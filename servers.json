@@ -14,21 +14,13 @@
 			"template": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
 			"attribution": "OpenStreetMap contributors"
 		},
-		"note": "main OSM server",
-		"oauth": {
-			"id": "hRPFdI68dfFi2ucLe8Nt8y6rBM4uwTwIzNioi1EuTms",
-			"url": "https://antonkhorev.github.io/osm-note-viewer/"
-		}
+		"note": "main OSM server"
 	},{
 		"web": "https://master.apis.dev.openstreetmap.org/",
 		"note": [
 			"OSM sandbox/development server",
 			"https://wiki.openstreetmap.org/wiki/Sandbox_for_editing#Experiment_with_the_API_(advanced)"
-		],
-		"oauth": {
-			"id": "KiQpJiwp0njkF3Y172lIpX2bzru4C98nH8y6FZcBir8",
-			"url": "https://antonkhorev.github.io/osm-note-viewer/"
-		}
+		]
 	},{
 		"web": [
 			"https://www.openhistoricalmap.org/",
@@ -36,11 +28,7 @@
 		],
 		"nominatim": "https://nominatim.openhistoricalmap.org/",
 		"overpass": "https://overpass-api.openhistoricalmap.org/",
-		"overpassTurbo": "https://openhistoricalmap.github.io/overpass-turbo/",
-		"oauth": {
-			"id": "pEMqG7m8YHHEfqRfctwQecseI1TYm1toHAAoRPzCPMw",
-			"url": "https://antonkhorev.github.io/osm-note-viewer/"
-		}
+		"overpassTurbo": "https://openhistoricalmap.github.io/overpass-turbo/"
 	},{
 		"web": "https://opengeofiction.net/",
 		"tiles": {
@@ -49,11 +37,7 @@
 		},
 		"overpass": "https://overpass.ogf.rent-a-planet.com/",
 		"overpassTurbo": "https://turbo.ogf.rent-a-planet.com/",
-		"world": "opengeofiction",
-		"oauth": {
-			"id": "q7AADWIuLnof-YIo5J6ht31jB73jFNPPp6LreINnwQs",
-			"url": "https://antonkhorev.github.io/osm-note-viewer/"
-		}
+		"world": "opengeofiction"
 	},{
 		"web": "https://fosm.org/",
 		"tiles": {
