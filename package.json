@@ -1,0 +1,22 @@
+{
+  "name": "osm-changeset-viewer",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "osm"
+  ],
+  "author": "Anton Khorev",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@rollup/plugin-virtual": "^3.0.1",
+    "rollup": "^3.20.2",
+    "tslib": "^2.5.0",
+    "typescript": "^5.0.2"
+  }
+}

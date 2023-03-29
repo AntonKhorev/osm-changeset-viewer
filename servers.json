@@ -1,0 +1,69 @@
+[
+	{
+		"web": [
+			"https://www.openstreetmap.org/",
+			"https://openstreetmap.org/",
+			"https://www.osm.org/",
+			"https://osm.org/"
+		],
+		"api": "https://api.openstreetmap.org/",
+		"nominatim": "https://nominatim.openstreetmap.org/",
+		"overpass": "https://www.overpass-api.de/",
+		"overpassTurbo": "https://overpass-turbo.eu/",
+		"tiles": {
+			"template": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+			"attribution": "OpenStreetMap contributors"
+		},
+		"note": "main OSM server",
+		"oauth": {
+			"id": "hRPFdI68dfFi2ucLe8Nt8y6rBM4uwTwIzNioi1EuTms",
+			"url": "https://antonkhorev.github.io/osm-note-viewer/"
+		}
+	},{
+		"web": "https://master.apis.dev.openstreetmap.org/",
+		"note": [
+			"OSM sandbox/development server",
+			"https://wiki.openstreetmap.org/wiki/Sandbox_for_editing#Experiment_with_the_API_(advanced)"
+		],
+		"oauth": {
+			"id": "KiQpJiwp0njkF3Y172lIpX2bzru4C98nH8y6FZcBir8",
+			"url": "https://antonkhorev.github.io/osm-note-viewer/"
+		}
+	},{
+		"web": [
+			"https://www.openhistoricalmap.org/",
+			"https://openhistoricalmap.org/"
+		],
+		"nominatim": "https://nominatim.openhistoricalmap.org/",
+		"overpass": "https://overpass-api.openhistoricalmap.org/",
+		"overpassTurbo": "https://openhistoricalmap.github.io/overpass-turbo/",
+		"oauth": {
+			"id": "pEMqG7m8YHHEfqRfctwQecseI1TYm1toHAAoRPzCPMw",
+			"url": "https://antonkhorev.github.io/osm-note-viewer/"
+		}
+	},{
+		"web": "https://opengeofiction.net/",
+		"tiles": {
+			"template": "https://tiles04.rent-a-planet.com/ogf-carto/{z}/{x}/{y}.png",
+			"attribution": "OpenGeofiction and contributors"
+		},
+		"overpass": "https://overpass.ogf.rent-a-planet.com/",
+		"overpassTurbo": "https://turbo.ogf.rent-a-planet.com/",
+		"world": "opengeofiction",
+		"oauth": {
+			"id": "q7AADWIuLnof-YIo5J6ht31jB73jFNPPp6LreINnwQs",
+			"url": "https://antonkhorev.github.io/osm-note-viewer/"
+		}
+	},{
+		"web": "https://fosm.org/",
+		"tiles": {
+			"template": "https://map.fosm.org/default/{z}/{x}/{y}.png",
+			"attribution": "https://fosm.org/",
+			"zoom": 18
+		},
+		"note": "uses old OSM APIs, probably won't work"
+	},{
+		"web": "http://127.0.0.1:3000/",
+		"note": "default local rails dev server"
+	}
+]
