@@ -1,5 +1,8 @@
+import Connection from './connection'
 import AuthStorage from './auth-storage'
 import Server from './server'
+import ServerSelector from './server-selector'
+import HashServerSelector from './hash-server-selector'
 import ServerList from './server-list'
 import ServerListSection from './server-list-section'
 import AppSection from './app-section'
@@ -9,39 +12,13 @@ import {checkAuthRedirectForInstallUri} from './redirect'
 import type {SimpleStorage} from '../util/storage'
 import {makeElement} from '../util/html'
 
-export {Server, ServerList}
+export {Connection, Server, ServerList, ServerSelector, HashServerSelector}
 export * from './server'
 
 const installUri=`${location.protocol}//${location.host}${location.pathname}`
 
 export function checkAuthRedirect(appName: string) {
 	return checkAuthRedirectForInstallUri(appName,installUri)
-}
-
-export interface ServerSelector {
-	selectServer(): Server|undefined
-	getServerSelectHref(server: Server): string
-	addServerSelectToAppInstallLocationHref(server: Server, installLocationHref: string): string
-	makeServerSelectErrorMessage(): (string|HTMLElement)[]
-}
-
-export class Connection {
-	constructor(
-		readonly server: Server,
-		private readonly authStorage: AuthStorage
-	) {}
-	get token(): string {
-		return this.authStorage.token
-	}
-	get username(): string|undefined {
-		return this.authStorage.login?.username
-	}
-	get uid(): number|undefined {
-		return this.authStorage.login?.uid
-	}
-	get isModerator(): boolean {
-		return this.authStorage.login?.roles?.includes('moderator')??false
-	}
 }
 
 export default class Net<T extends ServerSelector> {

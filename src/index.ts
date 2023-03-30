@@ -1,5 +1,4 @@
-import Net, {checkAuthRedirect} from './net'
-import {HashServerSelector} from './hash'
+import Net, {checkAuthRedirect, HashServerSelector} from './net'
 import {makeElement, makeDiv} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
 import serverListConfig from './server-list-config'
@@ -25,6 +24,7 @@ async function main() {
 		serverList=>new HashServerSelector(serverList),
 		()=>{} // TODO event like bubbleEvent($root,'osmChangesetViewer:loginChange')
 	)
+	net.serverSelector.installHashChangeListener(net.cx,()=>{})
 
 	$root.append(
 		makeElement('h1')()(`Changeset viewer`),
