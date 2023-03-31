@@ -1,8 +1,8 @@
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
-import {getChangesetsFromOsmApiResponse, toUserQuery} from './osm'
+import {toUserQuery} from './osm'
+import ChangesetStream from './changeset-stream'
 import {makeElement, makeDiv, makeLabel} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
-import {makeEscapeTag} from './util/escape'
 import serverListConfig from './server-list-config'
 
 const appName='osm-changeset-viewer'
@@ -62,22 +62,26 @@ async function main() {
 			ev.preventDefault()
 			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (userQuery.type=='invalid' || userQuery.type=='empty') return
-			const e=makeEscapeTag(encodeURIComponent)
-			let userParameter: string
-			if (userQuery.type=='id') {
-				userParameter=e`user=${userQuery.uid}`
-			} else {
-				userParameter=e`display_name=${userQuery.username}`
-			}
-			const result=await cx.server.api.fetch(`changesets.json?${userParameter}`)
-			const json=await result.json()
-			const changesets=getChangesetsFromOsmApiResponse(json)
+			const stream=new ChangesetStream(cx,userQuery)
 			const $ul=makeElement('ul')()()
-			$results.replaceChildren($ul)
-			for (const changeset of changesets) {
-				$ul.append(makeElement('li')()(
-					changeset.tags?.comment ?? ''
-				))
+			const $moreButton=makeElement('button')()(`Load more`)
+			$results.replaceChildren($ul,$moreButton)
+			$moreButton.onclick=async()=>{
+				$moreButton.disabled=true
+				$moreButton.textContent=`Loading...`
+				const changesets=await stream.fetch()
+				for (const changeset of changesets) {
+					$ul.append(makeElement('li')()(
+						changeset.tags?.comment ?? ''
+					))
+				}
+				if (changesets.length==0) {
+					$moreButton.textContent
+					$moreButton.textContent=`Loaded all changesets`
+				} else {
+					$moreButton.disabled=false
+					$moreButton.textContent=`Load more`
+				}
 			}
 		}
 		$root.append(

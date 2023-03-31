@@ -1,0 +1,52 @@
+import {Connection} from './net'
+import {ValidUserQuery, OsmChangesetApiData, getChangesetsFromOsmApiResponse} from './osm'
+import {makeEscapeTag} from './util/escape'
+
+export default class ChangesetStream {
+	private lastChangesetTimestamp: string|undefined
+	private visitedChangesetIds = new Set<number>()
+	constructor(
+		private readonly cx: Connection,
+		private readonly userQuery: ValidUserQuery
+	) {}
+	async fetch(): Promise<OsmChangesetApiData[]> {
+		const e=makeEscapeTag(encodeURIComponent)
+		let userParameter: string
+		if (this.userQuery.type=='id') {
+			userParameter=e`user=${this.userQuery.uid}`
+		} else {
+			userParameter=e`display_name=${this.userQuery.username}`
+		}
+		let timeParameter=''
+		if (this.lastChangesetTimestamp) {
+			const upperBoundDate=new Date(Date.parse(this.lastChangesetTimestamp)+1000)
+			timeParameter=e`&time=2001-01-01,${toIsoString(upperBoundDate)}`
+		}
+		const result=await this.cx.server.api.fetch(`changesets.json?${userParameter}${timeParameter}`)
+		const json=await result.json()
+		const changesets=getChangesetsFromOsmApiResponse(json)
+		const newChangesets=[] as OsmChangesetApiData[]
+		for (const changeset of changesets) {
+			if (!this.visitedChangesetIds.has(changeset.id)) {
+				this.visitedChangesetIds.add(changeset.id)
+				newChangesets.push(changeset)
+			}
+			this.lastChangesetTimestamp=changeset.created_at
+		}
+		return newChangesets
+	}
+}
+
+function toIsoString(date: Date, separator='-'): string {
+	const pad=(n: number): string => ('0'+n).slice(-2)
+	const dateString=
+		date.getUTCFullYear()+separator+
+		pad(date.getUTCMonth()+1)+separator+
+		pad(date.getUTCDate())+
+		'T'+
+		pad(date.getUTCHours())+separator+
+		pad(date.getUTCMinutes())+separator+
+		pad(date.getUTCSeconds())+
+		'Z'
+	return dateString
+}
