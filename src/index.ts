@@ -1,5 +1,5 @@
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
-import {toUserQuery} from './query-user'
+import {toUserQuery} from './osm'
 import {makeElement, makeDiv, makeLabel} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
 import {makeEscapeTag} from './util/escape'
@@ -48,9 +48,9 @@ async function main() {
 		)
 		$userInput.oninput=()=>{
 			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
-			if (userQuery.userType=='invalid') {
+			if (userQuery.type=='invalid') {
 				$userInput.setCustomValidity(userQuery.message)
-			} else if (userQuery.userType=='empty') {
+			} else if (userQuery.type=='empty') {
 				$userInput.setCustomValidity(`user query cannot be empty`)
 			} else {
 				$userInput.setCustomValidity('')
@@ -59,10 +59,10 @@ async function main() {
 		$form.onsubmit=async(ev)=>{
 			ev.preventDefault()
 			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
-			if (userQuery.userType=='invalid' || userQuery.userType=='empty') return
+			if (userQuery.type=='invalid' || userQuery.type=='empty') return
 			const e=makeEscapeTag(encodeURIComponent)
 			let userParameter: string
-			if (userQuery.userType=='id') {
+			if (userQuery.type=='id') {
 				userParameter=e`user=${userQuery.uid}`
 			} else {
 				userParameter=e`display_name=${userQuery.username}`
