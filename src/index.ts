@@ -1,5 +1,5 @@
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
-import {toUserQuery} from './osm'
+import {getChangesetsFromOsmApiResponse, toUserQuery} from './osm'
 import {makeElement, makeDiv, makeLabel} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
 import {makeEscapeTag} from './util/escape'
@@ -36,6 +36,7 @@ async function main() {
 		const cx=net.cx
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
+		$userInput.name='user'
 		const $form=makeElement('form')()(
 			makeDiv('major-input-group')(
 				makeLabel()(
@@ -46,6 +47,7 @@ async function main() {
 				makeElement('button')()(`Add user`)
 			)
 		)
+		const $results=makeDiv()()
 		$userInput.oninput=()=>{
 			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (userQuery.type=='invalid') {
@@ -69,11 +71,19 @@ async function main() {
 			}
 			const result=await cx.server.api.fetch(`changesets.json?${userParameter}`)
 			const json=await result.json()
-			console.log(json)
+			const changesets=getChangesetsFromOsmApiResponse(json)
+			const $ul=makeElement('ul')()()
+			$results.replaceChildren($ul)
+			for (const changeset of changesets) {
+				$ul.append(makeElement('li')()(
+					changeset.tags?.comment ?? ''
+				))
+			}
 		}
 		$root.append(
 			makeElement('h2')()(`Select users and changesets`),
-			$form
+			$form,
+			$results
 		)
 	} else {
 		$root.append(
