@@ -2,9 +2,10 @@ import Net, {checkAuthRedirect, HashServerSelector} from './net'
 import makeNetDialog from './net-dialog'
 import {toUserQuery} from './osm'
 import ChangesetStream from './changeset-stream'
+import {toIsoDateString, toIsoTimeString} from './date'
+import serverListConfig from './server-list-config'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
-import serverListConfig from './server-list-config'
 import {makeEscapeTag} from './util/escape'
 
 const appName='osm-changeset-viewer'
@@ -81,7 +82,7 @@ async function main() {
 				for (const changeset of changesets) {
 					$ul.append(makeElement('li')()(
 						makeLink(`${changeset.id}`,cx.server.web.getUrl(e`changeset/${changeset.id}`)),` `,
-						makeElement('time')()(changeset.created_at),` `,
+						makeDateOutputFromString(changeset.created_at),` `,
 						changeset.tags?.comment ?? ''
 					))
 				}
@@ -112,4 +113,17 @@ async function main() {
 			$netDialog.showModal()
 		}
 	}
+}
+
+function makeDateOutputFromString(dateString: string): HTMLTimeElement {
+	const date=new Date(dateString)
+	const isoDateString=toIsoDateString(date)
+	const isoTimeString=toIsoTimeString(date)
+	const $time=makeElement('time')()(
+		makeElement('span')('date')(isoDateString),' ',
+		makeElement('span')('time')(isoTimeString)
+	)
+	$time.dateTime=dateString
+	$time.title=`${isoDateString} ${isoTimeString} UTC`
+	return $time
 }

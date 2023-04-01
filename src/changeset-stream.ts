@@ -1,5 +1,6 @@
 import {Connection} from './net'
 import {ValidUserQuery, OsmChangesetApiData, getChangesetsFromOsmApiResponse} from './osm'
+import {toIsoString} from './date'
 import {makeEscapeTag} from './util/escape'
 
 export default class ChangesetStream {
@@ -35,18 +36,4 @@ export default class ChangesetStream {
 		}
 		return newChangesets
 	}
-}
-
-function toIsoString(date: Date, separator='-'): string {
-	const pad=(n: number): string => ('0'+n).slice(-2)
-	const dateString=
-		date.getUTCFullYear()+separator+
-		pad(date.getUTCMonth()+1)+separator+
-		pad(date.getUTCDate())+
-		'T'+
-		pad(date.getUTCHours())+separator+
-		pad(date.getUTCMinutes())+separator+
-		pad(date.getUTCSeconds())+
-		'Z'
-	return dateString
 }
