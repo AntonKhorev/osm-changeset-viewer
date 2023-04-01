@@ -24,8 +24,8 @@ body > .symbols {
 	display: grid;
 	grid-template-rows: 1fr 4rem;
 }
-.ui .content,
-.ui .toolbar {
+.ui main,
+.ui footer {
 	padding: .5rem;
 	overflow-y: auto;
 }
@@ -59,12 +59,12 @@ body > .symbols {
 	grid-auto-columns: minmax(20ch,50ch);
 }
 
-.ui .toolbar {
+.ui footer {
 	border-top: var(--frame-line);
 	display: flex;
 	align-items: center;
 }
-.ui .toolbar > button {
+.ui footer > button {
 	align-self: stretch;
 	margin-left: auto;
 }

@@ -35,10 +35,10 @@ async function main() {
 		()=>{} // TODO event like bubbleEvent($root,'osmChangesetViewer:loginChange')
 	)
 	net.serverSelector.installHashChangeListener(net.cx,()=>{})
-	const $content=makeElement('main')('content')(
+	const $content=makeElement('main')()(
 		makeElement('h1')()(`Changeset viewer`)
 	)
-	const $toolbar=makeElement('footer')('toolbar')()
+	const $toolbar=makeElement('footer')()()
 	const $netDialog=makeNetDialog(net)
 	$root.append($content,$toolbar,$netDialog)
 
