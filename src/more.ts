@@ -4,6 +4,9 @@ export default class More {
 	$button=makeElement('button')()(`Load more`)
 	$div=makeDiv('major-input-group')(this.$button)
 	constructor() {
+		this.changeToNotingToLoad()
+	}
+	changeToNotingToLoad() {
 		this.$div.hidden=true
 	}
 	changeToLoading() {

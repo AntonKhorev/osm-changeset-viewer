@@ -51,25 +51,30 @@ async function main() {
 			for (const $changeset of $grid.querySelectorAll('.changeset')) {
 				$changeset.remove()
 			}
-			more.changeToLoadMore()
-			more.$button.onclick=async()=>{
-				const e=makeEscapeTag(encodeURIComponent)
-				more.changeToLoading()
-				const nUsersAndChangesets=await stream.fetch()
-				for (const [nUser,changeset] of nUsersAndChangesets) {
-					const $changeset=makeDiv('changeset')(
-						makeLink(`${changeset.id}`,cx.server.web.getUrl(e`changeset/${changeset.id}`)),` `,
-						makeDateOutputFromString(changeset.created_at),` `,
-						changeset.tags?.comment ?? ''
-					)
-					$changeset.style.gridColumn=String(nUser+1)
-					$grid.append($changeset)
+			if (stream) {
+				more.changeToLoadMore()
+				more.$button.onclick=async()=>{
+					const e=makeEscapeTag(encodeURIComponent)
+					more.changeToLoading()
+					const nUsersAndChangesets=await stream.fetch()
+					for (const [nUser,changeset] of nUsersAndChangesets) {
+						const $changeset=makeDiv('changeset')(
+							makeLink(`${changeset.id}`,cx.server.web.getUrl(e`changeset/${changeset.id}`)),` `,
+							makeDateOutputFromString(changeset.created_at),` `,
+							changeset.tags?.comment ?? ''
+						)
+						$changeset.style.gridColumn=String(nUser+1)
+						$grid.append($changeset)
+					}
+					if (nUsersAndChangesets.length==0) {
+						more.changeToLoadedAll()
+					} else {
+						more.changeToLoadMore()
+					}
 				}
-				if (nUsersAndChangesets.length==0) {
-					more.changeToLoadedAll()
-				} else {
-					more.changeToLoadMore()
-				}
+			} else {
+				more.changeToNotingToLoad()
+				more.$button.onclick=null
 			}
 		})
 		$content.append(

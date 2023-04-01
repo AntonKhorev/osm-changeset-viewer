@@ -17,7 +17,7 @@ export default class GridHead {
 		private cx: Connection,
 		private $grid: HTMLElement,
 		sendUpdatedUserQueries: (userQueries: ValidUserQuery[])=>void,
-		private sendStream: (muxStream: MuxChangesetStream)=>void
+		private sendStream: (muxStream: MuxChangesetStream|null)=>void
 	) {
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
@@ -85,6 +85,10 @@ export default class GridHead {
 		return null
 	}
 	private openAndSendStream(): void {
+		if (this.userEntries.length==0) {
+			this.sendStream(null)
+			return
+		}
 		this.sendStream(
 			new MuxChangesetStream(
 				this.userEntries.map(({query})=>new ChangesetStream(this.cx,query))
