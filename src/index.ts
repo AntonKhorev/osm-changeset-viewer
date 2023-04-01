@@ -3,7 +3,7 @@ import makeNetDialog from './net-dialog'
 import writeToolbar from './toolbar'
 import {toUserQuery} from './osm'
 import ChangesetStream from './changeset-stream'
-import {toIsoDateString, toIsoTimeString} from './date'
+import {installRelativeTimeListeners, makeDateOutputFromString} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
@@ -22,6 +22,7 @@ async function main() {
 
 	const $root=makeDiv('ui')()
 	document.body.append($root)
+	installRelativeTimeListeners($root)
 
 	const storage=new PrefixedLocalStorage(appName+'-')
 	const net=new Net(
@@ -108,17 +109,4 @@ async function main() {
 	}
 
 	writeToolbar($root,$toolbar,$netDialog)
-}
-
-function makeDateOutputFromString(dateString: string): HTMLTimeElement {
-	const date=new Date(dateString)
-	const isoDateString=toIsoDateString(date)
-	const isoTimeString=toIsoTimeString(date)
-	const $time=makeElement('time')()(
-		makeElement('span')('date')(isoDateString),' ',
-		makeElement('span')('time')(isoTimeString)
-	)
-	$time.dateTime=dateString
-	$time.title=`${isoDateString} ${isoTimeString} UTC`
-	return $time
 }
