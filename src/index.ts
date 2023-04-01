@@ -2,11 +2,14 @@ import Net, {checkAuthRedirect, HashServerSelector} from './net'
 import makeNetDialog from './net-dialog'
 import {toUserQuery} from './osm'
 import ChangesetStream from './changeset-stream'
-import {makeElement, makeDiv, makeLabel} from './util/html'
+import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
 import serverListConfig from './server-list-config'
+import {makeEscapeTag} from './util/escape'
 
 const appName='osm-changeset-viewer'
+
+const e=makeEscapeTag(encodeURIComponent)
 
 main()
 
@@ -77,6 +80,8 @@ async function main() {
 				const changesets=await stream.fetch()
 				for (const changeset of changesets) {
 					$ul.append(makeElement('li')()(
+						makeLink(`${changeset.id}`,cx.server.web.getUrl(e`changeset/${changeset.id}`)),` `,
+						makeElement('time')()(changeset.created_at),` `,
 						changeset.tags?.comment ?? ''
 					))
 				}
