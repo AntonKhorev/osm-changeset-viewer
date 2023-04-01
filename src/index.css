@@ -1,0 +1,76 @@
+:root {
+	--frame-color: #CCC;
+	--hover-color: #DEF;
+
+	--frame-line: solid 1px var(--frame-color);
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--hover-color: #246;
+	}
+}
+
+body {
+	padding: 0;
+	margin: 0;
+}
+body > .symbols {
+	display: none;
+}
+.ui {
+	position: fixed;
+	height: 100%;
+	width: 100%;
+	display: grid;
+	grid-template-rows: 1fr 4rem;
+}
+.ui .content,
+.ui .toolbar {
+	padding: .5rem;
+	overflow-y: auto;
+}
+.ui .toolbar {
+	border-top: var(--frame-line);
+	display: flex;
+}
+
+.ui [class$="-input-group"] {
+	margin: .5rem 0;
+	--major-button-padding: .3rem;
+}
+.ui .major-input-group :is(input[type=text], textarea, button):not([hidden]) {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	margin: .2em 0;
+}
+.ui .major-input-group button {
+	padding: var(--major-button-padding);
+}
+
+.ui dialog {
+	padding: 1rem;
+}
+.ui dialog button.close {
+	float: right;
+	width: 2rem;
+	height: 2rem;
+	box-sizing: border-box;
+	border: none;
+	padding: 0;
+	margin: -2px;
+	background: none;
+	overflow: hidden;
+	border-radius: 50%;
+	cursor: pointer;
+}
+.ui dialog button.close:hover {
+	background: var(--hover-color);
+}
+.ui dialog button.close > svg {
+	width: 100%;
+	height: 100%;
+}
+.ui dialog > button.close:first-child + section > h2:first-child {
+	margin-top: 0;
+}

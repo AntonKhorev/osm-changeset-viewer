@@ -1,4 +1,5 @@
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
+import makeNetDialog from './net-dialog'
 import {toUserQuery} from './osm'
 import ChangesetStream from './changeset-stream'
 import {makeElement, makeDiv, makeLabel} from './util/html'
@@ -27,8 +28,12 @@ async function main() {
 		()=>{} // TODO event like bubbleEvent($root,'osmChangesetViewer:loginChange')
 	)
 	net.serverSelector.installHashChangeListener(net.cx,()=>{})
+	const $content=makeDiv('content')()
+	const $toolbar=makeDiv('toolbar')()
+	const $netDialog=makeNetDialog(net)
+	$root.append($content,$toolbar,$netDialog)
 
-	$root.append(
+	$content.append(
 		makeElement('h1')()(`Changeset viewer`)
 	)
 
@@ -84,18 +89,22 @@ async function main() {
 				}
 			}
 		}
-		$root.append(
+		$content.append(
 			makeElement('h2')()(`Select users and changesets`),
 			$form,
 			$results
 		)
 	} else {
-		$root.append(
+		$content.append(
 			makeDiv('notice')(`Please select a valid server`)
 		)
 	}
 
-	$root.append(
-		...net.$sections
-	)
+	{
+		const $netButton=makeElement('button')()(`Manage servers and logins`)
+		$toolbar.append($netButton)
+		$netButton.onclick=()=>{
+			$netDialog.showModal()
+		}
+	}
 }
