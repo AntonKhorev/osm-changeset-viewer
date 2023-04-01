@@ -2,13 +2,14 @@ import type {Connection} from './net'
 import type {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import ChangesetStream from './changeset-stream'
+import MuxChangesetStream from './mux-changeset-stream'
 import {makeElement, makeDiv, makeLabel} from './util/html'
 
 export default class GridHead {
 	constructor(
 		cx: Connection,
 		$grid: HTMLElement,
-		receiveStream: (stream: ChangesetStream)=>void
+		receiveStream: (muxStream: MuxChangesetStream)=>void
 	) {
 		const userQueries: ValidUserQuery[] = []
 		const $userInput=makeElement('input')()()
@@ -48,8 +49,13 @@ export default class GridHead {
 			userQueries.push(userQuery)
 			$form.style.gridColumn=String(userQueries.length+1)
 			$form.before($user)
-			const stream=new ChangesetStream(cx,userQuery)
-			receiveStream(stream)
+			const streams=[] as ChangesetStream[]
+			for (const userQuery of userQueries) {
+				const stream=new ChangesetStream(cx,userQuery)
+				streams.push(stream)
+			}
+			const muxStream=new MuxChangesetStream(streams)
+			receiveStream(muxStream)
 		}
 	}
 }

@@ -4,7 +4,7 @@ import {toIsoString} from './date'
 import {makeEscapeTag} from './util/escape'
 
 export default class ChangesetStream {
-	private lastChangesetTimestamp: string|undefined
+	private lowestTimestamp: number|undefined
 	private visitedChangesetIds = new Set<number>()
 	constructor(
 		private readonly cx: Connection,
@@ -19,8 +19,8 @@ export default class ChangesetStream {
 			userParameter=e`display_name=${this.userQuery.username}`
 		}
 		let timeParameter=''
-		if (this.lastChangesetTimestamp) {
-			const upperBoundDate=new Date(Date.parse(this.lastChangesetTimestamp)+1000)
+		if (this.lowestTimestamp) {
+			const upperBoundDate=new Date(this.lowestTimestamp+1000)
 			timeParameter=e`&time=2001-01-01,${toIsoString(upperBoundDate)}`
 		}
 		const result=await this.cx.server.api.fetch(`changesets.json?${userParameter}${timeParameter}`)
@@ -32,7 +32,7 @@ export default class ChangesetStream {
 				this.visitedChangesetIds.add(changeset.id)
 				newChangesets.push(changeset)
 			}
-			this.lastChangesetTimestamp=changeset.created_at
+			this.lowestTimestamp=Date.parse(changeset.created_at)
 		}
 		return newChangesets
 	}

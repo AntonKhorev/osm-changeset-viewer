@@ -46,20 +46,23 @@ async function main() {
 		const more=new More()
 		const $grid=makeDiv('grid')()
 		const gridHead=new GridHead(cx,$grid,async(stream)=>{
+			for (const $changeset of $grid.querySelectorAll('.changeset')) {
+				$changeset.remove()
+			}
 			more.changeToLoadMore()
 			more.$button.onclick=async()=>{
 				more.changeToLoading()
-				const changesets=await stream.fetch()
-				for (const changeset of changesets) {
+				const nUsersAndChangesets=await stream.fetch()
+				for (const [nUser,changeset] of nUsersAndChangesets) {
 					const $changeset=makeDiv('changeset')(
 						makeLink(`${changeset.id}`,cx.server.web.getUrl(e`changeset/${changeset.id}`)),` `,
 						makeDateOutputFromString(changeset.created_at),` `,
 						changeset.tags?.comment ?? ''
 					)
-					$changeset.style.gridColumn='1'
+					$changeset.style.gridColumn=String(nUser+1)
 					$grid.append($changeset)
 				}
-				if (changesets.length==0) {
+				if (nUsersAndChangesets.length==0) {
 					more.changeToLoadedAll()
 				} else {
 					more.changeToLoadMore()
