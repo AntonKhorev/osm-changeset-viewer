@@ -1,6 +1,7 @@
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
-import makeNetDialog from './net-dialog'
+import More from './more'
 import writeToolbar from './toolbar'
+import makeNetDialog from './net-dialog'
 import {toUserQuery} from './osm'
 import ChangesetStream from './changeset-stream'
 import {installRelativeTimeListeners, makeDateOutputFromString} from './date'
@@ -34,17 +35,17 @@ async function main() {
 		()=>{} // TODO event like bubbleEvent($root,'osmChangesetViewer:loginChange')
 	)
 	net.serverSelector.installHashChangeListener(net.cx,()=>{})
-	const $content=makeDiv('content')()
-	const $toolbar=makeDiv('toolbar')()
+	const $content=makeElement('main')('content')(
+		makeElement('h1')()(`Changeset viewer`)
+	)
+	const $toolbar=makeElement('footer')('toolbar')()
 	const $netDialog=makeNetDialog(net)
 	$root.append($content,$toolbar,$netDialog)
 
-	$content.append(
-		makeElement('h1')()(`Changeset viewer`)
-	)
-
 	if (net.cx) {
 		const cx=net.cx
+		const more=new More()
+		const $grid=makeDiv('grid')()
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
 		$userInput.name='user'
@@ -58,7 +59,7 @@ async function main() {
 				makeElement('button')()(`Add user`)
 			)
 		)
-		const $results=makeDiv()()
+		$grid.append($form)
 		$userInput.oninput=()=>{
 			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (userQuery.type=='invalid') {
@@ -74,33 +75,28 @@ async function main() {
 			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (userQuery.type=='invalid' || userQuery.type=='empty') return
 			const stream=new ChangesetStream(cx,userQuery)
-			const $ul=makeElement('ul')()()
-			const $moreButton=makeElement('button')()(`Load more`)
-			$results.replaceChildren($ul,$moreButton)
-			$moreButton.onclick=async()=>{
-				$moreButton.disabled=true
-				$moreButton.textContent=`Loading...`
+			more.changeToLoadMore()
+			more.$button.onclick=async()=>{
+				more.changeToLoading()
 				const changesets=await stream.fetch()
 				for (const changeset of changesets) {
-					$ul.append(makeElement('li')()(
+					$grid.append(makeDiv('changeset')(
 						makeLink(`${changeset.id}`,cx.server.web.getUrl(e`changeset/${changeset.id}`)),` `,
 						makeDateOutputFromString(changeset.created_at),` `,
 						changeset.tags?.comment ?? ''
 					))
 				}
 				if (changesets.length==0) {
-					$moreButton.textContent
-					$moreButton.textContent=`Loaded all changesets`
+					more.changeToLoadedAll()
 				} else {
-					$moreButton.disabled=false
-					$moreButton.textContent=`Load more`
+					more.changeToLoadMore()
 				}
 			}
 		}
 		$content.append(
 			makeElement('h2')()(`Select users and changesets`),
-			$form,
-			$results
+			$grid,
+			more.$div
 		)
 	} else {
 		$content.append(

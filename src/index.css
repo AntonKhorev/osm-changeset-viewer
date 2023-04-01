@@ -54,6 +54,11 @@ body > .symbols {
 	display: none;
 }
 
+.ui .grid {
+	display: grid;
+	grid-auto-columns: minmax(20ch,50ch);
+}
+
 .ui .toolbar {
 	border-top: var(--frame-line);
 	display: flex;
