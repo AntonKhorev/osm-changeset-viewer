@@ -29,10 +29,6 @@ body > .symbols {
 	padding: .5rem;
 	overflow-y: auto;
 }
-.ui .toolbar {
-	border-top: var(--frame-line);
-	display: flex;
-}
 
 .ui [class$="-input-group"] {
 	margin: .5rem 0;
@@ -46,6 +42,26 @@ body > .symbols {
 }
 .ui .major-input-group button {
 	padding: var(--major-button-padding);
+}
+
+.ui time {
+	text-decoration: underline dotted 1px;
+}
+.ui:not(.with-time) time {
+	display: inline-block;
+}
+.ui:not(.with-time) time .time {
+	display: none;
+}
+
+.ui .toolbar {
+	border-top: var(--frame-line);
+	display: flex;
+	align-items: center;
+}
+.ui .toolbar > button {
+	align-self: stretch;
+	margin-left: auto;
 }
 
 .ui dialog {

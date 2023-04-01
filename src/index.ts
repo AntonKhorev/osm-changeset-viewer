@@ -1,5 +1,6 @@
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
 import makeNetDialog from './net-dialog'
+import writeToolbar from './toolbar'
 import {toUserQuery} from './osm'
 import ChangesetStream from './changeset-stream'
 import {toIsoDateString, toIsoTimeString} from './date'
@@ -106,13 +107,7 @@ async function main() {
 		)
 	}
 
-	{
-		const $netButton=makeElement('button')()(`Manage servers and logins`)
-		$toolbar.append($netButton)
-		$netButton.onclick=()=>{
-			$netDialog.showModal()
-		}
-	}
+	writeToolbar($root,$toolbar,$netDialog)
 }
 
 function makeDateOutputFromString(dateString: string): HTMLTimeElement {
