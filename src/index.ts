@@ -2,11 +2,10 @@ import Net, {checkAuthRedirect, HashServerSelector} from './net'
 import More from './more'
 import writeToolbar from './toolbar'
 import makeNetDialog from './net-dialog'
-import {toUserQuery} from './osm'
-import ChangesetStream from './changeset-stream'
+import GridHead from './grid-head'
 import {installRelativeTimeListeners, makeDateOutputFromString} from './date'
 import serverListConfig from './server-list-config'
-import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
+import {makeElement, makeDiv, makeLink} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
 import {makeEscapeTag} from './util/escape'
 
@@ -46,35 +45,7 @@ async function main() {
 		const cx=net.cx
 		const more=new More()
 		const $grid=makeDiv('grid')()
-		const $userInput=makeElement('input')()()
-		$userInput.type='text'
-		$userInput.name='user'
-		const $form=makeElement('form')()(
-			makeDiv('major-input-group')(
-				makeLabel()(
-					`Username, URL or #id `,$userInput
-				)
-			),
-			makeDiv('major-input-group')(
-				makeElement('button')()(`Add user`)
-			)
-		)
-		$grid.append($form)
-		$userInput.oninput=()=>{
-			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
-			if (userQuery.type=='invalid') {
-				$userInput.setCustomValidity(userQuery.message)
-			} else if (userQuery.type=='empty') {
-				$userInput.setCustomValidity(`user query cannot be empty`)
-			} else {
-				$userInput.setCustomValidity('')
-			}
-		}
-		$form.onsubmit=async(ev)=>{
-			ev.preventDefault()
-			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
-			if (userQuery.type=='invalid' || userQuery.type=='empty') return
-			const stream=new ChangesetStream(cx,userQuery)
+		const gridHead=new GridHead(cx,$grid,async(stream)=>{
 			more.changeToLoadMore()
 			more.$button.onclick=async()=>{
 				more.changeToLoading()
@@ -92,7 +63,7 @@ async function main() {
 					more.changeToLoadMore()
 				}
 			}
-		}
+		})
 		$content.append(
 			makeElement('h2')()(`Select users and changesets`),
 			$grid,
