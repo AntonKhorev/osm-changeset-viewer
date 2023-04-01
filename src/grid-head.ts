@@ -5,12 +5,12 @@ import ChangesetStream from './changeset-stream'
 import {makeElement, makeDiv, makeLabel} from './util/html'
 
 export default class GridHead {
-	// private userQueries: ValidUserQuery[] = []
 	constructor(
 		cx: Connection,
 		$grid: HTMLElement,
 		receiveStream: (stream: ChangesetStream)=>void
 	) {
+		const userQueries: ValidUserQuery[] = []
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
 		$userInput.name='user'
@@ -39,6 +39,15 @@ export default class GridHead {
 			ev.preventDefault()
 			const userQuery=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (userQuery.type=='invalid' || userQuery.type=='empty') return
+			const $user=makeDiv('user')()
+			if (userQuery.type=='id') {
+				$user.append(`#${userQuery.uid}`)
+			} else {
+				$user.append(userQuery.username)
+			}
+			userQueries.push(userQuery)
+			$form.style.gridColumn=String(userQueries.length+1)
+			$form.before($user)
 			const stream=new ChangesetStream(cx,userQuery)
 			receiveStream(stream)
 		}

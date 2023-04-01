@@ -51,11 +51,13 @@ async function main() {
 				more.changeToLoading()
 				const changesets=await stream.fetch()
 				for (const changeset of changesets) {
-					$grid.append(makeDiv('changeset')(
+					const $changeset=makeDiv('changeset')(
 						makeLink(`${changeset.id}`,cx.server.web.getUrl(e`changeset/${changeset.id}`)),` `,
 						makeDateOutputFromString(changeset.created_at),` `,
 						changeset.tags?.comment ?? ''
-					))
+					)
+					$changeset.style.gridColumn='1'
+					$grid.append($changeset)
 				}
 				if (changesets.length==0) {
 					more.changeToLoadedAll()
