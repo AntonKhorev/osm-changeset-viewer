@@ -16,9 +16,7 @@ export default class Grid {
 	setColumns(nColumns: number) {
 		this.nRows=1
 		this.nextSeparatorTimestamp=undefined
-		for (const $changeset of this.$grid.querySelectorAll('.changeset .separator')) {
-			$changeset.remove()
-		}
+		this.clearChangesets()
 		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,50ch)) ` : ``
 		let style=
 			`#${this.id} {\n`+
@@ -50,5 +48,17 @@ export default class Grid {
 	}
 	private stampRow($e: HTMLElement): void {
 		$e.style.gridRow=String(++this.nRows)
+	}
+	private clearChangesets() {
+		let remove=false
+		for (const $e of [...this.$grid.children]) {
+			if ($e instanceof HTMLFormElement) {
+				remove=true
+				continue
+			}
+			if (remove) {
+				$e.remove()
+			}
+		}
 	}
 }
