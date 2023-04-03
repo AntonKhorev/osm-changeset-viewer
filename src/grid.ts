@@ -1,19 +1,22 @@
+import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
 
 let gridCounter=0
 
 export default class Grid {
-	$grid=makeDiv()()
+	$grid=makeDiv('grid')()
 	$style=makeElement('style')()()
 	id=`grid-${++gridCounter}`
-	nChangesets=0
+	nRows=1
+	nextSeparatorTimestamp: number|undefined
 	constructor() {
 		this.$grid.id=this.id
 		this.setColumns(0)
 	}
 	setColumns(nColumns: number) {
-		this.nChangesets=0
-		for (const $changeset of this.$grid.querySelectorAll('.changeset')) {
+		this.nRows=1
+		this.nextSeparatorTimestamp=undefined
+		for (const $changeset of this.$grid.querySelectorAll('.changeset .separator')) {
 			$changeset.remove()
 		}
 		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,50ch)) ` : ``
@@ -31,9 +34,21 @@ export default class Grid {
 			`}\n`
 		this.$style.textContent=style
 	}
-	appendChangeset($changeset: HTMLElement, iColumn: number) {
+	appendChangeset($changeset: HTMLElement, iColumn: number, date: Date) {
+		if (this.nextSeparatorTimestamp==null || date.getTime()<this.nextSeparatorTimestamp) {
+			const yearMonthString=toIsoYearMonthString(date)
+			const $separator=makeDiv('separator')(
+				makeElement('time')()(yearMonthString)
+			)
+			this.stampRow($separator)
+			this.$grid.append($separator)
+			this.nextSeparatorTimestamp=Date.parse(yearMonthString)
+		}
 		$changeset.dataset.column=String(iColumn)
-		$changeset.style.gridRow=String(++this.nChangesets+1)
+		this.stampRow($changeset)
 		this.$grid.append($changeset)
+	}
+	private stampRow($e: HTMLElement): void {
+		$e.style.gridRow=String(++this.nRows)
 	}
 }

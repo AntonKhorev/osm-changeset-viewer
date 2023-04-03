@@ -44,14 +44,36 @@ body > .symbols {
 	padding: var(--major-button-padding);
 }
 
-.ui time {
+.ui time[title] {
 	text-decoration: underline dotted 1px;
 }
-.ui:not(.with-time) time {
+.ui:not(.with-time) time[title] {
 	display: inline-block;
 }
-.ui:not(.with-time) time .time {
+.ui:not(.with-time) time[title] .time {
 	display: none;
+}
+
+.ui .grid > .separator {
+	grid-column: 1 / -1;
+	text-align: center;
+	opacity: .7;
+	position: relative;
+}
+.ui .grid > .separator time {
+	background: canvas;
+	padding: 0 .5em;
+}
+.ui .grid > .separator::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	height: 1px;
+	width: 100%;
+	background: currentColor;
+	opacity: .5;
+	z-index: -1;
 }
 
 .ui footer {

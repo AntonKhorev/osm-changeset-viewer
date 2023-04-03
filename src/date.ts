@@ -2,6 +2,13 @@ import {makeElement} from './util/html'
 
 const pad=(n: number): string => ('0'+n).slice(-2)
 
+export function toIsoYearMonthString(date: Date, separator='-'): string {
+	return (
+		date.getUTCFullYear()+separator+
+		pad(date.getUTCMonth()+1)
+	)
+}
+
 function toIsoDateString(date: Date, separator='-'): string {
 	return (
 		date.getUTCFullYear()+separator+

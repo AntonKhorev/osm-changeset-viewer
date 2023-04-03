@@ -64,7 +64,7 @@ async function main() {
 							makeDateOutputFromString(changeset.created_at),` `,
 							changeset.tags?.comment ?? ''
 						)
-						grid.appendChangeset($changeset,nUser)
+						grid.appendChangeset($changeset,nUser,new Date(changeset.created_at))
 					}
 					if (nUsersAndChangesets.length==0) {
 						more.changeToLoadedAll()
