@@ -14,12 +14,19 @@ type GridUserEntry = {
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
 	private $form=makeElement('form')()()
+	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
 	constructor(
 		private cx: Connection,
 		private grid: Grid,
-		sendUpdatedUserQueries: (userQueries: ValidUserQuery[])=>void,
-		private sendStream: (muxStream: MuxChangesetStream|null)=>void
+		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
+		private sendStreamReceiver: (muxStream: MuxChangesetStream|null)=>void
 	) {
+		{
+			const that=this
+			this.wrappedRemoveUserClickListener=function(){
+				that.removeUserClickListener(this)
+			}
+		}
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
 		$userInput.name='user'
@@ -48,11 +55,9 @@ export default class GridHead {
 			ev.preventDefault()
 			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (query.type=='invalid' || query.type=='empty') return
-			const $user=makeUserCard(query)
-			$user.style.gridColumn=String(this.userEntries.length+1)
+			const $user=this.makeUserCard(query)
 			this.userEntries.push({query,$user})
-			sendUpdatedUserQueries(this.userEntries.map(({query})=>query))
-			this.$form.style.gridColumn=String(this.userEntries.length+1)
+			this.sendUpdatedUserQueries()
 			this.$form.before($user)
 			this.grid.setColumns(this.userEntries.length)
 			this.openAndSendStream()
@@ -64,13 +69,11 @@ export default class GridHead {
 			for (const [i,query] of userQueries.entries()) {
 				let entry=this.pickFromExistingUserEntries(query)
 				if (!entry) {
-					const $user=makeUserCard(query)
+					const $user=this.makeUserCard(query)
 					entry={query,$user}
 				}
-				entry.$user.style.gridColumn=String(i+1)
 				newUserEntries.push(entry)
 			}
-			this.$form.style.gridColumn=String(newUserEntries.length+1)
 			for (const {$user} of this.userEntries) {
 				$user.remove()
 			}
@@ -91,14 +94,41 @@ export default class GridHead {
 	}
 	private openAndSendStream(): void {
 		if (this.userEntries.length==0) {
-			this.sendStream(null)
+			this.sendStreamReceiver(null)
 			return
 		}
-		this.sendStream(
+		this.sendStreamReceiver(
 			new MuxChangesetStream(
 				this.userEntries.map(({query})=>new ChangesetStream(this.cx,query))
 			)
 		)
+	}
+	private makeUserCard(query: ValidUserQuery): HTMLElement {
+		const $tab=makeDiv('tab')()
+		if (query.type=='id') {
+			$tab.append(`#${query.uid}`)
+		} else {
+			$tab.append(query.username)
+		}
+		const $closeButton=makeElement('button')()('X')
+		$closeButton.title=`Remove user`
+		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
+		$tab.append($closeButton)
+		return makeDiv('user')($tab)
+	}
+	private removeUserClickListener($button: HTMLElement): void {
+		const $user=$button.closest('.user')
+		for (const [i,entry] of this.userEntries.entries()) {
+			if (entry.$user!=$user) continue
+			this.userEntries.splice(i,1)
+			this.sendUpdatedUserQueries()
+			$user.remove()
+			this.grid.setColumns(this.userEntries.length)
+			this.openAndSendStream()
+		}
+	}
+	private sendUpdatedUserQueries(): void {
+		this.sendUpdatedUserQueriesReceiver(this.userEntries.map(({query})=>query))
 	}
 }
 
@@ -112,14 +142,4 @@ function isSameQuery(query1: ValidUserQuery, query2: ValidUserQuery): boolean {
 	} else {
 		return false
 	}
-}
-
-function makeUserCard(query: ValidUserQuery): HTMLElement {
-	const $user=makeDiv('user')()
-	if (query.type=='id') {
-		$user.append(`#${query.uid}`)
-	} else {
-		$user.append(query.username)
-	}
-	return $user
 }
