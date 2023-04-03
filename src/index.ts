@@ -102,7 +102,8 @@ function getUserQueriesFromHash(hash: string): ValidUserQuery[] {
 	for (const hashEntry of hash.split('&')) {
 		const match=hashEntry.match(/([^=]*)=(.*)/)
 		if (!match) continue
-		const [,k,v]=match
+		const [,k,ev]=match
+		const v=decodeURIComponent(ev)
 		if (k=='user') {
 			queries.push({
 				type: 'name',
