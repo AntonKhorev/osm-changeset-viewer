@@ -48,6 +48,7 @@ async function main() {
 				getHashFromUserQueries(userQueries)
 			)
 		},async(stream)=>{
+			let nRow=1
 			for (const $changeset of $grid.querySelectorAll('.changeset')) {
 				$changeset.remove()
 			}
@@ -64,6 +65,7 @@ async function main() {
 							changeset.tags?.comment ?? ''
 						)
 						$changeset.style.gridColumn=String(nUser+1)
+						$changeset.style.gridRow=String(++nRow)
 						$grid.append($changeset)
 					}
 					if (nUsersAndChangesets.length==0) {
