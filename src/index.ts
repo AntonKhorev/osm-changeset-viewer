@@ -44,7 +44,7 @@ async function main() {
 		const more=new More()
 		const $grid=makeDiv('grid')()
 		const gridHead=new GridHead(cx,$grid,userQueries=>{
-			net.serverSelector.pushHashToHistory(
+			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)
 			)
 		},async(stream)=>{
