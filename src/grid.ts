@@ -16,10 +16,11 @@ export default class Grid {
 		for (const $changeset of this.$grid.querySelectorAll('.changeset')) {
 			$changeset.remove()
 		}
+		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,50ch)) ` : ``
 		let style=
 			`#${this.id} {\n`+
 			`	display: grid;\n`+
-			`	grid-template-columns: repeat(${nColumns},minmax(20ch,50ch)) minmax(20ch,1fr);\n`+
+			`	grid-template-columns: ${repeatTemplateColumnsStyle}minmax(20ch,1fr);\n`+
 			`}\n`
 		for (let i=0;i<nColumns;i++) {
 			style+=`#${this.id} > .changeset[data-column="${i}"] { grid-column: ${i+1}; }\n`
@@ -28,7 +29,7 @@ export default class Grid {
 			`#${this.id}.with-expanded-changesets > .changeset {\n`+
 			`	grid-column: 1 / -1;\n`+
 			`}\n`
-		this.$style.innerHTML=style
+		this.$style.textContent=style
 	}
 	appendChangeset($changeset: HTMLElement, iColumn: number) {
 		$changeset.dataset.column=String(iColumn)
