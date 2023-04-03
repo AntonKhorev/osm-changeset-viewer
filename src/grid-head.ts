@@ -1,3 +1,4 @@
+import type Grid from './grid'
 import type {Connection} from './net'
 import type {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
@@ -15,7 +16,7 @@ export default class GridHead {
 	private $form=makeElement('form')()()
 	constructor(
 		private cx: Connection,
-		private $grid: HTMLElement,
+		private grid: Grid,
 		sendUpdatedUserQueries: (userQueries: ValidUserQuery[])=>void,
 		private sendStream: (muxStream: MuxChangesetStream|null)=>void
 	) {
@@ -32,7 +33,7 @@ export default class GridHead {
 				makeElement('button')()(`Add user`)
 			)
 		)
-		$grid.append(this.$form)
+		this.grid.$grid.append(this.$form)
 		$userInput.oninput=()=>{
 			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (query.type=='invalid') {
@@ -53,26 +54,30 @@ export default class GridHead {
 			sendUpdatedUserQueries(this.userEntries.map(({query})=>query))
 			this.$form.style.gridColumn=String(this.userEntries.length+1)
 			this.$form.before($user)
+			this.grid.setColumns(this.userEntries.length)
 			this.openAndSendStream()
 		}
 	}
 	receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): void {
-		const newUserEntries=[] as GridUserEntry[]
-		for (const [i,query] of userQueries.entries()) {
-			let entry=this.pickFromExistingUserEntries(query)
-			if (!entry) {
-				const $user=makeUserCard(query)
-				entry={query,$user}
+		{
+			const newUserEntries=[] as GridUserEntry[]
+			for (const [i,query] of userQueries.entries()) {
+				let entry=this.pickFromExistingUserEntries(query)
+				if (!entry) {
+					const $user=makeUserCard(query)
+					entry={query,$user}
+				}
+				entry.$user.style.gridColumn=String(i+1)
+				newUserEntries.push(entry)
 			}
-			entry.$user.style.gridColumn=String(i+1)
-			newUserEntries.push(entry)
+			this.$form.style.gridColumn=String(newUserEntries.length+1)
+			for (const {$user} of this.userEntries) {
+				$user.remove()
+			}
+			this.userEntries=newUserEntries
 		}
-		this.$form.style.gridColumn=String(newUserEntries.length+1)
-		for (const {$user} of this.userEntries) {
-			$user.remove()
-		}
-		this.userEntries=newUserEntries
-		this.$grid.prepend(...newUserEntries.map(({$user})=>$user))
+		this.grid.$grid.prepend(...this.userEntries.map(({$user})=>$user))
+		this.grid.setColumns(this.userEntries.length)
 		this.openAndSendStream()
 	}
 	private pickFromExistingUserEntries(query: ValidUserQuery): GridUserEntry|null {

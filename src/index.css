@@ -54,14 +54,10 @@ body > .symbols {
 	display: none;
 }
 
-.ui .grid {
-	display: grid;
-	grid-auto-columns: minmax(20ch,50ch);
-}
-
 .ui footer {
 	border-top: var(--frame-line);
 	display: flex;
+	gap: 1rem;
 	align-items: center;
 }
 .ui footer > button {

@@ -1,5 +1,6 @@
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
 import type {ValidUserQuery} from './osm'
+import Grid from './grid'
 import More from './more'
 import writeToolbar from './toolbar'
 import makeNetDialog from './net-dialog'
@@ -38,20 +39,19 @@ async function main() {
 	const $toolbar=makeElement('footer')()()
 	const $netDialog=makeNetDialog(net)
 	$root.append($content,$toolbar,$netDialog)
+	let $grid: HTMLElement|undefined
 
 	if (net.cx) {
 		const cx=net.cx
 		const more=new More()
-		const $grid=makeDiv('grid')()
-		const gridHead=new GridHead(cx,$grid,userQueries=>{
+		const grid=new Grid()
+		$grid=grid.$grid
+		document.body.append(grid.$style)
+		const gridHead=new GridHead(cx,grid,userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)
 			)
 		},async(stream)=>{
-			let nRow=1
-			for (const $changeset of $grid.querySelectorAll('.changeset')) {
-				$changeset.remove()
-			}
 			if (stream) {
 				more.changeToLoadMore()
 				more.$button.onclick=async()=>{
@@ -64,9 +64,7 @@ async function main() {
 							makeDateOutputFromString(changeset.created_at),` `,
 							changeset.tags?.comment ?? ''
 						)
-						$changeset.style.gridColumn=String(nUser+1)
-						$changeset.style.gridRow=String(++nRow)
-						$grid.append($changeset)
+						grid.appendChangeset($changeset,nUser)
 					}
 					if (nUsersAndChangesets.length==0) {
 						more.changeToLoadedAll()
@@ -81,7 +79,7 @@ async function main() {
 		})
 		$content.append(
 			makeElement('h2')()(`Select users and changesets`),
-			$grid,
+			grid.$grid,
 			more.$div
 		)
 		net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
@@ -96,7 +94,7 @@ async function main() {
 		net.serverSelector.installHashChangeListener(net.cx,()=>{})
 	}
 
-	writeToolbar($root,$toolbar,$netDialog)
+	writeToolbar($root,$toolbar,$netDialog,$grid)
 }
 
 function getUserQueriesFromHash(hash: string): ValidUserQuery[] {
