@@ -59,11 +59,13 @@ const userIdToData=new Map<number,UserData>()
 
 type GridUserEntry = {
 	query: ValidUserQuery
-	$user: HTMLElement
+	$tab: HTMLElement
+	$card: HTMLElement
 }
 
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
+	private $filler=makeDiv()() // cell filler above add user form
 	private $form=makeElement('form')()()
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
 	constructor(
@@ -78,6 +80,7 @@ export default class GridHead {
 				that.removeUserClickListener(this)
 			}
 		}
+		this.$filler.style.gridRow='1'
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
 		$userInput.name='user'
@@ -91,7 +94,8 @@ export default class GridHead {
 				makeElement('button')()(`Add user`)
 			)
 		)
-		this.grid.$grid.append(this.$form)
+		this.$form.style.gridRow='2'
+		this.grid.$grid.append(this.$filler,this.$form)
 		$userInput.oninput=()=>{
 			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (query.type=='invalid') {
@@ -107,10 +111,12 @@ export default class GridHead {
 			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (query.type=='invalid' || query.type=='empty') return
 			const userData=await this.getUserDataForQuery(query)
-			const $user=this.makeUserCard(query,userData)
-			this.userEntries.push({query,$user})
+			const $tab=this.makeUserTab(query)
+			const $card=this.makeUserCard(userData)
+			this.userEntries.push({query,$tab,$card})
 			this.sendUpdatedUserQueries()
-			this.$form.before($user)
+			this.$filler.before($tab)
+			this.$form.before($card)
 			this.grid.setColumns(this.userEntries.length)
 			this.openAndSendStream()
 		}
@@ -118,21 +124,24 @@ export default class GridHead {
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
 		{
 			const newUserEntries=[] as GridUserEntry[]
-			for (const [i,query] of userQueries.entries()) {
+			for (const query of userQueries) {
 				let entry=this.pickFromExistingUserEntries(query)
 				if (!entry) {
 					const userData=await this.getUserDataForQuery(query)
-					const $user=this.makeUserCard(query,userData)
-					entry={query,$user}
+					const $tab=this.makeUserTab(query)
+					const $card=this.makeUserCard(userData)
+					entry={query,$tab,$card}
 				}
 				newUserEntries.push(entry)
 			}
-			for (const {$user} of this.userEntries) {
-				$user.remove()
+			for (const {$tab,$card} of this.userEntries) {
+				$tab.remove()
+				$card.remove()
 			}
 			this.userEntries=newUserEntries
 		}
-		this.grid.$grid.prepend(...this.userEntries.map(({$user})=>$user))
+		this.$filler.before(...this.userEntries.map(({$tab})=>$tab))
+		this.$form.before(...this.userEntries.map(({$card})=>$card))
 		this.grid.setColumns(this.userEntries.length)
 		this.openAndSendStream()
 	}
@@ -214,7 +223,7 @@ export default class GridHead {
 			)
 		)
 	}
-	private makeUserCard(query: ValidUserQuery, userData: UserData|null): HTMLElement {
+	private makeUserTab(query: ValidUserQuery): HTMLElement {
 		const $tab=makeDiv('tab')()
 		if (query.type=='id') {
 			$tab.append(`#${query.uid}`)
@@ -226,26 +235,32 @@ export default class GridHead {
 		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
 		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
 		$tab.append(` `,$closeButton)
-		const $user=makeDiv('user')($tab)
+		$tab.style.gridRow='1'
+		return $tab
+	}
+	private makeUserCard(userData: UserData|null): HTMLElement {
+		const $card=makeDiv('card')()
 		if (!userData) {
-			$user.append(makeDiv('notice')(`unable to get user data`))
+			$card.append(makeDiv('notice')(`unable to get user data`))
 		} else {
-			$user.append(
+			$card.append(
 				makeDiv('name')(
 					makeLink(userData.user.display_name,this.cx.server.web.getUrl(e`user/${userData.user.display_name}`)),` `,
 					`(`,makeLink(`#${userData.user.id}`,this.cx.server.api.getUrl(e`user/${userData.user.id}.json`)),`)`
 				)
 			)
 		}
-		return $user
+		$card.style.gridRow='2'
+		return $card
 	}
 	private removeUserClickListener($button: HTMLElement): void {
-		const $user=$button.closest('.user')
+		const $tab=$button.closest('.tab')
 		for (const [i,entry] of this.userEntries.entries()) {
-			if (entry.$user!=$user) continue
+			if (entry.$tab!=$tab) continue
 			this.userEntries.splice(i,1)
 			this.sendUpdatedUserQueries()
-			$user.remove()
+			entry.$tab.remove()
+			entry.$card.remove()
 			this.grid.setColumns(this.userEntries.length)
 			this.openAndSendStream()
 		}

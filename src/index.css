@@ -1,11 +1,14 @@
 :root {
-	--frame-color: #CCC;
+	--light-text-color: #444;
+	--frame-color: #AAA;
 	--hover-color: #DEF;
 
 	--frame-line: solid 1px var(--frame-color);
 }
 @media (prefers-color-scheme: dark) {
 	:root {
+		--light-text-color: #CCC;
+		--frame-color: #666;
 		--hover-color: #246;
 	}
 }
@@ -71,24 +74,42 @@ body > .symbols {
 	height: 100%;
 }
 
-.ui .grid > .user .tab {
-	display: flex;
+.ui .grid {
+	--padding: .5rem;
 }
-.ui .grid > .user .tab button.close {
+.ui .grid > .tab {
+	display: flex;
+	height: 1rem;
+	padding: .5rem;
+	overflow: none;
+	border-left: var(--frame-line);
+	border-right: var(--frame-line);
+	border-top: var(--frame-line);
+	border-top-left-radius: var(--padding);
+	border-top-right-radius: var(--padding);
+	margin-right: -1px;
+}
+.ui .grid > .tab button.close {
 	margin-left: auto;
 	width: 1rem;
 	height: 1rem;
+}
+.ui .grid > .card {
+	padding: var(--padding);
+	border-left: var(--frame-line);
+	border-right: var(--frame-line);
+	margin-right: -1px;
 }
 .ui .grid > .separator {
 	grid-column: 1 / -1;
 	margin: .5em 0;
 	text-align: center;
-	opacity: .7;
 	position: relative;
 }
 .ui .grid > .separator time {
 	background: canvas;
 	padding: 0 .5em;
+	color: var(--light-text-color);
 }
 .ui .grid > .separator::before {
 	content: '';
@@ -97,9 +118,11 @@ body > .symbols {
 	top: 50%;
 	height: 1px;
 	width: 100%;
-	background: currentColor;
-	opacity: .5;
+	background: var(--frame-color);
 	z-index: -1;
+}
+.ui .grid > .changeset {
+	padding: 0 var(--padding);
 }
 
 .ui footer {

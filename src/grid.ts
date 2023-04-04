@@ -1,20 +1,21 @@
 import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
 
+const nHeadRows=2
 let gridCounter=0
 
 export default class Grid {
 	$grid=makeDiv('grid')()
 	$style=makeElement('style')()()
 	id=`grid-${++gridCounter}`
-	nRows=1
+	nRows=nHeadRows
 	nextSeparatorTimestamp: number|undefined
 	constructor() {
 		this.$grid.id=this.id
 		this.setColumns(0)
 	}
 	setColumns(nColumns: number) {
-		this.nRows=1
+		this.nRows=nHeadRows
 		this.nextSeparatorTimestamp=undefined
 		this.clearChangesets()
 		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,50ch)) ` : ``
