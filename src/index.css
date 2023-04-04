@@ -27,10 +27,15 @@ body > .symbols {
 	display: grid;
 	grid-template-rows: 1fr 4rem;
 }
-.ui main,
-.ui footer {
-	padding: .5rem;
+.ui main, .ui footer {
 	overflow-y: auto;
+}
+
+.ui main > h1,
+.ui main > h2,
+.ui main > [class$="-input-group"] {
+	padding-left: .5rem;
+	padding-right: .5rem;
 }
 
 .ui [class$="-input-group"] {
@@ -95,10 +100,29 @@ body > .symbols {
 	height: 1rem;
 }
 .ui .grid > .card {
+	position: relative;
 	padding: var(--padding);
-	border-left: var(--frame-line);
-	border-right: var(--frame-line);
 	margin-right: -1px;
+}
+.ui .grid > form {
+	position: relative;
+	padding: var(--padding);
+}
+.ui .grid > form > [class$="-input-group"]:first-child {
+	margin-top: 0;
+}
+.ui .grid > form > [class$="-input-group"]:last-child {
+	margin-bottom: 0;
+}
+.ui .grid > .card::before,
+.ui .grid > .card + form::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 1px;
+	background: linear-gradient(var(--frame-color), transparent);
 }
 .ui .grid > .separator {
 	grid-column: 1 / -1;
@@ -114,18 +138,19 @@ body > .symbols {
 .ui .grid > .separator::before {
 	content: '';
 	position: absolute;
+	z-index: -1;
 	left: 0;
 	top: 50%;
 	height: 1px;
 	width: 100%;
-	background: var(--frame-color);
-	z-index: -1;
+	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
 }
 .ui .grid > .changeset {
 	padding: 0 var(--padding);
 }
 
 .ui footer {
+	padding: .5rem;
 	border-top: var(--frame-line);
 	display: flex;
 	gap: 1rem;
