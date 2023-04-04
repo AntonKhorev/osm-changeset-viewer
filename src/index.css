@@ -93,6 +93,7 @@ body > .symbols {
 	border-top-left-radius: var(--padding);
 	border-top-right-radius: var(--padding);
 	margin-right: -1px;
+	box-shadow: 0 4px 4px -4px #AAA;
 }
 .ui .grid > .tab button.close {
 	margin-left: auto;
@@ -104,6 +105,8 @@ body > .symbols {
 	padding: .5rem;
 	border-bottom: var(--frame-line);
 	color: var(--light-text-color);
+	margin-bottom: -1px;
+	margin-top: 1px;
 }
 .ui .grid > .card {
 	position: relative;
@@ -161,6 +164,7 @@ body > .symbols {
 	display: flex;
 	gap: 1rem;
 	align-items: center;
+	box-shadow: 0 0px 6px #AAA;
 }
 .ui footer > button {
 	align-self: stretch;
