@@ -65,7 +65,7 @@ type GridUserEntry = {
 
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
-	private $filler=makeDiv()() // cell filler above add user form
+	private $formCap=makeDiv('form-cap')(`Add a user`)
 	private $form=makeElement('form')()()
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
 	constructor(
@@ -80,7 +80,7 @@ export default class GridHead {
 				that.removeUserClickListener(this)
 			}
 		}
-		this.$filler.style.gridRow='1'
+		this.$formCap.style.gridRow='1'
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
 		$userInput.name='user'
@@ -95,7 +95,7 @@ export default class GridHead {
 			)
 		)
 		this.$form.style.gridRow='2'
-		this.grid.$grid.append(this.$filler,this.$form)
+		this.grid.$grid.append(this.$formCap,this.$form)
 		$userInput.oninput=()=>{
 			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (query.type=='invalid') {
@@ -115,7 +115,7 @@ export default class GridHead {
 			const $card=this.makeUserCard(userData)
 			this.userEntries.push({query,$tab,$card})
 			this.sendUpdatedUserQueries()
-			this.$filler.before($tab)
+			this.$formCap.before($tab)
 			this.$form.before($card)
 			this.grid.setColumns(this.userEntries.length)
 			this.openAndSendStream()
@@ -140,7 +140,7 @@ export default class GridHead {
 			}
 			this.userEntries=newUserEntries
 		}
-		this.$filler.before(...this.userEntries.map(({$tab})=>$tab))
+		this.$formCap.before(...this.userEntries.map(({$tab})=>$tab))
 		this.$form.before(...this.userEntries.map(({$card})=>$card))
 		this.grid.setColumns(this.userEntries.length)
 		this.openAndSendStream()

@@ -99,6 +99,12 @@ body > .symbols {
 	width: 1rem;
 	height: 1rem;
 }
+.ui .grid > .form-cap {
+	height: 1rem;
+	padding: .5rem;
+	border-bottom: var(--frame-line);
+	color: var(--light-text-color);
+}
 .ui .grid > .card {
 	position: relative;
 	padding: var(--padding);
