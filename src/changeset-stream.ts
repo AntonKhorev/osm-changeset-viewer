@@ -8,8 +8,15 @@ export default class ChangesetStream {
 	private visitedChangesetIds = new Set<number>()
 	constructor(
 		private readonly cx: Connection,
-		private readonly userQuery: ValidUserQuery
-	) {}
+		private userQuery: ValidUserQuery,
+		visitedChangesets?: Iterable<OsmChangesetApiData>
+	) {
+		if (visitedChangesets) {
+			for (const changeset of visitedChangesets) {
+				this.visitChangeset(changeset)
+			}
+		}
+	}
 	async fetch(): Promise<OsmChangesetApiData[]> {
 		const e=makeEscapeTag(encodeURIComponent)
 		let userParameter: string
@@ -28,12 +35,21 @@ export default class ChangesetStream {
 		const changesets=getChangesetsFromOsmApiResponse(json)
 		const newChangesets=[] as OsmChangesetApiData[]
 		for (const changeset of changesets) {
+			if (this.userQuery.type=='name') {
+				this.userQuery={
+					type: 'id',
+					uid: changeset.uid
+				}
+			}
 			if (!this.visitedChangesetIds.has(changeset.id)) {
-				this.visitedChangesetIds.add(changeset.id)
 				newChangesets.push(changeset)
 			}
-			this.lowestTimestamp=Date.parse(changeset.created_at)
+			this.visitChangeset(changeset)
 		}
 		return newChangesets
+	}
+	private visitChangeset(changeset: OsmChangesetApiData) {
+		this.visitedChangesetIds.add(changeset.id)
+		this.lowestTimestamp=Date.parse(changeset.created_at)
 	}
 }

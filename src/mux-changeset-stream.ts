@@ -1,5 +1,4 @@
-import {OsmChangesetApiData} from './osm'
-import ChangesetStream from './changeset-stream'
+import type {OsmChangesetApiData} from './osm'
 
 // { https://stackoverflow.com/a/42919752
 
@@ -36,9 +35,10 @@ class MuxChangesetPriorityQueue {
 		return poppedValue
 	}
 	private greater(i: number, j: number) {
-		const [priority1]=this.heap[i]
-		const [priority2]=this.heap[j]
-		return priority1>priority2
+		const [timestamp1,,changeset1]=this.heap[i]
+		const [timestamp2,,changeset2]=this.heap[j]
+		if (timestamp1!=timestamp2) return timestamp1>timestamp2
+		return changeset1>changeset2
 	}
 	private swap(i: number, j: number) {
 		[this.heap[i],this.heap[j]]=[this.heap[j],this.heap[i]]
@@ -65,15 +65,19 @@ class MuxChangesetPriorityQueue {
 
 // } https://stackoverflow.com/a/42919752
 
+interface AnyChangesetStream {
+	fetch(): Promise<OsmChangesetApiData[]>
+}
+
 type MuxEntry = {
-	stream: ChangesetStream
+	stream: AnyChangesetStream
 	lowestTimestamp: number // +Infinity before stream began, -Infinity when stream ended
 }
 
 export default class MuxChangesetStream {
 	private muxEntries: MuxEntry[]
 	private queue = new MuxChangesetPriorityQueue()
-	constructor(streams: ChangesetStream[]){
+	constructor(streams: AnyChangesetStream[]){
 		this.muxEntries=streams.map(stream=>({
 			stream,
 			lowestTimestamp: +Infinity,
