@@ -6,7 +6,7 @@ export default function makeNetDialog(net: Net<HashServerSelector>): HTMLDialogE
 	const $helpDialog=makeElement('dialog')('help')()
 	const $closeButton=makeElement('button')('close')()
 	$closeButton.title=`close dialog`
-	$closeButton.innerHTML=`<svg><use href="#close" /></svg>`
+	$closeButton.innerHTML=`<svg width=32 height=32><use href="#close" /></svg>`
 	$closeButton.onclick=()=>{
 		$helpDialog.close()
 	}

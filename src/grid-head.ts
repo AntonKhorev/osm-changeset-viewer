@@ -221,10 +221,11 @@ export default class GridHead {
 		} else {
 			$tab.append(query.username)
 		}
-		const $closeButton=makeElement('button')()('X')
+		const $closeButton=makeElement('button')('close')('X')
 		$closeButton.title=`Remove user`
+		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
 		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
-		$tab.append($closeButton)
+		$tab.append(` `,$closeButton)
 		const $user=makeDiv('user')($tab)
 		if (!userData) {
 			$user.append(makeDiv('notice')(`unable to get user data`))
