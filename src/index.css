@@ -113,6 +113,10 @@ body > .symbols {
 	padding: var(--padding);
 	margin-right: -1px;
 }
+.ui .grid > .card .uid {
+	color: var(--light-text-color);
+	font-size: .8em;
+}
 .ui .grid > form {
 	position: relative;
 	padding: var(--padding);

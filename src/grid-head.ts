@@ -4,6 +4,7 @@ import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiRe
 import {toUserQuery} from './osm'
 import ChangesetStream from './changeset-stream'
 import MuxChangesetStream from './mux-changeset-stream'
+import {makeDateOutputFromString} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {makeEscapeTag} from './util/escape'
 
@@ -59,6 +60,7 @@ const userIdToData=new Map<number,UserData>()
 
 type GridUserEntry = {
 	query: ValidUserQuery
+	$downloadedChangesetsCount: HTMLOutputElement
 	$tab: HTMLElement
 	$card: HTMLElement
 }
@@ -112,8 +114,9 @@ export default class GridHead {
 			if (query.type=='invalid' || query.type=='empty') return
 			const userData=await this.getUserDataForQuery(query)
 			const $tab=this.makeUserTab(query)
-			const $card=this.makeUserCard(userData)
-			this.userEntries.push({query,$tab,$card})
+			const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
+			const $card=this.makeUserCard(userData,$downloadedChangesetsCount)
+			this.userEntries.push({query,$tab,$card,$downloadedChangesetsCount})
 			this.sendUpdatedUserQueries()
 			this.$formCap.before($tab)
 			this.$form.before($card)
@@ -129,8 +132,9 @@ export default class GridHead {
 				if (!entry) {
 					const userData=await this.getUserDataForQuery(query)
 					const $tab=this.makeUserTab(query)
-					const $card=this.makeUserCard(userData)
-					entry={query,$tab,$card}
+					const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
+					const $card=this.makeUserCard(userData,$downloadedChangesetsCount)
+					entry={query,$tab,$card,$downloadedChangesetsCount}
 				}
 				newUserEntries.push(entry)
 			}
@@ -238,15 +242,30 @@ export default class GridHead {
 		$tab.style.gridRow='1'
 		return $tab
 	}
-	private makeUserCard(userData: UserData|null): HTMLElement {
+	private makeUserDownloadedChangesetsCount(): HTMLOutputElement {
+		const $downloadedChangesetsCount=makeElement('output')()(`???`)
+		$downloadedChangesetsCount.title=`downloaded`
+		return $downloadedChangesetsCount
+	}
+	private makeUserCard(userData: UserData|null, $downloadedChangesetsCount: HTMLOutputElement): HTMLElement {
 		const $card=makeDiv('card')()
 		if (!userData) {
 			$card.append(makeDiv('notice')(`unable to get user data`))
 		} else {
+			const $totalChangesetsCount=makeElement('output')()(String(userData.user.changesets.count))
+			$totalChangesetsCount.title=`opened by the user`
 			$card.append(
 				makeDiv('name')(
 					makeLink(userData.user.display_name,this.cx.server.web.getUrl(e`user/${userData.user.display_name}`)),` `,
-					`(`,makeLink(`#${userData.user.id}`,this.cx.server.api.getUrl(e`user/${userData.user.id}.json`)),`)`
+					makeElement('span')('uid')(
+						`(`,makeLink(`#${userData.user.id}`,this.cx.server.api.getUrl(e`user/${userData.user.id}.json`)),`)`
+					)
+				),
+				makeDiv('created')(
+					`created at `,makeDateOutputFromString(userData.user.account_created)
+				),
+				makeDiv('changesets')(
+					`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
 				)
 			)
 		}
