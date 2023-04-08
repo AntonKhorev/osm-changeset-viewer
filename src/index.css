@@ -170,9 +170,11 @@ body > .symbols {
 	align-items: center;
 	box-shadow: 0 0px 6px #AAA;
 }
+.ui footer > .message {
+	flex-grow: 1;
+}
 .ui footer > button {
 	align-self: stretch;
-	margin-left: auto;
 }
 
 .ui dialog {

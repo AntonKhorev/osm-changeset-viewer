@@ -6,6 +6,16 @@ export default function writeToolbar(
 	$netDialog: HTMLDialogElement,
 	$grid?: HTMLElement
 ): void {
+	{
+		const $message=makeDiv('message')()
+		$toolbar.append(
+			$message
+		)
+		const broadcastChannel=new BroadcastChannel('OsmChangesetViewer')
+		broadcastChannel.onmessage=ev=>{
+			$message.textContent=ev.data
+		}
+	}
 	{ // TODO hide if invalid host
 		const $timeCheckbox=makeElement('input')()()
 		$timeCheckbox.type='checkbox'
