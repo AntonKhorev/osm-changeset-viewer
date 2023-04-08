@@ -1,5 +1,5 @@
 import type {UserDbRecord} from '../db'
-import ChangesetViewerDB from '../db'
+import {ChangesetViewerDBWriter} from '../db'
 import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
 import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse} from '../osm'
@@ -13,7 +13,7 @@ const net=new WorkerNet(serverListConfig)
 
 type HostDataEntry = {
 	broadcastSender: WorkerBroadcastSender
-	db: ChangesetViewerDB
+	db: ChangesetViewerDBWriter
 	userChangesetStreams: Map<number,ChangesetStream>
 }
 
@@ -31,7 +31,7 @@ self.onconnect=ev=>{
 			if (!hostDataEntry) {
 				hostDataEntry={
 					broadcastSender: new WorkerBroadcastSender(host),
-					db: await ChangesetViewerDB.open(host),
+					db: await ChangesetViewerDBWriter.open(host),
 					userChangesetStreams: new Map()
 				}
 			}

@@ -53,22 +53,13 @@ export type ChangesetDbRecord = {
 	bbox?: Bbox
 }
 
-export default class ChangesetViewerDB {
-	private closed: boolean = false
-	constructor(private idb: IDBDatabase) {
+export class ChangesetViewerDBReader {
+	protected closed: boolean = false
+	constructor(protected idb: IDBDatabase) {
 		idb.onversionchange=()=>{
 			idb.close()
 			this.closed=true
 		}
-	}
-	putUser(user: UserDbRecord): Promise<void> {
-		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
-		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction('users','readwrite')
-			tx.onerror=()=>reject(new Error(`Database error in putUser(): ${tx.error}`))
-			const request=tx.objectStore('users').put(user)
-			request.onsuccess=()=>resolve()
-		})
 	}
 	getUserById(uid: number): Promise<UserDbRecord|undefined> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
@@ -88,11 +79,14 @@ export default class ChangesetViewerDB {
 			request.onsuccess=()=>resolve(request.result)
 		})
 	}
-	static open(host: string): Promise<ChangesetViewerDB> {
+	static open(host: string): Promise<ChangesetViewerDBReader> {
+		return this.openWithType(host,idb=>new ChangesetViewerDBReader(idb))
+	}
+	protected static openWithType<T>(host: string, ctor: (idb:IDBDatabase)=>T): Promise<T> {
 		return new Promise((resolve,reject)=>{
 			const request=indexedDB.open(`OsmChangesetViewer[${host}]`)
 			request.onsuccess=()=>{
-				resolve(new ChangesetViewerDB(request.result))
+				resolve(ctor(request.result))
 			}
 			request.onupgradeneeded=()=>{
 				const idb=request.result
@@ -109,5 +103,20 @@ export default class ChangesetViewerDB {
 				reject(new Error(`failed to open the database because of blocked version change`)) // shouldn't happen
 			}
 		})
+	}
+}
+
+export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
+	putUser(user: UserDbRecord): Promise<void> {
+		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
+		return new Promise((resolve,reject)=>{
+			const tx=this.idb.transaction('users','readwrite')
+			tx.onerror=()=>reject(new Error(`Database error in putUser(): ${tx.error}`))
+			const request=tx.objectStore('users').put(user)
+			request.onsuccess=()=>resolve()
+		})
+	}
+	static open(host: string): Promise<ChangesetViewerDBWriter> {
+		return this.openWithType(host,idb=>new ChangesetViewerDBWriter(idb))
 	}
 }

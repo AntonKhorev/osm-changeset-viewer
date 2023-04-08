@@ -1,5 +1,5 @@
-import type {UserDbRecord} from './db'
 import type {Connection} from './net'
+import type {ChangesetViewerDBReader, UserDbRecord} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiResponse} from './osm'
@@ -82,6 +82,7 @@ export default class GridHead {
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
 	constructor(
 		private cx: Connection,
+		private db: ChangesetViewerDBReader,
 		private worker: SharedWorker,
 		private grid: Grid,
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
@@ -172,15 +173,19 @@ export default class GridHead {
 		this.openAndSendStream()
 	}
 	private async getUserDataForQuery(query: ValidUserQuery): Promise<UserInfo> {
-		// TODO check db; only hit the worker if no db entry found
+		if (query.type=='name') {
+			const user=await this.db.getUserByName(query.username)
+			if (user) return {status:'ready',user}
+		} else if (query.type=='id') {
+			const user=await this.db.getUserById(query.uid)
+			if (user) return {status:'ready',user}
+		}
 		this.worker.port.postMessage({
 			type: 'getUserInfo',
 			host: this.cx.server.host,
 			query
 		})
-		return {
-			status: 'pending'
-		}
+		return {status:'pending'}
 /*
 		const scanStartDate=new Date()
 		let stream: ChangesetStream|undefined
