@@ -124,10 +124,10 @@ export default class GridHead {
 			ev.preventDefault()
 			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (query.type=='invalid' || query.type=='empty') return
-			const userData=await this.getUserDataForQuery(query)
+			const info=await this.getUserInfoForQuery(query)
 			const $tab=this.makeUserTab(query)
 			const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
-			const $card=this.makeUserCard(userData,$downloadedChangesetsCount)
+			const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
 			this.userEntries.push({query,$tab,$card,$downloadedChangesetsCount})
 			this.sendUpdatedUserQueries()
 			this.$formCap.before($tab)
@@ -140,7 +140,7 @@ export default class GridHead {
 			if (message.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
 					if (!isSameQuery(userEntry.query,message.query)) continue
-					const $card=this.makeUserCard(message,userEntry.$downloadedChangesetsCount)
+					const $card=this.makeUserCard(userEntry.query,message,userEntry.$downloadedChangesetsCount)
 					userEntry.$card.replaceWith($card)
 					userEntry.$card=$card
 				}
@@ -153,10 +153,10 @@ export default class GridHead {
 			for (const query of userQueries) {
 				let entry=this.pickFromExistingUserEntries(query)
 				if (!entry) {
-					const userData=await this.getUserDataForQuery(query)
+					const info=await this.getUserInfoForQuery(query)
 					const $tab=this.makeUserTab(query)
 					const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
-					const $card=this.makeUserCard(userData,$downloadedChangesetsCount)
+					const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
 					entry={query,$tab,$card,$downloadedChangesetsCount}
 				}
 				newUserEntries.push(entry)
@@ -172,7 +172,7 @@ export default class GridHead {
 		this.grid.setColumns(this.userEntries.length)
 		this.openAndSendStream()
 	}
-	private async getUserDataForQuery(query: ValidUserQuery): Promise<UserInfo> {
+	private async getUserInfoForQuery(query: ValidUserQuery): Promise<UserInfo> {
 		if (query.type=='name') {
 			const user=await this.db.getUserByName(query.username)
 			if (user) return {status:'ready',user}
@@ -180,11 +180,7 @@ export default class GridHead {
 			const user=await this.db.getUserById(query.uid)
 			if (user) return {status:'ready',user}
 		}
-		this.worker.port.postMessage({
-			type: 'getUserInfo',
-			host: this.cx.server.host,
-			query
-		})
+		this.sendUserQueryToWorker(query)
 		return {status:'pending'}
 /*
 		const scanStartDate=new Date()
@@ -287,17 +283,17 @@ export default class GridHead {
 		$downloadedChangesetsCount.title=`downloaded`
 		return $downloadedChangesetsCount
 	}
-	private makeUserCard(userInfo: UserInfo, $downloadedChangesetsCount: HTMLOutputElement): HTMLElement {
+	private makeUserCard(query: ValidUserQuery, info: UserInfo, $downloadedChangesetsCount: HTMLOutputElement): HTMLElement {
 		const $card=makeDiv('card')()
-		if (userInfo.status=='pending' || userInfo.status=='running') {
+		if (info.status=='pending' || info.status=='running') {
 			$card.append(makeDiv('notice')(`waiting for user data`))
-		} else if (userInfo.status!='ready') {
+		} else if (info.status!='ready') {
 			$card.append(makeDiv('notice')(`unable to get user data`))
 		} else {
-			const user=userInfo.user
 			const $totalChangesetsCount=makeElement('output')()()
-			if (user.visible) {
-				$totalChangesetsCount.append(String(user.changesets.count))
+			const $updateButton=makeElement('button')()(`Update user info`)
+			if (info.user.visible) {
+				$totalChangesetsCount.append(String(info.user.changesets.count))
 				$totalChangesetsCount.title=`opened by the user`
 			} else {
 				$totalChangesetsCount.append(`???`)
@@ -305,27 +301,44 @@ export default class GridHead {
 			}
 			$card.append(
 				makeDiv('name')(
-					(user.visible
-						? makeLink(user.name,this.cx.server.web.getUrl(e`user/${user.name}`))
+					(info.user.visible
+						? makeLink(info.user.name,this.cx.server.web.getUrl(e`user/${info.user.name}`))
 						: `deleted user`
 					),` `,
 					makeElement('span')('uid')(
-						`(`,makeLink(`#${user.id}`,this.cx.server.api.getUrl(e`user/${user.id}.json`)),`)`
+						`(`,makeLink(`#${info.user.id}`,this.cx.server.api.getUrl(e`user/${info.user.id}.json`)),`)`
 					)
 				)
 			)
-			if (user.visible) {
+			if (info.user.visible) {
 				$card.append(
 					makeDiv('created')(
-						`created at `,makeDateOutput(user.createdAt)
+						`created at `,makeDateOutput(info.user.createdAt)
+					)
+				)
+			} else {
+				const $unknown=makeElement('span')()(`???`)
+				$unknown.title=`date is unknown because the user is deleted`
+				$card.append(
+					makeDiv('created')(
+						`created at `,$unknown
 					)
 				)
 			}
 			$card.append(
 				makeDiv('changesets')(
 					`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
+				),
+				makeDiv('updated')(
+					`user info updated at `,makeDateOutput(info.user.infoUpdatedAt)
+				),
+				makeDiv('major-input-group')(
+					$updateButton
 				)
 			)
+			$updateButton.onclick=()=>{
+				this.sendUserQueryToWorker(query)
+			}
 		}
 		$card.style.gridRow='2'
 		return $card
@@ -344,6 +357,13 @@ export default class GridHead {
 	}
 	private sendUpdatedUserQueries(): void {
 		this.sendUpdatedUserQueriesReceiver(this.userEntries.map(({query})=>query))
+	}
+	private sendUserQueryToWorker(query: ValidUserQuery) {
+		this.worker.port.postMessage({
+			type: 'getUserInfo',
+			host: this.cx.server.host,
+			query
+		})
 	}
 }
 
