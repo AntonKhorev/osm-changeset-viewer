@@ -1,4 +1,4 @@
-import {Connection} from './net'
+import {ApiProvider, Connection} from './net'
 import {ValidUserQuery, OsmChangesetApiData, getChangesetsFromOsmApiResponse} from './osm'
 import {toIsoString} from './date'
 import {makeEscapeTag} from './util/escape'
@@ -7,7 +7,7 @@ export default class ChangesetStream {
 	private lowestTimestamp: number|undefined
 	private visitedChangesetIds = new Set<number>()
 	constructor(
-		private readonly cx: Connection,
+		private readonly api: ApiProvider,
 		private userQuery: ValidUserQuery,
 		visitedChangesets?: Iterable<OsmChangesetApiData>
 	) {
@@ -30,7 +30,7 @@ export default class ChangesetStream {
 			const upperBoundDate=new Date(this.lowestTimestamp+1000)
 			timeParameter=e`&time=2001-01-01,${toIsoString(upperBoundDate)}`
 		}
-		const result=await this.cx.server.api.fetch(`changesets.json?${userParameter}${timeParameter}`)
+		const result=await this.api.fetch(`changesets.json?${userParameter}${timeParameter}`)
 		const json=await result.json()
 		const changesets=getChangesetsFromOsmApiResponse(json)
 		const newChangesets=[] as OsmChangesetApiData[]

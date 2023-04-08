@@ -3,13 +3,9 @@ import type Grid from './grid'
 import type {Connection} from './net'
 import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiResponse} from './osm'
 import {toUserQuery} from './osm'
-import ChangesetStream from './changeset-stream'
 import MuxChangesetStream from './mux-changeset-stream'
 import {makeDateOutputFromString} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
-import {makeEscapeTag} from './util/escape'
-
-const e=makeEscapeTag(encodeURIComponent)
 
 // type UserData = {
 // 	user: OsmUserApiData

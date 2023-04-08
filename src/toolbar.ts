@@ -4,19 +4,22 @@ export default function writeToolbar(
 	$root: HTMLElement,
 	$toolbar: HTMLElement,
 	$netDialog: HTMLDialogElement,
-	$grid?: HTMLElement
+	$grid?: HTMLElement,
+	host?: string
 ): void {
 	{
 		const $message=makeDiv('message')()
 		$toolbar.append(
 			$message
 		)
-		const broadcastChannel=new BroadcastChannel('OsmChangesetViewer')
-		broadcastChannel.onmessage=ev=>{
-			$message.textContent=ev.data
+		if (host) {
+			const statusChannel=new BroadcastChannel(`OsmChangesetViewerStatus[${host}]`)
+			statusChannel.onmessage=ev=>{
+				$message.textContent=ev.data
+			}
 		}
 	}
-	{ // TODO hide if invalid host
+	if (host) {
 		const $timeCheckbox=makeElement('input')()()
 		$timeCheckbox.type='checkbox'
 		$timeCheckbox.oninput=()=>{

@@ -13,23 +13,26 @@ type Bbox = {
 
 export type UserDbRecord = {
 	id: number
-	visible: boolean // false = deleted account
-	// { api data except for id; full data won't be known if user is deleted
-	name?: string // "display_name" in api data - because sometimes it's "user" in other api data
-	createdAt?: Date // "account_created" in api data - because sometimes it's "created_at" in other api data
+	infoUpdatedAt: Date
+} & ({
+	visible: false // deleted account
+} | {
+	visible: true
+	// api data except for id:
+	name: string // "display_name" in api data - because sometimes it's "user" in other api data
+	createdAt: Date // "account_created" in api data - because sometimes it's "created_at" in other api data
 	description?: string
 	img?: {
 		href: string
 	}
-	roles?: string[]
-	changesets?: Counter
-	traces?: Counter
-	blocks?: {
+	roles: string[]
+	changesets: Counter
+	traces: Counter
+	blocks: {
 		received: ActiveCounter
 		issued?: ActiveCounter
 	}
-	// } api data
-}
+})
 
 export type UserChangesetScanDbRecord = {
 	uid: number

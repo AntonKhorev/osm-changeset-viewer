@@ -97,7 +97,7 @@ async function main() {
 		net.serverSelector.installHashChangeListener(net.cx,()=>{})
 	}
 
-	writeToolbar($root,$toolbar,$netDialog,$grid)
+	writeToolbar($root,$toolbar,$netDialog,$grid,net.cx?.server.host)
 }
 
 function getUserQueriesFromHash(hash: string): ValidUserQuery[] {
