@@ -144,6 +144,19 @@ async function buildJs(srcDir,dstDir,serverListConfig) {
 		file: `${dstDir}/index.js`,
 	})
 	bundle.close()
+	try {
+		await fs.access(`${srcDir}/worker`)
+	} catch {
+		return
+	}
+	const workerBundle=await rollup({
+		input: `${srcDir}/worker/index.ts`,
+		plugins
+	})
+	workerBundle.write({
+		file: `${dstDir}/worker.js`,
+	})
+	workerBundle.close()
 }
 
 async function getAllCssFiles(srcDir) {

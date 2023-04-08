@@ -42,6 +42,7 @@ async function main() {
 	let $grid: HTMLElement|undefined
 
 	if (net.cx) {
+		const worker=new SharedWorker('worker.js')
 		const cx=net.cx
 		const more=new More()
 		const grid=new Grid()
