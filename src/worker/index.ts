@@ -1,6 +1,7 @@
 import type {UserDbRecord} from '../db'
 import ChangesetViewerDB from '../db'
 import {WorkerNet} from '../net'
+import {WorkerBroadcastSender} from '../broadcast-channel'
 import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse} from '../osm'
 import ChangesetStream from '../changeset-stream'
 import serverListConfig from '../server-list-config'
@@ -11,8 +12,7 @@ const e=makeEscapeTag(encodeURIComponent)
 const net=new WorkerNet(serverListConfig)
 
 type HostDataEntry = {
-	statusChannel: BroadcastChannel
-	updateChannel: BroadcastChannel
+	broadcastSender: WorkerBroadcastSender
 	db: ChangesetViewerDB
 	userChangesetStreams: Map<number,ChangesetStream>
 }
@@ -22,15 +22,15 @@ const hostData=new Map<string,HostDataEntry>()
 self.onconnect=ev=>{
 	const port=ev.ports[0]
 	port.onmessage=async(ev)=>{
-		if (ev.data.type=='getUserInfo') {
+		const type=ev.data.type
+		if (type=='getUserInfo') {
 			const host=ev.data.host
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			let hostDataEntry=hostData.get(host)
 			if (!hostDataEntry) {
 				hostDataEntry={
-					statusChannel: new BroadcastChannel(`OsmChangesetViewerStatus[${host}]`),
-					updateChannel: new BroadcastChannel(`OsmChangesetViewerUpdate[${host}]`),
+					broadcastSender: new WorkerBroadcastSender(host),
 					db: await ChangesetViewerDB.open(host),
 					userChangesetStreams: new Map()
 				}
@@ -39,8 +39,13 @@ self.onconnect=ev=>{
 			let stream: ChangesetStream|undefined
 			let changesets=[] as OsmChangesetApiData[]
 			let uid: number|undefined
+			let text=`info of unknown user`
 			if (query.type=='name') {
-				hostDataEntry.statusChannel.postMessage(`getting info of user "${query.username}"`)
+				text=`info of user "${query.username}"`
+				hostDataEntry.broadcastSender.postMessage({
+					type,query,text,
+					status: 'running',
+				})
 				try {
 					stream=new ChangesetStream(server.api,query)
 					changesets=await stream.fetch()
@@ -49,25 +54,28 @@ self.onconnect=ev=>{
 					}
 				} catch {}
 			} else if (query.type=='id') {
-				hostDataEntry.statusChannel.postMessage(`getting info of user #${query.uid}`)
+				text=`info of user #${query.uid}`
+				hostDataEntry.broadcastSender.postMessage({
+					type,query,text,
+					status: 'running',
+				})
 				uid=query.uid
 			}
 			if (uid==null) {
-				hostDataEntry.updateChannel.postMessage({
-					type: 'getUserInfo',
-					query,
+				hostDataEntry.broadcastSender.postMessage({
+					type,query,text,
 					status: 'failed',
-					failure: 'uid'
+					failedText: 'unable to get user id'
 				})
 				return
 			}
-			let userDbRecord: UserDbRecord|undefined
+			let user: UserDbRecord|undefined
 			try {
 				const now=new Date()
 				const result=await server.api.fetch(e`user/${uid}.json`)
 				if (!result.ok) {
 					if (result.status==410) { // deleted user
-						userDbRecord={
+						user={
 							id: uid,
 							infoUpdatedAt: now,
 							visible: false
@@ -75,36 +83,35 @@ self.onconnect=ev=>{
 					}
 				} else {
 					const json=await result.json()
-					const user=getUserFromOsmApiResponse(json)
-					userDbRecord={
+					const userApiData=getUserFromOsmApiResponse(json)
+					user={
 						id: uid,
 						infoUpdatedAt: now,
 						visible: true,
-						name: user.display_name,
-						createdAt: new Date(user.account_created),
-						roles: user.roles,
-						changesets: user.changesets,
-						traces: user.traces,
-						blocks: user.blocks
+						name: userApiData.display_name,
+						createdAt: new Date(userApiData.account_created),
+						roles: userApiData.roles,
+						changesets: userApiData.changesets,
+						traces: userApiData.traces,
+						blocks: userApiData.blocks
 					}
-					if (user.description!=null) userDbRecord.description=user.description
-					if (user.img!=null) userDbRecord.img=user.img
+					if (userApiData.description!=null) user.description=userApiData.description
+					if (userApiData.img!=null) user.img=userApiData.img
 				}
 			} catch {}
-			if (userDbRecord==null) {
-				hostDataEntry.updateChannel.postMessage({
-					type: 'getUserInfo',
-					query,
+			if (user==null) {
+				hostDataEntry.broadcastSender.postMessage({
+					type,query,text,
 					status: 'failed',
-					failure: 'info'
+					failedText: 'unable to get user info'
 				})
 				return
 			}
-			hostDataEntry.db.putUser(userDbRecord)
-			hostDataEntry.updateChannel.postMessage({
-				type: 'getUserInfo',
-				query,
-				status: 'ready'
+			hostDataEntry.db.putUser(user)
+			hostDataEntry.broadcastSender.postMessage({
+				type,query,text,
+				status: 'ready',
+				user
 			})
 		}
 	}

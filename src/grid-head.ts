@@ -1,11 +1,15 @@
 import type {UserDbRecord} from './db'
-import type Grid from './grid'
 import type {Connection} from './net'
+import type Grid from './grid'
+import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiResponse} from './osm'
 import {toUserQuery} from './osm'
 import MuxChangesetStream from './mux-changeset-stream'
-import {makeDateOutputFromString} from './date'
+import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
+import {makeEscapeTag} from './util/escape'
+
+const e=makeEscapeTag(encodeURIComponent)
 
 // type UserData = {
 // 	user: OsmUserApiData
@@ -15,10 +19,8 @@ import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 // 	stream?: ChangesetStream
 // }
 
-type UserData = {
-	status: 'pending'
-} | {
-	status: 'failed'
+type UserInfo = {
+	status: 'pending'|'running'|'failed'
 } | {
 	status: 'ready'
 	user: UserDbRecord
@@ -132,6 +134,17 @@ export default class GridHead {
 			this.grid.setColumns(this.userEntries.length)
 			this.openAndSendStream()
 		}
+		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
+		broadcastReceiver.onmessage=({data:message})=>{
+			if (message.type=='getUserInfo') {
+				for (const userEntry of this.userEntries) {
+					if (!isSameQuery(userEntry.query,message.query)) continue
+					const $card=this.makeUserCard(message,userEntry.$downloadedChangesetsCount)
+					userEntry.$card.replaceWith($card)
+					userEntry.$card=$card
+				}
+			}
+		}
 	}
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
 		{
@@ -158,7 +171,8 @@ export default class GridHead {
 		this.grid.setColumns(this.userEntries.length)
 		this.openAndSendStream()
 	}
-	private async getUserDataForQuery(query: ValidUserQuery): Promise<UserData> {
+	private async getUserDataForQuery(query: ValidUserQuery): Promise<UserInfo> {
+		// TODO check db; only hit the worker if no db entry found
 		this.worker.port.postMessage({
 			type: 'getUserInfo',
 			host: this.cx.server.host,
@@ -268,31 +282,45 @@ export default class GridHead {
 		$downloadedChangesetsCount.title=`downloaded`
 		return $downloadedChangesetsCount
 	}
-	private makeUserCard(userData: UserData, $downloadedChangesetsCount: HTMLOutputElement): HTMLElement {
+	private makeUserCard(userInfo: UserInfo, $downloadedChangesetsCount: HTMLOutputElement): HTMLElement {
 		const $card=makeDiv('card')()
-		if (userData.status=='pending') {
+		if (userInfo.status=='pending' || userInfo.status=='running') {
 			$card.append(makeDiv('notice')(`waiting for user data`))
-		} else if (userData.status=='failed') {
+		} else if (userInfo.status!='ready') {
 			$card.append(makeDiv('notice')(`unable to get user data`))
 		} else {
-			/*
-			const $totalChangesetsCount=makeElement('output')()(String(userData.user.changesets.count))
-			$totalChangesetsCount.title=`opened by the user`
+			const user=userInfo.user
+			const $totalChangesetsCount=makeElement('output')()()
+			if (user.visible) {
+				$totalChangesetsCount.append(String(user.changesets.count))
+				$totalChangesetsCount.title=`opened by the user`
+			} else {
+				$totalChangesetsCount.append(`???`)
+				$totalChangesetsCount.title=`number of changesets opened by the user is unknown because the user is deleted`
+			}
 			$card.append(
 				makeDiv('name')(
-					makeLink(userData.user.display_name,this.cx.server.web.getUrl(e`user/${userData.user.display_name}`)),` `,
+					(user.visible
+						? makeLink(user.name,this.cx.server.web.getUrl(e`user/${user.name}`))
+						: `deleted user`
+					),` `,
 					makeElement('span')('uid')(
-						`(`,makeLink(`#${userData.user.id}`,this.cx.server.api.getUrl(e`user/${userData.user.id}.json`)),`)`
+						`(`,makeLink(`#${user.id}`,this.cx.server.api.getUrl(e`user/${user.id}.json`)),`)`
 					)
-				),
-				makeDiv('created')(
-					`created at `,makeDateOutputFromString(userData.user.account_created)
-				),
+				)
+			)
+			if (user.visible) {
+				$card.append(
+					makeDiv('created')(
+						`created at `,makeDateOutput(user.createdAt)
+					)
+				)
+			}
+			$card.append(
 				makeDiv('changesets')(
 					`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
 				)
 			)
-			*/
 		}
 		$card.style.gridRow='2'
 		return $card

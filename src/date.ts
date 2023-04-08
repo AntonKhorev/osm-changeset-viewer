@@ -35,14 +35,17 @@ export function toIsoString(date: Date, dateSeparator='-', timeSeparator=':'): s
 }
 
 export function makeDateOutputFromString(dateString: string): HTMLTimeElement {
-	const date=new Date(dateString)
+	return makeDateOutput(new Date(dateString))
+}
+
+export function makeDateOutput(date: Date): HTMLTimeElement {
 	const isoDateString=toIsoDateString(date)
 	const isoTimeString=toIsoTimeString(date)
 	const $time=makeElement('time')()(
 		makeElement('span')('date')(isoDateString),' ',
 		makeElement('span')('time')(isoTimeString)
 	)
-	$time.dateTime=dateString
+	$time.dateTime=toIsoString(date)
 	$time.title=`${isoDateString} ${isoTimeString} UTC`
 	return $time
 }

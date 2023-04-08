@@ -1,4 +1,6 @@
+import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {makeElement, makeDiv, makeLabel} from './util/html'
+import {strong} from './util/html-shortcuts'
 
 export default function writeToolbar(
 	$root: HTMLElement,
@@ -13,9 +15,16 @@ export default function writeToolbar(
 			$message
 		)
 		if (host) {
-			const statusChannel=new BroadcastChannel(`OsmChangesetViewerStatus[${host}]`)
-			statusChannel.onmessage=ev=>{
-				$message.textContent=ev.data
+			const broadcastReceiver=new WorkerBroadcastReceiver(host)
+			broadcastReceiver.onmessage=({data:message})=>{
+				$message.replaceChildren(
+					strong(message.status),` `,message.text
+				)
+				if (message.status=='failed') {
+					$message.append(
+						`: `,strong(message.failedText)
+					)
+				}
 			}
 		}
 	}
