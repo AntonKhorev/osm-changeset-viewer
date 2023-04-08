@@ -1,3 +1,4 @@
+import type {UserDbRecord} from './db'
 import type Grid from './grid'
 import type {Connection} from './net'
 import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiResponse} from './osm'
@@ -10,14 +11,24 @@ import {makeEscapeTag} from './util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
 
+// type UserData = {
+// 	user: OsmUserApiData
+// 	changesets: OsmChangesetApiData[]
+// 	scanStartDate?: Date
+// 	scanEndDate?: Date
+// 	stream?: ChangesetStream
+// }
+
 type UserData = {
-	user: OsmUserApiData
-	changesets: OsmChangesetApiData[]
-	scanStartDate?: Date
-	scanEndDate?: Date
-	stream?: ChangesetStream
+	status: 'pending'
+} | {
+	status: 'failed'
+} | {
+	status: 'ready'
+	user: UserDbRecord
 }
 
+/*
 class CachedChangesetStream {
 	position=0
 	constructor(
@@ -54,9 +65,10 @@ class CachedChangesetStream {
 		return batch
 	}
 }
+*/
 
-const userNameToId=new Map<string,number>() // 0 = unknown uid because has no changesets
-const userIdToData=new Map<number,UserData>()
+// const userNameToId=new Map<string,number>() // 0 = unknown uid because has no changesets
+// const userIdToData=new Map<number,UserData>()
 
 type GridUserEntry = {
 	query: ValidUserQuery
@@ -72,6 +84,7 @@ export default class GridHead {
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
 	constructor(
 		private cx: Connection,
+		private worker: SharedWorker,
 		private grid: Grid,
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
 		private sendStreamReceiver: (muxStream: MuxChangesetStream|null)=>void
@@ -149,7 +162,16 @@ export default class GridHead {
 		this.grid.setColumns(this.userEntries.length)
 		this.openAndSendStream()
 	}
-	private async getUserDataForQuery(query: ValidUserQuery): Promise<UserData|null> {
+	private async getUserDataForQuery(query: ValidUserQuery): Promise<UserData> {
+		this.worker.port.postMessage({
+			type: 'getUserInfo',
+			host: this.cx.server.host,
+			query
+		})
+		return {
+			status: 'pending'
+		}
+/*
 		const scanStartDate=new Date()
 		let stream: ChangesetStream|undefined
 		let changesets=[] as OsmChangesetApiData[]
@@ -188,7 +210,7 @@ export default class GridHead {
 		}
 		userIdToData.set(uid,userData)
 		return userData
-		
+*/
 	}
 	private pickFromExistingUserEntries(query: ValidUserQuery): GridUserEntry|null {
 		for (const [i,entry] of this.userEntries.entries()) {
@@ -200,6 +222,8 @@ export default class GridHead {
 		return null
 	}
 	private openAndSendStream(): void {
+		this.sendStreamReceiver(null)
+/*
 		if (this.userEntries.length==0) {
 			this.sendStreamReceiver(null)
 			return
@@ -226,6 +250,7 @@ export default class GridHead {
 				})
 			)
 		)
+*/
 	}
 	private makeUserTab(query: ValidUserQuery): HTMLElement {
 		const $tab=makeDiv('tab')()
@@ -247,11 +272,14 @@ export default class GridHead {
 		$downloadedChangesetsCount.title=`downloaded`
 		return $downloadedChangesetsCount
 	}
-	private makeUserCard(userData: UserData|null, $downloadedChangesetsCount: HTMLOutputElement): HTMLElement {
+	private makeUserCard(userData: UserData, $downloadedChangesetsCount: HTMLOutputElement): HTMLElement {
 		const $card=makeDiv('card')()
-		if (!userData) {
+		if (userData.status=='pending') {
+			$card.append(makeDiv('notice')(`waiting for user data`))
+		} else if (userData.status=='failed') {
 			$card.append(makeDiv('notice')(`unable to get user data`))
 		} else {
+			/*
 			const $totalChangesetsCount=makeElement('output')()(String(userData.user.changesets.count))
 			$totalChangesetsCount.title=`opened by the user`
 			$card.append(
@@ -268,6 +296,7 @@ export default class GridHead {
 					`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
 				)
 			)
+			*/
 		}
 		$card.style.gridRow='2'
 		return $card

@@ -1,4 +1,5 @@
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
+import ChangesetViewerDB from './db'
 import type {ValidUserQuery} from './osm'
 import Grid from './grid'
 import More from './more'
@@ -42,13 +43,14 @@ async function main() {
 	let $grid: HTMLElement|undefined
 
 	if (net.cx) {
-		const worker=new SharedWorker('worker.js')
 		const cx=net.cx
+		const db=await ChangesetViewerDB.open(cx.server.host)
+		const worker=new SharedWorker('worker.js')
 		const more=new More()
 		const grid=new Grid()
 		$grid=grid.$grid
 		document.body.append(grid.$style)
-		const gridHead=new GridHead(cx,grid,userQueries=>{
+		const gridHead=new GridHead(cx,worker,grid,userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)
 			)
