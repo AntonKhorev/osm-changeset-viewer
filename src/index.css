@@ -161,6 +161,9 @@ body > .symbols {
 .ui .grid > .changeset {
 	padding: 0 var(--padding);
 }
+.ui .grid.with-expanded-changesets > .changeset.duplicate {
+	display: none;
+}
 
 .ui footer {
 	padding: .5rem;

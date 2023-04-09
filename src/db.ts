@@ -46,6 +46,7 @@ export type UserChangesetScanDbRecord = {
 export type ChangesetDbRecord = {
 	id: number
 	uid: number
+	tags: {[key:string]:string}
 	createdAt: Date
 	closedAt?: Date // open if undefined
 	comments: Counter

@@ -1,5 +1,5 @@
 import type {Connection} from './net'
-import type {ChangesetViewerDBReader, UserDbRecord} from './db'
+import type {ChangesetViewerDBReader, UserDbRecord, ChangesetDbRecord} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiResponse} from './osm'
@@ -75,6 +75,8 @@ type GridUserEntry = {
 	$card: HTMLElement
 }
 
+type ChangesetBatchItem = [iColumns:number[],changeset:ChangesetDbRecord]
+
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
 	private $formCap=makeDiv('form-cap')(`Add a user`)
@@ -86,7 +88,10 @@ export default class GridHead {
 		private worker: SharedWorker,
 		private grid: Grid,
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
-		private sendStreamReceiver: (muxStream: MuxChangesetStream|null)=>void
+		private sendChangesetsReceiver: (
+			changesetBatch: Iterable<ChangesetBatchItem>,
+			requestMore: (()=>void) | null
+		) => void
 	) {
 		{
 			const that=this
@@ -233,7 +238,24 @@ export default class GridHead {
 		return null
 	}
 	private openAndSendStream(): void {
-		this.sendStreamReceiver(null)
+		const fakeChangesetBatch: ChangesetBatchItem[]=[
+			[[...this.userEntries.keys()],{
+				id: 123456,
+				uid: 654321,
+				tags: {
+					comment: `fake changeset`
+				},
+				createdAt: new Date(),
+				comments: {count:0},
+				changes: {count:0}
+			}]
+		]
+		this.sendChangesetsReceiver(
+			fakeChangesetBatch,
+			()=>{
+				console.log(`TODO get more chagesets`)
+			}
+		)
 /*
 		if (this.userEntries.length==0) {
 			this.sendStreamReceiver(null)
@@ -330,10 +352,7 @@ export default class GridHead {
 					`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
 				),
 				makeDiv('updated')(
-					`user info updated at `,makeDateOutput(info.user.infoUpdatedAt)
-				),
-				makeDiv('major-input-group')(
-					$updateButton
+					`user info updated at `,makeDateOutput(info.user.infoUpdatedAt),` `,$updateButton
 				)
 			)
 			$updateButton.onclick=()=>{

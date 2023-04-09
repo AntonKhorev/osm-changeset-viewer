@@ -1,4 +1,5 @@
-import Net, {checkAuthRedirect, HashServerSelector} from './net'
+import Net, {checkAuthRedirect, HashServerSelector, WebProvider} from './net'
+import type {ChangesetDbRecord} from './db'
 import {ChangesetViewerDBReader} from './db'
 import type {ValidUserQuery} from './osm'
 import Grid from './grid'
@@ -6,11 +7,13 @@ import More from './more'
 import writeToolbar from './toolbar'
 import makeNetDialog from './net-dialog'
 import GridHead from './grid-head'
-import {installRelativeTimeListeners, makeDateOutputFromString} from './date'
+import {installRelativeTimeListeners, makeDateOutput} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv, makeLink} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
 import {escapeHash, makeEscapeTag} from './util/escape'
+
+const e=makeEscapeTag(encodeURIComponent)
 
 const appName='osm-changeset-viewer'
 
@@ -54,29 +57,30 @@ async function main() {
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)
 			)
-		},async(stream)=>{
-			if (stream) {
+		},(changesetBatch,requestMore)=>{
+			if (requestMore) {
 				more.changeToLoadMore()
-				more.$button.onclick=async()=>{
-					const e=makeEscapeTag(encodeURIComponent)
-					more.changeToLoading()
-					const nUsersAndChangesets=await stream.fetch()
-					for (const [nUser,changeset] of nUsersAndChangesets) {
-						const $changeset=makeDiv('changeset')(
-							makeLink(`${changeset.id}`,cx.server.web.getUrl(e`changeset/${changeset.id}`)),` `,
-							makeDateOutputFromString(changeset.created_at),` `,
-							changeset.tags?.comment ?? ''
-						)
-						grid.appendChangeset($changeset,nUser,new Date(changeset.created_at))
-					}
-					if (nUsersAndChangesets.length==0) {
-						more.changeToLoadedAll()
-					} else {
-						more.changeToLoadMore()
+				let first=true
+				for (const [iColumns,changeset] of changesetBatch) {
+					grid.startNewRow(changeset.createdAt)
+					// TODO possibly insert in the middle
+					for (const iColumn of iColumns) {
+						const $changeset=makeChangesetCard(cx.server.web,changeset)
+						if (first) {
+							first=false
+						} else {
+							$changeset.classList.add('duplicate')
+						}
+						grid.appendChangeset($changeset,iColumn)
 					}
 				}
+				more.$button.onclick=()=>{
+					more.changeToLoading()
+					requestMore()
+				}
 			} else {
-				more.changeToNotingToLoad()
+				// more.changeToNothingToLoad()
+				more.changeToLoadedAll()
 				more.$button.onclick=null
 			}
 		})
@@ -98,6 +102,14 @@ async function main() {
 	}
 
 	writeToolbar($root,$toolbar,$netDialog,$grid,net.cx?.server.host)
+}
+
+function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord) {
+	return makeDiv('changeset')(
+		makeLink(`${changeset.id}`,web.getUrl(e`changeset/${changeset.id}`)),` `,
+		makeDateOutput(changeset.createdAt),` `,
+		changeset.tags?.comment ?? ''
+	)
 }
 
 function getUserQueriesFromHash(hash: string): ValidUserQuery[] {

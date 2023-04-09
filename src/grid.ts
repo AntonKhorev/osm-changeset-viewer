@@ -33,7 +33,8 @@ export default class Grid {
 			`}\n`
 		this.$style.textContent=style
 	}
-	appendChangeset($changeset: HTMLElement, iColumn: number, date: Date) {
+	startNewRow(date: Date) {
+		this.nRows++
 		if (this.nextSeparatorTimestamp==null || date.getTime()<this.nextSeparatorTimestamp) {
 			const yearMonthString=toIsoYearMonthString(date)
 			const $separator=makeDiv('separator')(
@@ -42,13 +43,16 @@ export default class Grid {
 			this.stampRow($separator)
 			this.$grid.append($separator)
 			this.nextSeparatorTimestamp=Date.parse(yearMonthString)
+			this.nRows++
 		}
+	}
+	appendChangeset($changeset: HTMLElement, iColumn: number) {
 		$changeset.dataset.column=String(iColumn)
 		this.stampRow($changeset)
 		this.$grid.append($changeset)
 	}
 	private stampRow($e: HTMLElement): void {
-		$e.style.gridRow=String(++this.nRows)
+		$e.style.gridRow=String(this.nRows)
 	}
 	private clearChangesets() {
 		let remove=false
