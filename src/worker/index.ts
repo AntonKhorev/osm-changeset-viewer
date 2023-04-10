@@ -1,8 +1,8 @@
-import type {UserDbRecord} from '../db'
+import type {UserDbRecord, ChangesetDbRecord} from '../db'
 import {ChangesetViewerDBWriter} from '../db'
 import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
-import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse} from '../osm'
+import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse, hasBbox} from '../osm'
 import ChangesetStream from '../changeset-stream'
 import serverListConfig from '../server-list-config'
 import {makeEscapeTag} from '../util/escape'
@@ -19,6 +19,14 @@ type HostDataEntry = {
 
 const hostData=new Map<string,HostDataEntry>()
 
+async function getHostDataEntry(host: string): Promise<HostDataEntry> {
+	return hostData.get(host) ?? {
+		broadcastSender: new WorkerBroadcastSender(host),
+		db: await ChangesetViewerDBWriter.open(host),
+		userChangesetStreams: new Map()
+	}
+}
+
 self.onconnect=ev=>{
 	const port=ev.ports[0]
 	port.onmessage=async(ev)=>{
@@ -27,17 +35,10 @@ self.onconnect=ev=>{
 			const host=ev.data.host
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
-			let hostDataEntry=hostData.get(host)
-			if (!hostDataEntry) {
-				hostDataEntry={
-					broadcastSender: new WorkerBroadcastSender(host),
-					db: await ChangesetViewerDBWriter.open(host),
-					userChangesetStreams: new Map()
-				}
-			}
+			const hostDataEntry=await getHostDataEntry(host)
 			const query=ev.data.query as ValidUserQuery
 			let stream: ChangesetStream|undefined
-			let changesets=[] as OsmChangesetApiData[]
+			let changesetsApiData=[] as OsmChangesetApiData[]
 			let uid: number|undefined
 			let text=`info of unknown user`
 			if (query.type=='name') {
@@ -48,9 +49,9 @@ self.onconnect=ev=>{
 				})
 				try {
 					stream=new ChangesetStream(server.api,query)
-					changesets=await stream.fetch()
-					if (changesets.length>0) {
-						uid=changesets[0].uid
+					changesetsApiData=await stream.fetch()
+					if (changesetsApiData.length>0) {
+						uid=changesetsApiData[0].uid
 					}
 				} catch {}
 			} else if (query.type=='id') {
@@ -70,8 +71,8 @@ self.onconnect=ev=>{
 				return
 			}
 			let user: UserDbRecord|undefined
+			const now=new Date()
 			try {
-				const now=new Date()
 				const result=await server.api.fetch(e`user/${uid}.json`)
 				if (!result.ok) {
 					if (result.status==410) { // deleted user
@@ -107,12 +108,40 @@ self.onconnect=ev=>{
 				})
 				return
 			}
-			hostDataEntry.db.putUser(user)
+			await hostDataEntry.db.putUser(user)
+			if (stream) {
+				const changesets=changesetsApiData.map((a):ChangesetDbRecord=>{
+					const b: ChangesetDbRecord = {
+						id: a.id,
+						uid: a.uid,
+						tags: a.tags ?? {},
+						createdAt: new Date(a.created_at),
+						comments: {count:a.comments_count},
+						changes: {count:a.changes_count}
+					}
+					if (hasBbox(a)) {
+						b.bbox={
+							minLat: a.minlat, maxLat: a.maxlat,
+							minLon: a.minlon, maxLon: a.maxlon,
+						}
+					}
+					return b
+				})
+				const restartedScan=await hostDataEntry.db.addUserChangesets(user.id,now,changesets,true)
+				if (restartedScan) {
+					hostDataEntry.userChangesetStreams.set(user.id,stream)
+				}
+			}
 			hostDataEntry.broadcastSender.postMessage({
 				type,query,text,
 				status: 'ready',
 				user
 			})
+		} else if (type=='startUserChangesetScan') {
+			const host=ev.data.host
+			const server=net.serverList.servers.get(host)
+			if (!server) throw new RangeError(`unknown host "${host}"`)
+			const hostDataEntry=await getHostDataEntry(host)
 		}
 	}
 }
