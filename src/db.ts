@@ -36,12 +36,17 @@ export type UserDbRecord = {
 
 export type UserChangesetScanDbRecord = {
 	uid: number
-	completed: boolean
+	stash: number // 0 = current; 1 = stashed
+	changesets: Counter
 	beginDate: Date
 	endDate?: Date
-	changesets: Counter
-	earliestChangesetDate?: Date
-}
+} & ({
+	empty: true // without complete changeset requests or with empty results
+} | {
+	empty: false
+	upperChangesetDate: Date
+	lowerChangesetDate: Date
+})
 
 export type ChangesetDbRecord = {
 	id: number
@@ -80,6 +85,41 @@ export class ChangesetViewerDBReader {
 			request.onsuccess=()=>resolve(request.result)
 		})
 	}
+	getCurrentUserChangesetScan(uid: number): Promise<UserChangesetScanDbRecord|undefined> {
+		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
+		return new Promise((resolve,reject)=>{
+			const tx=this.idb.transaction('userChangesetScans','readonly')
+			tx.onerror=()=>reject(new Error(`Database error in getCurrentUserChangesetScan(): ${tx.error}`))
+			const request=tx.objectStore('userChangesetScans').get([uid,0])
+			request.onsuccess=()=>resolve(request.result)
+		})
+	}
+	// getChangesets(uid: number, limit: number, upperDate?: Date): Promise<ChangesetDbRecord[]> {
+	// getChangesets(uid: number, limit: number, upperDate: Date): Promise<ChangesetDbRecord[]> {
+	getChangesets(uid: number, limit: number, upperDate: Date, lowerDate: Date): Promise<ChangesetDbRecord[]> {
+		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
+		return new Promise((resolve,reject)=>{
+			const tx=this.idb.transaction('changesets','readonly')
+			tx.onerror=()=>reject(new Error(`Database error in getChangesets(): ${tx.error}`))
+			// const range=(upperDate 
+			// 	? IDBKeyRange.bound([uid],[uid,upperDate,+Infinity])
+			// 	: IDBKeyRange.bound([uid],[uid+1])
+			// )
+			// const range=IDBKeyRange.bound([uid],[uid,upperDate,+Infinity])
+			const range=IDBKeyRange.bound([uid,lowerDate],[uid,upperDate,+Infinity])
+			const changesets=[] as ChangesetDbRecord[]
+			tx.oncomplete=()=>resolve(changesets)
+			const request=tx.objectStore('changesets').index('user').openCursor(range,'prev')
+			request.onsuccess=()=>{
+				const cursor=request.result
+				if (!cursor) return
+				changesets.push(cursor.value)
+				if (changesets.length<limit) {
+					cursor.continue()
+				}
+			}
+		})
+	}
 	static open(host: string): Promise<ChangesetViewerDBReader> {
 		return this.openWithType(host,idb=>new ChangesetViewerDBReader(idb))
 	}
@@ -93,7 +133,7 @@ export class ChangesetViewerDBReader {
 				const idb=request.result
 				const userStore=idb.createObjectStore('users',{keyPath:'id'})
 				userStore.createIndex('name','name')
-				idb.createObjectStore('userChangesetScans',{keyPath:['uid','completed']})
+				idb.createObjectStore('userChangesetScans',{keyPath:['uid','stash']})
 				const changesetStore=idb.createObjectStore('changesets',{keyPath:'id'})
 				changesetStore.createIndex('user',['uid','createdAt','id'])
 			}

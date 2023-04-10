@@ -57,29 +57,34 @@ async function main() {
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)
 			)
-		},(changesetBatch,requestMore)=>{
-			if (requestMore) {
-				more.changeToLoadMore()
-				let first=true
-				for (const [iColumns,changeset] of changesetBatch) {
-					grid.startNewRow(changeset.createdAt)
-					// TODO possibly insert in the middle
-					for (const iColumn of iColumns) {
-						const $changeset=makeChangesetCard(cx.server.web,changeset)
-						if (first) {
-							first=false
-						} else {
-							$changeset.classList.add('duplicate')
-						}
-						grid.appendChangeset($changeset,iColumn)
+		},()=>{
+			more.changeToNothingToLoad()
+			more.$button.onclick=null
+		},(requestNextBatch)=>{
+			more.changeToLoad()
+			more.$button.onclick=()=>{
+				more.changeToLoading()
+				requestNextBatch()
+			}
+		},(batch)=>{
+			let wroteAnyChangeset=false
+			for (const [iColumns,changeset] of batch) {
+				grid.startNewRow(changeset.createdAt)
+				// TODO possibly insert in the middle
+				let wroteAnyCopyOfChangeset=false
+				for (const iColumn of iColumns) {
+					const $changeset=makeChangesetCard(cx.server.web,changeset)
+					if (!wroteAnyCopyOfChangeset) {
+						$changeset.classList.add('duplicate')
 					}
+					grid.appendChangeset($changeset,iColumn)
+					wroteAnyCopyOfChangeset=true
 				}
-				more.$button.onclick=()=>{
-					more.changeToLoading()
-					requestMore()
-				}
+				wroteAnyChangeset=true
+			}
+			if (wroteAnyChangeset) {
+				more.changeToLoadMore()
 			} else {
-				// more.changeToNothingToLoad()
 				more.changeToLoadedAll()
 				more.$button.onclick=null
 			}

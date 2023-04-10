@@ -9,10 +9,15 @@ export default class More {
 	changeToNothingToLoad() {
 		this.$div.hidden=true
 	}
+	changeToLoad() {
+		this.$div.hidden=false
+		this.$button.disabled=false
+		this.$button.textContent=`Load changesets`
+	}
 	changeToLoading() {
 		this.$div.hidden=false
 		this.$button.disabled=true
-		this.$button.textContent=`Loading...`
+		this.$button.textContent=`Loading changesets...`
 	}
 	changeToLoadedAll() {
 		this.$div.hidden=false
@@ -22,6 +27,6 @@ export default class More {
 	changeToLoadMore() {
 		this.$div.hidden=false
 		this.$button.disabled=false
-		this.$button.textContent=`Load more`
+		this.$button.textContent=`Load more changesets`
 	}
 }

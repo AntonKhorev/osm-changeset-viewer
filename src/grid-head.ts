@@ -4,7 +4,7 @@ import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiResponse} from './osm'
 import {toUserQuery} from './osm'
-import MuxChangesetStream from './mux-changeset-stream'
+import MuxChangesetDbStream from './mux-changeset-db-stream'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {makeEscapeTag} from './util/escape'
@@ -73,24 +73,55 @@ type GridUserEntry = {
 	$downloadedChangesetsCount: HTMLOutputElement
 	$tab: HTMLElement
 	$card: HTMLElement
+	info: UserInfo
 }
 
 type ChangesetBatchItem = [iColumns:number[],changeset:ChangesetDbRecord]
+
+class MuxChangesetDbStreamMessenger {
+	constructor(
+		private stream: MuxChangesetDbStream
+	) {}
+	async requestNextBatch(
+		receiveBatch: (batch:[uid:number,changeset:ChangesetDbRecord][])=>void
+	): Promise<void> {
+		const action=await this.stream.getNextAction()
+		if (action.type=='startScan') {
+			console.log(`TODO start scan`,action.uid)
+		} else if (action.type=='continueScan') {
+			console.log(`TODO continue scan`,action.uid)
+		} else if (action.type=='batch') {
+			receiveBatch(action.batch)
+		} else if (action.type=='end') {
+			receiveBatch([])
+		}
+	}
+}
 
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
 	private $formCap=makeDiv('form-cap')(`Add a user`)
 	private $form=makeElement('form')()()
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
+	// private stream: MuxChangesetDbStream|undefined
+	// private isStreaming=false
+	private streamMessenger: MuxChangesetDbStreamMessenger|undefined
 	constructor(
 		private cx: Connection,
 		private db: ChangesetViewerDBReader,
 		private worker: SharedWorker,
 		private grid: Grid,
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
-		private sendChangesetsReceiver: (
-			changesetBatch: Iterable<ChangesetBatchItem>,
-			requestMore: (()=>void) | null
+		// private sendChangesetsReceiver: (
+		// 	changesetBatch: Iterable<ChangesetBatchItem>,
+		// 	requestMore: (()=>void) | null
+		// ) => void
+		private restartStreamCallback: ()=>void,
+		private readyStreamCallback: (
+			requestNextBatch: ()=>void
+		) => void,
+		private receiveBatchCallback: (
+			batch: Iterable<ChangesetBatchItem>
 		) => void
 	) {
 		{
@@ -133,12 +164,11 @@ export default class GridHead {
 			const $tab=this.makeUserTab(query)
 			const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
 			const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
-			this.userEntries.push({query,$tab,$card,$downloadedChangesetsCount})
+			this.userEntries.push({query,$tab,$card,$downloadedChangesetsCount,info})
 			this.sendUpdatedUserQueries()
 			this.$formCap.before($tab)
 			this.$form.before($card)
 			this.grid.setColumns(this.userEntries.length)
-			this.openAndSendStream()
 		}
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
 		broadcastReceiver.onmessage=({data:message})=>{
@@ -149,6 +179,7 @@ export default class GridHead {
 					userEntry.$card.replaceWith($card)
 					userEntry.$card=$card
 				}
+				this.startStreamIfNotStartedAndGotAllUids()
 			}
 		}
 	}
@@ -162,7 +193,7 @@ export default class GridHead {
 					const $tab=this.makeUserTab(query)
 					const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
 					const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
-					entry={query,$tab,$card,$downloadedChangesetsCount}
+					entry={query,$tab,$card,$downloadedChangesetsCount,info}
 				}
 				newUserEntries.push(entry)
 			}
@@ -174,8 +205,7 @@ export default class GridHead {
 		}
 		this.$formCap.before(...this.userEntries.map(({$tab})=>$tab))
 		this.$form.before(...this.userEntries.map(({$card})=>$card))
-		this.grid.setColumns(this.userEntries.length)
-		this.openAndSendStream()
+		this.restartStream()
 	}
 	private async getUserInfoForQuery(query: ValidUserQuery): Promise<UserInfo> {
 		if (query.type=='name') {
@@ -237,7 +267,55 @@ export default class GridHead {
 		}
 		return null
 	}
+	private restartStream() {
+		this.grid.setColumns(this.userEntries.length)
+		// this.isStreaming=false
+		this.streamMessenger=undefined
+		this.restartStreamCallback()
+		this.startStreamIfNotStartedAndGotAllUids()
+	}
+	private startStreamIfNotStartedAndGotAllUids() { // TODO call when user info updates
+		// if (this.isStreaming) return
+		if (this.streamMessenger) return
+		const uidToColumns=new Map<number,number[]>
+		for (const [i,entry] of this.userEntries.entries()) {
+			if (entry.info.status=='failed') {
+			} else if (entry.info.status=='ready') {
+				const uid=entry.info.user.id
+				if (!uidToColumns.has(uid)) {
+					uidToColumns.set(uid,[])
+				}
+				uidToColumns.get(uid)?.push(i)
+			} else {
+				return
+			}
+		}
+		/*
+		const stream=new MuxChangesetDbStream(this.db,[...uidToColumns.keys()])
+		this.readyStreamCallback(async()=>{
+			const action=await stream.getNextAction()
+			if (action.type=='batch') {
+				this.receiveBatchCallback(
+					action.batch.map(([uid,changeset])=>[uidToColumns.get(uid)??[],changeset])
+				)
+			} // TODO wrap in another class and handle other actions
+		})
+		this.isStreaming=true
+		*/
+		const stream=new MuxChangesetDbStream(this.db,[...uidToColumns.keys()])
+		const streamMessenger=new MuxChangesetDbStreamMessenger(stream)
+		this.readyStreamCallback(async()=>{
+			await streamMessenger.requestNextBatch(batch=>{
+				this.receiveBatchCallback(
+					batch.map(([uid,changeset])=>[uidToColumns.get(uid)??[],changeset])
+				)
+			})
+		})
+		this.streamMessenger=streamMessenger
+	}
+/*
 	private openAndSendStream(): void {
+		const muxStream=new MuxChangesetDbStream(this.db)
 		const fakeChangesetBatch: ChangesetBatchItem[]=[
 			[[...this.userEntries.keys()],{
 				id: 123456,
@@ -253,10 +331,10 @@ export default class GridHead {
 		this.sendChangesetsReceiver(
 			fakeChangesetBatch,
 			()=>{
-				console.log(`TODO get more chagesets`)
+				console.log(`TODO get more changesets`)
 			}
 		)
-/*
+	/////////////////////
 		if (this.userEntries.length==0) {
 			this.sendStreamReceiver(null)
 			return
@@ -283,8 +361,8 @@ export default class GridHead {
 				})
 			)
 		)
-*/
 	}
+*/
 	private makeUserTab(query: ValidUserQuery): HTMLElement {
 		const $tab=makeDiv('tab')()
 		if (query.type=='id') {
@@ -371,7 +449,8 @@ export default class GridHead {
 			entry.$tab.remove()
 			entry.$card.remove()
 			this.grid.setColumns(this.userEntries.length)
-			this.openAndSendStream()
+			this.restartStream()
+			break
 		}
 	}
 	private sendUpdatedUserQueries(): void {
