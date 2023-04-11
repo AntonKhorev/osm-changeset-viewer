@@ -187,7 +187,17 @@ export default class GridHead {
 			if (message.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
 					if (!isSameQuery(userEntry.query,message.query)) continue
-					const $card=this.makeUserCard(userEntry.query,message,userEntry.$downloadedChangesetsCount)
+					if (message.status=='running' || message.status=='failed') { // TODO maybe skip running?
+						userEntry.info={status:message.status}
+					} else if (message.status=='ready') {
+						userEntry.info={
+							status: message.status,
+							user: message.user
+						}
+					} else {
+						continue
+					}
+					const $card=this.makeUserCard(userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount)
 					userEntry.$card.replaceWith($card)
 					userEntry.$card=$card
 				}
@@ -284,13 +294,11 @@ export default class GridHead {
 	}
 	private restartStream() {
 		this.grid.setColumns(this.userEntries.length)
-		// this.isStreaming=false
 		this.streamMessenger=undefined
 		this.restartStreamCallback()
 		this.startStreamIfNotStartedAndGotAllUids()
 	}
-	private startStreamIfNotStartedAndGotAllUids() { // TODO call when user info updates
-		// if (this.isStreaming) return
+	private startStreamIfNotStartedAndGotAllUids() {
 		if (this.streamMessenger) return
 		const uidToColumns=new Map<number,number[]>
 		for (const [i,entry] of this.userEntries.entries()) {
@@ -305,18 +313,6 @@ export default class GridHead {
 				return
 			}
 		}
-		/*
-		const stream=new MuxChangesetDbStream(this.db,[...uidToColumns.keys()])
-		this.readyStreamCallback(async()=>{
-			const action=await stream.getNextAction()
-			if (action.type=='batch') {
-				this.receiveBatchCallback(
-					action.batch.map(([uid,changeset])=>[uidToColumns.get(uid)??[],changeset])
-				)
-			} // TODO wrap in another class and handle other actions
-		})
-		this.isStreaming=true
-		*/
 		const stream=new MuxChangesetDbStream(this.db,[...uidToColumns.keys()])
 		const streamMessenger=new MuxChangesetDbStreamMessenger(this.cx.server.host,this.worker,stream)
 		this.readyStreamCallback(async()=>{
