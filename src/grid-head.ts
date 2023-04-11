@@ -79,33 +79,38 @@ type GridUserEntry = {
 
 type ChangesetBatchItem = [iColumns:number[],changeset:ChangesetDbRecord]
 
+let muxChangesetDbStreamMessengerCounter=0
+
 class MuxChangesetDbStreamMessenger {
+	private displayNumber=muxChangesetDbStreamMessengerCounter++
 	constructor(
 		private host: string,
 		private worker: SharedWorker,
-		private stream: MuxChangesetDbStream
+		private stream: MuxChangesetDbStream,
+		private receiveBatch: (batch:[uid:number,changeset:ChangesetDbRecord][])=>void
 	) {}
-	async requestNextBatch(
-		receiveBatch: (batch:[uid:number,changeset:ChangesetDbRecord][])=>void
-	): Promise<void> {
+	async requestNextBatch(): Promise<void> {
 		const action=await this.stream.getNextAction()
 		if (action.type=='startScan') {
 			this.worker.port.postMessage({
 				type: 'startUserChangesetScan',
 				host: this.host,
-				uid: action.uid
+				uid: action.uid,
+				displayNumber: this.displayNumber
 			})
 		} else if (action.type=='continueScan') {
 			console.log(`TODO continue scan`,action.uid)
 		} else if (action.type=='batch') {
-			receiveBatch(action.batch)
+			this.receiveBatch(action.batch)
 		} else if (action.type=='end') {
-			receiveBatch([])
+			this.receiveBatch([])
 		}
 	}
-	receiveMessage(message: WorkerBroadcastChannelMessage): void {
+	async receiveMessage(message: WorkerBroadcastChannelMessage): Promise<void> {
 		if (message.type=='startUserChangesetScan') {
-			console.log(`TODO process incoming startUserChangesetScan message`)
+			if (message.displayNumber==this.displayNumber) {
+				await this.requestNextBatch()
+			}
 		}
 	}
 }
@@ -183,7 +188,7 @@ export default class GridHead {
 			this.grid.setColumns(this.userEntries.length)
 		}
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
-		broadcastReceiver.onmessage=({data:message})=>{
+		broadcastReceiver.onmessage=async({data:message})=>{
 			if (message.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
 					if (!isSameQuery(userEntry.query,message.query)) continue
@@ -204,7 +209,7 @@ export default class GridHead {
 				this.startStreamIfNotStartedAndGotAllUids()
 			}
 			if (this.streamMessenger) {
-				this.streamMessenger.receiveMessage(message)
+				await this.streamMessenger.receiveMessage(message)
 			}
 		}
 	}
@@ -314,13 +319,15 @@ export default class GridHead {
 			}
 		}
 		const stream=new MuxChangesetDbStream(this.db,[...uidToColumns.keys()])
-		const streamMessenger=new MuxChangesetDbStreamMessenger(this.cx.server.host,this.worker,stream)
-		this.readyStreamCallback(async()=>{
-			await streamMessenger.requestNextBatch(batch=>{
+		const streamMessenger=new MuxChangesetDbStreamMessenger(
+			this.cx.server.host,this.worker,stream,batch=>{
 				this.receiveBatchCallback(
 					batch.map(([uid,changeset])=>[uidToColumns.get(uid)??[],changeset])
 				)
-			})
+			}
+		)
+		this.readyStreamCallback(async()=>{
+			await streamMessenger.requestNextBatch()
 		})
 		this.streamMessenger=streamMessenger
 	}

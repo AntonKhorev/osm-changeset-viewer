@@ -126,12 +126,14 @@ self.onconnect=ev=>{
 			if (typeof host != 'string') throw new TypeError(`invalid host type`)
 			const uid=ev.data.uid
 			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
+			const displayNumber=ev.data.displayNumber
+			if (typeof displayNumber != 'number') throw new TypeError(`invalid uid type`)
 			const text=`start a changeset scan of user #${uid}`
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
 			hostDataEntry.broadcastSender.postMessage({
-				type,uid,text,
+				type,uid,displayNumber,text,
 				status: 'running',
 			})
 			let stream: ChangesetStream|undefined
@@ -142,7 +144,7 @@ self.onconnect=ev=>{
 				changesetsApiData=await stream.fetch()
 			} catch {
 				return hostDataEntry.broadcastSender.postMessage({
-					type,uid,text,
+					type,uid,displayNumber,text,
 					status: 'failed',
 					failedText: `network error`
 				})
@@ -151,7 +153,7 @@ self.onconnect=ev=>{
 			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'forceNewScan')
 			hostDataEntry.userChangesetStreams.set(uid,stream)
 			hostDataEntry.broadcastSender.postMessage({
-				type,uid,text,
+				type,uid,displayNumber,text,
 				status: 'ready'
 			})
 		}

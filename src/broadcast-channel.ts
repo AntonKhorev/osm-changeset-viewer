@@ -27,6 +27,7 @@ export type WorkerBroadcastChannelMessage = {
 		{
 			type: 'startUserChangesetScan'
 			uid: number
+			displayNumber: number
 			status: 'running'|'failed'|'ready'
 		}
 	)
