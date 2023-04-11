@@ -3,7 +3,7 @@ import type {ChangesetViewerDBReader, UserDbRecord, ChangesetDbRecord} from './d
 import type Grid from './grid'
 import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
-import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiResponse} from './osm'
+import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import MuxChangesetDbStream from './mux-changeset-db-stream'
 import {makeDateOutput} from './date'
@@ -12,62 +12,12 @@ import {makeEscapeTag} from './util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
 
-// type UserData = {
-// 	user: OsmUserApiData
-// 	changesets: OsmChangesetApiData[]
-// 	scanStartDate?: Date
-// 	scanEndDate?: Date
-// 	stream?: ChangesetStream
-// }
-
 type UserInfo = {
 	status: 'pending'|'running'|'failed'
 } | {
 	status: 'ready'
 	user: UserDbRecord
 }
-
-/*
-class CachedChangesetStream {
-	position=0
-	constructor(
-		private readonly cx: Connection,
-		private readonly userData: UserData
-	) {}
-	async fetch(): Promise<OsmChangesetApiData[]> {
-		const limit=100
-		if (this.position<this.userData.changesets.length-limit) {
-			const i1=this.position
-			this.position+=limit
-			const i2=this.position
-			return this.userData.changesets.slice(i1,i2)
-		} else if (this.position<this.userData.changesets.length) {
-			const i1=this.position
-			this.position=this.userData.changesets.length
-			return this.userData.changesets.slice(i1)
-		} else if (this.userData.scanEndDate) {
-			return []
-		}
-		if (!this.userData.scanStartDate && this.userData.changesets.length==0) {
-			this.userData.scanStartDate=new Date()
-		}
-		if (!this.userData.stream) {
-			const query={type:'id',uid:this.userData.user.id} as ValidUserQuery
-			this.userData.stream=new ChangesetStream(this.cx,query,this.userData.changesets)
-		}
-		const batch=await this.userData.stream.fetch()
-		this.userData.changesets.push(...batch)
-		this.position=this.userData.changesets.length
-		if (batch.length==0) {
-			this.userData.scanEndDate=new Date()
-		}
-		return batch
-	}
-}
-*/
-
-// const userNameToId=new Map<string,number>() // 0 = unknown uid because has no changesets
-// const userIdToData=new Map<number,UserData>()
 
 type GridUserEntry = {
 	query: ValidUserQuery
@@ -125,8 +75,6 @@ export default class GridHead {
 	private $formCap=makeDiv('form-cap')(`Add a user`)
 	private $form=makeElement('form')()()
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
-	// private stream: MuxChangesetDbStream|undefined
-	// private isStreaming=false
 	private streamMessenger: MuxChangesetDbStreamMessenger|undefined
 	constructor(
 		private cx: Connection,
@@ -134,10 +82,6 @@ export default class GridHead {
 		private worker: SharedWorker,
 		private grid: Grid,
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
-		// private sendChangesetsReceiver: (
-		// 	changesetBatch: Iterable<ChangesetBatchItem>,
-		// 	requestMore: (()=>void) | null
-		// ) => void
 		private restartStreamCallback: ()=>void,
 		private readyStreamCallback: (
 			requestNextBatch: ()=>void
@@ -252,46 +196,6 @@ export default class GridHead {
 		}
 		this.sendUserQueryToWorker(query)
 		return {status:'pending'}
-/*
-		const scanStartDate=new Date()
-		let stream: ChangesetStream|undefined
-		let changesets=[] as OsmChangesetApiData[]
-		let uid: number|undefined
-		if (query.type=='name') {
-			uid=userNameToId.get(query.username)
-			if (uid==null) {
-				stream=new ChangesetStream(this.cx,query)
-				changesets=await stream.fetch()
-				if (changesets.length==0) {
-					uid=0
-					userNameToId.set(query.username,uid)
-					return null
-				}
-				uid=changesets[0].uid
-				userNameToId.set(query.username,uid)
-			}
-		} else {
-			uid=query.uid
-		}
-		let userData=userIdToData.get(uid)
-		if (userData) return userData
-		const result=await this.cx.server.api.fetch(e`user/${uid}.json`)
-		const json=await result.json()
-		const user=getUserFromOsmApiResponse(json)
-		userData={
-			user,
-			changesets
-		}
-		if (stream) {
-			userData={
-				...userData,
-				stream,
-				scanStartDate
-			}
-		}
-		userIdToData.set(uid,userData)
-		return userData
-*/
 	}
 	private pickFromExistingUserEntries(query: ValidUserQuery): GridUserEntry|null {
 		for (const [i,entry] of this.userEntries.entries()) {
@@ -336,56 +240,6 @@ export default class GridHead {
 		})
 		this.streamMessenger=streamMessenger
 	}
-/*
-	private openAndSendStream(): void {
-		const muxStream=new MuxChangesetDbStream(this.db)
-		const fakeChangesetBatch: ChangesetBatchItem[]=[
-			[[...this.userEntries.keys()],{
-				id: 123456,
-				uid: 654321,
-				tags: {
-					comment: `fake changeset`
-				},
-				createdAt: new Date(),
-				comments: {count:0},
-				changes: {count:0}
-			}]
-		]
-		this.sendChangesetsReceiver(
-			fakeChangesetBatch,
-			()=>{
-				console.log(`TODO get more changesets`)
-			}
-		)
-	/////////////////////
-		if (this.userEntries.length==0) {
-			this.sendStreamReceiver(null)
-			return
-		}
-		const emptyStream={
-			fetch: async()=>[]
-		}
-		this.sendStreamReceiver(
-			new MuxChangesetStream(
-				// this.userEntries.map(({query})=>new ChangesetStream(this.cx,query))
-				this.userEntries.map(({query})=>{
-					let uid=0
-					if (query.type=='id') {
-						uid=query.uid
-					} else {
-						uid=userNameToId.get(query.username)??0
-					}
-					if (uid==0) {
-						return emptyStream
-					}
-					const userData=userIdToData.get(uid)
-					if (!userData) return emptyStream // shouldn't happen
-					return new CachedChangesetStream(this.cx,userData) // TODO multiple columns with same query
-				})
-			)
-		)
-	}
-*/
 	private makeUserTab(query: ValidUserQuery): HTMLElement {
 		const $tab=makeDiv('tab')()
 		if (query.type=='id') {
