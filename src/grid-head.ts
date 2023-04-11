@@ -133,7 +133,7 @@ export default class GridHead {
 			this.sendUpdatedUserQueries()
 			this.$formCap.before($tab)
 			this.$form.before($card)
-			this.grid.setColumns(this.userEntries.length)
+			this.restartStream()
 		}
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
 		broadcastReceiver.onmessage=async({data:message})=>{
