@@ -29,10 +29,8 @@ type GridUserEntry = {
 
 type ChangesetBatchItem = [iColumns:number[],changeset:ChangesetDbRecord]
 
-let muxChangesetDbStreamMessengerCounter=0
-
 class MuxChangesetDbStreamMessenger {
-	private displayNumber=muxChangesetDbStreamMessengerCounter++
+	watchedUids=new Set<number>()
 	constructor(
 		private host: string,
 		private worker: SharedWorker,
@@ -42,18 +40,18 @@ class MuxChangesetDbStreamMessenger {
 	async requestNextBatch(): Promise<void> {
 		const action=await this.stream.getNextAction()
 		if (action.type=='startScan') {
+			this.watchedUids.add(action.uid)
 			this.worker.port.postMessage({
 				type: 'startUserChangesetScan',
 				host: this.host,
 				uid: action.uid,
-				displayNumber: this.displayNumber
 			})
 		} else if (action.type=='continueScan') {
+			this.watchedUids.add(action.uid)
 			this.worker.port.postMessage({
 				type: 'continueUserChangesetScan',
 				host: this.host,
 				uid: action.uid,
-				displayNumber: this.displayNumber
 			})
 		} else if (action.type=='batch') {
 			this.receiveBatch(action.batch)
@@ -63,7 +61,8 @@ class MuxChangesetDbStreamMessenger {
 	}
 	async receiveMessage(message: WorkerBroadcastChannelMessage): Promise<void> {
 		if (message.type=='startUserChangesetScan' || message.type=='continueUserChangesetScan') {
-			if (message.status=='ready' && message.displayNumber==this.displayNumber) {
+			if (message.status=='ready' && this.watchedUids.has(message.uid)) {
+				this.watchedUids.delete(message.uid)
 				await this.requestNextBatch()
 			}
 		}

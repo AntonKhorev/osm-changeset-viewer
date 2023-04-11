@@ -131,14 +131,12 @@ self.onconnect=ev=>{
 			if (typeof host != 'string') throw new TypeError(`invalid host type`)
 			const uid=ev.data.uid
 			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
-			const displayNumber=ev.data.displayNumber
-			if (typeof displayNumber != 'number') throw new TypeError(`invalid displayNumber type`)
 			const text=`start scanning changesets of user #${uid}`
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
 			hostDataEntry.broadcastSender.postMessage({
-				type,uid,displayNumber,text,
+				type,uid,text,
 				status: 'running',
 			})
 			const stream=new ChangesetStream(server.api,{type:'id',uid})
@@ -148,7 +146,7 @@ self.onconnect=ev=>{
 				changesetsApiData=await stream.fetch()
 			} catch {
 				return hostDataEntry.broadcastSender.postMessage({
-					type,uid,displayNumber,text,
+					type,uid,text,
 					status: 'failed',
 					failedText: `network error`
 				})
@@ -157,7 +155,7 @@ self.onconnect=ev=>{
 			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'toNewScan')
 			hostDataEntry.userChangesetStreams.set(uid,stream)
 			hostDataEntry.broadcastSender.postMessage({
-				type,uid,displayNumber,text,
+				type,uid,text,
 				status: 'ready'
 			})
 			// TODO mark scan as completed
@@ -166,14 +164,12 @@ self.onconnect=ev=>{
 			if (typeof host != 'string') throw new TypeError(`invalid host type`)
 			const uid=ev.data.uid
 			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
-			const displayNumber=ev.data.displayNumber
-			if (typeof displayNumber != 'number') throw new TypeError(`invalid displayNumber type`)
 			const text=`continue scanning changesets of user #${uid}`
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
 			hostDataEntry.broadcastSender.postMessage({
-				type,uid,displayNumber,text,
+				type,uid,text,
 				status: 'running',
 			})
 			let stream=hostDataEntry.userChangesetStreams.get(uid)
@@ -187,7 +183,7 @@ self.onconnect=ev=>{
 				changesetsApiData=await stream.fetch()
 			} catch {
 				return hostDataEntry.broadcastSender.postMessage({
-					type,uid,displayNumber,text,
+					type,uid,text,
 					status: 'failed',
 					failedText: `network error`
 				})
@@ -196,7 +192,7 @@ self.onconnect=ev=>{
 			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'toNewOrExistingScan')
 			hostDataEntry.userChangesetStreams.set(uid,stream)
 			hostDataEntry.broadcastSender.postMessage({
-				type,uid,displayNumber,text,
+				type,uid,text,
 				status: 'ready'
 			})
 			// TODO mark scan as completed
