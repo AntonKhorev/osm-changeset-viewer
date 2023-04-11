@@ -176,7 +176,10 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	/**
 	 * @returns true if decided to add/update the scan
 	 */
-	addUserChangesets(uid: number, beginDate: Date, changesets: ChangesetDbRecord[], mode: 'forceNewScan'|'onlyAddToExistingScan'): Promise<boolean> {
+	addUserChangesets(
+		uid: number, beginDate: Date, changesets: ChangesetDbRecord[],
+		mode: 'toNewScan'|'toExistingScan'|'toNewOrExistingScan'
+	): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
 			const tx=this.idb.transaction(['changesets','userChangesetScans'],'readwrite')
@@ -211,7 +214,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 				beginDate,
 				empty: true
 			})
-			if (mode=='forceNewScan') {
+			if (mode=='toNewScan') {
 				handleScan(makeEmptyScan())
 			} else {
 				const getScanRequest=tx.objectStore('userChangesetScans').get([uid,0])
@@ -220,7 +223,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 					if (getScanRequest.result==null) {
 						scan=makeEmptyScan()
 					} else {
-						if (mode=='onlyAddToExistingScan') {
+						if (mode=='toExistingScan') {
 							return resolve(false)
 						}
 						scan=getScanRequest.result

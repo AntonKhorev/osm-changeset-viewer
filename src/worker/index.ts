@@ -20,11 +20,16 @@ type HostDataEntry = {
 const hostData=new Map<string,HostDataEntry>()
 
 async function getHostDataEntry(host: string): Promise<HostDataEntry> {
-	return hostData.get(host) ?? {
-		broadcastSender: new WorkerBroadcastSender(host),
-		db: await ChangesetViewerDBWriter.open(host),
-		userChangesetStreams: new Map()
+	let hostDataEntry=hostData.get(host)
+	if (!hostDataEntry) {
+		hostDataEntry={
+			broadcastSender: new WorkerBroadcastSender(host),
+			db: await ChangesetViewerDBWriter.open(host),
+			userChangesetStreams: new Map()
+		}
+		hostData.set(host,hostDataEntry)
 	}
+	return hostDataEntry
 }
 
 self.onconnect=ev=>{
@@ -111,7 +116,7 @@ self.onconnect=ev=>{
 			await hostDataEntry.db.putUser(user)
 			if (stream) {
 				const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
-				const restartedScan=await hostDataEntry.db.addUserChangesets(user.id,now,changesets,'onlyAddToExistingScan')
+				const restartedScan=await hostDataEntry.db.addUserChangesets(user.id,now,changesets,'toExistingScan')
 				if (restartedScan) {
 					hostDataEntry.userChangesetStreams.set(user.id,stream)
 				}
@@ -127,8 +132,8 @@ self.onconnect=ev=>{
 			const uid=ev.data.uid
 			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
 			const displayNumber=ev.data.displayNumber
-			if (typeof displayNumber != 'number') throw new TypeError(`invalid uid type`)
-			const text=`start a changeset scan of user #${uid}`
+			if (typeof displayNumber != 'number') throw new TypeError(`invalid displayNumber type`)
+			const text=`start scanning changesets of user #${uid}`
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
@@ -136,11 +141,10 @@ self.onconnect=ev=>{
 				type,uid,displayNumber,text,
 				status: 'running',
 			})
-			let stream: ChangesetStream|undefined
+			const stream=new ChangesetStream(server.api,{type:'id',uid})
 			let changesetsApiData=[] as OsmChangesetApiData[]
 			const now=new Date()
 			try {
-				stream=new ChangesetStream(server.api,{type:'id',uid})
 				changesetsApiData=await stream.fetch()
 			} catch {
 				return hostDataEntry.broadcastSender.postMessage({
@@ -150,12 +154,51 @@ self.onconnect=ev=>{
 				})
 			}
 			const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
-			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'forceNewScan')
+			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'toNewScan')
 			hostDataEntry.userChangesetStreams.set(uid,stream)
 			hostDataEntry.broadcastSender.postMessage({
 				type,uid,displayNumber,text,
 				status: 'ready'
 			})
+			// TODO mark scan as completed
+		} else if (type=='continueUserChangesetScan') {
+			const host=ev.data.host
+			if (typeof host != 'string') throw new TypeError(`invalid host type`)
+			const uid=ev.data.uid
+			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
+			const displayNumber=ev.data.displayNumber
+			if (typeof displayNumber != 'number') throw new TypeError(`invalid displayNumber type`)
+			const text=`continue scanning changesets of user #${uid}`
+			const server=net.serverList.servers.get(host)
+			if (!server) throw new RangeError(`unknown host "${host}"`)
+			const hostDataEntry=await getHostDataEntry(host)
+			hostDataEntry.broadcastSender.postMessage({
+				type,uid,displayNumber,text,
+				status: 'running',
+			})
+			let stream=hostDataEntry.userChangesetStreams.get(uid)
+			if (!stream) {
+				stream=new ChangesetStream(server.api,{type:'id',uid})
+			}
+			let changesetsApiData=[] as OsmChangesetApiData[]
+			const now=new Date()
+			try {
+				changesetsApiData=await stream.fetch()
+			} catch {
+				return hostDataEntry.broadcastSender.postMessage({
+					type,uid,displayNumber,text,
+					status: 'failed',
+					failedText: `network error`
+				})
+			}
+			const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
+			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'toNewOrExistingScan')
+			hostDataEntry.userChangesetStreams.set(uid,stream)
+			hostDataEntry.broadcastSender.postMessage({
+				type,uid,displayNumber,text,
+				status: 'ready'
+			})
+			// TODO mark scan as completed
 		}
 	}
 }

@@ -99,7 +99,12 @@ class MuxChangesetDbStreamMessenger {
 				displayNumber: this.displayNumber
 			})
 		} else if (action.type=='continueScan') {
-			console.log(`TODO continue scan`,action.uid)
+			this.worker.port.postMessage({
+				type: 'continueUserChangesetScan',
+				host: this.host,
+				uid: action.uid,
+				displayNumber: this.displayNumber
+			})
 		} else if (action.type=='batch') {
 			this.receiveBatch(action.batch)
 		} else if (action.type=='end') {
@@ -107,8 +112,8 @@ class MuxChangesetDbStreamMessenger {
 		}
 	}
 	async receiveMessage(message: WorkerBroadcastChannelMessage): Promise<void> {
-		if (message.type=='startUserChangesetScan') {
-			if (message.displayNumber==this.displayNumber) {
+		if (message.type=='startUserChangesetScan' || message.type=='continueUserChangesetScan') {
+			if (message.status=='ready' && message.displayNumber==this.displayNumber) {
 				await this.requestNextBatch()
 			}
 		}
