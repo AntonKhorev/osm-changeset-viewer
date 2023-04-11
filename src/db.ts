@@ -1,3 +1,5 @@
+import type {ChangesetStreamResumeInfo} from './changeset-stream'
+
 type Counter = {
 	count: number
 }
@@ -173,6 +175,40 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 		})
 	}
 	*/
+	getChangesetStreamResumeInfo(uid: number): Promise<ChangesetStreamResumeInfo|undefined> {
+		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
+		return new Promise((resolve,reject)=>{
+			const tx=this.idb.transaction(['changesets','userChangesetScans'],'readonly')
+			tx.onerror=()=>reject(new Error(`Database error in getEarliestScanChangesests(): ${tx.error}`))
+			const scanRequest=tx.objectStore('userChangesetScans').get([uid,0])
+			scanRequest.onsuccess=()=>{
+				if (scanRequest.result==null) {
+					return resolve(undefined)
+				}
+				const scan=scanRequest.result as UserChangesetScanDbRecord
+				if (scan.empty) {
+					return resolve(undefined)
+				}
+				const changesetsRequest=tx.objectStore('changesets').index('user').getAll(
+					IDBKeyRange.bound([uid,scan.lowerChangesetDate],[uid,scan.lowerChangesetDate,+Infinity])
+				)
+				changesetsRequest.onsuccess=()=>{
+					let lowerChangesetDate: Date|undefined
+					const idsOfChangesetsWithLowerDate=changesetsRequest.result.map((changeset:ChangesetDbRecord)=>{
+						if (!lowerChangesetDate || lowerChangesetDate.getTime()>changeset.createdAt.getTime()) {
+							lowerChangesetDate=changeset.createdAt
+						}
+						return changeset.id
+					})
+					if (lowerChangesetDate) {
+						resolve({lowerChangesetDate,idsOfChangesetsWithLowerDate})
+					} else {
+						resolve(undefined)
+					}
+				}
+			}
+		})
+	}
 	/**
 	 * @returns true if decided to add/update the scan
 	 */

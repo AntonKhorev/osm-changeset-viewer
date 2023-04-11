@@ -1,7 +1,12 @@
-import {ApiProvider, Connection} from './net'
+import {ApiProvider} from './net'
 import {ValidUserQuery, OsmChangesetApiData, getChangesetsFromOsmApiResponse} from './osm'
 import {toIsoString} from './date'
 import {makeEscapeTag} from './util/escape'
+
+export type ChangesetStreamResumeInfo = {
+	lowerChangesetDate: Date,
+	idsOfChangesetsWithLowerDate: Iterable<number>
+}
 
 export default class ChangesetStream {
 	private lowestTimestamp: number|undefined
@@ -9,12 +14,11 @@ export default class ChangesetStream {
 	constructor(
 		private readonly api: ApiProvider,
 		private userQuery: ValidUserQuery,
-		visitedChangesets?: Iterable<OsmChangesetApiData>
+		resumeInfo?: ChangesetStreamResumeInfo
 	) {
-		if (visitedChangesets) {
-			for (const changeset of visitedChangesets) {
-				this.visitChangeset(changeset)
-			}
+		if (resumeInfo) {
+			this.lowestTimestamp=resumeInfo.lowerChangesetDate.getTime()
+			this.visitedChangesetIds=new Set(resumeInfo.idsOfChangesetsWithLowerDate)
 		}
 	}
 	async fetch(): Promise<OsmChangesetApiData[]> {
@@ -44,12 +48,9 @@ export default class ChangesetStream {
 			if (!this.visitedChangesetIds.has(changeset.id)) {
 				newChangesets.push(changeset)
 			}
-			this.visitChangeset(changeset)
+			this.visitedChangesetIds.add(changeset.id)
+			this.lowestTimestamp=Date.parse(changeset.created_at)
 		}
 		return newChangesets
-	}
-	private visitChangeset(changeset: OsmChangesetApiData) {
-		this.visitedChangesetIds.add(changeset.id)
-		this.lowestTimestamp=Date.parse(changeset.created_at)
 	}
 }

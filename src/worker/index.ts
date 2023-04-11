@@ -178,7 +178,8 @@ self.onconnect=ev=>{
 			})
 			let stream=hostDataEntry.userChangesetStreams.get(uid)
 			if (!stream) {
-				stream=new ChangesetStream(server.api,{type:'id',uid})
+				const resumeInfo=await hostDataEntry.db.getChangesetStreamResumeInfo(uid)
+				stream=new ChangesetStream(server.api,{type:'id',uid},resumeInfo)
 			}
 			let changesetsApiData=[] as OsmChangesetApiData[]
 			const now=new Date()
