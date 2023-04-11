@@ -74,7 +74,7 @@ async function main() {
 				let wroteAnyCopyOfChangeset=false
 				for (const iColumn of iColumns) {
 					const $changeset=makeChangesetCard(cx.server.web,changeset)
-					if (!wroteAnyCopyOfChangeset) {
+					if (wroteAnyCopyOfChangeset) {
 						$changeset.classList.add('duplicate')
 					}
 					grid.appendChangeset($changeset,iColumn)

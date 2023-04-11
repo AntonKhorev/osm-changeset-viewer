@@ -31,8 +31,10 @@ self.onconnect=ev=>{
 	const port=ev.ports[0]
 	port.onmessage=async(ev)=>{
 		const type=ev.data.type
+		if (typeof type != 'string') throw new TypeError(`invalid message type`)
 		if (type=='getUserInfo') {
 			const host=ev.data.host
+			if (typeof host != 'string') throw new TypeError(`invalid host type`)
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
@@ -63,12 +65,11 @@ self.onconnect=ev=>{
 				uid=query.uid
 			}
 			if (uid==null) {
-				hostDataEntry.broadcastSender.postMessage({
+				return hostDataEntry.broadcastSender.postMessage({
 					type,query,text,
 					status: 'failed',
 					failedText: 'unable to get user id'
 				})
-				return
 			}
 			let user: UserDbRecord|undefined
 			const now=new Date()
@@ -101,33 +102,16 @@ self.onconnect=ev=>{
 				}
 			} catch {}
 			if (user==null) {
-				hostDataEntry.broadcastSender.postMessage({
+				return hostDataEntry.broadcastSender.postMessage({
 					type,query,text,
 					status: 'failed',
 					failedText: 'unable to get user info'
 				})
-				return
 			}
 			await hostDataEntry.db.putUser(user)
 			if (stream) {
-				const changesets=changesetsApiData.map((a):ChangesetDbRecord=>{
-					const b: ChangesetDbRecord = {
-						id: a.id,
-						uid: a.uid,
-						tags: a.tags ?? {},
-						createdAt: new Date(a.created_at),
-						comments: {count:a.comments_count},
-						changes: {count:a.changes_count}
-					}
-					if (hasBbox(a)) {
-						b.bbox={
-							minLat: a.minlat, maxLat: a.maxlat,
-							minLon: a.minlon, maxLon: a.maxlon,
-						}
-					}
-					return b
-				})
-				const restartedScan=await hostDataEntry.db.addUserChangesets(user.id,now,changesets,true)
+				const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
+				const restartedScan=await hostDataEntry.db.addUserChangesets(user.id,now,changesets,'onlyAddToExistingScan')
 				if (restartedScan) {
 					hostDataEntry.userChangesetStreams.set(user.id,stream)
 				}
@@ -139,9 +123,55 @@ self.onconnect=ev=>{
 			})
 		} else if (type=='startUserChangesetScan') {
 			const host=ev.data.host
+			if (typeof host != 'string') throw new TypeError(`invalid host type`)
+			const uid=ev.data.uid
+			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
+			const text=`start a changeset scan of user #${uid}`
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
+			hostDataEntry.broadcastSender.postMessage({
+				type,uid,text,
+				status: 'running',
+			})
+			let stream: ChangesetStream|undefined
+			let changesetsApiData=[] as OsmChangesetApiData[]
+			const now=new Date()
+			try {
+				stream=new ChangesetStream(server.api,{type:'id',uid})
+				changesetsApiData=await stream.fetch()
+			} catch {
+				return hostDataEntry.broadcastSender.postMessage({
+					type,uid,text,
+					status: 'failed',
+					failedText: `network error`
+				})
+			}
+			const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
+			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'forceNewScan')
+			hostDataEntry.userChangesetStreams.set(uid,stream)
+			hostDataEntry.broadcastSender.postMessage({
+				type,uid,text,
+				status: 'ready'
+			})
 		}
 	}
+}
+
+function convertChangesetApiDataToDbRecord(a: OsmChangesetApiData): ChangesetDbRecord {
+	const b: ChangesetDbRecord = {
+		id: a.id,
+		uid: a.uid,
+		tags: a.tags ?? {},
+		createdAt: new Date(a.created_at),
+		comments: {count:a.comments_count},
+		changes: {count:a.changes_count}
+	}
+	if (hasBbox(a)) {
+		b.bbox={
+			minLat: a.minlat, maxLat: a.maxlat,
+			minLon: a.minlon, maxLon: a.maxlon,
+		}
+	}
+	return b
 }

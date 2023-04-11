@@ -153,35 +153,35 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 		return new Promise((resolve,reject)=>{
 			const tx=this.idb.transaction('users','readwrite')
 			tx.onerror=()=>reject(new Error(`Database error in putUser(): ${tx.error}`))
-			const request=tx.objectStore('users').put(user)
-			request.onsuccess=()=>resolve()
+			tx.objectStore('users').put(user).onsuccess=()=>resolve()
 		})
 	}
+	/*
+	startUserChangesetScan(uid: number, beginDate: Date): Promise<void> {
+		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
+		return new Promise((resolve,reject)=>{
+			const tx=this.idb.transaction('userChangesetScans','readwrite')
+			tx.onerror=()=>reject(new Error(`Database error in startUserChangesetScan(): ${tx.error}`))
+			const scan: UserChangesetScanDbRecord = {
+				uid,
+				stash: 0,
+				changesets: {count:0},
+				beginDate,
+				empty: true
+			}
+			tx.objectStore('userChangesetScans').put(scan).onsuccess=()=>resolve()
+		})
+	}
+	*/
 	/**
 	 * @returns true if decided to add/update the scan
 	 */
-	addUserChangesets(uid: number, beginDate: Date, changesets: ChangesetDbRecord[], onlyIfNoExistingScan: boolean): Promise<boolean> {
+	addUserChangesets(uid: number, beginDate: Date, changesets: ChangesetDbRecord[], mode: 'forceNewScan'|'onlyAddToExistingScan'): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
 			const tx=this.idb.transaction(['changesets','userChangesetScans'],'readwrite')
 			tx.onerror=()=>reject(new Error(`Database error in addCurrentUserChangesetScan(): ${tx.error}`))
-			const getScanRequest=tx.objectStore('userChangesetScans').get([uid,0])
-			getScanRequest.onsuccess=ev=>{
-				let scan: UserChangesetScanDbRecord
-				if (getScanRequest.result==null) {
-					scan={
-						uid,
-						stash: 0,
-						changesets: {count:0},
-						beginDate,
-						empty: true
-					}
-				} else {
-					if (onlyIfNoExistingScan) {
-						return resolve(false)
-					}
-					scan=getScanRequest.result
-				}
+			const handleScan=(scan: UserChangesetScanDbRecord)=>{
 				for (const changeset of changesets) {
 					tx.objectStore('changesets').put(changeset)
 					if (scan.empty) {
@@ -203,6 +203,30 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 				}
 				tx.objectStore('userChangesetScans').put(scan)
 				tx.oncomplete=()=>resolve(true)
+			}
+			const makeEmptyScan=():UserChangesetScanDbRecord=>({
+				uid,
+				stash: 0,
+				changesets: {count:0},
+				beginDate,
+				empty: true
+			})
+			if (mode=='forceNewScan') {
+				handleScan(makeEmptyScan())
+			} else {
+				const getScanRequest=tx.objectStore('userChangesetScans').get([uid,0])
+				getScanRequest.onsuccess=ev=>{
+					let scan: UserChangesetScanDbRecord
+					if (getScanRequest.result==null) {
+						scan=makeEmptyScan()
+					} else {
+						if (mode=='onlyAddToExistingScan') {
+							return resolve(false)
+						}
+						scan=getScanRequest.result
+					}
+					handleScan(scan)
+				}
 			}
 		})
 	}

@@ -1,7 +1,7 @@
 import {ValidUserQuery} from './osm'
 import type {UserDbRecord} from './db'
 
-type Message = {
+export type WorkerBroadcastChannelMessage = {
 	text: string
 } & (
 	{
@@ -13,15 +13,23 @@ type Message = {
 		status: 'ready'
 	}
 ) & (
-	{
-		type: 'getUserInfo'
-		query: ValidUserQuery
-	} & ({
-		status: 'running'|'failed'
-	} | {
-		status: 'ready'
-		user: UserDbRecord
-	})
+	(
+		{
+			type: 'getUserInfo'
+			query: ValidUserQuery
+		} & ({
+			status: 'running'|'failed'
+		} | {
+			status: 'ready'
+			user: UserDbRecord
+		})
+	) | (
+		{
+			type: 'startUserChangesetScan'
+			uid: number
+			status: 'running'|'failed'|'ready'
+		}
+	)
 )
 
 class WorkerBroadcastChannel {
@@ -32,13 +40,13 @@ class WorkerBroadcastChannel {
 }
 
 export class WorkerBroadcastSender extends WorkerBroadcastChannel {
-	postMessage(message: Message) {
+	postMessage(message: WorkerBroadcastChannelMessage) {
 		this.broadcastChannel.postMessage(message)
 	}
 }
 
 export class WorkerBroadcastReceiver extends WorkerBroadcastChannel {
-	set onmessage(listener: (ev:MessageEvent<Message>)=>void) {
+	set onmessage(listener: (ev:MessageEvent<WorkerBroadcastChannelMessage>)=>void) {
 		this.broadcastChannel.onmessage=listener
 	}
 }

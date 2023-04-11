@@ -1,6 +1,7 @@
 import type {Connection} from './net'
 import type {ChangesetViewerDBReader, UserDbRecord, ChangesetDbRecord} from './db'
 import type Grid from './grid'
+import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {ValidUserQuery, OsmUserApiData, OsmChangesetApiData, getUserFromOsmApiResponse} from './osm'
 import {toUserQuery} from './osm'
@@ -80,6 +81,8 @@ type ChangesetBatchItem = [iColumns:number[],changeset:ChangesetDbRecord]
 
 class MuxChangesetDbStreamMessenger {
 	constructor(
+		private host: string,
+		private worker: SharedWorker,
 		private stream: MuxChangesetDbStream
 	) {}
 	async requestNextBatch(
@@ -87,13 +90,22 @@ class MuxChangesetDbStreamMessenger {
 	): Promise<void> {
 		const action=await this.stream.getNextAction()
 		if (action.type=='startScan') {
-			console.log(`TODO start scan`,action.uid)
+			this.worker.port.postMessage({
+				type: 'startUserChangesetScan',
+				host: this.host,
+				uid: action.uid
+			})
 		} else if (action.type=='continueScan') {
 			console.log(`TODO continue scan`,action.uid)
 		} else if (action.type=='batch') {
 			receiveBatch(action.batch)
 		} else if (action.type=='end') {
 			receiveBatch([])
+		}
+	}
+	receiveMessage(message: WorkerBroadcastChannelMessage): void {
+		if (message.type=='startUserChangesetScan') {
+			console.log(`TODO process incoming startUserChangesetScan message`)
 		}
 	}
 }
@@ -180,6 +192,9 @@ export default class GridHead {
 					userEntry.$card=$card
 				}
 				this.startStreamIfNotStartedAndGotAllUids()
+			}
+			if (this.streamMessenger) {
+				this.streamMessenger.receiveMessage(message)
 			}
 		}
 	}
@@ -303,7 +318,7 @@ export default class GridHead {
 		this.isStreaming=true
 		*/
 		const stream=new MuxChangesetDbStream(this.db,[...uidToColumns.keys()])
-		const streamMessenger=new MuxChangesetDbStreamMessenger(stream)
+		const streamMessenger=new MuxChangesetDbStreamMessenger(this.cx.server.host,this.worker,stream)
 		this.readyStreamCallback(async()=>{
 			await streamMessenger.requestNextBatch(batch=>{
 				this.receiveBatchCallback(
