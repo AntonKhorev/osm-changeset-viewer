@@ -49,19 +49,24 @@ self.onconnect=ev=>{
 			let changesetsApiData=[] as OsmChangesetApiData[]
 			let uid: number|undefined
 			let text=`info of unknown user`
+			let failedText=`unable to get user id`
 			if (query.type=='name') {
 				text=`info of user "${query.username}"`
 				hostDataEntry.broadcastSender.postMessage({
 					type,query,text,
 					status: 'running',
 				})
+				stream=new ChangesetStream(server.api,query)
 				try {
-					stream=new ChangesetStream(server.api,query)
 					changesetsApiData=await stream.fetch()
-					if (changesetsApiData.length>0) {
-						uid=changesetsApiData[0].uid
+				} catch (ex) {
+					if (ex instanceof TypeError) {
+						failedText+=` because: ${ex.message}`
 					}
-				} catch {}
+				}
+				if (changesetsApiData.length>0) {
+					uid=changesetsApiData[0].uid
+				}
 			} else if (query.type=='id') {
 				text=`info of user #${query.uid}`
 				hostDataEntry.broadcastSender.postMessage({
@@ -74,15 +79,15 @@ self.onconnect=ev=>{
 				return hostDataEntry.broadcastSender.postMessage({
 					type,query,text,
 					status: 'failed',
-					failedText: 'unable to get user id'
+					failedText
 				})
 			}
 			let user: UserDbRecord|undefined
 			const now=new Date()
 			try {
-				const result=await server.api.fetch(e`user/${uid}.json`)
-				if (!result.ok) {
-					if (result.status==410) { // deleted user
+				const response=await server.api.fetch(e`user/${uid}.json`)
+				if (!response.ok) {
+					if (response.status==410) { // deleted user
 						user={
 							id: uid,
 							infoUpdatedAt: now,
@@ -90,7 +95,7 @@ self.onconnect=ev=>{
 						}
 					}
 				} else {
-					const json=await result.json()
+					const json=await response.json()
 					const userApiData=getUserFromOsmApiResponse(json)
 					user={
 						id: uid,
@@ -111,7 +116,7 @@ self.onconnect=ev=>{
 				return hostDataEntry.broadcastSender.postMessage({
 					type,query,text,
 					status: 'failed',
-					failedText: 'unable to get user info'
+					failedText
 				})
 			}
 			await hostDataEntry.db.putUser(user)
@@ -159,11 +164,12 @@ self.onconnect=ev=>{
 			const now=new Date()
 			try {
 				changesetsApiData=await stream.fetch()
-			} catch {
+			} catch (ex) {
+				const failedText=(ex instanceof TypeError) ? ex.message : `unknown error`
 				return hostDataEntry.broadcastSender.postMessage({
 					type,uid,text,
 					status: 'failed',
-					failedText: `network error`
+					failedText
 				})
 			}
 			const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)

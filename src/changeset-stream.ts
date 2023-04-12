@@ -34,8 +34,20 @@ export default class ChangesetStream {
 		if (upperBoundDate) {
 			timeParameter=e`&time=2001-01-01,${toIsoString(upperBoundDate)}`
 		}
-		const result=await this.api.fetch(`changesets.json?${userParameter}${timeParameter}`)
-		const json=await result.json()
+		let response: Response
+		try {
+			response=await this.api.fetch(`changesets.json?${userParameter}${timeParameter}`)
+		} catch (ex) {
+			throw new TypeError(`network error`)
+		}
+		if (!response.ok) {
+			if (response.status==404) {
+				throw new TypeError(`user not found / didn't agree to contributor terms`)
+			} else {
+				throw new TypeError(`unsuccessful response from OSM API`)
+			}
+		}
+		const json=await response.json()
 		const changesets=getChangesetsFromOsmApiResponse(json)
 		const newChangesets=[] as OsmChangesetApiData[]
 		for (const changeset of changesets) {
