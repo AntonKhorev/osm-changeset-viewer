@@ -25,13 +25,17 @@ function toIsoTimeString(date: Date, separator=':'): string {
 	)
 }
 
-export function toIsoString(date: Date, dateSeparator='-', timeSeparator=':'): string {
+export function toIsoString(date: Date, dateSeparator='-', timeSeparator=':', dateTimeSeparator='T', utcSuffix='Z'): string {
 	return (
 		toIsoDateString(date,dateSeparator)+
-		'T'+
+		dateTimeSeparator+
 		toIsoTimeString(date,timeSeparator)+
-		'Z'
+		utcSuffix
 	)
+}
+
+export function toReadableIsoString(date: Date): string {
+	return toIsoString(date,'-',':',' ','')
 }
 
 export function makeDateOutputFromString(dateString: string): HTMLTimeElement {

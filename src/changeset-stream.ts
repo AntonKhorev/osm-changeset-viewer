@@ -30,8 +30,8 @@ export default class ChangesetStream {
 			userParameter=e`display_name=${this.userQuery.username}`
 		}
 		let timeParameter=''
-		if (this.lowestTimestamp) {
-			const upperBoundDate=new Date(this.lowestTimestamp+1000)
+		const upperBoundDate=this.nextFetchUpperBoundDate
+		if (upperBoundDate) {
 			timeParameter=e`&time=2001-01-01,${toIsoString(upperBoundDate)}`
 		}
 		const result=await this.api.fetch(`changesets.json?${userParameter}${timeParameter}`)
@@ -52,5 +52,12 @@ export default class ChangesetStream {
 			this.lowestTimestamp=Date.parse(changeset.created_at)
 		}
 		return newChangesets
+	}
+	get nextFetchUpperBoundDate(): Date|null {
+		if (this.lowestTimestamp) {
+			return new Date(this.lowestTimestamp+1000)
+		} else {
+			return null
+		}
 	}
 }

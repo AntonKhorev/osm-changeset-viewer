@@ -4,6 +4,7 @@ import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
 import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse, hasBbox} from '../osm'
 import ChangesetStream from '../changeset-stream'
+import {toReadableIsoString} from '../date'
 import serverListConfig from '../server-list-config'
 import {makeEscapeTag} from '../util/escape'
 
@@ -134,17 +135,9 @@ self.onconnect=ev=>{
 			if (typeof host != 'string') throw new TypeError(`invalid host type`)
 			const uid=ev.data.uid
 			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
-			const text=(type=='startUserChangesetScan'
-				? `start scanning changesets of user #${uid}`
-				: `continue scanning changesets of user #${uid}`
-			)
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
-			hostDataEntry.broadcastSender.postMessage({
-				type,uid,text,
-				status: 'running',
-			})
 			let stream: ChangesetStream|undefined
 			if (type=='startUserChangesetScan') {
 				stream=new ChangesetStream(server.api,{type:'id',uid})
@@ -155,6 +148,13 @@ self.onconnect=ev=>{
 					stream=new ChangesetStream(server.api,{type:'id',uid},resumeInfo)
 				}
 			}
+			const text=`${type=='startUserChangesetScan'?`start `:``}scan ${
+				stream.nextFetchUpperBoundDate?`changesets before `+toReadableIsoString(stream.nextFetchUpperBoundDate):`latest changesets`
+			} of user #${uid}`
+			hostDataEntry.broadcastSender.postMessage({
+				type,uid,text,
+				status: 'running',
+			})
 			let changesetsApiData=[] as OsmChangesetApiData[]
 			const now=new Date()
 			try {
