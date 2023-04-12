@@ -197,6 +197,9 @@ function convertChangesetApiDataToDbRecord(a: OsmChangesetApiData): ChangesetDbR
 		comments: {count:a.comments_count},
 		changes: {count:a.changes_count}
 	}
+	if (a.closed_at!=null) {
+		b.closedAt=new Date(a.closed_at)
+	}
 	if (hasBbox(a)) {
 		b.bbox={
 			minLat: a.minlat, maxLat: a.maxlat,

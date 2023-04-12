@@ -2,7 +2,7 @@ import type {ChangesetViewerDBReader, ChangesetDbRecord, UserChangesetScanDbReco
 
 // { https://stackoverflow.com/a/42919752
 
-type HeapItem = [timestamp: number, uid: number, changeset: ChangesetDbRecord]
+type HeapItem = [timestamp: number, uid: number, changeset: ChangesetDbRecord, close: number]
 
 const iTop=0
 const iParent = (i:number)=>((i+1)>>>1)-1
@@ -35,10 +35,11 @@ class MuxChangesetPriorityQueue {
 		return poppedValue
 	}
 	private greater(i: number, j: number) {
-		const [timestamp1,,changeset1]=this.heap[i]
-		const [timestamp2,,changeset2]=this.heap[j]
+		const [timestamp1,,changeset1,close1]=this.heap[i]
+		const [timestamp2,,changeset2,close2]=this.heap[j]
 		if (timestamp1!=timestamp2) return timestamp1>timestamp2
-		return changeset1.id>changeset2.id
+		if (changeset1.id!=changeset2.id) return changeset1.id>changeset2.id
+		return close1>close2
 	}
 	private swap(i: number, j: number) {
 		[this.heap[i],this.heap[j]]=[this.heap[j],this.heap[i]]
@@ -72,6 +73,12 @@ type MuxEntry = {
 	visitedChangesetIds: Set<number>
 }
 
+export type MuxBatchItem = {
+	uid: number,
+	type: 'open'|'close',
+	changeset: ChangesetDbRecord
+}
+
 export default class MuxChangesetDbStream {
 	private muxEntries: MuxEntry[]
 	private queue = new MuxChangesetPriorityQueue()
@@ -88,7 +95,7 @@ export default class MuxChangesetDbStream {
 	}
 	async getNextAction(): Promise<{
 		type: 'batch'
-		batch: [uid: number, changeset: ChangesetDbRecord][]
+		batch: MuxBatchItem[]
 	} | {
 		type: 'startScan'|'continueScan'
 		uid: number
@@ -112,10 +119,13 @@ export default class MuxChangesetDbStream {
 				}
 			}
 		}
-		const batch=[] as [uid: number, changeset: ChangesetDbRecord][]
+		const batch=[] as MuxBatchItem[]
 		const moveQueueTopToResults=()=>{
-			const [,uid,changeset]=this.queue.pop()
-			batch.push([uid,changeset])
+			const [,uid,changeset,closed]=this.queue.pop()
+			batch.push({
+				uid,changeset,
+				type: closed?'close':'open'
+			})
 		}
 		while (true) {
 			let upperTimestamp=-Infinity
@@ -169,8 +179,11 @@ export default class MuxChangesetDbStream {
 			for (const changeset of changesets) {
 				if (muxEntry.visitedChangesetIds.has(changeset.id)) continue
 				muxEntry.visitedChangesetIds.add(changeset.id)
+				if (changeset.closedAt) {
+					this.queue.push([changeset.closedAt.getTime(),muxEntry.uid,changeset,1])
+				}
 				newLowestReachedTimestamp=changeset.createdAt.getTime()
-				this.queue.push([newLowestReachedTimestamp,muxEntry.uid,changeset])
+				this.queue.push([newLowestReachedTimestamp,muxEntry.uid,changeset,0])
 			}
 			if (newLowestReachedTimestamp==-Infinity && !muxEntry.scan.endDate) {
 				muxEntry.scan=null

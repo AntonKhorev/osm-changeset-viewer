@@ -68,12 +68,12 @@ async function main() {
 			}
 		},(batch)=>{
 			let wroteAnyChangeset=false
-			for (const [iColumns,changeset] of batch) {
+			for (const {iColumns,type,changeset} of batch) {
 				grid.startNewRow(changeset.createdAt)
 				// TODO possibly insert in the middle
 				let wroteAnyCopyOfChangeset=false
 				for (const iColumn of iColumns) {
-					const $changeset=makeChangesetCard(cx.server.web,changeset)
+					const $changeset=makeChangesetCard(cx.server.web,changeset,type=='close')
 					if (wroteAnyCopyOfChangeset) {
 						$changeset.classList.add('duplicate')
 					}
@@ -109,10 +109,15 @@ async function main() {
 	writeToolbar($root,$toolbar,$netDialog,$grid,net.cx?.server.host)
 }
 
-function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord) {
+function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClose: boolean) {
+	const makeDate=()=>{
+		const date=isClose ? changeset.closedAt : changeset.createdAt
+		return date ? makeDateOutput(date) : `???`
+	}
 	return makeDiv('changeset')(
+		isClose ? `[ ` : `] `,
 		makeLink(`${changeset.id}`,web.getUrl(e`changeset/${changeset.id}`)),` `,
-		makeDateOutput(changeset.createdAt),` `,
+		makeDate(),` `,
 		changeset.tags?.comment ?? ''
 	)
 }

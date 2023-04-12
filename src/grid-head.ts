@@ -5,6 +5,7 @@ import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
+import type {MuxBatchItem} from './mux-changeset-db-stream'
 import MuxChangesetDbStream from './mux-changeset-db-stream'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
@@ -27,7 +28,11 @@ type GridUserEntry = {
 	info: UserInfo
 }
 
-type ChangesetBatchItem = [iColumns:number[],changeset:ChangesetDbRecord]
+type GridBatchItem = {
+	iColumns: number[]
+	type: 'open'|'close'
+	changeset: ChangesetDbRecord
+}
 
 class MuxChangesetDbStreamMessenger {
 	watchedUids=new Set<number>()
@@ -35,7 +40,7 @@ class MuxChangesetDbStreamMessenger {
 		private host: string,
 		private worker: SharedWorker,
 		private stream: MuxChangesetDbStream,
-		private receiveBatch: (batch:[uid:number,changeset:ChangesetDbRecord][])=>void
+		private receiveBatch: (batch:MuxBatchItem[])=>void
 	) {}
 	async requestNextBatch(): Promise<void> {
 		const action=await this.stream.getNextAction()
@@ -86,7 +91,7 @@ export default class GridHead {
 			requestNextBatch: ()=>void
 		) => void,
 		private receiveBatchCallback: (
-			batch: Iterable<ChangesetBatchItem>
+			batch: Iterable<GridBatchItem>
 		) => void
 	) {
 		{
@@ -230,7 +235,7 @@ export default class GridHead {
 		const streamMessenger=new MuxChangesetDbStreamMessenger(
 			this.cx.server.host,this.worker,stream,batch=>{
 				this.receiveBatchCallback(
-					batch.map(([uid,changeset])=>[uidToColumns.get(uid)??[],changeset])
+					batch.map(({uid,type,changeset})=>({iColumns:uidToColumns.get(uid)??[],type,changeset}))
 				)
 			}
 		)
