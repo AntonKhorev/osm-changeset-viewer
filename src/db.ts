@@ -213,7 +213,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	 * @returns true if decided to add/update the scan
 	 */
 	addUserChangesets(
-		uid: number, beginDate: Date, changesets: ChangesetDbRecord[],
+		uid: number, now: Date, changesets: ChangesetDbRecord[],
 		mode: 'toNewScan'|'toExistingScan'|'toNewOrExistingScan'
 	): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
@@ -240,6 +240,11 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 					}
 					scan.changesets.count++
 				}
+				if (changesets.length>0) {
+					delete scan.endDate
+				} else {
+					scan.endDate=now
+				}
 				tx.objectStore('userChangesetScans').put(scan)
 				tx.oncomplete=()=>resolve(true)
 			}
@@ -247,7 +252,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 				uid,
 				stash: 0,
 				changesets: {count:0},
-				beginDate,
+				beginDate: now,
 				empty: true
 			})
 			if (mode=='toNewScan') {
