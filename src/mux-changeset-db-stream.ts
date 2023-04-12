@@ -65,74 +65,6 @@ class MuxChangesetPriorityQueue {
 
 // } https://stackoverflow.com/a/42919752
 
-/*
-interface AnyChangesetStream {
-	fetch(): Promise<OsmChangesetApiData[]>
-}
-
-type MuxEntry = {
-	stream: AnyChangesetStream
-	lowestTimestamp: number // +Infinity before stream began, -Infinity when stream ended
-}
-
-export default class MuxChangesetStream {
-	private muxEntries: MuxEntry[]
-	private queue = new MuxChangesetPriorityQueue()
-	constructor(streams: AnyChangesetStream[]){
-		this.muxEntries=streams.map(stream=>({
-			stream,
-			lowestTimestamp: +Infinity,
-		}))
-	}
-	async fetch(): Promise<[nStream:number,changeset:OsmChangesetApiData][]> {
-		if (this.muxEntries.length==0) return []
-		const results=[] as [nStream:number,changeset:OsmChangesetApiData][]
-		const moveQueueTopToResults=()=>{
-			const [,nStream,changeset]=this.queue.pop()
-			results.push([nStream,changeset])
-		}
-		do {
-			let upperTimestamp=-Infinity
-			let nUpperStream: number|undefined
-			for (const [n,muxEntry] of this.muxEntries.entries()) {
-				if (muxEntry.lowestTimestamp==+Infinity) {
-					await this.fetchMuxEntry(n)
-				}
-				if (upperTimestamp>=muxEntry.lowestTimestamp) continue
-				upperTimestamp=muxEntry.lowestTimestamp
-				nUpperStream=n
-			}
-			if (nUpperStream==null) {
-				while (!this.queue.isEmpty) {
-					moveQueueTopToResults()
-				}
-				break
-			}
-			await this.fetchMuxEntry(nUpperStream)
-			while (!this.queue.isEmpty) {
-				const [timestamp]=this.queue.peek()
-				if (timestamp<upperTimestamp) break
-				moveQueueTopToResults()
-			}
-		} while (results.length==0)
-		return results
-	}
-	private async fetchMuxEntry(nStream: number): Promise<void> {
-		const muxEntry=this.muxEntries[nStream]
-		const newChangesets=await muxEntry.stream.fetch()
-		if (newChangesets.length==0) {
-			muxEntry.lowestTimestamp=-Infinity
-			return
-		}
-		for (const changeset of newChangesets) {
-			const timestamp=Date.parse(changeset.created_at)
-			muxEntry.lowestTimestamp=timestamp
-			this.queue.push([timestamp,nStream,changeset])
-		}
-	}
-}
-*/
-
 type MuxEntry = {
 	uid: number
 	lowestReachedTimestamp: number // +Infinity before stream began, -Infinity when stream ended
@@ -141,14 +73,12 @@ type MuxEntry = {
 }
 
 export default class MuxChangesetDbStream {
-	// private lowestTimestamps = new Map<number,number>()
 	private muxEntries: MuxEntry[]
 	private queue = new MuxChangesetPriorityQueue()
 	constructor(
 		private db: ChangesetViewerDBReader,
 		uids: number[]
 	) {
-		// this.lowestTimestamps=new Map(uids.map(uid=>[uid,+Infinity]))
 		this.muxEntries=uids.map(uid=>({
 			uid,
 			lowestReachedTimestamp: +Infinity,
@@ -165,7 +95,6 @@ export default class MuxChangesetDbStream {
 	} | {
 		type: 'end'
 	}> {
-		// for (const uid of this.uids) {
 		for (const muxEntry of this.muxEntries) {
 			if (!muxEntry.scan) {
 				const scan=await this.db.getCurrentUserChangesetScan(muxEntry.uid)
@@ -177,7 +106,6 @@ export default class MuxChangesetDbStream {
 			}
 			if (muxEntry.lowestReachedTimestamp<+Infinity) continue
 			if (await this.enqueueMoreChangesetsAndCheckIfNeedToContinueScan(muxEntry)) {
-				// muxEntry.scan=null
 				return {
 					type: 'continueScan',
 					uid: muxEntry.uid
@@ -189,23 +117,14 @@ export default class MuxChangesetDbStream {
 			const [,uid,changeset]=this.queue.pop()
 			batch.push([uid,changeset])
 		}
-		// do {
 		while (true) {
 			let upperTimestamp=-Infinity
-			// let nUpperEntry: number|undefined
 			let upperMuxEntry: MuxEntry|undefined
-			// for (const [n,muxEntry] of this.muxEntries.entries()) {
 			for (const muxEntry of this.muxEntries) {
 				if (upperTimestamp>=muxEntry.lowestReachedTimestamp) continue
 				upperTimestamp=muxEntry.lowestReachedTimestamp
-				// nUpperEntry=n
 				upperMuxEntry=muxEntry
 			}
-			// if (nUpperStream==null) {
-			// 	while (!this.queue.isEmpty) {
-			// 		moveQueueTopToResults()
-			// 	}
-			// }
 			while (!this.queue.isEmpty) {
 				const [timestamp]=this.queue.peek()
 				if (timestamp<upperTimestamp) break
@@ -228,7 +147,6 @@ export default class MuxChangesetDbStream {
 				break
 			}
 		}
-		// } while (results.length==0)
 		return {type:'end'}
 	}
 	private async enqueueMoreChangesetsAndCheckIfNeedToContinueScan(muxEntry: MuxEntry): Promise<boolean> {
@@ -246,9 +164,6 @@ export default class MuxChangesetDbStream {
 				: muxEntry.scan.upperChangesetDate
 			)
 			const lowerDate=muxEntry.scan.lowerChangesetDate
-			// const newLowestReachedTimestamp=await this.pushChangesetsToQueue( // TODO discard already visited changesets
-			// 	muxEntry.uid,upperDate,lowerDate
-			// )
 			let newLowestReachedTimestamp=-Infinity
 			const changesets=await this.db.getChangesets(muxEntry.uid,100,upperDate,lowerDate)
 			for (const changeset of changesets) {
@@ -257,7 +172,6 @@ export default class MuxChangesetDbStream {
 				newLowestReachedTimestamp=changeset.createdAt.getTime()
 				this.queue.push([newLowestReachedTimestamp,muxEntry.uid,changeset])
 			}
-			//
 			if (newLowestReachedTimestamp==-Infinity && !muxEntry.scan.endDate) {
 				muxEntry.scan=null
 				return true
@@ -266,13 +180,4 @@ export default class MuxChangesetDbStream {
 		}
 		return false
 	}
-	// private async pushChangesetsToQueue(uid: number, upperDate: Date, lowerDate: Date): Promise<number> {
-	// 	let timestamp=-Infinity
-	// 	const changesets=await this.db.getChangesets(uid,100,upperDate,lowerDate)
-	// 	for (const changeset of changesets) {
-	// 		timestamp=changeset.createdAt.getTime()
-	// 		this.queue.push([timestamp,uid,changeset])
-	// 	}
-	// 	return timestamp
-	// }
 }
