@@ -126,12 +126,18 @@ self.onconnect=ev=>{
 				status: 'ready',
 				user
 			})
-		} else if (type=='startUserChangesetScan') {
+		} else if (
+			type=='startUserChangesetScan' ||
+			type=='continueUserChangesetScan'
+		) {
 			const host=ev.data.host
 			if (typeof host != 'string') throw new TypeError(`invalid host type`)
 			const uid=ev.data.uid
 			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
-			const text=`start scanning changesets of user #${uid}`
+			const text=(type=='startUserChangesetScan'
+				? `start scanning changesets of user #${uid}`
+				: `continue scanning changesets of user #${uid}`
+			)
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
@@ -139,43 +145,15 @@ self.onconnect=ev=>{
 				type,uid,text,
 				status: 'running',
 			})
-			const stream=new ChangesetStream(server.api,{type:'id',uid})
-			let changesetsApiData=[] as OsmChangesetApiData[]
-			const now=new Date()
-			try {
-				changesetsApiData=await stream.fetch()
-			} catch {
-				return hostDataEntry.broadcastSender.postMessage({
-					type,uid,text,
-					status: 'failed',
-					failedText: `network error`
-				})
-			}
-			const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
-			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'toNewScan')
-			hostDataEntry.userChangesetStreams.set(uid,stream)
-			hostDataEntry.broadcastSender.postMessage({
-				type,uid,text,
-				status: 'ready'
-			})
-			// TODO mark scan as completed
-		} else if (type=='continueUserChangesetScan') {
-			const host=ev.data.host
-			if (typeof host != 'string') throw new TypeError(`invalid host type`)
-			const uid=ev.data.uid
-			if (typeof uid != 'number') throw new TypeError(`invalid uid type`)
-			const text=`continue scanning changesets of user #${uid}`
-			const server=net.serverList.servers.get(host)
-			if (!server) throw new RangeError(`unknown host "${host}"`)
-			const hostDataEntry=await getHostDataEntry(host)
-			hostDataEntry.broadcastSender.postMessage({
-				type,uid,text,
-				status: 'running',
-			})
-			let stream=hostDataEntry.userChangesetStreams.get(uid)
-			if (!stream) {
-				const resumeInfo=await hostDataEntry.db.getChangesetStreamResumeInfo(uid)
-				stream=new ChangesetStream(server.api,{type:'id',uid},resumeInfo)
+			let stream: ChangesetStream|undefined
+			if (type=='startUserChangesetScan') {
+				stream=new ChangesetStream(server.api,{type:'id',uid})
+			} else {
+				stream=hostDataEntry.userChangesetStreams.get(uid)
+				if (!stream) {
+					const resumeInfo=await hostDataEntry.db.getChangesetStreamResumeInfo(uid)
+					stream=new ChangesetStream(server.api,{type:'id',uid},resumeInfo)
+				}
 			}
 			let changesetsApiData=[] as OsmChangesetApiData[]
 			const now=new Date()
@@ -189,7 +167,11 @@ self.onconnect=ev=>{
 				})
 			}
 			const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
-			await hostDataEntry.db.addUserChangesets(uid,now,changesets,'toNewOrExistingScan')
+			const mode=(type=='startUserChangesetScan'
+				? 'toNewScan'
+				: 'toNewOrExistingScan'
+			)
+			await hostDataEntry.db.addUserChangesets(uid,now,changesets,mode)
 			hostDataEntry.userChangesetStreams.set(uid,stream)
 			hostDataEntry.broadcastSender.postMessage({
 				type,uid,text,
