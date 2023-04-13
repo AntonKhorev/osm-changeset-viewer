@@ -113,7 +113,17 @@ export class UserNoteStream extends UserStream<OsmNoteApiData> {
 		return `notes/search.json?${this.userParameter}&sort=created_at&order=newest&closed=-1${timeParameter}`
 	}
 	protected getOsmDataFromResponseJson(json: unknown): OsmNoteApiData[] {
-		return getNotesFromOsmApiResponse(json)
+		const notes=getNotesFromOsmApiResponse(json)
+		return notes.filter(note=>{
+			if (note.properties.comments.length==0) return false
+			const [openingComment]=note.properties.comments
+			if (openingComment.action!='opened') return false
+			if (this.userQuery.type=='id') {
+				return openingComment.uid==this.userQuery.uid
+			} else {
+				return openingComment.user==this.userQuery.username
+			}
+		})
 	}
 	protected getItemId(note: OsmNoteApiData): number {
 		return note.properties.id
