@@ -3,7 +3,7 @@ import {ChangesetViewerDBWriter} from '../db'
 import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
 import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse, hasBbox} from '../osm'
-import ChangesetStream from '../changeset-stream'
+import {UserChangesetStream} from '../user-stream'
 import {toReadableIsoString} from '../date'
 import serverListConfig from '../server-list-config'
 import {makeEscapeTag} from '../util/escape'
@@ -15,7 +15,7 @@ const net=new WorkerNet(serverListConfig)
 type HostDataEntry = {
 	broadcastSender: WorkerBroadcastSender
 	db: ChangesetViewerDBWriter
-	userChangesetStreams: Map<number,ChangesetStream>
+	userChangesetStreams: Map<number,UserChangesetStream>
 }
 
 const hostData=new Map<string,HostDataEntry>()
@@ -45,7 +45,7 @@ self.onconnect=ev=>{
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
 			const query=ev.data.query as ValidUserQuery
-			let stream: ChangesetStream|undefined
+			let stream: UserChangesetStream|undefined
 			let changesetsApiData=[] as OsmChangesetApiData[]
 			let uid: number|undefined
 			let text=`info of unknown user`
@@ -56,7 +56,7 @@ self.onconnect=ev=>{
 					type,query,text,
 					status: 'running',
 				})
-				stream=new ChangesetStream(server.api,query)
+				stream=new UserChangesetStream(server.api,query)
 				try {
 					changesetsApiData=await stream.fetch()
 				} catch (ex) {
@@ -143,14 +143,14 @@ self.onconnect=ev=>{
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
-			let stream: ChangesetStream|undefined
+			let stream: UserChangesetStream|undefined
 			if (type=='startUserChangesetScan') {
-				stream=new ChangesetStream(server.api,{type:'id',uid})
+				stream=new UserChangesetStream(server.api,{type:'id',uid})
 			} else {
 				stream=hostDataEntry.userChangesetStreams.get(uid)
 				if (!stream) {
 					const resumeInfo=await hostDataEntry.db.getChangesetStreamResumeInfo(uid)
-					stream=new ChangesetStream(server.api,{type:'id',uid},resumeInfo)
+					stream=new UserChangesetStream(server.api,{type:'id',uid},resumeInfo)
 				}
 			}
 			const text=`${type=='startUserChangesetScan'?`start `:``}scan ${

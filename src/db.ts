@@ -1,4 +1,4 @@
-import type {ChangesetStreamResumeInfo} from './changeset-stream'
+import type {UserStreamResumeInfo} from './user-stream'
 
 type Counter = {
 	count: number
@@ -175,7 +175,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 		})
 	}
 	*/
-	getChangesetStreamResumeInfo(uid: number): Promise<ChangesetStreamResumeInfo|undefined> {
+	getChangesetStreamResumeInfo(uid: number): Promise<UserStreamResumeInfo|undefined> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
 			const tx=this.idb.transaction(['changesets','userChangesetScans'],'readonly')
@@ -193,15 +193,15 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 					IDBKeyRange.bound([uid,scan.lowerChangesetDate],[uid,scan.lowerChangesetDate,+Infinity])
 				)
 				changesetsRequest.onsuccess=()=>{
-					let lowerChangesetDate: Date|undefined
-					const idsOfChangesetsWithLowerDate=changesetsRequest.result.map((changeset:ChangesetDbRecord)=>{
-						if (!lowerChangesetDate || lowerChangesetDate.getTime()>changeset.createdAt.getTime()) {
-							lowerChangesetDate=changeset.createdAt
+					let lowerDate: Date|undefined
+					const idsWithLowerDate=changesetsRequest.result.map((changeset:ChangesetDbRecord)=>{
+						if (!lowerDate || lowerDate.getTime()>changeset.createdAt.getTime()) {
+							lowerDate=changeset.createdAt
 						}
 						return changeset.id
 					})
-					if (lowerChangesetDate) {
-						resolve({lowerChangesetDate,idsOfChangesetsWithLowerDate})
+					if (lowerDate) {
+						resolve({lowerDate,idsWithLowerDate})
 					} else {
 						resolve(undefined)
 					}
@@ -259,7 +259,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 				handleScan(makeEmptyScan())
 			} else {
 				const getScanRequest=tx.objectStore('userChangesetScans').get([uid,0])
-				getScanRequest.onsuccess=ev=>{
+				getScanRequest.onsuccess=()=>{
 					let scan: UserChangesetScanDbRecord
 					if (getScanRequest.result==null) {
 						scan=makeEmptyScan()
