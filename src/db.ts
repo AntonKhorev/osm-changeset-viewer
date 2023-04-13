@@ -36,30 +36,43 @@ export type UserDbRecord = {
 	}
 })
 
-export type UserChangesetScanDbRecord = {
+type UserItemDbRecord = {
+	id: number
+	uid: number // we get only notes of known users for now
+	createdAt: Date
+}
+
+export type ChangesetDbRecord = UserItemDbRecord & {
+	tags: {[key:string]:string}
+	closedAt?: Date // open if undefined
+	comments: Counter
+	changes: Counter
+	bbox?: Bbox
+}
+
+export type NoteDbRecord = UserItemDbRecord & {
+	openingComment?: string
+}
+
+type UserItemDbRecordMap = {
+	changesets: ChangesetDbRecord
+	notes: NoteDbRecord
+}
+
+export type UserScanDbRecord = {
 	uid: number
+	type: keyof UserItemDbRecordMap
 	stash: number // 0 = current; 1 = stashed
-	changesets: Counter
+	items: Counter
 	beginDate: Date
 	endDate?: Date
 } & ({
 	empty: true // without complete changeset requests or with empty results
 } | {
 	empty: false
-	upperChangesetDate: Date
-	lowerChangesetDate: Date
+	upperItemDate: Date
+	lowerItemDate: Date
 })
-
-export type ChangesetDbRecord = {
-	id: number
-	uid: number
-	tags: {[key:string]:string}
-	createdAt: Date
-	closedAt?: Date // open if undefined
-	comments: Counter
-	changes: Counter
-	bbox?: Bbox
-}
 
 export class ChangesetViewerDBReader {
 	protected closed: boolean = false
@@ -87,36 +100,31 @@ export class ChangesetViewerDBReader {
 			request.onsuccess=()=>resolve(request.result)
 		})
 	}
-	getCurrentUserChangesetScan(uid: number): Promise<UserChangesetScanDbRecord|undefined> {
+	getCurrentUserScan(type: keyof UserItemDbRecordMap, uid: number): Promise<UserScanDbRecord|undefined> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction('userChangesetScans','readonly')
-			tx.onerror=()=>reject(new Error(`Database error in getCurrentUserChangesetScan(): ${tx.error}`))
-			const request=tx.objectStore('userChangesetScans').get([uid,0])
+			const tx=this.idb.transaction('userScans','readonly')
+			tx.onerror=()=>reject(new Error(`Database error in getCurrentUserScan(): ${tx.error}`))
+			const request=tx.objectStore('userScans').get([uid,type,0])
 			request.onsuccess=()=>resolve(request.result)
 		})
 	}
-	// getChangesets(uid: number, limit: number, upperDate?: Date): Promise<ChangesetDbRecord[]> {
-	// getChangesets(uid: number, limit: number, upperDate: Date): Promise<ChangesetDbRecord[]> {
-	getChangesets(uid: number, limit: number, upperDate: Date, lowerDate: Date): Promise<ChangesetDbRecord[]> {
+	getUserItems<T extends keyof UserItemDbRecordMap>(
+		type: T, uid: number, limit: number, upperDate: Date, lowerDate: Date
+	): Promise<UserItemDbRecordMap[T][]> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction('changesets','readonly')
-			tx.onerror=()=>reject(new Error(`Database error in getChangesets(): ${tx.error}`))
-			// const range=(upperDate 
-			// 	? IDBKeyRange.bound([uid],[uid,upperDate,+Infinity])
-			// 	: IDBKeyRange.bound([uid],[uid+1])
-			// )
-			// const range=IDBKeyRange.bound([uid],[uid,upperDate,+Infinity])
+			const tx=this.idb.transaction(type,'readonly')
+			tx.onerror=()=>reject(new Error(`Database error in getUserItems(): ${tx.error}`))
 			const range=IDBKeyRange.bound([uid,lowerDate],[uid,upperDate,+Infinity])
-			const changesets=[] as ChangesetDbRecord[]
-			tx.oncomplete=()=>resolve(changesets)
-			const request=tx.objectStore('changesets').index('user').openCursor(range,'prev')
+			const items=[] as UserItemDbRecordMap[T][]
+			tx.oncomplete=()=>resolve(items)
+			const request=tx.objectStore(type).index('user').openCursor(range,'prev')
 			request.onsuccess=()=>{
 				const cursor=request.result
 				if (!cursor) return
-				changesets.push(cursor.value)
-				if (changesets.length<limit) {
+				items.push(cursor.value)
+				if (items.length<limit) {
 					cursor.continue()
 				}
 			}
@@ -135,9 +143,11 @@ export class ChangesetViewerDBReader {
 				const idb=request.result
 				const userStore=idb.createObjectStore('users',{keyPath:'id'})
 				userStore.createIndex('name','name')
-				idb.createObjectStore('userChangesetScans',{keyPath:['uid','stash']})
+				idb.createObjectStore('userScans',{keyPath:['uid','type','stash']})
 				const changesetStore=idb.createObjectStore('changesets',{keyPath:'id'})
 				changesetStore.createIndex('user',['uid','createdAt','id'])
+				const noteStore=idb.createObjectStore('notes',{keyPath:'id'})
+				noteStore.createIndex('user',['uid','createdAt','id'])
 			}
 			request.onerror=()=>{
 				reject(new Error(`failed to open the database`))
@@ -158,50 +168,33 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 			tx.objectStore('users').put(user).onsuccess=()=>resolve()
 		})
 	}
-	/*
-	startUserChangesetScan(uid: number, beginDate: Date): Promise<void> {
+	getUserStreamResumeInfo<T extends keyof UserItemDbRecordMap>(type: T, uid: number): Promise<UserStreamResumeInfo|undefined> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction('userChangesetScans','readwrite')
-			tx.onerror=()=>reject(new Error(`Database error in startUserChangesetScan(): ${tx.error}`))
-			const scan: UserChangesetScanDbRecord = {
-				uid,
-				stash: 0,
-				changesets: {count:0},
-				beginDate,
-				empty: true
-			}
-			tx.objectStore('userChangesetScans').put(scan).onsuccess=()=>resolve()
-		})
-	}
-	*/
-	getChangesetStreamResumeInfo(uid: number): Promise<UserStreamResumeInfo|undefined> {
-		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
-		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction(['changesets','userChangesetScans'],'readonly')
-			tx.onerror=()=>reject(new Error(`Database error in getEarliestScanChangesests(): ${tx.error}`))
-			const scanRequest=tx.objectStore('userChangesetScans').get([uid,0])
+			const tx=this.idb.transaction([type,'userScans'],'readonly')
+			tx.onerror=()=>reject(new Error(`Database error in getUserStreamResumeInfo(): ${tx.error}`))
+			const scanRequest=tx.objectStore('userScans').get([uid,type,0])
 			scanRequest.onsuccess=()=>{
 				if (scanRequest.result==null) {
 					return resolve(undefined)
 				}
-				const scan=scanRequest.result as UserChangesetScanDbRecord
+				const scan=scanRequest.result as UserScanDbRecord
 				if (scan.empty) {
 					return resolve(undefined)
 				}
-				const changesetsRequest=tx.objectStore('changesets').index('user').getAll(
-					IDBKeyRange.bound([uid,scan.lowerChangesetDate],[uid,scan.lowerChangesetDate,+Infinity])
+				const itemRequest=tx.objectStore(type).index('user').getAll(
+					IDBKeyRange.bound([uid,scan.lowerItemDate],[uid,scan.lowerItemDate,+Infinity])
 				)
-				changesetsRequest.onsuccess=()=>{
-					let lowerDate: Date|undefined
-					const idsWithLowerDate=changesetsRequest.result.map((changeset:ChangesetDbRecord)=>{
-						if (!lowerDate || lowerDate.getTime()>changeset.createdAt.getTime()) {
-							lowerDate=changeset.createdAt
+				itemRequest.onsuccess=()=>{
+					let lowerItemDate: Date|undefined
+					const itemIdsWithLowerDate=itemRequest.result.map((item:UserItemDbRecordMap[T])=>{
+						if (!lowerItemDate || lowerItemDate.getTime()>item.createdAt.getTime()) {
+							lowerItemDate=item.createdAt
 						}
-						return changeset.id
+						return item.id
 					})
-					if (lowerDate) {
-						resolve({lowerDate,idsWithLowerDate})
+					if (lowerItemDate) {
+						resolve({lowerItemDate,itemIdsWithLowerDate})
 					} else {
 						resolve(undefined)
 					}
@@ -212,55 +205,56 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	/**
 	 * @returns true if decided to add/update the scan
 	 */
-	addUserChangesets(
-		uid: number, now: Date, changesets: ChangesetDbRecord[],
+	addUserItems<T extends keyof UserItemDbRecordMap>(
+		type: T, uid: number, now: Date, items: UserItemDbRecordMap[T][],
 		mode: 'toNewScan'|'toExistingScan'|'toNewOrExistingScan'
 	): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction(['changesets','userChangesetScans'],'readwrite')
-			tx.onerror=()=>reject(new Error(`Database error in addCurrentUserChangesetScan(): ${tx.error}`))
-			const handleScan=(scan: UserChangesetScanDbRecord)=>{
-				for (const changeset of changesets) {
-					tx.objectStore('changesets').put(changeset)
+			const tx=this.idb.transaction([type,'userScans'],'readwrite')
+			tx.onerror=()=>reject(new Error(`Database error in addUserItems(): ${tx.error}`))
+			const handleScan=(scan: UserScanDbRecord)=>{
+				for (const item of items) {
+					tx.objectStore(type).put(item)
 					if (scan.empty) {
 						scan={
 							...scan,
 							empty: false,
-							upperChangesetDate: changeset.createdAt,
-							lowerChangesetDate: changeset.createdAt
+							upperItemDate: item.createdAt,
+							lowerItemDate: item.createdAt
 						}
 					} else {
-						if (scan.upperChangesetDate.getTime()<changeset.createdAt.getTime()) {
-							scan.upperChangesetDate=changeset.createdAt
+						if (scan.upperItemDate.getTime()<item.createdAt.getTime()) {
+							scan.upperItemDate=item.createdAt
 						}
-						if (scan.lowerChangesetDate.getTime()>changeset.createdAt.getTime()) {
-							scan.lowerChangesetDate=changeset.createdAt
+						if (scan.lowerItemDate.getTime()>item.createdAt.getTime()) {
+							scan.lowerItemDate=item.createdAt
 						}
 					}
-					scan.changesets.count++
+					scan.items.count++
 				}
-				if (changesets.length>0) {
+				if (items.length>0) {
 					delete scan.endDate
 				} else {
 					scan.endDate=now
 				}
-				tx.objectStore('userChangesetScans').put(scan)
+				tx.objectStore('userScans').put(scan)
 				tx.oncomplete=()=>resolve(true)
 			}
-			const makeEmptyScan=():UserChangesetScanDbRecord=>({
+			const makeEmptyScan=():UserScanDbRecord=>({
 				uid,
+				type,
 				stash: 0,
-				changesets: {count:0},
+				items: {count:0},
 				beginDate: now,
 				empty: true
 			})
 			if (mode=='toNewScan') {
 				handleScan(makeEmptyScan())
 			} else {
-				const getScanRequest=tx.objectStore('userChangesetScans').get([uid,0])
+				const getScanRequest=tx.objectStore('userScans').get([uid,type,0])
 				getScanRequest.onsuccess=()=>{
-					let scan: UserChangesetScanDbRecord
+					let scan: UserScanDbRecord
 					if (getScanRequest.result==null) {
 						scan=makeEmptyScan()
 					} else {

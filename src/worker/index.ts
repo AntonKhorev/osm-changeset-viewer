@@ -122,7 +122,7 @@ self.onconnect=ev=>{
 			await hostDataEntry.db.putUser(user)
 			if (stream) {
 				const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
-				const restartedScan=await hostDataEntry.db.addUserChangesets(user.id,now,changesets,'toExistingScan')
+				const restartedScan=await hostDataEntry.db.addUserItems('changesets',user.id,now,changesets,'toExistingScan')
 				if (restartedScan) {
 					hostDataEntry.userChangesetStreams.set(user.id,stream)
 				}
@@ -149,7 +149,7 @@ self.onconnect=ev=>{
 			} else {
 				stream=hostDataEntry.userChangesetStreams.get(uid)
 				if (!stream) {
-					const resumeInfo=await hostDataEntry.db.getChangesetStreamResumeInfo(uid)
+					const resumeInfo=await hostDataEntry.db.getUserStreamResumeInfo('changesets',uid)
 					stream=new UserChangesetStream(server.api,{type:'id',uid},resumeInfo)
 				}
 			}
@@ -177,13 +177,12 @@ self.onconnect=ev=>{
 				? 'toNewScan'
 				: 'toNewOrExistingScan'
 			)
-			await hostDataEntry.db.addUserChangesets(uid,now,changesets,mode)
+			await hostDataEntry.db.addUserItems('changesets',uid,now,changesets,mode)
 			hostDataEntry.userChangesetStreams.set(uid,stream)
 			hostDataEntry.broadcastSender.postMessage({
 				type,uid,text,
 				status: 'ready'
 			})
-			// TODO mark scan as completed
 		}
 	}
 }

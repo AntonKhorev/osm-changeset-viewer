@@ -1,4 +1,4 @@
-import type {ChangesetViewerDBReader, ChangesetDbRecord, UserChangesetScanDbRecord} from './db'
+import type {ChangesetViewerDBReader, ChangesetDbRecord, UserScanDbRecord} from './db'
 
 // { https://stackoverflow.com/a/42919752
 
@@ -69,7 +69,7 @@ class MuxChangesetPriorityQueue {
 type MuxEntry = {
 	uid: number
 	lowestReachedTimestamp: number // +Infinity before stream began, -Infinity when stream ended
-	scan: UserChangesetScanDbRecord|null
+	scan: UserScanDbRecord|null
 	visitedChangesetIds: Set<number>
 }
 
@@ -104,7 +104,7 @@ export default class MuxChangesetDbStream {
 	}> {
 		for (const muxEntry of this.muxEntries) {
 			if (!muxEntry.scan) {
-				const scan=await this.db.getCurrentUserChangesetScan(muxEntry.uid)
+				const scan=await this.db.getCurrentUserScan('changesets',muxEntry.uid)
 				if (!scan) return {
 					type: 'startScan',
 					uid: muxEntry.uid
@@ -168,14 +168,14 @@ export default class MuxChangesetDbStream {
 			}
 			muxEntry.lowestReachedTimestamp=-Infinity
 		} else {
-			const scanUpperTimestamp=muxEntry.scan.upperChangesetDate.getTime()
+			const scanUpperTimestamp=muxEntry.scan.upperItemDate.getTime()
 			const upperDate=(muxEntry.lowestReachedTimestamp<scanUpperTimestamp
 				? new Date(muxEntry.lowestReachedTimestamp)
-				: muxEntry.scan.upperChangesetDate
+				: muxEntry.scan.upperItemDate
 			)
-			const lowerDate=muxEntry.scan.lowerChangesetDate
+			const lowerDate=muxEntry.scan.lowerItemDate
 			let newLowestReachedTimestamp=-Infinity
-			const changesets=await this.db.getChangesets(muxEntry.uid,100,upperDate,lowerDate)
+			const changesets=await this.db.getUserItems('changesets',muxEntry.uid,100,upperDate,lowerDate)
 			for (const changeset of changesets) {
 				if (muxEntry.visitedChangesetIds.has(changeset.id)) continue
 				muxEntry.visitedChangesetIds.add(changeset.id)

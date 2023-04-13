@@ -10,8 +10,8 @@ import {makeEscapeTag} from './util/escape'
 const e=makeEscapeTag(encodeURIComponent)
 
 export type UserStreamResumeInfo = {
-	lowerDate: Date,
-	idsWithLowerDate: Iterable<number>
+	lowerItemDate: Date,
+	itemIdsWithLowerDate: Iterable<number>
 }
 
 abstract class UserStream<T> {
@@ -23,8 +23,8 @@ abstract class UserStream<T> {
 		resumeInfo?: UserStreamResumeInfo
 	) {
 		if (resumeInfo) {
-			this.lowestTimestamp=resumeInfo.lowerDate.getTime()
-			this.visitedIds=new Set(resumeInfo.idsWithLowerDate)
+			this.lowestTimestamp=resumeInfo.lowerItemDate.getTime()
+			this.visitedIds=new Set(resumeInfo.itemIdsWithLowerDate)
 		}
 	}
 	async fetch(): Promise<T[]> {
