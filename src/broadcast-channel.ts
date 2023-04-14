@@ -25,7 +25,7 @@ export type WorkerBroadcastChannelMessage = {
 		})
 	) | (
 		{
-			type: 'startUserChangesetScan'|'continueUserChangesetScan'
+			type: 'scanUserItems'
 			uid: number
 			status: 'running'|'failed'|'ready'
 		}

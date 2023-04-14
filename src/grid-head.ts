@@ -44,18 +44,13 @@ class MuxChangesetDbStreamMessenger {
 	) {}
 	async requestNextBatch(): Promise<void> {
 		const action=await this.stream.getNextAction()
-		if (action.type=='startScan') {
+		if (action.type=='scan') {
 			this.watchedUids.add(action.uid)
 			this.worker.port.postMessage({
-				type: 'startUserChangesetScan',
+				type: 'scanUserItems',
 				host: this.host,
-				uid: action.uid,
-			})
-		} else if (action.type=='continueScan') {
-			this.watchedUids.add(action.uid)
-			this.worker.port.postMessage({
-				type: 'continueUserChangesetScan',
-				host: this.host,
+				start: action.start,
+				itemType: action.itemType,
 				uid: action.uid,
 			})
 		} else if (action.type=='batch') {
@@ -65,7 +60,7 @@ class MuxChangesetDbStreamMessenger {
 		}
 	}
 	async receiveMessage(message: WorkerBroadcastChannelMessage): Promise<void> {
-		if (message.type=='startUserChangesetScan' || message.type=='continueUserChangesetScan') {
+		if (message.type=='scanUserItems') {
 			if (message.status=='ready' && this.watchedUids.has(message.uid)) {
 				this.watchedUids.delete(message.uid)
 				await this.requestNextBatch()

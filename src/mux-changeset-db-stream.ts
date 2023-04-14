@@ -97,7 +97,9 @@ export default class MuxChangesetDbStream {
 		type: 'batch'
 		batch: MuxBatchItem[]
 	} | {
-		type: 'startScan'|'continueScan'
+		type: 'scan'
+		start: boolean
+		itemType: 'changesets'|'notes'
 		uid: number
 	} | {
 		type: 'end'
@@ -106,7 +108,9 @@ export default class MuxChangesetDbStream {
 			if (!muxEntry.scan) {
 				const scan=await this.db.getCurrentUserScan('changesets',muxEntry.uid)
 				if (!scan) return {
-					type: 'startScan',
+					type: 'scan',
+					start: true,
+					itemType: 'changesets',
 					uid: muxEntry.uid
 				}
 				muxEntry.scan=scan
@@ -114,7 +118,9 @@ export default class MuxChangesetDbStream {
 			if (muxEntry.lowestReachedTimestamp<+Infinity) continue
 			if (await this.enqueueMoreChangesetsAndCheckIfNeedToContinueScan(muxEntry)) {
 				return {
-					type: 'continueScan',
+					type: 'scan',
+					start: false,
+					itemType: 'changesets',
 					uid: muxEntry.uid
 				}
 			}
@@ -149,7 +155,9 @@ export default class MuxChangesetDbStream {
 			if (upperMuxEntry) {
 				if (await this.enqueueMoreChangesetsAndCheckIfNeedToContinueScan(upperMuxEntry)) {
 					return {
-						type: 'continueScan',
+						type: 'scan',
+						start: false,
+						itemType: 'changesets',
 						uid: upperMuxEntry.uid
 					}
 				}

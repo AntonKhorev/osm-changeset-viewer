@@ -54,7 +54,7 @@ export type NoteDbRecord = UserItemDbRecord & {
 	openingComment?: string
 }
 
-type UserItemDbRecordMap = {
+export type UserItemDbRecordMap = {
 	changesets: ChangesetDbRecord
 	notes: NoteDbRecord
 }
