@@ -1,5 +1,5 @@
 import Net, {checkAuthRedirect, HashServerSelector, WebProvider} from './net'
-import type {ChangesetDbRecord} from './db'
+import type {ChangesetDbRecord, NoteDbRecord} from './db'
 import {ChangesetViewerDBReader} from './db'
 import type {ValidUserQuery} from './osm'
 import Grid from './grid'
@@ -10,6 +10,7 @@ import GridHead from './grid-head'
 import {installRelativeTimeListeners, makeDateOutput} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv, makeLink} from './util/html'
+import {code} from './util/html-shortcuts'
 import {PrefixedLocalStorage} from './util/storage'
 import {escapeHash, makeEscapeTag} from './util/escape'
 
@@ -77,12 +78,12 @@ async function main() {
 					if (type=='changeset'||type=='changesetClose') {
 						$item=makeChangesetCard(cx.server.web,item,type=='changesetClose')
 					} else {
-						continue // TODO note
+						$item=makeNoteCard(cx.server.web,item)
 					}
 					if (wroteAnyCopyOfItem) {
 						$item.classList.add('duplicate')
 					}
-					grid.appendChangeset($item,iColumn)
+					grid.appendItem($item,iColumn)
 					wroteAnyCopyOfItem=true
 				}
 				wroteAnyItem=true
@@ -119,11 +120,20 @@ function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClo
 		const date=isClose ? changeset.closedAt : changeset.createdAt
 		return date ? makeDateOutput(date) : `???`
 	}
-	return makeDiv('changeset')(
-		isClose ? `[ ` : `] `,
+	return makeDiv('item','changeset')(
+		code(isClose ? `[.` : `.]`),` `,
 		makeLink(`${changeset.id}`,web.getUrl(e`changeset/${changeset.id}`)),` `,
 		makeDate(),` `,
 		changeset.tags?.comment ?? ''
+	)
+}
+
+function makeNoteCard(web: WebProvider, note: NoteDbRecord) {
+	return makeDiv('item','note')(
+		code(`N!`),` `,
+		makeLink(`${note.id}`,web.getUrl(e`note/${note.id}`)),` `,
+		makeDateOutput(note.createdAt),` `,
+		note.openingComment ?? ''
 	)
 }
 

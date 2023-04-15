@@ -158,10 +158,10 @@ body > .symbols {
 	width: 100%;
 	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
 }
-.ui .grid > .changeset {
+.ui .grid > .item {
 	padding: 0 var(--padding);
 }
-.ui .grid.with-expanded-changesets > .changeset.duplicate {
+.ui .grid.with-expanded-items > .item.duplicate {
 	display: none;
 }
 

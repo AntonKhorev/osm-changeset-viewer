@@ -44,7 +44,7 @@ export default function writeToolbar(
 		const $changesetsCheckbox=makeElement('input')()()
 		$changesetsCheckbox.type='checkbox'
 		$changesetsCheckbox.oninput=()=>{
-			$grid.classList.toggle('with-expanded-changesets',$changesetsCheckbox.checked)
+			$grid.classList.toggle('with-expanded-items',$changesetsCheckbox.checked)
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(

@@ -17,7 +17,7 @@ export default class Grid {
 	setColumns(nColumns: number) {
 		this.nRows=nHeadRows
 		this.nextSeparatorTimestamp=undefined
-		this.clearChangesets()
+		this.clearItems()
 		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,50ch)) ` : ``
 		let style=
 			`#${this.id} {\n`+
@@ -25,10 +25,10 @@ export default class Grid {
 			`	grid-template-columns: ${repeatTemplateColumnsStyle}minmax(20ch,1fr);\n`+
 			`}\n`
 		for (let i=0;i<nColumns;i++) {
-			style+=`#${this.id} > .changeset[data-column="${i}"] { grid-column: ${i+1}; }\n`
+			style+=`#${this.id} > .item[data-column="${i}"] { grid-column: ${i+1}; }\n`
 		}
 		style+=
-			`#${this.id}.with-expanded-changesets > .changeset {\n`+
+			`#${this.id}.with-expanded-items > .item {\n`+
 			`	grid-column: 1 / -1;\n`+
 			`}\n`
 		this.$style.textContent=style
@@ -46,15 +46,15 @@ export default class Grid {
 			this.nRows++
 		}
 	}
-	appendChangeset($changeset: HTMLElement, iColumn: number) {
-		$changeset.dataset.column=String(iColumn)
-		this.stampRow($changeset)
-		this.$grid.append($changeset)
+	appendItem($item: HTMLElement, iColumn: number) {
+		$item.dataset.column=String(iColumn)
+		this.stampRow($item)
+		this.$grid.append($item)
 	}
 	private stampRow($e: HTMLElement): void {
 		$e.style.gridRow=String(this.nRows)
 	}
-	private clearChangesets() {
+	private clearItems() {
 		let remove=false
 		for (const $e of [...this.$grid.children]) {
 			if ($e instanceof HTMLFormElement) {
