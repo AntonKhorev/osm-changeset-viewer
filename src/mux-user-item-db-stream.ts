@@ -116,10 +116,12 @@ export default class MuxUserItemDbStream {
 			const {itemType,uid}=muxEntry
 			if (!muxEntry.scan) {
 				const scan=await this.db.getCurrentUserScan(itemType,uid)
-				if (!scan) return {
-					type: 'scan',
-					start: true,
-					itemType,uid
+				if (!scan) {
+					return {
+						type: 'scan',
+						start: true,
+						itemType,uid
+					}
 				}
 				muxEntry.scan=scan
 			}
@@ -164,12 +166,12 @@ export default class MuxUserItemDbStream {
 				}
 			}
 			if (upperMuxEntry) {
+				const {itemType,uid}=upperMuxEntry
 				if (await this.enqueueMoreItemsAndCheckIfNeedToContinueScan(upperMuxEntry)) {
 					return {
 						type: 'scan',
 						start: false,
-						itemType: 'changesets',
-						uid: upperMuxEntry.uid
+						itemType,uid
 					}
 				}
 			} else {
