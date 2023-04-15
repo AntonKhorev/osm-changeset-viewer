@@ -266,10 +266,17 @@ function convertNoteApiDataToDbRecord(a: OsmNoteApiData): NoteDbRecord {
 	const b: NoteDbRecord = {
 		id: a.properties.id,
 		uid: c.uid,
-		createdAt: new Date(a.properties.date_created),
+		createdAt: parseNoteDate(a.properties.date_created),
 	}
 	if (c.text!=null) {
 		b.openingComment=c.text
 	}
 	return b
+}
+
+function parseNoteDate(a: string): Date {
+	const match=a.match(/^\d\d\d\d-\d\d-\d\d\s+\d\d:\d\d:\d\d/)
+	if (!match) throw new RangeError(`invalid date format`)
+	const [s]=match
+	return new Date(s+'Z')
 }
