@@ -1,5 +1,5 @@
 import type {UserItemDbRecordMap, UserDbRecord, ChangesetDbRecord, NoteDbRecord} from '../db'
-import {ChangesetViewerDBWriter} from '../db'
+import {ChangesetViewerDBWriter} from './db-writer'
 import type {ApiProvider} from '../net'
 import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
