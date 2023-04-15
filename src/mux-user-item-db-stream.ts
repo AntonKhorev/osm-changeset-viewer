@@ -1,15 +1,20 @@
-import type {ChangesetViewerDBReader, ChangesetDbRecord, UserScanDbRecord} from './db'
+import type {ChangesetViewerDBReader, ChangesetDbRecord, NoteDbRecord, UserScanDbRecord} from './db'
 
 // { https://stackoverflow.com/a/42919752
 
-type HeapItem = [timestamp: number, uid: number, changeset: ChangesetDbRecord, close: number]
+const CHANGESET = 0
+const CHANGESET_CLOSE = 1
+const NOTE = 2
+type HeapItem =
+	[timestamp: number, type: typeof CHANGESET | typeof CHANGESET_CLOSE, changeset: ChangesetDbRecord] |
+	[timestamp: number, type: typeof NOTE, note: NoteDbRecord]
 
 const iTop=0
 const iParent = (i:number)=>((i+1)>>>1)-1
 const iLeft   = (i:number)=>(i<<1)+1
 const iRight  = (i:number)=>(i+1)<<1
 
-class MuxChangesetPriorityQueue {
+class MuxUserItemPriorityQueue {
 	private heap: HeapItem[] = []
 	get size() {
 		return this.heap.length
@@ -35,11 +40,11 @@ class MuxChangesetPriorityQueue {
 		return poppedValue
 	}
 	private greater(i: number, j: number) {
-		const [timestamp1,,changeset1,close1]=this.heap[i]
-		const [timestamp2,,changeset2,close2]=this.heap[j]
+		const [timestamp1,type1,item1]=this.heap[i]
+		const [timestamp2,type2,item2]=this.heap[j]
 		if (timestamp1!=timestamp2) return timestamp1>timestamp2
-		if (changeset1.id!=changeset2.id) return changeset1.id>changeset2.id
-		return close1>close2
+		if (type1!=type2) return type1>type2
+		return item1.id>item2.id
 	}
 	private swap(i: number, j: number) {
 		[this.heap[i],this.heap[j]]=[this.heap[j],this.heap[i]]
@@ -74,14 +79,16 @@ type MuxEntry = {
 }
 
 export type MuxBatchItem = {
-	uid: number,
-	type: 'open'|'close',
-	changeset: ChangesetDbRecord
+	type: 'changeset'|'changesetClose'
+	item: ChangesetDbRecord
+} | {
+	type: 'note'
+	item: NoteDbRecord
 }
 
-export default class MuxChangesetDbStream {
+export default class MuxUserItemDbStream {
 	private muxEntries: MuxEntry[]
-	private queue = new MuxChangesetPriorityQueue()
+	private queue = new MuxUserItemPriorityQueue()
 	constructor(
 		private db: ChangesetViewerDBReader,
 		uids: number[]
@@ -127,11 +134,14 @@ export default class MuxChangesetDbStream {
 		}
 		const batch=[] as MuxBatchItem[]
 		const moveQueueTopToResults=()=>{
-			const [,uid,changeset,closed]=this.queue.pop()
-			batch.push({
-				uid,changeset,
-				type: closed?'close':'open'
-			})
+			const [,type,item]=this.queue.pop()
+			if (type==CHANGESET) {
+				batch.push({type:'changeset',item})
+			} else if (type==CHANGESET_CLOSE) {
+				batch.push({type:'changesetClose',item})
+			} else if (type==NOTE) {
+				batch.push({type:'note',item})
+			}
 		}
 		while (true) {
 			let upperTimestamp=-Infinity
@@ -188,10 +198,10 @@ export default class MuxChangesetDbStream {
 				if (muxEntry.visitedChangesetIds.has(changeset.id)) continue
 				muxEntry.visitedChangesetIds.add(changeset.id)
 				if (changeset.closedAt) {
-					this.queue.push([changeset.closedAt.getTime(),muxEntry.uid,changeset,1])
+					this.queue.push([changeset.closedAt.getTime(),CHANGESET_CLOSE,changeset])
 				}
 				newLowestReachedTimestamp=changeset.createdAt.getTime()
-				this.queue.push([newLowestReachedTimestamp,muxEntry.uid,changeset,0])
+				this.queue.push([newLowestReachedTimestamp,CHANGESET,changeset])
 			}
 			if (newLowestReachedTimestamp==-Infinity && !muxEntry.scan.endDate) {
 				muxEntry.scan=null

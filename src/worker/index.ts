@@ -4,8 +4,8 @@ import type {ApiProvider} from '../net'
 import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
 import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse, hasBbox, OsmNoteApiData} from '../osm'
-import type {UserStreamResumeInfo} from '../user-stream'
-import {UserChangesetStream, UserNoteStream} from '../user-stream'
+import type {UserItemStreamResumeInfo} from './user-item-stream'
+import {UserChangesetStream, UserNoteStream} from './user-item-stream'
 import {toReadableIsoString} from '../date'
 import serverListConfig from '../server-list-config'
 import {makeEscapeTag} from '../util/escape'
@@ -14,7 +14,7 @@ const e=makeEscapeTag(encodeURIComponent)
 
 const net=new WorkerNet(serverListConfig)
 
-type UserStreamMap = {
+type UserItemStreamMap = {
 	changesets: UserChangesetStream
 	notes: UserNoteStream
 }
@@ -170,7 +170,7 @@ async function scanUserItems<T extends 'changesets'|'notes'>(itemType: T, host: 
 	const server=net.serverList.servers.get(host)
 	if (!server) throw new RangeError(`unknown host "${host}"`)
 	const hostDataEntry=await getHostDataEntry(host)
-	const stream=await resumeUserStream(itemType,hostDataEntry,server.api,start,uid)
+	const stream=await resumeUserItemStream(itemType,hostDataEntry,server.api,start,uid)
 	const text=`${start?`start `:``}scan ${stream.nextFetchUpperBoundDate
 		? `${itemType} before `+toReadableIsoString(stream.nextFetchUpperBoundDate)
 		: `latest ${itemType}`
@@ -211,20 +211,24 @@ async function scanUserItems<T extends 'changesets'|'notes'>(itemType: T, host: 
 	})
 }
 
-function makeNewUserStream<T extends 'changesets'|'notes'>(itemType: T, api: ApiProvider, uid: number, resumeInfo?: UserStreamResumeInfo): UserStreamMap[T] {
+function makeNewUserItemStream<T extends 'changesets'|'notes'>(
+	itemType: T, api: ApiProvider, uid: number, resumeInfo?: UserItemStreamResumeInfo
+): UserItemStreamMap[T] {
 	if (itemType=='changesets') {
-		return new UserChangesetStream(api,{type:'id',uid},resumeInfo) as UserStreamMap[T]
+		return new UserChangesetStream(api,{type:'id',uid},resumeInfo) as UserItemStreamMap[T]
 	} else if (itemType=='notes') {
-		return new UserNoteStream(api,{type:'id',uid},resumeInfo) as UserStreamMap[T]
+		return new UserNoteStream(api,{type:'id',uid},resumeInfo) as UserItemStreamMap[T]
 	} else {
 		throw new RangeError(`unknown item type`)
 	}
 }
 
-async function resumeUserStream<T extends 'changesets'|'notes'>(itemType: T, hostDataEntry: HostDataEntry, api: ApiProvider, start: boolean, uid: number): Promise<UserStreamMap[T]> {
-	const userStreamsOfType=hostDataEntry.userStreams[itemType] as Map<number,UserStreamMap[T]>
-	const makeAndRememberNewStream=(resumeInfo?:UserStreamResumeInfo)=>{
-		const newStream=makeNewUserStream(itemType,api,uid,resumeInfo)
+async function resumeUserItemStream<T extends 'changesets'|'notes'>(
+	itemType: T, hostDataEntry: HostDataEntry, api: ApiProvider, start: boolean, uid: number
+): Promise<UserItemStreamMap[T]> {
+	const userStreamsOfType=hostDataEntry.userStreams[itemType] as Map<number,UserItemStreamMap[T]>
+	const makeAndRememberNewStream=(resumeInfo?:UserItemStreamResumeInfo)=>{
+		const newStream=makeNewUserItemStream(itemType,api,uid,resumeInfo)
 		userStreamsOfType.set(uid,newStream)
 		return newStream
 	}

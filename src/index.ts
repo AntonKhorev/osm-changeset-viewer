@@ -67,22 +67,27 @@ async function main() {
 				requestNextBatch()
 			}
 		},(batch)=>{
-			let wroteAnyChangeset=false
-			for (const {iColumns,type,changeset} of batch) {
-				grid.startNewRow(changeset.createdAt)
+			let wroteAnyItem=false
+			for (const {iColumns,type,item} of batch) {
+				grid.startNewRow(item.createdAt)
 				// TODO possibly insert in the middle
-				let wroteAnyCopyOfChangeset=false
+				let wroteAnyCopyOfItem=false
 				for (const iColumn of iColumns) {
-					const $changeset=makeChangesetCard(cx.server.web,changeset,type=='close')
-					if (wroteAnyCopyOfChangeset) {
-						$changeset.classList.add('duplicate')
+					let $item: HTMLElement
+					if (type=='changeset'||type=='changesetClose') {
+						$item=makeChangesetCard(cx.server.web,item,type=='changesetClose')
+					} else {
+						continue // TODO note
 					}
-					grid.appendChangeset($changeset,iColumn)
-					wroteAnyCopyOfChangeset=true
+					if (wroteAnyCopyOfItem) {
+						$item.classList.add('duplicate')
+					}
+					grid.appendChangeset($item,iColumn)
+					wroteAnyCopyOfItem=true
 				}
-				wroteAnyChangeset=true
+				wroteAnyItem=true
 			}
-			if (wroteAnyChangeset) {
+			if (wroteAnyItem) {
 				more.changeToLoadMore()
 			} else {
 				more.changeToLoadedAll()

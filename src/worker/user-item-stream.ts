@@ -1,26 +1,26 @@
-import {ApiProvider} from './net'
+import {ApiProvider} from '../net'
 import {
 	ValidUserQuery,
 	OsmChangesetApiData, getChangesetsFromOsmApiResponse,
 	OsmNoteApiData, getNotesFromOsmApiResponse
-} from './osm'
-import {toIsoString} from './date'
-import {makeEscapeTag} from './util/escape'
+} from '../osm'
+import {toIsoString} from '../date'
+import {makeEscapeTag} from '../util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
 
-export type UserStreamResumeInfo = {
+export type UserItemStreamResumeInfo = {
 	lowerItemDate: Date,
 	itemIdsWithLowerDate: Iterable<number>
 }
 
-abstract class UserStream<T> {
+abstract class UserItemStream<T> {
 	private lowestTimestamp: number|undefined
 	private visitedIds = new Set<number>()
 	constructor(
 		private readonly api: ApiProvider,
 		protected userQuery: ValidUserQuery,
-		resumeInfo?: UserStreamResumeInfo
+		resumeInfo?: UserItemStreamResumeInfo
 	) {
 		if (resumeInfo) {
 			this.lowestTimestamp=resumeInfo.lowerItemDate.getTime()
@@ -77,7 +77,7 @@ abstract class UserStream<T> {
 	protected abstract getItemTimestamp(item: T): number
 }
 
-export class UserChangesetStream extends UserStream<OsmChangesetApiData> {
+export class UserChangesetStream extends UserItemStream<OsmChangesetApiData> {
 	protected getFetchPath(upperBoundDate: Date|null): string {
 		let timeParameter=''
 		if (upperBoundDate) {
@@ -104,7 +104,7 @@ export class UserChangesetStream extends UserStream<OsmChangesetApiData> {
 	}
 }
 
-export class UserNoteStream extends UserStream<OsmNoteApiData> {
+export class UserNoteStream extends UserItemStream<OsmNoteApiData> {
 	protected getFetchPath(upperBoundDate: Date|null): string {
 		let timeParameter=''
 		if (upperBoundDate) {

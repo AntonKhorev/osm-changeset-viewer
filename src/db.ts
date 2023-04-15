@@ -1,4 +1,4 @@
-import type {UserStreamResumeInfo} from './user-stream'
+import type {UserItemStreamResumeInfo} from './worker/user-item-stream'
 
 type Counter = {
 	count: number
@@ -168,7 +168,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 			tx.objectStore('users').put(user).onsuccess=()=>resolve()
 		})
 	}
-	getUserStreamResumeInfo<T extends keyof UserItemDbRecordMap>(type: T, uid: number): Promise<UserStreamResumeInfo|undefined> {
+	getUserStreamResumeInfo<T extends keyof UserItemDbRecordMap>(type: T, uid: number): Promise<UserItemStreamResumeInfo|undefined> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
 			const tx=this.idb.transaction([type,'userScans'],'readonly')

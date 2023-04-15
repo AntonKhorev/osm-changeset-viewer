@@ -5,8 +5,8 @@ import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
-import type {MuxBatchItem} from './mux-changeset-db-stream'
-import MuxChangesetDbStream from './mux-changeset-db-stream'
+import type {MuxBatchItem} from './mux-user-item-db-stream'
+import MuxUserItemDbStream from './mux-user-item-db-stream'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {makeEscapeTag} from './util/escape'
@@ -30,16 +30,14 @@ type GridUserEntry = {
 
 type GridBatchItem = {
 	iColumns: number[]
-	type: 'open'|'close'
-	changeset: ChangesetDbRecord
-}
+} & MuxBatchItem
 
-class MuxChangesetDbStreamMessenger {
+class MuxUserItemDbStreamMessenger {
 	watchedUids=new Set<number>()
 	constructor(
 		private host: string,
 		private worker: SharedWorker,
-		private stream: MuxChangesetDbStream,
+		private stream: MuxUserItemDbStream,
 		private receiveBatch: (batch:MuxBatchItem[])=>void
 	) {}
 	async requestNextBatch(): Promise<void> {
@@ -74,7 +72,7 @@ export default class GridHead {
 	private $formCap=makeDiv('form-cap')(`Add a user`)
 	private $form=makeElement('form')()()
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
-	private streamMessenger: MuxChangesetDbStreamMessenger|undefined
+	private streamMessenger: MuxUserItemDbStreamMessenger|undefined
 	constructor(
 		private cx: Connection,
 		private db: ChangesetViewerDBReader,
@@ -226,11 +224,11 @@ export default class GridHead {
 				return
 			}
 		}
-		const stream=new MuxChangesetDbStream(this.db,[...uidToColumns.keys()])
-		const streamMessenger=new MuxChangesetDbStreamMessenger(
+		const stream=new MuxUserItemDbStream(this.db,[...uidToColumns.keys()])
+		const streamMessenger=new MuxUserItemDbStreamMessenger(
 			this.cx.server.host,this.worker,stream,batch=>{
 				this.receiveBatchCallback(
-					batch.map(({uid,type,changeset})=>({iColumns:uidToColumns.get(uid)??[],type,changeset}))
+					batch.map((muxBatchItem)=>({...muxBatchItem,iColumns:uidToColumns.get(muxBatchItem.item.uid)??[]}))
 				)
 			}
 		)
