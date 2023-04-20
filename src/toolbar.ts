@@ -41,14 +41,22 @@ export default function writeToolbar(
 		)
 	}
 	if ($grid) {
-		const $changesetsCheckbox=makeElement('input')()()
-		$changesetsCheckbox.type='checkbox'
-		$changesetsCheckbox.oninput=()=>{
-			$grid.classList.toggle('with-expanded-items',$changesetsCheckbox.checked)
+		const $expandCheckbox=makeElement('input')()()
+		$expandCheckbox.type='checkbox'
+		$expandCheckbox.oninput=()=>{
+			$grid.classList.toggle('with-expanded-items',$expandCheckbox.checked)
+		}
+		const $showCloseCheckbox=makeElement('input')()()
+		$showCloseCheckbox.type='checkbox'
+		$showCloseCheckbox.oninput=()=>{
+			$grid.classList.toggle('with-changeset-close-items',$showCloseCheckbox.checked)
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(
-				$changesetsCheckbox,` Expand changesets`
+				$expandCheckbox,` Expand changesets`
+			)),
+			makeDiv('input-group')(makeLabel()(
+				$showCloseCheckbox,` Show changeset close events`
 			))
 		)
 	}

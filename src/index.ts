@@ -116,12 +116,14 @@ function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClo
 		const date=isClose ? changeset.closedAt : changeset.createdAt
 		return date ? makeDateOutput(date) : `???`
 	}
-	return makeDiv('item','changeset')(
+	const $item=makeDiv('item','changeset')(
 		code(isClose ? `[.` : `.]`),` `,
 		makeLink(`${changeset.id}`,web.getUrl(e`changeset/${changeset.id}`)),` `,
 		makeDate(),` `,
 		changeset.tags?.comment ?? ''
 	)
+	if (isClose) $item.classList.add('close')
+	return $item
 }
 
 function makeNoteCard(web: WebProvider, note: NoteDbRecord) {
