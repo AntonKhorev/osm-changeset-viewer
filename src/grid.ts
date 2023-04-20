@@ -1,3 +1,4 @@
+import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
 
@@ -8,15 +9,11 @@ export default class Grid {
 	$grid=makeDiv('grid')()
 	$style=makeElement('style')()()
 	id=`grid-${++gridCounter}`
-	nRows=nHeadRows
-	nextSeparatorTimestamp: number|undefined
 	constructor() {
 		this.$grid.id=this.id
 		this.setColumns(0)
 	}
 	setColumns(nColumns: number) {
-		this.nRows=nHeadRows
-		this.nextSeparatorTimestamp=undefined
 		this.clearItems()
 		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,50ch)) ` : ``
 		let style=
@@ -33,36 +30,68 @@ export default class Grid {
 			`}\n`
 		this.$style.textContent=style
 	}
-	appendItem($masterItem: HTMLElement, iColumns: number[], date: Date) {
-		this.startNewRow(date)
+	addItem($masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number) {
+		if (iColumns.length==0) return
+		let $precedingElement=this.getPrecedingElement(date,type,id)
+		let nRow=getGridRow($precedingElement)+1
+		const timestamp=date.getTime()
+		const rank=getItemTypeRank(type)
 		for (const [i,iColumn] of iColumns.entries()) {
 			const $item=$masterItem.cloneNode(true) as HTMLElement
 			if (i) $item.classList.add('duplicate')
 			$item.dataset.column=String(iColumn)
-			this.stampRow($item)
-			this.$grid.append($item)
+			$item.dataset.timestamp=String(timestamp)
+			$item.dataset.rank=String(rank)
+			$item.dataset.id=String(id)
+			setGridRow($item,nRow)
+			$precedingElement.after($item)
+			$precedingElement=$item
+		}
+		if (!$precedingElement.nextElementSibling) return
+		const nNextRowBefore=getGridRow($precedingElement.nextElementSibling)
+		const nNextRowAfter=nRow+1
+		const nRowDiff=nNextRowAfter-nNextRowBefore
+		for (let $e:Element|null=$precedingElement.nextElementSibling;$e;$e=$e.nextElementSibling) {
+			if (!($e instanceof HTMLElement)) continue
+			setGridRow($e,getGridRow($e)+nRowDiff)
 		}
 	}
-	private startNewRow(date: Date) {
-		this.nRows++
-		if (this.nextSeparatorTimestamp==null || date.getTime()<this.nextSeparatorTimestamp) {
+	private getPrecedingElement(date: Date, type: MuxBatchItem['type'], id: number): HTMLElement {
+		const timestamp=date.getTime()
+		const rank=getItemTypeRank(type)
+		let $e=this.$grid.lastElementChild
+		for (;$e;$e=$e.previousElementSibling) {
+			if (!($e instanceof HTMLElement)) continue
+			if (isFrontGuardElement($e)) break
+			const currentTimestamp=Number($e.dataset.timestamp)
+			if (currentTimestamp>timestamp) break
+			const currentRank=Number($e.dataset.rank)
+			if (currentRank>rank) break
+			const currentId=Number($e.dataset.id)
+			if (currentId>id) break
+		}
+		if (!$e || isFrontGuardElement($e) || !isElementWithSameMonth($e,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
 			const $separator=makeDiv('separator')(
 				makeElement('time')()(yearMonthString)
 			)
-			this.stampRow($separator)
-			this.$grid.append($separator)
-			this.nextSeparatorTimestamp=Date.parse(yearMonthString)
-			this.nRows++
+			$separator.dataset.timestamp=String(getLastTimestampOfMonth(date))
+			$separator.dataset.rank='0'
+			setGridRow($separator,getGridRow($e)+1)
+			if ($e) {
+				$e.after($separator)
+			} else {
+				this.$grid.append($separator)
+			}
+			return $separator
+		} else {
+			return $e
 		}
-	}
-	private stampRow($e: HTMLElement): void {
-		$e.style.gridRow=String(this.nRows)
 	}
 	private clearItems() {
 		let remove=false
 		for (const $e of [...this.$grid.children]) {
-			if ($e instanceof HTMLFormElement) {
+			if (isFrontGuardElement($e)) {
 				remove=true
 				continue
 			}
@@ -71,4 +100,48 @@ export default class Grid {
 			}
 		}
 	}
+}
+
+function getGridRow($e: unknown): number {
+	if ($e instanceof HTMLElement) {
+		return Number($e.style.gridRow) || nHeadRows
+	} else {
+		return nHeadRows
+	}
+}
+function setGridRow($e: HTMLElement, nRow: number) {
+	$e.style.gridRow=String(nRow)
+}
+
+function isFrontGuardElement($e: Element): boolean {
+	return $e instanceof HTMLFormElement
+}
+
+function isElementWithSameMonth($e: HTMLElement, date: Date): boolean {
+	if ($e.dataset.timestamp==null) return false
+	const elementDate=new Date(Number($e.dataset.timestamp))
+	return elementDate.getUTCFullYear()==date.getFullYear() && elementDate.getUTCMonth()==date.getUTCMonth()
+}
+
+function getItemTypeRank(type: MuxBatchItem['type']): number {
+	// 0 = rank of separators
+	switch (type) {
+	case 'changeset':
+		return 1
+	case 'changesetClose':
+		return 2
+	case 'note':
+		return 3
+	}
+}
+
+function getLastTimestampOfMonth(date: Date): number {
+	let monthIndex=date.getUTCMonth()
+	let year=date.getUTCFullYear()
+	monthIndex++
+	if (monthIndex>=12) {
+		monthIndex=0
+		year++
+	}
+	return Date.UTC(year,monthIndex)-1
 }

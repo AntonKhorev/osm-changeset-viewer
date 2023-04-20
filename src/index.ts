@@ -81,7 +81,7 @@ async function main() {
 					$item=makeNoteCard(cx.server.web,item)
 					date=item.createdAt
 				}
-				grid.appendItem($item,iColumns,date)
+				grid.addItem($item,iColumns,date,type,item.id)
 				wroteAnyItem=true
 			}
 			if (wroteAnyItem) {
