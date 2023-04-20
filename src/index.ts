@@ -70,22 +70,18 @@ async function main() {
 		},(batch)=>{
 			let wroteAnyItem=false
 			for (const {iColumns,type,item} of batch) {
-				grid.startNewRow(item.createdAt)
-				// TODO possibly insert in the middle
-				let wroteAnyCopyOfItem=false
-				for (const iColumn of iColumns) {
-					let $item: HTMLElement
-					if (type=='changeset'||type=='changesetClose') {
-						$item=makeChangesetCard(cx.server.web,item,type=='changesetClose')
-					} else {
-						$item=makeNoteCard(cx.server.web,item)
+				let $item: HTMLElement
+				let date=item.createdAt
+				if (type=='changeset'||type=='changesetClose') {
+					$item=makeChangesetCard(cx.server.web,item,type=='changesetClose')
+					if (type=='changesetClose' && item.closedAt) {
+						date=item.closedAt
 					}
-					if (wroteAnyCopyOfItem) {
-						$item.classList.add('duplicate')
-					}
-					grid.appendItem($item,iColumn)
-					wroteAnyCopyOfItem=true
+				} else {
+					$item=makeNoteCard(cx.server.web,item)
+					date=item.createdAt
 				}
+				grid.appendItem($item,iColumns,date)
 				wroteAnyItem=true
 			}
 			if (wroteAnyItem) {

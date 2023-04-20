@@ -33,7 +33,17 @@ export default class Grid {
 			`}\n`
 		this.$style.textContent=style
 	}
-	startNewRow(date: Date) {
+	appendItem($masterItem: HTMLElement, iColumns: number[], date: Date) {
+		this.startNewRow(date)
+		for (const [i,iColumn] of iColumns.entries()) {
+			const $item=$masterItem.cloneNode(true) as HTMLElement
+			if (i) $item.classList.add('duplicate')
+			$item.dataset.column=String(iColumn)
+			this.stampRow($item)
+			this.$grid.append($item)
+		}
+	}
+	private startNewRow(date: Date) {
 		this.nRows++
 		if (this.nextSeparatorTimestamp==null || date.getTime()<this.nextSeparatorTimestamp) {
 			const yearMonthString=toIsoYearMonthString(date)
@@ -45,11 +55,6 @@ export default class Grid {
 			this.nextSeparatorTimestamp=Date.parse(yearMonthString)
 			this.nRows++
 		}
-	}
-	appendItem($item: HTMLElement, iColumn: number) {
-		$item.dataset.column=String(iColumn)
-		this.stampRow($item)
-		this.$grid.append($item)
 	}
 	private stampRow($e: HTMLElement): void {
 		$e.style.gridRow=String(this.nRows)
