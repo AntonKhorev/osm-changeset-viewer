@@ -84,6 +84,7 @@ async function main() {
 				grid.addItem($item,iColumns,date,type,item.id)
 				wroteAnyItem=true
 			}
+			grid.combineOrUncombineChangesets()
 			if (wroteAnyItem) {
 				more.changeToLoadMore()
 			} else {
@@ -101,14 +102,16 @@ async function main() {
 				getUserQueriesFromHash(hostlessHash)
 			)
 		},true)
+		writeToolbar($root,$toolbar,$netDialog,$grid,net.cx.server.host,()=>{
+			grid.combineOrUncombineChangesets()
+		})
 	} else {
 		$content.append(
 			makeDiv('notice')(`Please select a valid server`)
 		)
 		net.serverSelector.installHashChangeListener(net.cx,()=>{})
+		writeToolbar($root,$toolbar,$netDialog)
 	}
-
-	writeToolbar($root,$toolbar,$netDialog,$grid,net.cx?.server.host)
 }
 
 function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {

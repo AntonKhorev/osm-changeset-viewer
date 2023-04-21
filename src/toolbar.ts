@@ -7,7 +7,8 @@ export default function writeToolbar(
 	$toolbar: HTMLElement,
 	$netDialog: HTMLDialogElement,
 	$grid?: HTMLElement,
-	host?: string
+	host?: string,
+	closedChangesetsCallback?: ()=>void
 ): void {
 	{
 		const $message=makeDiv('message')()
@@ -50,6 +51,7 @@ export default function writeToolbar(
 		$showCloseCheckbox.type='checkbox'
 		$showCloseCheckbox.oninput=()=>{
 			$grid.classList.toggle('with-closed-changesets',$showCloseCheckbox.checked)
+			closedChangesetsCallback?.()
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(

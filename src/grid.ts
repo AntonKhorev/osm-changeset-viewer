@@ -56,6 +56,47 @@ export default class Grid {
 			setGridRow($e,getGridRow($e)+nRowDiff)
 		}
 	}
+	combineOrUncombineChangesets(): void {
+		const withClosedChangesets=this.$grid.classList.contains('with-closed-changesets')
+		if (withClosedChangesets) {
+			this.combineChangesets()
+		} else {
+			this.uncombineChangesets()
+		}
+	}
+	private combineChangesets(): void {
+		const $itemsAbove=new Map<number,HTMLElement>()
+		for (const $item of this.getElementsAfterGuard()) {
+			if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) {
+				$itemsAbove.clear()
+				continue
+			}
+			const column=Number($item.dataset.column)
+			const $itemAbove=$itemsAbove.get(column)
+			const areConnected=(
+				$itemAbove &&
+				$item.classList.contains('changeset') &&
+				$itemAbove.classList.contains('changeset') &&
+				$item.dataset.id==$itemAbove.dataset.id &&
+				!$item.classList.contains('closed') &&
+				$itemAbove.classList.contains('closed')
+			)
+			if (areConnected) {
+				$itemAbove.hidden=true
+				$item.classList.add('combined')
+			}
+			$itemsAbove.set(column,$item)
+		}
+	}
+	private uncombineChangesets(): void {
+		for (const $item of this.getElementsAfterGuard()) {
+			if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) {
+				continue
+			}
+			$item.hidden=false
+			$item.classList.remove('combined')
+		}
+	}
 	private getPrecedingElement(date: Date, type: MuxBatchItem['type'], id: number): HTMLElement {
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
@@ -97,6 +138,17 @@ export default class Grid {
 			}
 			if (remove) {
 				$e.remove()
+			}
+		}
+	}
+	private *getElementsAfterGuard() {
+		let started=false
+		for (const $e of this.$grid.children) {
+			if (started) {
+				yield $e
+			} else if (isFrontGuardElement($e)) {
+				started=true
+				continue
 			}
 		}
 	}
