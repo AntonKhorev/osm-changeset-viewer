@@ -161,7 +161,7 @@ body > .symbols {
 .ui .grid.with-expanded-items > .item.duplicate {
 	display: none;
 }
-.ui .grid:not(.with-changeset-close-items) > .item.changeset.close {
+.ui .grid:not(.with-closed-changesets) > .item.changeset.closed {
 	display: none;
 }
 
@@ -191,9 +191,13 @@ body > .symbols {
 	top: 50%;
 	background: var(--accent-color);
 }
-.ui .grid > .item.changeset.close .icon::before {
+.ui .grid > .item.changeset.closed .icon::before {
 	top: 0;
 	bottom: 50%;
+}
+.ui .grid > .item.changeset.combined .icon::before {
+	top: 0;
+	bottom: 0;
 }
 .ui .grid > .item.note .icon {
 	border-radius: 50%;

@@ -49,7 +49,7 @@ export default function writeToolbar(
 		const $showCloseCheckbox=makeElement('input')()()
 		$showCloseCheckbox.type='checkbox'
 		$showCloseCheckbox.oninput=()=>{
-			$grid.classList.toggle('with-changeset-close-items',$showCloseCheckbox.checked)
+			$grid.classList.toggle('with-closed-changesets',$showCloseCheckbox.checked)
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(

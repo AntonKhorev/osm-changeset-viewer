@@ -111,13 +111,13 @@ async function main() {
 	writeToolbar($root,$toolbar,$netDialog,$grid,net.cx?.server.host)
 }
 
-function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClose: boolean): HTMLElement {
+function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
 	const makeDate=()=>{
-		const date=isClose ? changeset.closedAt : changeset.createdAt
+		const date=isClosed ? changeset.closedAt : changeset.createdAt
 		return date ? makeDateOutput(date) : `???`
 	}
 	let $item: HTMLElement
-	if (isClose) {
+	if (isClosed) {
 		const $noCheckbox=makeElement('span')('no-checkbox')()
 		$noCheckbox.tabIndex=0
 		$noCheckbox.title=`closed changeset ${changeset.id}`
@@ -133,7 +133,7 @@ function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClo
 		makeDate(),` `,
 		changeset.tags?.comment ?? ''
 	)
-	if (isClose) $item.classList.add('close')
+	if (isClosed) $item.classList.add('closed')
 	return $item
 }
 
