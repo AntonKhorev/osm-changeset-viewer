@@ -23,7 +23,11 @@ export default class Grid {
 			`	grid-template-columns: ${repeatTemplateColumnsStyle}minmax(20ch,1fr);\n`+
 			`}\n`
 		for (let i=0;i<nColumns;i++) {
-			style+=`#${this.id} > .item[data-column="${i}"] { grid-column: ${i+1}; }\n`
+			const hue=(50+77*i)%360
+			style+=`#${this.id} > .item[data-column="${i}"] {\n`+
+			`	grid-column: ${i+1};\n`+
+			`	--hue: ${hue};`+
+			`}\n`
 		}
 		style+=
 			`#${this.id}.with-expanded-items > .item {\n`+
