@@ -111,13 +111,24 @@ async function main() {
 	writeToolbar($root,$toolbar,$netDialog,$grid,net.cx?.server.host)
 }
 
-function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClose: boolean) {
+function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClose: boolean): HTMLElement {
 	const makeDate=()=>{
 		const date=isClose ? changeset.closedAt : changeset.createdAt
 		return date ? makeDateOutput(date) : `???`
 	}
-	const $item=makeDiv('item','changeset')(
-		code(isClose ? `[.` : `.]`),` `,
+	let $item: HTMLElement
+	if (isClose) {
+		const $noCheckbox=makeElement('span')('no-checkbox')()
+		$noCheckbox.tabIndex=0
+		$noCheckbox.title=`closed changeset ${changeset.id}`
+		$item=makeItemCard('changeset',$noCheckbox)
+	} else {
+		const $checkbox=makeElement('input')()()
+		$checkbox.type='checkbox'
+		$checkbox.title=`opened changeset ${changeset.id}`
+		$item=makeItemCard('changeset',$checkbox)
+	}
+	$item.append(
 		makeLink(`${changeset.id}`,web.getUrl(e`changeset/${changeset.id}`)),` `,
 		makeDate(),` `,
 		changeset.tags?.comment ?? ''
@@ -126,13 +137,20 @@ function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClo
 	return $item
 }
 
-function makeNoteCard(web: WebProvider, note: NoteDbRecord) {
-	return makeDiv('item','note')(
-		code(`N!`),` `,
+function makeNoteCard(web: WebProvider, note: NoteDbRecord): HTMLElement {
+	const $item=makeItemCard('note',code(`N!`))
+	$item.append(
 		makeLink(`${note.id}`,web.getUrl(e`note/${note.id}`)),` `,
 		makeDateOutput(note.createdAt),` `,
 		note.openingComment ?? ''
 	)
+	return $item
+}
+
+function makeItemCard(type: string, $iconChild: HTMLElement): HTMLElement {
+	const $icon=makeElement('span')('icon')($iconChild)
+	const $item=makeDiv('item',type)($icon,` `)
+	return $item
 }
 
 function getUserQueriesFromHash(hash: string): ValidUserQuery[] {
