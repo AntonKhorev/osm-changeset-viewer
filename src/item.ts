@@ -7,6 +7,22 @@ import {makeEscapeTag} from './util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
 
+export function markChangesetCardAsCombined($item: HTMLElement, id: number|string): void {
+	$item.classList.add('combined')
+	const $checkbox=$item.querySelector('.icon input')
+	if ($checkbox instanceof HTMLInputElement) {
+		$checkbox.title=`changeset ${id}`
+	}
+}
+
+export function markChangesetCardAsUncombined($item: HTMLElement, id: number|string): void {
+	$item.classList.remove('combined')
+	const $checkbox=$item.querySelector('.icon input')
+	if ($checkbox instanceof HTMLInputElement) {
+		$checkbox.title=`opened changeset ${id}`
+	}
+}
+
 export function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
 	const makeDate=()=>{
 		const date=isClosed ? changeset.closedAt : changeset.createdAt

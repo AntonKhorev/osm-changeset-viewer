@@ -1,3 +1,4 @@
+import {markChangesetCardAsCombined, markChangesetCardAsUncombined} from './item'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
@@ -83,7 +84,7 @@ export default class Grid {
 			)
 			if (areConnected) {
 				$itemAbove.hidden=true
-				$item.classList.add('combined')
+				markChangesetCardAsCombined($item,$item.dataset.id??'???')
 			}
 			$itemsAbove.set(column,$item)
 		}
@@ -93,8 +94,11 @@ export default class Grid {
 			if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) {
 				continue
 			}
-			$item.hidden=false
-			$item.classList.remove('combined')
+			if ($item.classList.contains('closed')) {
+				$item.hidden=false
+			} else {
+				markChangesetCardAsUncombined($item,$item.dataset.id??'???')
+			}
 		}
 	}
 	private getPrecedingElement(date: Date, type: MuxBatchItem['type'], id: number): HTMLElement {
