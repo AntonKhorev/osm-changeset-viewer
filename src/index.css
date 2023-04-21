@@ -166,11 +166,12 @@ body > .symbols {
 }
 
 .ui .grid > .item {
+	--vertical-padding: .125rem;
 	--icon-size: 1.25em;
 	--hue: 77;
 	--accent-color: hsl(var(--hue) 50% 50%);
 	position: relative;
-	padding: 0 var(--padding) 0 calc(2 * var(--padding) + var(--icon-size));
+	padding: var(--vertical-padding) var(--padding) var(--vertical-padding) calc(2 * var(--padding) + var(--icon-size));
 	min-height: var(--icon-size);
 	text-overflow: ellipsis;
 	overflow: hidden;
