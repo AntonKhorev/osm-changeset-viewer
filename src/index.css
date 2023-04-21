@@ -195,7 +195,8 @@ body > .symbols {
 	top: 0;
 	bottom: 50%;
 }
-.ui .grid > .item.changeset.combined .icon::before {
+.ui .grid > .item.changeset.combined .icon::before,
+.ui .grid:not(.with-closed-changesets) > .item.changeset .icon::before {
 	top: 0;
 	bottom: 0;
 }
