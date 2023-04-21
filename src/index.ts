@@ -81,7 +81,7 @@ async function main() {
 				grid.addItem($item,iColumns,date,type,item.id)
 				wroteAnyItem=true
 			}
-			grid.combineOrUncombineChangesets()
+			grid.combineChangesets()
 			if (wroteAnyItem) {
 				more.changeToLoadMore()
 			} else {
@@ -100,7 +100,7 @@ async function main() {
 			)
 		},true)
 		writeToolbar($root,$toolbar,$netDialog,$grid,net.cx.server.host,()=>{
-			grid.combineOrUncombineChangesets()
+			grid.combineChangesets()
 		})
 	} else {
 		$content.append(

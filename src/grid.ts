@@ -57,15 +57,8 @@ export default class Grid {
 			setGridRow($e,getGridRow($e)+nRowDiff)
 		}
 	}
-	combineOrUncombineChangesets(): void {
+	combineChangesets(): void {
 		const withClosedChangesets=this.$grid.classList.contains('with-closed-changesets')
-		if (withClosedChangesets) {
-			this.combineChangesets()
-		} else {
-			this.uncombineChangesets()
-		}
-	}
-	private combineChangesets(): void {
 		const $itemsAbove=new Map<number,HTMLElement>()
 		for (const $item of this.getElementsAfterGuard()) {
 			if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) {
@@ -74,31 +67,25 @@ export default class Grid {
 			}
 			const column=Number($item.dataset.column)
 			const $itemAbove=$itemsAbove.get(column)
-			const areConnected=(
+			const isConnectedWithAboveItem=(
 				$itemAbove &&
-				$item.classList.contains('changeset') &&
 				$itemAbove.classList.contains('changeset') &&
-				$item.dataset.id==$itemAbove.dataset.id &&
-				!$item.classList.contains('closed') &&
-				$itemAbove.classList.contains('closed')
+				$itemAbove.classList.contains('closed') &&
+				$item.dataset.id==$itemAbove.dataset.id
 			)
-			if (areConnected) {
-				$itemAbove.hidden=true
-				markChangesetCardAsCombined($item,$item.dataset.id??'???')
+			if ($item.classList.contains('changeset')) {
+				if ($item.classList.contains('closed')) {
+					$item.hidden=!withClosedChangesets
+				} else {
+					if (isConnectedWithAboveItem || !withClosedChangesets) {
+						if (isConnectedWithAboveItem) $itemAbove.hidden=true
+						markChangesetCardAsCombined($item,$item.dataset.id??'???')
+					} else {
+						markChangesetCardAsUncombined($item,$item.dataset.id??'???')
+					}
+				}
 			}
 			$itemsAbove.set(column,$item)
-		}
-	}
-	private uncombineChangesets(): void {
-		for (const $item of this.getElementsAfterGuard()) {
-			if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) {
-				continue
-			}
-			if ($item.classList.contains('closed')) {
-				$item.hidden=false
-			} else {
-				markChangesetCardAsUncombined($item,$item.dataset.id??'???')
-			}
 		}
 	}
 	private getPrecedingElement(date: Date, type: MuxBatchItem['type'], id: number): HTMLElement {
