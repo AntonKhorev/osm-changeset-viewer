@@ -1,4 +1,4 @@
-import {markChangesetCardAsCombined, markChangesetCardAsUncombined} from './item'
+import {getItemCheckbox, markChangesetCardAsCombined, markChangesetCardAsUncombined} from './item'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
@@ -41,6 +41,7 @@ export default class Grid {
 		let nRow=getGridRow($precedingElement)+1
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
+		const $checkboxes:HTMLInputElement[]=[]
 		for (const [i,iColumn] of iColumns.entries()) {
 			const $item=$masterItem.cloneNode(true) as HTMLElement
 			if (i) $item.classList.add('duplicate')
@@ -51,6 +52,17 @@ export default class Grid {
 			setGridRow($item,nRow)
 			$precedingElement.after($item)
 			$precedingElement=$item
+			const $checkbox=getItemCheckbox($item)
+			if ($checkbox) $checkboxes.push($checkbox)
+		}
+		if ($checkboxes.length>1) {
+			for (const $checkbox of $checkboxes) {
+				$checkbox.addEventListener('input',()=>{
+					for (const $sameItemCheckbox of $checkboxes) {
+						$sameItemCheckbox.checked=$checkbox.checked
+					}
+				})
+			}
 		}
 		if (!$precedingElement.nextElementSibling) return
 		const nNextRowBefore=getGridRow($precedingElement.nextElementSibling)
