@@ -1,5 +1,4 @@
-import Net, {checkAuthRedirect, HashServerSelector, WebProvider} from './net'
-import type {ChangesetDbRecord, NoteDbRecord} from './db'
+import Net, {checkAuthRedirect, HashServerSelector} from './net'
 import {ChangesetViewerDBReader} from './db'
 import type {ValidUserQuery} from './osm'
 import Grid from './grid'
@@ -7,14 +6,12 @@ import More from './more'
 import writeToolbar from './toolbar'
 import makeNetDialog from './net-dialog'
 import GridHead from './grid-head'
-import {installRelativeTimeListeners, makeDateOutput} from './date'
+import {makeChangesetCard, makeNoteCard} from './item'
+import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
-import {makeElement, makeDiv, makeLink} from './util/html'
-import {code} from './util/html-shortcuts'
+import {makeElement, makeDiv} from './util/html'
 import {PrefixedLocalStorage} from './util/storage'
-import {escapeHash, makeEscapeTag} from './util/escape'
-
-const e=makeEscapeTag(encodeURIComponent)
+import {escapeHash} from './util/escape'
 
 const appName='osm-changeset-viewer'
 
@@ -112,48 +109,6 @@ async function main() {
 		net.serverSelector.installHashChangeListener(net.cx,()=>{})
 		writeToolbar($root,$toolbar,$netDialog)
 	}
-}
-
-function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
-	const makeDate=()=>{
-		const date=isClosed ? changeset.closedAt : changeset.createdAt
-		return date ? makeDateOutput(date) : `???`
-	}
-	let $item: HTMLElement
-	if (isClosed) {
-		const $noCheckbox=makeElement('span')('no-checkbox')()
-		$noCheckbox.tabIndex=0
-		$noCheckbox.title=`closed changeset ${changeset.id}`
-		$item=makeItemCard('changeset',$noCheckbox)
-	} else {
-		const $checkbox=makeElement('input')()()
-		$checkbox.type='checkbox'
-		$checkbox.title=`opened changeset ${changeset.id}`
-		$item=makeItemCard('changeset',$checkbox)
-	}
-	$item.append(
-		makeLink(`${changeset.id}`,web.getUrl(e`changeset/${changeset.id}`)),` `,
-		makeDate(),` `,
-		changeset.tags?.comment ?? ''
-	)
-	if (isClosed) $item.classList.add('closed')
-	return $item
-}
-
-function makeNoteCard(web: WebProvider, note: NoteDbRecord): HTMLElement {
-	const $item=makeItemCard('note',code(`N!`))
-	$item.append(
-		makeLink(`${note.id}`,web.getUrl(e`note/${note.id}`)),` `,
-		makeDateOutput(note.createdAt),` `,
-		note.openingComment ?? ''
-	)
-	return $item
-}
-
-function makeItemCard(type: string, $iconChild: HTMLElement): HTMLElement {
-	const $icon=makeElement('span')('icon')($iconChild)
-	const $item=makeDiv('item',type)($icon,` `)
-	return $item
 }
 
 function getUserQueriesFromHash(hash: string): ValidUserQuery[] {
