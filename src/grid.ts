@@ -3,59 +3,48 @@ import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
 
-const nHeadRows=2
-let gridCounter=0
-
 export default class Grid {
-	$grid=makeDiv('grid')()
-	$style=makeElement('style')()()
-	$adder=makeDiv('adder')()
-	id=`grid-${++gridCounter}`
+	$grid=makeElement('table')('grid')()
+	private $colgroup=makeElement('colgroup')()()
+	private nColumns=0
 	constructor() {
-		this.$grid.id=this.id
+		this.$grid.append(this.$colgroup)
+		this.$grid.createTHead()
+		this.$grid.createTBody()
 		this.setColumns(0)
-		this.$adder.style.gridRow='2'
-		this.$grid.append(this.$adder)
 	}
 	setColumns(nColumns: number) {
 		this.clearItems()
-		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,1fr)) ` : ``
-		let style=
-			`#${this.id} {\n`+
-			`	display: grid;\n`+
-			`	grid-template-columns: ${repeatTemplateColumnsStyle}10ch;\n`+
-			`}\n`
+		this.$grid.style.setProperty('--columns',String(nColumns))
+		this.$colgroup.replaceChildren()
 		for (let i=0;i<nColumns;i++) {
-			const hue=(50+77*i)%360
-			style+=`#${this.id} > .item[data-column="${i}"] {\n`+
-			`	grid-column: ${i+1};\n`+
-			`	--hue: ${hue};`+
-			`}\n`
+			this.$colgroup.append(
+				makeElement('col')()()
+			)
 		}
-		style+=
-			`#${this.id}.with-expanded-items > .item {\n`+
-			`	grid-column: 1 / -1;\n`+
-			`}\n`
-		this.$style.textContent=style
+		this.$colgroup.append(
+			makeElement('col')('adder')()
+		)
 	}
 	addItem($masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number) {
 		if (iColumns.length==0) return
-		let $precedingElement=this.getPrecedingElement(date,type,id)
-		let nRow=getGridRow($precedingElement)+1
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
+		const $row=this.insertRow(date,type,id)
+		$row.classList.add(...$masterItem.classList)
+		$row.dataset.timestamp=String(timestamp)
+		$row.dataset.rank=String(rank)
+		$row.dataset.id=String(id)
 		const $checkboxes:HTMLInputElement[]=[]
-		for (const [i,iColumn] of iColumns.entries()) {
-			const $item=$masterItem.cloneNode(true) as HTMLElement
-			if (i) $item.classList.add('duplicate')
-			$item.dataset.column=String(iColumn)
-			$item.dataset.timestamp=String(timestamp)
-			$item.dataset.rank=String(rank)
-			$item.dataset.id=String(id)
-			setGridRow($item,nRow)
-			$precedingElement.after($item)
-			$precedingElement=$item
-			const $checkbox=getItemCheckbox($item)
+		const columnTemplate=new Array(this.nColumns).fill(false) as boolean[]
+		for (const iColumn of iColumns) {
+			columnTemplate[iColumn]=true
+		}
+		for (const fillCell of columnTemplate) {
+			const $cell=$row.insertCell()
+			if (!fillCell) continue
+			$cell.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
+			const $checkbox=getItemCheckbox($cell)
 			if ($checkbox) $checkboxes.push($checkbox)
 		}
 		if ($checkboxes.length>1) {
@@ -67,25 +56,15 @@ export default class Grid {
 				})
 			}
 		}
-		if (!$precedingElement.nextElementSibling) return
-		const nNextRowBefore=getGridRow($precedingElement.nextElementSibling)
-		const nNextRowAfter=nRow+1
-		const nRowDiff=nNextRowAfter-nNextRowBefore
-		for (let $e:Element|null=$precedingElement.nextElementSibling;$e;$e=$e.nextElementSibling) {
-			if (!($e instanceof HTMLElement)) continue
-			setGridRow($e,getGridRow($e)+nRowDiff)
-		}
 	}
 	combineChangesets(): void {
 		const withClosedChangesets=this.$grid.classList.contains('with-closed-changesets')
-		const $itemsAbove=new Map<number,HTMLElement>()
-		for (const $item of this.getElementsAfterGuard()) {
-			if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) {
-				$itemsAbove.clear()
+		let $itemAbove: HTMLElement|undefined
+		for (const $item of this.$tbody.rows) {
+			if (!$item.classList.contains('item')) {
+				$itemAbove=undefined
 				continue
 			}
-			const column=Number($item.dataset.column)
-			const $itemAbove=$itemsAbove.get(column)
 			const isConnectedWithAboveItem=(
 				$itemAbove &&
 				$itemAbove.classList.contains('changeset') &&
@@ -97,82 +76,52 @@ export default class Grid {
 					$item.hidden=!withClosedChangesets
 				} else {
 					if (isConnectedWithAboveItem || !withClosedChangesets) {
-						if (isConnectedWithAboveItem) $itemAbove.hidden=true
+						if ($itemAbove && isConnectedWithAboveItem) $itemAbove.hidden=true
 						markChangesetCardAsCombined($item,$item.dataset.id??'???')
 					} else {
 						markChangesetCardAsUncombined($item,$item.dataset.id??'???')
 					}
 				}
 			}
-			$itemsAbove.set(column,$item)
+			$itemAbove=$item
 		}
 	}
-	private getPrecedingElement(date: Date, type: MuxBatchItem['type'], id: number): HTMLElement {
+	private insertRow(date: Date, type: MuxBatchItem['type'], id: number): HTMLTableRowElement {
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
-		let $e=this.$grid.lastElementChild
-		for (;$e;$e=$e.previousElementSibling) {
-			if (!($e instanceof HTMLElement)) continue
-			if ($e==this.$adder) break
-			const currentTimestamp=Number($e.dataset.timestamp)
+		let $row:HTMLTableRowElement|undefined
+		let i=this.$tbody.rows.length-1
+		for (;i>=0;i--) {
+			$row=this.$tbody.rows[i]
+			const currentTimestamp=Number($row.dataset.timestamp)
 			if (currentTimestamp>timestamp) break
-			const currentRank=Number($e.dataset.rank)
+			const currentRank=Number($row.dataset.rank)
 			if (currentRank>rank) break
-			const currentId=Number($e.dataset.id)
+			const currentId=Number($row.dataset.id)
 			if (currentId>id) break
 		}
-		if (!$e || $e==this.$adder || !isElementWithSameMonth($e,date)) {
+		if (!$row || !isElementWithSameMonth($row,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
 			const $separator=makeDiv('separator')(
 				makeElement('time')()(yearMonthString)
 			)
 			$separator.dataset.timestamp=String(getLastTimestampOfMonth(date))
 			$separator.dataset.rank='0'
-			setGridRow($separator,getGridRow($e)+1)
-			if ($e) {
-				$e.after($separator)
-			} else {
-				this.$grid.append($separator)
-			}
-			return $separator
+			$row=this.$tbody.insertRow(i+1)
+			const $cell=$row.insertCell()
+			$cell.append($separator)
+			$cell.colSpan=this.nColumns+1
+			return this.$tbody.insertRow(i+2)
 		} else {
-			return $e
+			return this.$tbody.insertRow(i+1)
 		}
 	}
-	private clearItems() {
-		let remove=false
-		for (const $e of [...this.$grid.children]) {
-			if ($e==this.$adder) {
-				remove=true
-				continue
-			}
-			if (remove) {
-				$e.remove()
-			}
-		}
+	private clearItems(): void {
+		this.$tbody.replaceChildren()
 	}
-	private *getElementsAfterGuard() {
-		let started=false
-		for (const $e of this.$grid.children) {
-			if (started) {
-				yield $e
-			} else if ($e==this.$adder) {
-				started=true
-				continue
-			}
-		}
+	private get $tbody(): HTMLTableSectionElement {
+		return this.$grid.tBodies[0]
 	}
-}
-
-function getGridRow($e: unknown): number {
-	if ($e instanceof HTMLElement) {
-		return Number($e.style.gridRow) || nHeadRows
-	} else {
-		return nHeadRows
-	}
-}
-function setGridRow($e: HTMLElement, nRow: number) {
-	$e.style.gridRow=String(nRow)
 }
 
 function isElementWithSameMonth($e: HTMLElement, date: Date): boolean {

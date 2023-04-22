@@ -39,6 +39,7 @@ type GridBatchItem = {
 } & MuxBatchItem
 
 class MuxUserItemDbStreamMessenger {
+	$adder=makeDiv('adder')()
 	watchedUids=new Set<number>()
 	constructor(
 		private host: string,
@@ -77,6 +78,9 @@ export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
 	private streamMessenger: MuxUserItemDbStreamMessenger|undefined
+	private $tabRow: HTMLTableRowElement
+	private $cardRow: HTMLTableRowElement
+	private $adderCell: HTMLTableCellElement
 	constructor(
 		private cx: Connection,
 		private db: ChangesetViewerDBReader,
@@ -97,25 +101,20 @@ export default class GridHead {
 				that.removeUserClickListener(this)
 			}
 		}
+		if (!grid.$grid.tHead) throw new RangeError(`no table head section`)
+		this.$tabRow=grid.$grid.tHead.insertRow()
+		this.$cardRow=grid.$grid.tHead.insertRow()
+		this.$adderCell=this.$cardRow.insertCell()
+		this.$adderCell.classList.add('adder')
 		const $adderButton=makeElement('button')()(`+`)
 		$adderButton.onclick=()=>{
-			let lastUserEntry: GridUserEntry|undefined
-			if (this.userEntries.length>0) {
-				lastUserEntry=this.userEntries[this.userEntries.length-1]
-			}
 			const formEntry=this.makeFormUserEntry()
 			this.userEntries.push(formEntry)
-			if (lastUserEntry) {
-				lastUserEntry.$tab.after(formEntry.$tab)
-				lastUserEntry.$card.after(formEntry.$card)
-			} else {
-				this.grid.$adder.before(
-					formEntry.$tab,formEntry.$card
-				)
-			}
+			// this.appendUserEntryToHead(formEntry)
+			this.rewriteUserEntriesInHead()
 			this.restartStream()
 		}
-		grid.$adder.append($adderButton)
+		this.$adderCell.append($adderButton)
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
 		broadcastReceiver.onmessage=async({data:message})=>{
 			if (message.type=='getUserInfo') {
@@ -166,15 +165,8 @@ export default class GridHead {
 				newUserEntries.push(entry)
 			}
 		}
-		for (const {$tab,$card} of this.userEntries) {
-			$tab.remove()
-			$card.remove()
-		}
 		this.userEntries=newUserEntries
-		this.grid.$adder.before(
-			...this.userEntries.map(({$tab})=>$tab),
-			...this.userEntries.map(({$card})=>$card)
-		)
+		this.rewriteUserEntriesInHead()
 		this.restartStream()
 	}
 	private makeFormUserEntry(): GridUserEntry {
@@ -252,7 +244,6 @@ export default class GridHead {
 		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
 		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
 		$tab.append(` `,$closeButton)
-		$tab.style.gridRow='1'
 		return $tab
 	}
 	private makeFormTab(): HTMLElement {
@@ -263,7 +254,6 @@ export default class GridHead {
 		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
 		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
 		$tab.append(` `,$closeButton)
-		$tab.style.gridRow='1'
 		return $tab
 	}
 	private makeUserDownloadedChangesetsCount(): HTMLOutputElement {
@@ -325,7 +315,6 @@ export default class GridHead {
 				this.sendUserQueryToWorker(query)
 			}
 		}
-		$card.style.gridRow='2'
 		return $card
 	}
 	private makeFormCard() {
@@ -363,8 +352,8 @@ export default class GridHead {
 			const $newTab=this.makeUserTab(query)
 			const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
 			const $newCard=this.makeUserCard(query,info,$downloadedChangesetsCount)
-			userEntry.$tab.replaceWith($newTab)
-			userEntry.$card.replaceWith($newCard)
+			// userEntry.$tab.replaceWith($newTab)
+			// userEntry.$card.replaceWith($newCard)
 			const newUserEntry:GridUserEntry={
 				$tab: $newTab,
 				$card: $newCard,
@@ -372,11 +361,11 @@ export default class GridHead {
 				query,$downloadedChangesetsCount,info
 			}
 			Object.assign(userEntry,newUserEntry)
+			this.rewriteUserEntriesInHead()
 			this.sendUpdatedUserQueries()
 			this.restartStream()
 		}
 		$card.append($form)
-		$card.style.gridRow='2'
 		return $card
 	}
 	private findUserEntryByCard($card: HTMLElement): GridUserEntry|undefined {
@@ -389,9 +378,10 @@ export default class GridHead {
 		for (const [i,entry] of this.userEntries.entries()) {
 			if (entry.$tab!=$tab) continue
 			this.userEntries.splice(i,1)
+			// entry.$tab.remove() // TODO rewrite
+			// entry.$card.remove()
+			this.rewriteUserEntriesInHead()
 			this.sendUpdatedUserQueries()
-			entry.$tab.remove()
-			entry.$card.remove()
 			this.restartStream()
 			break
 		}
@@ -407,6 +397,19 @@ export default class GridHead {
 			host: this.cx.server.host,
 			query
 		})
+	}
+	// private appendUserEntryToHead(userEntry: GridUserEntry): void {
+	// 	this.$tabRow.append(userEntry.$tab) // TODO make table cells
+	// 	this.$adderCell.before(userEntry.$card)
+	// }
+	private rewriteUserEntriesInHead(): void {
+		this.$tabRow.replaceChildren(
+			...this.userEntries.map(({$tab})=>makeElement('th')()($tab))
+		)
+		this.$cardRow.replaceChildren(
+			...this.userEntries.map(({$card})=>makeElement('td')()($card)),
+			this.$adderCell
+		)
 	}
 }
 

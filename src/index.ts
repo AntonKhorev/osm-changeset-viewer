@@ -50,7 +50,6 @@ async function main() {
 		const more=new More()
 		const grid=new Grid()
 		$grid=grid.$grid
-		document.body.append(grid.$style)
 		const gridHead=new GridHead(cx,db,worker,grid,userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)

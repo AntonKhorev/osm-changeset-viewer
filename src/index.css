@@ -81,16 +81,29 @@ body > .symbols {
 
 .ui .grid {
 	--padding: .5rem;
+	--adder-width: 10ch;
+	--column-min-width: 20ch;
+	table-layout: fixed;
+	border-collapse: collapse;
+	width: 100%;
+	min-width: calc(var(--column-min-width) * var(--cols) + var(--adder-width));
 }
-.ui .grid > .adder {
+.ui .grid :is(td,th) {
+	padding: 0;
+	vertical-align: top;
+}
+.ui .grid col.adder {
+	width: var(--adder-width);
+}
+.ui .grid thead td.adder {
 	position: relative;
 	padding: 0 var(--padding);
 }
-.ui .grid > .adder button {
+.ui .grid thead td.adder button {
 	width: 100%;
 	aspect-ratio: 1;
 }
-.ui .grid > .tab {
+.ui .grid thead .tab {
 	display: flex;
 	height: 1rem;
 	padding: .5rem;
@@ -103,28 +116,28 @@ body > .symbols {
 	margin-right: -1px;
 	box-shadow: 0 4px 4px -4px #AAA;
 }
-.ui .grid > .tab button.close {
+.ui .grid thead .tab button.close {
 	margin-left: auto;
 	width: 1rem;
 	height: 1rem;
 }
-.ui .grid > .card {
+.ui .grid thead .card {
 	position: relative;
 	padding: var(--padding);
 	margin-right: -1px;
 }
-.ui .grid > .card .uid {
+.ui .grid thead .card .uid {
 	color: var(--light-text-color);
 	font-size: .8em;
 }
-.ui .grid > .card form > [class$="-input-group"]:first-child {
+.ui .grid thead .card form > [class$="-input-group"]:first-child {
 	margin-top: 0;
 }
-.ui .grid > .card form > [class$="-input-group"]:last-child {
+.ui .grid thead .card form > [class$="-input-group"]:last-child {
 	margin-bottom: 0;
 }
-.ui .grid > .card::before,
-.ui .grid > .card + .adder::before {
+.ui .grid thead .card::before,
+.ui .grid thead .adder::before {
 	content: '';
 	position: absolute;
 	left: 0;
@@ -161,7 +174,7 @@ body > .symbols {
 .ui .grid > .item {
 	--vertical-padding: .125rem;
 	--icon-size: 1.25em;
-	--accent-color: hsl(var(--hue) 50% 50%);
+	--accent-color: hsl(var(--hue,#888) 50% 50%);
 	position: relative;
 	padding: var(--vertical-padding) var(--padding) var(--vertical-padding) calc(2 * var(--padding) + var(--icon-size));
 	min-height: var(--icon-size);
