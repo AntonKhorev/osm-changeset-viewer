@@ -19,11 +19,11 @@ export default class Grid {
 	}
 	setColumns(nColumns: number) {
 		this.clearItems()
-		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,50ch)) ` : ``
+		const repeatTemplateColumnsStyle=nColumns>0 ? `repeat(${nColumns},minmax(20ch,1fr)) ` : ``
 		let style=
 			`#${this.id} {\n`+
 			`	display: grid;\n`+
-			`	grid-template-columns: ${repeatTemplateColumnsStyle}minmax(20ch,1fr);\n`+
+			`	grid-template-columns: ${repeatTemplateColumnsStyle}10ch;\n`+
 			`}\n`
 		for (let i=0;i<nColumns;i++) {
 			const hue=(50+77*i)%360

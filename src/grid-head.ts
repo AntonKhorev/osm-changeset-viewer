@@ -99,6 +99,9 @@ export default class GridHead {
 				that.removeUserClickListener(this)
 			}
 		}
+		grid.$adder.append(
+			makeElement('button')()(`+`)
+		)
 		// this.$formCap.style.gridRow='1'
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'

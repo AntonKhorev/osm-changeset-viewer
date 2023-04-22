@@ -82,6 +82,14 @@ body > .symbols {
 .ui .grid {
 	--padding: .5rem;
 }
+.ui .grid > .adder {
+	position: relative;
+	padding: 0 var(--padding);
+}
+.ui .grid > .adder button {
+	width: 100%;
+	aspect-ratio: 1;
+}
 .ui .grid > .tab {
 	display: flex;
 	height: 1rem;
@@ -128,7 +136,7 @@ body > .symbols {
 	margin-bottom: 0;
 }
 .ui .grid > .card::before,
-.ui .grid > .card + form::before {
+.ui .grid > .card + .adder::before {
 	content: '';
 	position: absolute;
 	left: 0;
