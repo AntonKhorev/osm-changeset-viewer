@@ -37,28 +37,30 @@ export default function writeToolbar(
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(
-				$timeCheckbox,` Show time`
+				$timeCheckbox,` time`
 			))
 		)
 	}
 	if ($grid) {
-		const $expandCheckbox=makeElement('input')()()
-		$expandCheckbox.type='checkbox'
-		$expandCheckbox.oninput=()=>{
-			$grid.classList.toggle('with-expanded-items',$expandCheckbox.checked)
-		}
-		const $showCloseCheckbox=makeElement('input')()()
-		$showCloseCheckbox.type='checkbox'
-		$showCloseCheckbox.oninput=()=>{
-			$grid.classList.toggle('with-closed-changesets',$showCloseCheckbox.checked)
+		const $closeEventsCheckbox=makeElement('input')()()
+		$closeEventsCheckbox.type='checkbox'
+		$closeEventsCheckbox.oninput=()=>{
+			$grid.classList.toggle('with-closed-changesets',$closeEventsCheckbox.checked)
 			closedChangesetsCallback?.()
 		}
+		const $closeEventsLabel=makeLabel()(
+			$closeEventsCheckbox,` changeset close events`
+		)
+		$closeEventsLabel.title=`visible only if there's some other event between changeset opening and closing`
+		const $oneColumnCheckbox=makeElement('input')()()
+		$oneColumnCheckbox.type='checkbox'
+		$oneColumnCheckbox.oninput=()=>{
+			$grid.classList.toggle('with-expanded-items',$oneColumnCheckbox.checked)
+		}
 		$toolbar.append(
+			makeDiv('input-group')($closeEventsLabel),
 			makeDiv('input-group')(makeLabel()(
-				$expandCheckbox,` Expand changesets`
-			)),
-			makeDiv('input-group')(makeLabel()(
-				$showCloseCheckbox,` Show changeset close events`
+				$oneColumnCheckbox,` one column`
 			))
 		)
 	}
