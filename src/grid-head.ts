@@ -99,9 +99,29 @@ export default class GridHead {
 				that.removeUserClickListener(this)
 			}
 		}
-		grid.$adder.append(
-			makeElement('button')()(`+`)
-		)
+		const $adderButton=makeElement('button')()(`+`)
+		$adderButton.onclick=()=>{
+			let lastUserEntry: GridUserEntry|undefined
+			if (this.userEntries.length>0) {
+				lastUserEntry=this.userEntries[this.userEntries.length-1]
+			}
+			const formEntry:GridUserEntry={
+				$tab: this.makeFormTab(),
+				$card: this.makeFormCard(),
+				type: 'form'
+			}
+			this.userEntries.push(formEntry)
+			if (lastUserEntry) {
+				lastUserEntry.$tab.after(formEntry.$tab)
+				lastUserEntry.$card.after(formEntry.$card)
+			} else {
+				this.grid.$adder.before(
+					formEntry.$tab,formEntry.$card
+				)
+			}
+			this.restartStream()
+		}
+		grid.$adder.append($adderButton)
 		// this.$formCap.style.gridRow='1'
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
@@ -270,6 +290,17 @@ export default class GridHead {
 		$tab.style.gridRow='1'
 		return $tab
 	}
+	private makeFormTab(): HTMLElement {
+		const $tab=makeDiv('tab')()
+		$tab.append(`Add user`)
+		const $closeButton=makeElement('button')('close')('X')
+		$closeButton.title=`Remove form`
+		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
+		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
+		$tab.append(` `,$closeButton)
+		$tab.style.gridRow='1'
+		return $tab
+	}
 	private makeUserDownloadedChangesetsCount(): HTMLOutputElement {
 		const $downloadedChangesetsCount=makeElement('output')()(`???`)
 		$downloadedChangesetsCount.title=`downloaded`
@@ -332,6 +363,11 @@ export default class GridHead {
 		$card.style.gridRow='2'
 		return $card
 	}
+	private makeFormCard() {
+		const $card=makeDiv('card')(`TODO`)
+		$card.style.gridRow='2'
+		return $card
+	}
 	private removeUserClickListener($button: HTMLElement): void {
 		const $tab=$button.closest('.tab')
 		for (const [i,entry] of this.userEntries.entries()) {
@@ -340,7 +376,6 @@ export default class GridHead {
 			this.sendUpdatedUserQueries()
 			entry.$tab.remove()
 			entry.$card.remove()
-			this.grid.setColumns(this.userEntries.length)
 			this.restartStream()
 			break
 		}
