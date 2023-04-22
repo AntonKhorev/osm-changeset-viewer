@@ -1,5 +1,5 @@
 import type {Connection} from './net'
-import type {ChangesetViewerDBReader, UserDbRecord, ChangesetDbRecord} from './db'
+import type {ChangesetViewerDBReader, UserDbRecord} from './db'
 import type Grid from './grid'
 import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
@@ -21,12 +21,18 @@ type UserInfo = {
 }
 
 type GridUserEntry = {
-	query: ValidUserQuery
-	$downloadedChangesetsCount: HTMLOutputElement
 	$tab: HTMLElement
 	$card: HTMLElement
-	info: UserInfo
-}
+} & (
+	{
+		type: 'form'
+	} | {
+		type: 'query'
+		query: ValidUserQuery
+		$downloadedChangesetsCount: HTMLOutputElement
+		info: UserInfo
+	}
+)
 
 type GridBatchItem = {
 	iColumns: number[]
@@ -69,8 +75,8 @@ class MuxUserItemDbStreamMessenger {
 
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
-	private $formCap=makeDiv('form-cap')(`Add a user`)
-	private $form=makeElement('form')()()
+	// private $formCap=makeDiv('form-cap')(`Add a user`)
+	// private $form=makeElement('form')()()
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
 	private streamMessenger: MuxUserItemDbStreamMessenger|undefined
 	constructor(
@@ -93,22 +99,22 @@ export default class GridHead {
 				that.removeUserClickListener(this)
 			}
 		}
-		this.$formCap.style.gridRow='1'
+		// this.$formCap.style.gridRow='1'
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
 		$userInput.name='user'
-		this.$form.append(
-			makeDiv('major-input-group')(
-				makeLabel()(
-					`Username, URL or #id `,$userInput
-				)
-			),
-			makeDiv('major-input-group')(
-				makeElement('button')()(`Add user`)
-			)
-		)
-		this.$form.style.gridRow='2'
-		this.grid.$grid.append(this.$formCap,this.$form)
+		// this.$form.append(
+		// 	makeDiv('major-input-group')(
+		// 		makeLabel()(
+		// 			`Username, URL or #id `,$userInput
+		// 		)
+		// 	),
+		// 	makeDiv('major-input-group')(
+		// 		makeElement('button')()(`Add user`)
+		// 	)
+		// )
+		// this.$form.style.gridRow='2'
+		// this.grid.$grid.append(this.$formCap,this.$form)
 		$userInput.oninput=()=>{
 			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
 			if (query.type=='invalid') {
@@ -119,24 +125,25 @@ export default class GridHead {
 				$userInput.setCustomValidity('')
 			}
 		}
-		this.$form.onsubmit=async(ev)=>{
-			ev.preventDefault()
-			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
-			if (query.type=='invalid' || query.type=='empty') return
-			const info=await this.getUserInfoForQuery(query)
-			const $tab=this.makeUserTab(query)
-			const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
-			const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
-			this.userEntries.push({query,$tab,$card,$downloadedChangesetsCount,info})
-			this.sendUpdatedUserQueries()
-			this.$formCap.before($tab)
-			this.$form.before($card)
-			this.restartStream()
-		}
+		// this.$form.onsubmit=async(ev)=>{
+		// 	ev.preventDefault()
+		// 	const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
+		// 	if (query.type=='invalid' || query.type=='empty') return
+		// 	const info=await this.getUserInfoForQuery(query)
+		// 	const $tab=this.makeUserTab(query)
+		// 	const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
+		// 	const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
+		// 	this.userEntries.push({query,$tab,$card,$downloadedChangesetsCount,info})
+		// 	this.sendUpdatedUserQueries()
+		// 	this.$formCap.before($tab)
+		// 	this.$form.before($card)
+		// 	this.restartStream()
+		// }
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
 		broadcastReceiver.onmessage=async({data:message})=>{
 			if (message.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
+					if (userEntry.type!='query') continue
 					if (!isSameQuery(userEntry.query,message.query)) continue
 					if (message.status=='running' || message.status=='failed') { // TODO maybe skip running?
 						userEntry.info={status:message.status}
@@ -169,7 +176,11 @@ export default class GridHead {
 					const $tab=this.makeUserTab(query)
 					const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
 					const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
-					entry={query,$tab,$card,$downloadedChangesetsCount,info}
+					entry={
+						$tab,$card,
+						type: 'query',
+						query,$downloadedChangesetsCount,info
+					}
 				}
 				newUserEntries.push(entry)
 			}
@@ -179,8 +190,10 @@ export default class GridHead {
 			}
 			this.userEntries=newUserEntries
 		}
-		this.$formCap.before(...this.userEntries.map(({$tab})=>$tab))
-		this.$form.before(...this.userEntries.map(({$card})=>$card))
+		this.grid.$adder.before(
+			...this.userEntries.map(({$tab})=>$tab),
+			...this.userEntries.map(({$card})=>$card)
+		)
 		this.restartStream()
 	}
 	private async getUserInfoForQuery(query: ValidUserQuery): Promise<UserInfo> {
@@ -196,6 +209,7 @@ export default class GridHead {
 	}
 	private pickFromExistingUserEntries(query: ValidUserQuery): GridUserEntry|null {
 		for (const [i,entry] of this.userEntries.entries()) {
+			if (entry.type!='query') continue
 			if (isSameQuery(query,entry.query)) {
 				this.userEntries.splice(i,1)
 				return entry
@@ -213,6 +227,7 @@ export default class GridHead {
 		if (this.streamMessenger) return
 		const uidToColumns=new Map<number,number[]>
 		for (const [i,entry] of this.userEntries.entries()) {
+			if (entry.type!='query') continue
 			if (entry.info.status=='failed') {
 			} else if (entry.info.status=='ready') {
 				const uid=entry.info.user.id
@@ -328,7 +343,9 @@ export default class GridHead {
 		}
 	}
 	private sendUpdatedUserQueries(): void {
-		this.sendUpdatedUserQueriesReceiver(this.userEntries.map(({query})=>query))
+		this.sendUpdatedUserQueriesReceiver(
+			this.userEntries.flatMap(entry=>entry.type=='query'?[entry.query]:[])
+		)
 	}
 	private sendUserQueryToWorker(query: ValidUserQuery) {
 		this.worker.port.postMessage({

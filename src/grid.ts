@@ -9,10 +9,13 @@ let gridCounter=0
 export default class Grid {
 	$grid=makeDiv('grid')()
 	$style=makeElement('style')()()
+	$adder=makeDiv('adder')()
 	id=`grid-${++gridCounter}`
 	constructor() {
 		this.$grid.id=this.id
 		this.setColumns(0)
+		this.$adder.style.gridRow='2'
+		this.$grid.append(this.$adder)
 	}
 	setColumns(nColumns: number) {
 		this.clearItems()
@@ -110,7 +113,7 @@ export default class Grid {
 		let $e=this.$grid.lastElementChild
 		for (;$e;$e=$e.previousElementSibling) {
 			if (!($e instanceof HTMLElement)) continue
-			if (isFrontGuardElement($e)) break
+			if ($e==this.$adder) break
 			const currentTimestamp=Number($e.dataset.timestamp)
 			if (currentTimestamp>timestamp) break
 			const currentRank=Number($e.dataset.rank)
@@ -118,7 +121,7 @@ export default class Grid {
 			const currentId=Number($e.dataset.id)
 			if (currentId>id) break
 		}
-		if (!$e || isFrontGuardElement($e) || !isElementWithSameMonth($e,date)) {
+		if (!$e || $e==this.$adder || !isElementWithSameMonth($e,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
 			const $separator=makeDiv('separator')(
 				makeElement('time')()(yearMonthString)
@@ -139,7 +142,7 @@ export default class Grid {
 	private clearItems() {
 		let remove=false
 		for (const $e of [...this.$grid.children]) {
-			if (isFrontGuardElement($e)) {
+			if ($e==this.$adder) {
 				remove=true
 				continue
 			}
@@ -153,7 +156,7 @@ export default class Grid {
 		for (const $e of this.$grid.children) {
 			if (started) {
 				yield $e
-			} else if (isFrontGuardElement($e)) {
+			} else if ($e==this.$adder) {
 				started=true
 				continue
 			}
@@ -170,10 +173,6 @@ function getGridRow($e: unknown): number {
 }
 function setGridRow($e: HTMLElement, nRow: number) {
 	$e.style.gridRow=String(nRow)
-}
-
-function isFrontGuardElement($e: Element): boolean {
-	return $e instanceof HTMLFormElement
 }
 
 function isElementWithSameMonth($e: HTMLElement, date: Date): boolean {
