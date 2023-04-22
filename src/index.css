@@ -146,18 +146,18 @@ body > .symbols {
 	width: 1px;
 	background: linear-gradient(var(--frame-color), transparent);
 }
-.ui .grid > .separator {
-	grid-column: 1 / -1;
-	margin: .5em 0;
+
+.ui .grid tbody tr.separator td {
+	padding: var(--padding) 0;
 	text-align: center;
 	position: relative;
 }
-.ui .grid > .separator time {
+.ui .grid tbody tr.separator td time {
 	background: canvas;
 	padding: 0 .5em;
 	color: var(--light-text-color);
 }
-.ui .grid > .separator::before {
+.ui .grid tbody tr.separator td::before {
 	content: '';
 	position: absolute;
 	z-index: -1;
@@ -166,9 +166,6 @@ body > .symbols {
 	height: 1px;
 	width: 100%;
 	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
-}
-.ui .grid.with-expanded-items > .item.duplicate {
-	display: none;
 }
 
 .ui .grid > .item {

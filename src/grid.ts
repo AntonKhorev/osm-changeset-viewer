@@ -14,6 +14,7 @@ export default class Grid {
 		this.setColumns(0)
 	}
 	setColumns(nColumns: number) {
+		this.nColumns=nColumns
 		this.clearItems()
 		this.$grid.style.setProperty('--columns',String(nColumns))
 		this.$colgroup.replaceChildren()
@@ -102,14 +103,14 @@ export default class Grid {
 		}
 		if (!$row || !isElementWithSameMonth($row,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
-			const $separator=makeDiv('separator')(
+			$row=this.$tbody.insertRow(i+1)
+			$row.classList.add('separator')
+			$row.dataset.timestamp=String(getLastTimestampOfMonth(date))
+			$row.dataset.rank='0'
+			const $cell=$row.insertCell()
+			$cell.append(
 				makeElement('time')()(yearMonthString)
 			)
-			$separator.dataset.timestamp=String(getLastTimestampOfMonth(date))
-			$separator.dataset.rank='0'
-			$row=this.$tbody.insertRow(i+1)
-			const $cell=$row.insertCell()
-			$cell.append($separator)
 			$cell.colSpan=this.nColumns+1
 			return this.$tbody.insertRow(i+2)
 		} else {
