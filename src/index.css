@@ -117,14 +117,10 @@ body > .symbols {
 	color: var(--light-text-color);
 	font-size: .8em;
 }
-.ui .grid > form {
-	position: relative;
-	padding: var(--padding);
-}
-.ui .grid > form > [class$="-input-group"]:first-child {
+.ui .grid > .card form > [class$="-input-group"]:first-child {
 	margin-top: 0;
 }
-.ui .grid > form > [class$="-input-group"]:last-child {
+.ui .grid > .card form > [class$="-input-group"]:last-child {
 	margin-bottom: 0;
 }
 .ui .grid > .card::before,
