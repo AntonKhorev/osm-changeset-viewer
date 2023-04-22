@@ -103,11 +103,7 @@ export default class GridHead {
 			if (this.userEntries.length>0) {
 				lastUserEntry=this.userEntries[this.userEntries.length-1]
 			}
-			const formEntry:GridUserEntry={
-				$tab: this.makeFormTab(),
-				$card: this.makeFormCard(),
-				type: 'form'
-			}
+			const formEntry=this.makeFormUserEntry()
 			this.userEntries.push(formEntry)
 			if (lastUserEntry) {
 				lastUserEntry.$tab.after(formEntry.$tab)
@@ -148,8 +144,12 @@ export default class GridHead {
 		}
 	}
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
-		{
-			const newUserEntries=[] as GridUserEntry[]
+		const newUserEntries=[] as GridUserEntry[]
+		if (userQueries.length==0) {
+			newUserEntries.push(
+				this.makeFormUserEntry()
+			)
+		} else {
 			for (const query of userQueries) {
 				let entry=this.pickFromExistingUserEntries(query)
 				if (!entry) {
@@ -165,17 +165,24 @@ export default class GridHead {
 				}
 				newUserEntries.push(entry)
 			}
-			for (const {$tab,$card} of this.userEntries) {
-				$tab.remove()
-				$card.remove()
-			}
-			this.userEntries=newUserEntries
 		}
+		for (const {$tab,$card} of this.userEntries) {
+			$tab.remove()
+			$card.remove()
+		}
+		this.userEntries=newUserEntries
 		this.grid.$adder.before(
 			...this.userEntries.map(({$tab})=>$tab),
 			...this.userEntries.map(({$card})=>$card)
 		)
 		this.restartStream()
+	}
+	private makeFormUserEntry(): GridUserEntry {
+		return {
+			$tab: this.makeFormTab(),
+			$card: this.makeFormCard(),
+			type: 'form'
+		}
 	}
 	private async getUserInfoForQuery(query: ValidUserQuery): Promise<UserInfo> {
 		if (query.type=='name') {
