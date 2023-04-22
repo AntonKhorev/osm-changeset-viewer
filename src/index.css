@@ -168,24 +168,24 @@ body > .symbols {
 	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
 }
 
-.ui .grid > .item {
+.ui .grid tbody tr.item td {
 	--vertical-padding: .125rem;
 	--icon-size: 1.25em;
-	--accent-color: hsl(var(--hue,#888) 50% 50%);
+	--accent-color: hsl(var(--hue,77) 50% 50%);
 	position: relative;
 	padding: var(--vertical-padding) var(--padding) var(--vertical-padding) calc(2 * var(--padding) + var(--icon-size));
 	min-height: var(--icon-size);
 	text-overflow: ellipsis;
 	overflow: hidden;
 }
-.ui .grid > .item .icon {
+.ui .grid tbody tr.item td .icon {
 	display: block;
 	position: absolute;
 	left: var(--padding);
 	width: var(--icon-size);
 	height: var(--icon-size);
 }
-.ui .grid > .item.changeset .icon::before {
+.ui .grid tbody tr.item.changeset td .icon::before {
 	content: '';
 	display: block;
 	position: absolute;
@@ -193,26 +193,26 @@ body > .symbols {
 	top: 50%;
 	background: var(--accent-color);
 }
-.ui .grid > .item.changeset.closed .icon::before {
+.ui .grid tbody tr.item.changeset.closed td .icon::before {
 	top: 0;
 	bottom: 50%;
 }
-.ui .grid > .item.changeset.combined .icon::before {
+.ui .grid tbody tr.item.changeset.combined td .icon::before {
 	top: 0;
 	bottom: 0;
 }
-.ui .grid > .item.note .icon {
+.ui .grid tbody tr.item.note td .icon {
 	border-radius: 50%;
 	background: var(--accent-color);
 }
-.ui .grid > .item .icon > * {
+.ui .grid tbody tr.item td .icon > * {
 	position: absolute;
 	inset: 0;
 	margin: auto;
 	max-width: 100%;
 	max-height: 100%;
 }
-.ui .grid > .item .icon > .no-checkbox {
+.ui .grid tbody tr.item td .icon > .no-checkbox {
 	width: .75rem;
 	height: .75rem;
 	background: canvas;
