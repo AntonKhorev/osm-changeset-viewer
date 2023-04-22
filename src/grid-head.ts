@@ -122,7 +122,6 @@ export default class GridHead {
 			this.restartStream()
 		}
 		grid.$adder.append($adderButton)
-		// this.$formCap.style.gridRow='1'
 		const $userInput=makeElement('input')()()
 		$userInput.type='text'
 		$userInput.name='user'
