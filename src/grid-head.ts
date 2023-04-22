@@ -75,8 +75,6 @@ class MuxUserItemDbStreamMessenger {
 
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
-	// private $formCap=makeDiv('form-cap')(`Add a user`)
-	// private $form=makeElement('form')()()
 	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
 	private streamMessenger: MuxUserItemDbStreamMessenger|undefined
 	constructor(
@@ -122,31 +120,16 @@ export default class GridHead {
 			this.restartStream()
 		}
 		grid.$adder.append($adderButton)
-		const $userInput=makeElement('input')()()
-		$userInput.type='text'
-		$userInput.name='user'
-		// this.$form.append(
-		// 	makeDiv('major-input-group')(
-		// 		makeLabel()(
-		// 			`Username, URL or #id `,$userInput
-		// 		)
-		// 	),
-		// 	makeDiv('major-input-group')(
-		// 		makeElement('button')()(`Add user`)
-		// 	)
-		// )
-		// this.$form.style.gridRow='2'
-		// this.grid.$grid.append(this.$formCap,this.$form)
-		$userInput.oninput=()=>{
-			const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
-			if (query.type=='invalid') {
-				$userInput.setCustomValidity(query.message)
-			} else if (query.type=='empty') {
-				$userInput.setCustomValidity(`user query cannot be empty`)
-			} else {
-				$userInput.setCustomValidity('')
-			}
-		}
+		// $userInput.oninput=()=>{
+		// 	const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
+		// 	if (query.type=='invalid') {
+		// 		$userInput.setCustomValidity(query.message)
+		// 	} else if (query.type=='empty') {
+		// 		$userInput.setCustomValidity(`user query cannot be empty`)
+		// 	} else {
+		// 		$userInput.setCustomValidity('')
+		// 	}
+		// }
 		// this.$form.onsubmit=async(ev)=>{
 		// 	ev.preventDefault()
 		// 	const query=toUserQuery(cx.server.api,cx.server.web,$userInput.value)
@@ -363,7 +346,21 @@ export default class GridHead {
 		return $card
 	}
 	private makeFormCard() {
-		const $card=makeDiv('card')(`TODO`)
+		const $card=makeDiv('card')()
+		const $userInput=makeElement('input')()()
+		$userInput.type='text'
+		$userInput.name='user'
+		const $form=makeElement('form')()(
+			makeDiv('major-input-group')(
+				makeLabel()(
+					`Username, URL or #id `,$userInput
+				)
+			),
+			makeDiv('major-input-group')(
+				makeElement('button')()(`Add user`)
+			)
+		)
+		$card.append($form)
 		$card.style.gridRow='2'
 		return $card
 	}
