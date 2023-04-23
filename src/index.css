@@ -145,14 +145,19 @@ body > .symbols {
 	margin-bottom: 0;
 }
 .ui .grid thead .card::before,
-.ui .grid thead .adder::before {
+.ui .grid thead .card::after {
 	content: '';
 	position: absolute;
-	left: 0;
 	top: 0;
 	height: 100%;
 	width: 1px;
 	background: linear-gradient(var(--frame-color), transparent);
+}
+.ui .grid thead .card::before {
+	left: 0;
+}
+.ui .grid thead .card::after {
+	right: 0;
 }
 .ui .grid.with-grabbed-tab thead :is(.tab,.card):not(.grabbed) {
 	opacity: .5;
