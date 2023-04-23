@@ -6,19 +6,22 @@ import {makeElement, makeDiv} from './util/html'
 export default class Grid {
 	$grid=makeElement('table')('grid')()
 	private $colgroup=makeElement('colgroup')()()
-	private nColumns=0
+	private columnHues: (number|null)[] = []
 	constructor() {
 		this.$grid.append(this.$colgroup)
 		this.$grid.createTHead()
 		this.$grid.createTBody()
-		this.setColumns(0)
+		this.setColumns([])
 	}
-	setColumns(nColumns: number) {
-		this.nColumns=nColumns
+	get nColumns(): number {
+		return this.columnHues.length
+	}
+	setColumns(columnHues: (number|null)[]) {
+		this.columnHues=columnHues
 		this.clearItems()
-		this.$grid.style.setProperty('--columns',String(nColumns))
+		this.$grid.style.setProperty('--columns',String(this.nColumns))
 		this.$colgroup.replaceChildren()
-		for (let i=0;i<nColumns;i++) {
+		for (let i=0;i<this.nColumns;i++) {
 			this.$colgroup.append(
 				makeElement('col')()()
 			)
@@ -37,13 +40,17 @@ export default class Grid {
 		$row.dataset.rank=String(rank)
 		$row.dataset.id=String(id)
 		const $checkboxes:HTMLInputElement[]=[]
-		const columnTemplate=new Array(this.nColumns).fill(false) as boolean[]
+		const columnTemplate=this.columnHues.map(()=>false)
 		for (const iColumn of iColumns) {
 			columnTemplate[iColumn]=true
 		}
-		for (const fillCell of columnTemplate) {
+		for (const [iColumn,fillCell] of columnTemplate.entries()) {
 			const $cell=$row.insertCell()
 			if (!fillCell) continue
+			const hue=this.columnHues[iColumn]
+			if (hue!=null) {
+				$cell.style.setProperty('--hue',String(hue))
+			}
 			$cell.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
 			const $checkbox=getItemCheckbox($cell)
 			if ($checkbox) $checkboxes.push($checkbox)

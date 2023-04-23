@@ -198,7 +198,11 @@ export default class GridHead {
 		return null
 	}
 	private restartStream() {
-		this.grid.setColumns(this.userEntries.length)
+		const columnHues=this.userEntries.map(userEntry=>userEntry.type=='query'&&userEntry.info.status=='ready'
+			? userEntry.info.user.id % 360
+			: null
+		)
+		this.grid.setColumns(columnHues)
 		this.streamMessenger=undefined
 		this.restartStreamCallback()
 		this.startStreamIfNotStartedAndGotAllUids()
