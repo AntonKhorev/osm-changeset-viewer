@@ -97,10 +97,11 @@ export default class Grid {
 						spanned=true
 					} else {
 						$cell.hidden=true
+						$cell.removeAttribute('colspan')
 					}
 				} else {
 					$cell.hidden=false
-					$cell.colSpan=1
+					$cell.removeAttribute('colspan')
 				}
 			}
 		}
