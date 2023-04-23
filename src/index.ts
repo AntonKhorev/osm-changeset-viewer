@@ -80,7 +80,7 @@ async function main() {
 				grid.addItem($item,iColumns,date,type,item.id)
 				wroteAnyItem=true
 			}
-			grid.combineChangesets()
+			grid.updateTableAccordingToSettings()
 			if (wroteAnyItem) {
 				more.changeToLoadMore()
 			} else {
@@ -99,7 +99,7 @@ async function main() {
 			)
 		},true)
 		writeToolbar($root,$toolbar,$netDialog,$grid,net.cx.server.host,()=>{
-			grid.combineChangesets()
+			grid.updateTableAccordingToSettings()
 		})
 	} else {
 		$content.append(

@@ -58,7 +58,8 @@ export default class Grid {
 			}
 		}
 	}
-	combineChangesets(): void {
+	updateTableAccordingToSettings(): void {
+		const inOneColumn=this.$grid.classList.contains('in-one-column')
 		const withClosedChangesets=this.$grid.classList.contains('with-closed-changesets')
 		let $itemAbove: HTMLElement|undefined
 		for (const $item of this.$tbody.rows) {
@@ -66,6 +67,7 @@ export default class Grid {
 				$itemAbove=undefined
 				continue
 			}
+			// combine open+close changeset
 			const isConnectedWithAboveItem=(
 				$itemAbove &&
 				$itemAbove.classList.contains('changeset') &&
@@ -85,6 +87,22 @@ export default class Grid {
 				}
 			}
 			$itemAbove=$item
+			// span columns
+			let spanned=false
+			for (const $cell of $item.cells) {
+				if (inOneColumn) {
+					if (!spanned && $cell.childNodes.length) {
+						$cell.hidden=false
+						$cell.colSpan=this.nColumns+1
+						spanned=true
+					} else {
+						$cell.hidden=true
+					}
+				} else {
+					$cell.hidden=false
+					$cell.colSpan=1
+				}
+			}
 		}
 	}
 	private insertRow(date: Date, type: MuxBatchItem['type'], id: number): HTMLTableRowElement {
