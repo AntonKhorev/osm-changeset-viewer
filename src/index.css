@@ -104,6 +104,7 @@ body > .symbols {
 	aspect-ratio: 1;
 }
 .ui .grid thead .tab {
+	position: relative;
 	display: flex;
 	height: 1rem;
 	padding: .5rem;
@@ -114,7 +115,9 @@ body > .symbols {
 	border-top-left-radius: var(--padding);
 	border-top-right-radius: var(--padding);
 	margin-right: -1px;
-	box-shadow: 0 4px 4px -4px #AAA;
+	cursor: grab;
+	touch-action: none;
+	background: canvas;
 }
 .ui .grid thead .tab button.close {
 	margin-left: auto;
@@ -125,6 +128,11 @@ body > .symbols {
 	position: relative;
 	padding: var(--padding);
 	margin-right: -1px;
+	background: canvas;
+	box-shadow:
+		inset 4px -4px 4px canvas,
+		inset -4px -4px 4px canvas,
+		inset 0 4px 4px -4px #AAA;
 }
 .ui .grid thead .card .uid {
 	color: var(--light-text-color);
@@ -145,6 +153,13 @@ body > .symbols {
 	height: 100%;
 	width: 1px;
 	background: linear-gradient(var(--frame-color), transparent);
+}
+.ui .grid.with-grabbed-tab thead :is(.tab,.card):not(.grabbed) {
+	opacity: .5;
+}
+.ui .grid.with-grabbed-tab thead :is(.tab,.card).grabbed {
+	z-index: 1;
+	cursor: grabbing;
 }
 
 .ui .grid tbody tr.separator td {

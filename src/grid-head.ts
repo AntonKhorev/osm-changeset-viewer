@@ -237,18 +237,17 @@ export default class GridHead {
 		this.streamMessenger=streamMessenger
 	}
 	private makeUserTab(query: ValidUserQuery): HTMLElement {
-		const $tab=makeDiv('tab')()
+		const $label=makeElement('span')('label')()
 		if (query.type=='id') {
-			$tab.append(`#${query.uid}`)
+			$label.append(`#${query.uid}`)
 		} else {
-			$tab.append(query.username)
+			$label.append(query.username)
 		}
 		const $closeButton=makeElement('button')('close')('X')
 		$closeButton.title=`Remove user`
 		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
 		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
-		$tab.append(` `,$closeButton)
-		return $tab
+		return makeDiv('tab')($label,` `,$closeButton)
 	}
 	private makeFormTab(): HTMLElement {
 		const $tab=makeDiv('tab')()
@@ -407,13 +406,43 @@ export default class GridHead {
 	// 	this.$adderCell.before(userEntry.$card)
 	// }
 	private rewriteUserEntriesInHead(): void {
-		this.$tabRow.replaceChildren(
-			...this.userEntries.map(({$tab})=>makeElement('th')()($tab))
-		)
-		this.$cardRow.replaceChildren(
-			...this.userEntries.map(({$card})=>makeElement('td')()($card)),
-			this.$adderCell
-		)
+		this.$tabRow.replaceChildren()
+		this.$cardRow.replaceChildren()
+		for (const {$tab,$card} of this.userEntries) {
+			this.$tabRow.append(makeElement('th')()($tab))
+			this.$cardRow.append(makeElement('td')()($card))
+			let grab: {
+				pointerId: number
+				startX: number
+			} | undefined
+			$tab.onpointerdown=ev=>{
+				if (grab) return
+				grab={
+					pointerId: ev.pointerId,
+					startX: ev.clientX
+				}
+				$tab.setPointerCapture(ev.pointerId)
+				$tab.classList.add('grabbed')
+				$card.classList.add('grabbed')
+				this.grid.$grid.classList.add('with-grabbed-tab')
+			}
+			$tab.onpointerup=$tab.onpointercancel=ev=>{
+				if (!grab || grab.pointerId!=ev.pointerId) return
+				grab=undefined
+				$tab.style.removeProperty('translate')
+				$card.style.removeProperty('translate')
+				$tab.classList.remove('grabbed')
+				$card.classList.remove('grabbed')
+				this.grid.$grid.classList.remove('with-grabbed-tab')
+			}
+			$tab.onpointermove=ev=>{
+				if (!grab || grab.pointerId!=ev.pointerId) return
+				const offsetX=ev.clientX-grab.startX
+				$tab.style.translate=`${offsetX}px`
+				$card.style.translate=`${offsetX}px`
+			}
+		}
+		this.$cardRow.append(this.$adderCell)
 	}
 }
 
