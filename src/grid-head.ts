@@ -118,17 +118,7 @@ export default class GridHead {
 			for (const query of userQueries) {
 				let entry=this.pickFromExistingUserEntries(query)
 				if (!entry) {
-					const info=await this.getUserInfoForQuery(query)
-					const $tab=makeUserTab(
-						this.wrappedRemoveColumnClickListener,query
-					)
-					const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
-					const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
-					entry={
-						$tab,$card,
-						type: 'query',
-						query,$downloadedChangesetsCount,info
-					}
+					entry=await this.makeQueryUserEntry(query)
 				}
 				newUserEntries.push(entry)
 			}
@@ -136,6 +126,19 @@ export default class GridHead {
 		this.userEntries=newUserEntries
 		this.rewriteUserEntriesInHead()
 		this.restartStream()
+	}
+	private async makeQueryUserEntry(query: ValidUserQuery): Promise<GridUserEntry> {
+		const info=await this.getUserInfoForQuery(query)
+		const $tab=makeUserTab(
+			this.wrappedRemoveColumnClickListener,query
+		)
+		const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
+		const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
+		return {
+			$tab,$card,
+			type: 'query',
+			query,$downloadedChangesetsCount,info
+		}
 	}
 	private makeFormUserEntry(): GridUserEntry {
 		const userEntry: GridUserEntry = {
@@ -145,20 +148,9 @@ export default class GridHead {
 			$card: makeFormCard(value=>{
 				return toUserQuery(this.cx.server.api,this.cx.server.web,value)
 			},async(query)=>{
-				const info=await this.getUserInfoForQuery(query)
-				const $newTab=makeUserTab(
-					this.wrappedRemoveColumnClickListener,query
-				)
-				const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
-				const $newCard=this.makeUserCard(query,info,$downloadedChangesetsCount)
+				const newUserEntry=await this.makeQueryUserEntry(query)
 				// userEntry.$tab.replaceWith($newTab)
 				// userEntry.$card.replaceWith($newCard)
-				const newUserEntry:GridUserEntry={
-					$tab: $newTab,
-					$card: $newCard,
-					type: 'query',
-					query,$downloadedChangesetsCount,info
-				}
 				Object.assign(userEntry,newUserEntry)
 				this.rewriteUserEntriesInHead()
 				this.sendUpdatedUserQueries()
