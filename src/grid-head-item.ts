@@ -1,15 +1,37 @@
 import type {UserQuery, ValidUserQuery} from './osm/query-user'
 import {makeElement, makeDiv, makeLabel} from './util/html'
 
+export function makeUserTab(
+	removeColumnClickListener: (this:HTMLElement)=>void,
+	query: ValidUserQuery
+): HTMLElement {
+	const $label=makeElement('span')('label')()
+	if (query.type=='id') {
+		$label.append(`#${query.uid}`)
+	} else {
+		$label.append(query.username)
+	}
+	const $closeButton=makeCloseButton(removeColumnClickListener)
+	$closeButton.title=`Remove user`
+	return makeDiv('tab')($label,` `,$closeButton)
+}
+
 export function makeFormTab(
 	removeColumnClickListener: (this:HTMLElement)=>void
 ): HTMLElement {
 	const $label=makeElement('span')('label')(`Add user`)
-	const $closeButton=makeElement('button')('close')('X')
+	const $closeButton=makeCloseButton(removeColumnClickListener)
 	$closeButton.title=`Remove form`
+	return makeDiv('tab')($label,` `,$closeButton)
+}
+
+function makeCloseButton(
+	removeColumnClickListener: (this:HTMLElement)=>void
+): HTMLButtonElement {
+	const $closeButton=makeElement('button')('close')()
 	$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
 	$closeButton.addEventListener('click',removeColumnClickListener)
-	return makeDiv('tab')($label,` `,$closeButton)
+	return $closeButton
 }
 
 export function makeFormCard(

@@ -3,7 +3,7 @@ import type {ChangesetViewerDBReader, UserDbRecord} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
-import {makeFormTab, makeFormCard} from './grid-head-item'
+import {makeUserTab, makeFormTab, makeFormCard} from './grid-head-item'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import MuxUserItemDbStream from './mux-user-item-db-stream'
@@ -119,7 +119,9 @@ export default class GridHead {
 				let entry=this.pickFromExistingUserEntries(query)
 				if (!entry) {
 					const info=await this.getUserInfoForQuery(query)
-					const $tab=this.makeUserTab(query)
+					const $tab=makeUserTab(
+						this.wrappedRemoveColumnClickListener,query
+					)
 					const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
 					const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
 					entry={
@@ -144,7 +146,9 @@ export default class GridHead {
 				return toUserQuery(this.cx.server.api,this.cx.server.web,value)
 			},async(query)=>{
 				const info=await this.getUserInfoForQuery(query)
-				const $newTab=this.makeUserTab(query)
+				const $newTab=makeUserTab(
+					this.wrappedRemoveColumnClickListener,query
+				)
 				const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
 				const $newCard=this.makeUserCard(query,info,$downloadedChangesetsCount)
 				// userEntry.$tab.replaceWith($newTab)
@@ -217,19 +221,6 @@ export default class GridHead {
 			await streamMessenger.requestNextBatch()
 		})
 		this.streamMessenger=streamMessenger
-	}
-	private makeUserTab(query: ValidUserQuery): HTMLElement {
-		const $label=makeElement('span')('label')()
-		if (query.type=='id') {
-			$label.append(`#${query.uid}`)
-		} else {
-			$label.append(query.username)
-		}
-		const $closeButton=makeElement('button')('close')('X')
-		$closeButton.title=`Remove user`
-		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
-		$closeButton.addEventListener('click',this.wrappedRemoveColumnClickListener)
-		return makeDiv('tab')($label,` `,$closeButton)
 	}
 	private makeUserDownloadedChangesetsCount(): HTMLOutputElement {
 		const $downloadedChangesetsCount=makeElement('output')()(`???`)
