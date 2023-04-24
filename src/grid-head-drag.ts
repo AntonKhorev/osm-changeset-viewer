@@ -18,9 +18,15 @@ export default function installTabDragListeners(
 ) {
 	let grab: Grab | undefined
 	const {$tabCell,$cardCell,$tab,$card}=elements[iActive]
-	const translate=(x:number)=>{
-		$tab.style.translate=`${x}px`
-		$card.style.translate=`${x}px`
+	const translate=(x:number,i:number=iActive)=>{
+		const {$tab,$card}=elements[i]
+		if (x) {
+			$tab.style.translate=`${x}px`
+			$card.style.translate=`${x}px`
+		} else {
+			$tab.style.removeProperty('translate')
+			$card.style.removeProperty('translate')
+		}
 	}
 	$tab.ontransitionend=()=>{
 		$tabCell.classList.remove('settling')
@@ -43,9 +49,8 @@ export default function installTabDragListeners(
 		$grid.classList.add('with-grabbed-tab')
 	}
 	const cleanup=(grab: Grab)=>{
-		for (const {$tab,$card} of elements) {
-			$tab.style.removeProperty('translate')
-			$card.style.removeProperty('translate')
+		for (const i of elements.keys()) {
+			translate(0,i)
 		}
 		$tabCell.classList.remove('grabbed')
 		$cardCell.classList.remove('grabbed')
@@ -55,8 +60,7 @@ export default function installTabDragListeners(
 			requestAnimationFrame(()=>{
 				$tabCell.classList.add('settling')
 				$cardCell.classList.add('settling')
-				$tab.style.removeProperty('translate')
-				$card.style.removeProperty('translate')
+				translate(0)
 			})
 		})
 	}
@@ -102,8 +106,7 @@ export default function installTabDragListeners(
 			if (iShuffle>iActive && iShuffle<=iShiftTo) {
 				shuffleX=elements[iShuffle-1].$tabCell.offsetLeft-elements[iShuffle].$tabCell.offsetLeft
 			}
-			elements[iShuffle].$tab.style.translate=`${shuffleX}px`
-			elements[iShuffle].$card.style.translate=`${shuffleX}px`
+			translate(shuffleX,iShuffle)
 		}
 		grab.iShiftTo=iShiftTo
 	}
