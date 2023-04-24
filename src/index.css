@@ -166,6 +166,7 @@ body > .symbols {
 .ui .grid.with-grabbed-tab thead :is(.tab,.card).grabbed {
 	z-index: 1;
 	cursor: grabbing;
+	user-select: none;
 }
 
 .ui .grid tbody tr.separator td {
