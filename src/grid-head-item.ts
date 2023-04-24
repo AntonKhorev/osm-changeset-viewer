@@ -142,3 +142,14 @@ export function makeFormCard(
 	$card.append($form)
 	return $card
 }
+
+export function makeUserSelector(): HTMLElement {
+	const $checkbox=makeElement('input')()()
+	$checkbox.type='checkbox'
+	const $icon=makeElement('span')('icon')($checkbox)
+	return makeDiv('selector')($icon)
+}
+
+export function makeFormSelector(): HTMLElement {
+	return makeDiv('selector')()
+}

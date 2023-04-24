@@ -4,7 +4,10 @@ import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
 import type {UserInfo} from './grid-head-item'
-import {makeUserTab, makeFormTab, makeUserCard, makeFormCard} from './grid-head-item'
+import {
+	makeUserTab, makeUserCard, makeUserSelector,
+	makeFormTab, makeFormCard, makeFormSelector
+} from './grid-head-item'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import MuxUserItemDbStream from './mux-user-item-db-stream'
@@ -19,7 +22,7 @@ const e=makeEscapeTag(encodeURIComponent)
 type GridUserEntry = {
 	$tab: HTMLElement
 	$card: HTMLElement
-	// $selector: HTMLElement
+	$selector: HTMLElement
 } & (
 	{
 		type: 'form'
@@ -37,7 +40,7 @@ export default class GridHead {
 	private streamMessenger: MuxUserItemDbStreamMessenger|undefined
 	private $tabRow: HTMLTableRowElement
 	private $cardRow: HTMLTableRowElement
-	// private $selectorRow: HTMLTableRowElement
+	private $selectorRow: HTMLTableRowElement
 	private $adderCell: HTMLTableCellElement
 	constructor(
 		private cx: Connection,
@@ -62,7 +65,7 @@ export default class GridHead {
 		if (!grid.$grid.tHead) throw new RangeError(`no table head section`)
 		this.$tabRow=grid.$grid.tHead.insertRow()
 		this.$cardRow=grid.$grid.tHead.insertRow()
-		// this.$selectorRow=grid.$grid.tHead.insertRow()
+		this.$selectorRow=grid.$grid.tHead.insertRow()
 		this.$adderCell=this.$cardRow.insertCell()
 		this.$adderCell.classList.add('adder')
 		const $adderButton=makeElement('button')()(`+`)
@@ -137,8 +140,9 @@ export default class GridHead {
 			id=>this.cx.server.api.getUrl(e`user/${id}.json`),
 			query=>this.sendUserQueryToWorker(query)
 		)
+		const $selector=makeUserSelector()
 		return {
-			$tab,$card,
+			$tab,$card,$selector,
 			type: 'query',
 			query,$downloadedChangesetsCount,info
 		}
@@ -159,6 +163,7 @@ export default class GridHead {
 				this.sendUpdatedUserQueries()
 				this.restartStream()
 			}),
+			$selector: makeFormSelector(),
 			type: 'form'
 		}
 		return userEntry
@@ -254,17 +259,21 @@ export default class GridHead {
 	private rewriteUserEntriesInHead(): void {
 		this.$tabRow.replaceChildren()
 		this.$cardRow.replaceChildren()
+		this.$selectorRow.replaceChildren()
 		const tabDragElements: {
 			$tabCell: HTMLTableCellElement,
 			$cardCell: HTMLTableCellElement,
 			$tab: HTMLElement,
 			$card: HTMLElement
+			// TODO selector
 		}[] = []
-		for (const {$tab,$card} of this.userEntries) {
+		for (const {$tab,$card,$selector} of this.userEntries) {
 			const $tabCell=makeElement('th')()($tab)
 			const $cardCell=makeElement('td')()($card)
+			const $selectorCell=makeElement('td')()($selector)
 			this.$tabRow.append($tabCell)
 			this.$cardRow.append($cardCell)
+			this.$selectorRow.append($selectorCell)
 			tabDragElements.push({$tabCell,$cardCell,$tab,$card})
 		}
 		for (const iActive of tabDragElements.keys()) {

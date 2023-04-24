@@ -96,6 +96,22 @@ body > .symbols {
 .ui .grid col.adder {
 	width: var(--adder-width);
 }
+.ui .grid .icon {
+	--accent-color: hsl(var(--hue,77) 50% 50%);
+	display: block;
+	position: absolute;
+	left: var(--padding);
+	width: var(--icon-size);
+	height: var(--icon-size);
+}
+.ui .grid .icon > * {
+	position: absolute;
+	inset: 0;
+	margin: auto;
+	max-width: 100%;
+	max-height: 100%;
+}
+
 .ui .grid thead th {
 	position: sticky;
 	top: 0;
@@ -178,6 +194,13 @@ body > .symbols {
 .ui .grid thead td .card::after {
 	right: 0;
 }
+.ui .grid thead td .selector {
+	height: calc(2 * var(--padding) + var(--icon-size));
+}
+.ui .grid thead td .selector .icon {
+	background: var(--accent-color);
+}
+
 .ui .grid thead th.settling {
 	z-index: 3;
 }
@@ -231,19 +254,11 @@ body > .symbols {
 
 .ui .grid tbody tr.item td {
 	--vertical-padding: .125rem;
-	--accent-color: hsl(var(--hue,77) 50% 50%);
 	position: relative;
 	padding: var(--vertical-padding) var(--padding) var(--vertical-padding) calc(2 * var(--padding) + var(--icon-size));
 	min-height: var(--icon-size);
 	text-overflow: ellipsis;
 	overflow: hidden;
-}
-.ui .grid tbody tr.item td .icon {
-	display: block;
-	position: absolute;
-	left: var(--padding);
-	width: var(--icon-size);
-	height: var(--icon-size);
 }
 .ui .grid tbody tr.item.changeset td .icon::before {
 	content: '';
@@ -264,13 +279,6 @@ body > .symbols {
 .ui .grid tbody tr.item.note td .icon {
 	border-radius: 50%;
 	background: var(--accent-color);
-}
-.ui .grid tbody tr.item td .icon > * {
-	position: absolute;
-	inset: 0;
-	margin: auto;
-	max-width: 100%;
-	max-height: 100%;
 }
 .ui .grid tbody tr.item td .icon > .no-checkbox {
 	width: .75rem;
