@@ -422,7 +422,14 @@ export default class GridHead {
 			tabDragElements.push({$tabCell,$tab,$card})
 		}
 		for (const iActive of tabDragElements.keys()) {
-			installTabDragListeners(this.grid.$grid,tabDragElements,iActive)
+			installTabDragListeners(this.grid.$grid,tabDragElements,iActive,iShiftTo=>{
+				const shiftedUserEntry=this.userEntries[iActive]
+				this.userEntries.splice(iActive,1)
+				this.userEntries.splice(iShiftTo,0,shiftedUserEntry)
+				this.rewriteUserEntriesInHead()
+				this.sendUpdatedUserQueries()
+				this.restartStream()
+			})
 		}
 		this.$cardRow.append(this.$adderCell)
 	}

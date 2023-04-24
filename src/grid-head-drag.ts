@@ -5,11 +5,13 @@ export default function installTabDragListeners(
 		$tab: HTMLElement,
 		$card: HTMLElement
 	}[],
-	iActive: number
+	iActive: number,
+	shiftTabCallback: (iShiftTo: number)=>void
 ) {
 	let grab: {
 		pointerId: number
 		startX: number
+		iShiftTo: number
 	} | undefined
 	const {$tab,$card}=elements[iActive]
 	$tab.onpointerdown=ev=>{
@@ -17,15 +19,15 @@ export default function installTabDragListeners(
 		if (ev.target instanceof Element && ev.target.closest('button')) return
 		grab={
 			pointerId: ev.pointerId,
-			startX: ev.clientX
+			startX: ev.clientX,
+			iShiftTo: iActive
 		}
 		$tab.setPointerCapture(ev.pointerId)
 		$tab.classList.add('grabbed')
 		$card.classList.add('grabbed')
 		$grid.classList.add('with-grabbed-tab')
 	}
-	$tab.onpointerup=$tab.onpointercancel=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
+	const cleanup=()=>{
 		grab=undefined
 		for (const {$tab,$card} of elements) {
 			$tab.style.removeProperty('translate')
@@ -34,6 +36,16 @@ export default function installTabDragListeners(
 		$tab.classList.remove('grabbed')
 		$card.classList.remove('grabbed')
 		$grid.classList.remove('with-grabbed-tab')
+	}
+	$tab.onpointerup=ev=>{
+		if (!grab || grab.pointerId!=ev.pointerId) return
+		const iShiftTo=grab.iShiftTo
+		cleanup()
+		if (iShiftTo!=iActive) shiftTabCallback(iShiftTo)
+	}
+	$tab.onpointercancel=ev=>{
+		if (!grab || grab.pointerId!=ev.pointerId) return
+		cleanup()
 	}
 	$tab.onpointermove=ev=>{
 		if (!grab || grab.pointerId!=ev.pointerId) return
@@ -68,5 +80,6 @@ export default function installTabDragListeners(
 			elements[iShuffle].$tab.style.translate=`${shuffleX}px`
 			elements[iShuffle].$card.style.translate=`${shuffleX}px`
 		}
+		grab.iShiftTo=iShiftTo
 	}
 }
