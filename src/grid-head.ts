@@ -3,13 +3,14 @@ import type {ChangesetViewerDBReader, UserDbRecord} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
+import {makeFormCard} from './grid-head-item'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import MuxUserItemDbStream from './mux-user-item-db-stream'
 import type {GridBatchItem} from './mux-user-item-db-stream-messenger'
 import MuxUserItemDbStreamMessenger from './mux-user-item-db-stream-messenger'
 import {makeDateOutput} from './date'
-import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
+import {makeElement, makeDiv, makeLink} from './util/html'
 import {makeEscapeTag} from './util/escape'
 import {moveInArray} from './util/types'
 
@@ -25,6 +26,7 @@ type UserInfo = {
 type GridUserEntry = {
 	$tab: HTMLElement
 	$card: HTMLElement
+	// $selector: HTMLElement
 } & (
 	{
 		type: 'form'
@@ -42,6 +44,7 @@ export default class GridHead {
 	private streamMessenger: MuxUserItemDbStreamMessenger|undefined
 	private $tabRow: HTMLTableRowElement
 	private $cardRow: HTMLTableRowElement
+	// private $selectorRow: HTMLTableRowElement
 	private $adderCell: HTMLTableCellElement
 	constructor(
 		private cx: Connection,
@@ -66,6 +69,7 @@ export default class GridHead {
 		if (!grid.$grid.tHead) throw new RangeError(`no table head section`)
 		this.$tabRow=grid.$grid.tHead.insertRow()
 		this.$cardRow=grid.$grid.tHead.insertRow()
+		// this.$selectorRow=grid.$grid.tHead.insertRow()
 		this.$adderCell=this.$cardRow.insertCell()
 		this.$adderCell.classList.add('adder')
 		const $adderButton=makeElement('button')()(`+`)
@@ -132,11 +136,31 @@ export default class GridHead {
 		this.restartStream()
 	}
 	private makeFormUserEntry(): GridUserEntry {
-		return {
+		const userEntry: GridUserEntry = {
 			$tab: this.makeFormTab(),
-			$card: this.makeFormCard(),
+			$card: makeFormCard(value=>{
+				return toUserQuery(this.cx.server.api,this.cx.server.web,value)
+			},async(query)=>{
+				const info=await this.getUserInfoForQuery(query)
+				const $newTab=this.makeUserTab(query)
+				const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
+				const $newCard=this.makeUserCard(query,info,$downloadedChangesetsCount)
+				// userEntry.$tab.replaceWith($newTab)
+				// userEntry.$card.replaceWith($newCard)
+				const newUserEntry:GridUserEntry={
+					$tab: $newTab,
+					$card: $newCard,
+					type: 'query',
+					query,$downloadedChangesetsCount,info
+				}
+				Object.assign(userEntry,newUserEntry)
+				this.rewriteUserEntriesInHead()
+				this.sendUpdatedUserQueries()
+				this.restartStream()
+			}),
 			type: 'form'
 		}
+		return userEntry
 	}
 	private async getUserInfoForQuery(query: ValidUserQuery): Promise<UserInfo> {
 		if (query.type=='name') {
@@ -273,62 +297,6 @@ export default class GridHead {
 			}
 		}
 		return $card
-	}
-	private makeFormCard() {
-		const $card=makeDiv('card')()
-		const $userInput=makeElement('input')()()
-		$userInput.type='text'
-		$userInput.name='user'
-		$userInput.oninput=()=>{
-			const query=toUserQuery(this.cx.server.api,this.cx.server.web,$userInput.value)
-			if (query.type=='invalid') {
-				$userInput.setCustomValidity(query.message)
-			} else if (query.type=='empty') {
-				$userInput.setCustomValidity(`user query cannot be empty`)
-			} else {
-				$userInput.setCustomValidity('')
-			}
-		}
-		const $form=makeElement('form')()(
-			makeDiv('major-input-group')(
-				makeLabel()(
-					`Username, URL or #id `,$userInput
-				)
-			),
-			makeDiv('major-input-group')(
-				makeElement('button')()(`Add user`)
-			)
-		)
-		$form.onsubmit=async(ev)=>{
-			ev.preventDefault()
-			const query=toUserQuery(this.cx.server.api,this.cx.server.web,$userInput.value)
-			if (query.type=='invalid' || query.type=='empty') return
-			const info=await this.getUserInfoForQuery(query)
-			const userEntry=this.findUserEntryByCard($card)
-			if (!userEntry) return
-			const $newTab=this.makeUserTab(query)
-			const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
-			const $newCard=this.makeUserCard(query,info,$downloadedChangesetsCount)
-			// userEntry.$tab.replaceWith($newTab)
-			// userEntry.$card.replaceWith($newCard)
-			const newUserEntry:GridUserEntry={
-				$tab: $newTab,
-				$card: $newCard,
-				type: 'query',
-				query,$downloadedChangesetsCount,info
-			}
-			Object.assign(userEntry,newUserEntry)
-			this.rewriteUserEntriesInHead()
-			this.sendUpdatedUserQueries()
-			this.restartStream()
-		}
-		$card.append($form)
-		return $card
-	}
-	private findUserEntryByCard($card: HTMLElement): GridUserEntry|undefined {
-		for (const userEntry of this.userEntries) {
-			if (userEntry.$card==$card) return userEntry
-		}
 	}
 	private removeUserClickListener($button: HTMLElement): void {
 		const $tab=$button.closest('.tab')
