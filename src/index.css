@@ -159,8 +159,9 @@ body > .symbols {
 .ui .grid thead .card::after {
 	right: 0;
 }
-.ui .grid thead :is(.tab,.card):not(.grabbed) {
-	transition: translate 70ms;
+.ui .grid thead :is(.tab,.card).settling {
+	z-index: 1;
+	transition: translate 50ms;
 }
 .ui .grid.with-grabbed-tab thead :is(.tab,.card):not(.grabbed) {
 	opacity: .5;

@@ -21,6 +21,12 @@ export default function installTabDragListeners(
 		$tab.style.translate=`${x}px`
 		$card.style.translate=`${x}px`
 	}
+	$tab.ontransitionend=()=>{
+		$tab.classList.remove('settling')
+	}
+	$card.ontransitionend=()=>{
+		$card.classList.remove('settling')
+	}
 	$tab.onpointerdown=ev=>{
 		if (grab) return
 		if (ev.target instanceof Element && ev.target.closest('button')) return
@@ -44,12 +50,10 @@ export default function installTabDragListeners(
 		$card.classList.remove('grabbed')
 		$grid.classList.remove('with-grabbed-tab')
 		requestAnimationFrame(()=>{
-			$tab.style.transition=`none`
-			$card.style.transition=`none`
 			translate(grab.relativeShiftX)
 			requestAnimationFrame(()=>{
-				$tab.style.removeProperty('transition')
-				$card.style.removeProperty('transition')
+				$tab.classList.add('settling')
+				$card.classList.add('settling')
 				$tab.style.removeProperty('translate')
 				$card.style.removeProperty('translate')
 			})
