@@ -69,6 +69,7 @@ export default function installTabDragListeners(
 		}
 		toggleCellClass('grabbed',false)
 		$grid.classList.remove('with-grabbed-tab')
+		if (!grab.relativeShiftX) return
 		requestAnimationFrame(()=>{
 			translate(grab.relativeShiftX)
 			requestAnimationFrame(()=>{
