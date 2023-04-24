@@ -194,11 +194,18 @@ body > .symbols {
 .ui .grid thead td .card::after {
 	right: 0;
 }
-.ui .grid thead td .selector {
-	height: calc(2 * var(--padding) + var(--icon-size));
+.ui .grid thead tr.selectors td {
+	position: sticky;
+	top: var(--padding);
+	z-index: 5;
+	pointer-events: none;
 }
-.ui .grid thead td .selector .icon {
+.ui .grid thead tr.selectors td .selector {
+	height: var(--icon-size);
+}
+.ui .grid thead tr.selectors td .selector .icon {
 	background: var(--accent-color);
+	pointer-events: all;
 }
 
 .ui .grid thead th.settling {

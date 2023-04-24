@@ -66,6 +66,7 @@ export default class GridHead {
 		this.$tabRow=grid.$grid.tHead.insertRow()
 		this.$cardRow=grid.$grid.tHead.insertRow()
 		this.$selectorRow=grid.$grid.tHead.insertRow()
+		this.$selectorRow.classList.add('selectors')
 		this.$adderCell=this.$cardRow.insertCell()
 		this.$adderCell.classList.add('adder')
 		const $adderButton=makeElement('button')()(`+`)
