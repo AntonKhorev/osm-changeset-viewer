@@ -190,10 +190,13 @@ body > .symbols {
 .ui .grid thead td.settling .card {
 	transition: translate 50ms;
 }
-.ui .grid.with-grabbed-tab thead th:not(.grabbed) .tab, 
+.ui .grid.with-grabbed-tab thead th:not(.grabbed) .tab,
 .ui .grid.with-grabbed-tab thead td:not(.grabbed) .card {
-	opacity: .5;
 	transition: translate 100ms;
+}
+.ui .grid.with-grabbed-tab thead th:not(.grabbed) .tab > *,
+.ui .grid.with-grabbed-tab thead td:not(.grabbed) .card > * {
+	opacity: .5;
 }
 .ui .grid.with-grabbed-tab thead th.grabbed {
 	z-index: 3;
