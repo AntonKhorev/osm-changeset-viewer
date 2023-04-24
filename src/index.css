@@ -112,13 +112,18 @@ body > .symbols {
 	max-height: 100%;
 }
 
+.ui .grid thead {
+	--base-z-index: 0;
+}
 .ui .grid thead th {
+	--base-z-index: 1;
 	position: sticky;
 	top: 0;
-	z-index: 1;
+	z-index: var(--base-z-index);
 }
 .ui .grid thead td {
 	position: relative;
+	z-index: var(--base-z-index);
 }
 .ui .grid thead td.adder {
 	position: relative;
@@ -195,9 +200,9 @@ body > .symbols {
 	right: 0;
 }
 .ui .grid thead tr.selectors td {
+	--base-z-index: 2;
 	position: sticky;
 	top: var(--padding);
-	z-index: 5;
 	pointer-events: none;
 }
 .ui .grid thead tr.selectors td .selector {
@@ -208,11 +213,9 @@ body > .symbols {
 	pointer-events: all;
 }
 
-.ui .grid thead th.settling {
-	z-index: 3;
-}
-.ui .grid thead td.settling {
-	z-index: 2;
+.ui .grid thead :is(th,td).settling,
+.ui .grid.with-grabbed-tab thead :is(th,td).grabbed {
+	z-index: calc(var(--base-z-index) + 10);
 }
 .ui .grid thead th.settling .tab, 
 .ui .grid thead td.settling :is(.card,.selector) {
@@ -225,12 +228,6 @@ body > .symbols {
 .ui .grid.with-grabbed-tab thead th:not(.grabbed) .tab > *,
 .ui .grid.with-grabbed-tab thead td:not(.grabbed) :is(.card,.selector) > * {
 	opacity: .5;
-}
-.ui .grid.with-grabbed-tab thead th.grabbed {
-	z-index: 3;
-}
-.ui .grid.with-grabbed-tab thead td.grabbed {
-	z-index: 2;
 }
 .ui .grid.with-grabbed-tab thead th.grabbed .tab, 
 .ui .grid.with-grabbed-tab thead td.grabbed :is(.card,.selector) {
