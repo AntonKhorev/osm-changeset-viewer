@@ -1,6 +1,17 @@
 import type {UserQuery, ValidUserQuery} from './osm/query-user'
 import {makeElement, makeDiv, makeLabel} from './util/html'
 
+export function makeFormTab(
+	removeColumnClickListener: (this:HTMLElement)=>void
+): HTMLElement {
+	const $label=makeElement('span')('label')(`Add user`)
+	const $closeButton=makeElement('button')('close')('X')
+	$closeButton.title=`Remove form`
+	$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
+	$closeButton.addEventListener('click',removeColumnClickListener)
+	return makeDiv('tab')($label,` `,$closeButton)
+}
+
 export function makeFormCard(
 	getUserQueryFromInputValue: (value:string)=>UserQuery,
 	processValidUserQuery: (query:ValidUserQuery)=>Promise<void>

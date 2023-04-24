@@ -3,7 +3,7 @@ import type {ChangesetViewerDBReader, UserDbRecord} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
-import {makeFormCard} from './grid-head-item'
+import {makeFormTab, makeFormCard} from './grid-head-item'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import MuxUserItemDbStream from './mux-user-item-db-stream'
@@ -40,7 +40,7 @@ type GridUserEntry = {
 
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
-	private wrappedRemoveUserClickListener: (this:HTMLElement)=>void
+	private wrappedRemoveColumnClickListener: (this:HTMLElement)=>void
 	private streamMessenger: MuxUserItemDbStreamMessenger|undefined
 	private $tabRow: HTMLTableRowElement
 	private $cardRow: HTMLTableRowElement
@@ -62,8 +62,8 @@ export default class GridHead {
 	) {
 		{
 			const that=this
-			this.wrappedRemoveUserClickListener=function(){
-				that.removeUserClickListener(this)
+			this.wrappedRemoveColumnClickListener=function(){
+				that.removeColumnClickListener(this)
 			}
 		}
 		if (!grid.$grid.tHead) throw new RangeError(`no table head section`)
@@ -137,7 +137,9 @@ export default class GridHead {
 	}
 	private makeFormUserEntry(): GridUserEntry {
 		const userEntry: GridUserEntry = {
-			$tab: this.makeFormTab(),
+			$tab: makeFormTab(
+				this.wrappedRemoveColumnClickListener
+			),
 			$card: makeFormCard(value=>{
 				return toUserQuery(this.cx.server.api,this.cx.server.web,value)
 			},async(query)=>{
@@ -226,15 +228,7 @@ export default class GridHead {
 		const $closeButton=makeElement('button')('close')('X')
 		$closeButton.title=`Remove user`
 		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
-		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
-		return makeDiv('tab')($label,` `,$closeButton)
-	}
-	private makeFormTab(): HTMLElement {
-		const $label=makeElement('span')('label')(`Add user`)
-		const $closeButton=makeElement('button')('close')('X')
-		$closeButton.title=`Remove form`
-		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
-		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
+		$closeButton.addEventListener('click',this.wrappedRemoveColumnClickListener)
 		return makeDiv('tab')($label,` `,$closeButton)
 	}
 	private makeUserDownloadedChangesetsCount(): HTMLOutputElement {
@@ -298,7 +292,7 @@ export default class GridHead {
 		}
 		return $card
 	}
-	private removeUserClickListener($button: HTMLElement): void {
+	private removeColumnClickListener($button: HTMLElement): void {
 		const $tab=$button.closest('.tab')
 		for (const [i,entry] of this.userEntries.entries()) {
 			if (entry.$tab!=$tab) continue
