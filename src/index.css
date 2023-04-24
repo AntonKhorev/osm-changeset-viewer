@@ -124,6 +124,7 @@ body > .symbols {
 	cursor: grab;
 	touch-action: none;
 	background: canvas;
+	box-shadow: 0 4px 4px -4px #AAA;
 }
 .ui .grid thead th .tab > * {
 	position: absolute;
@@ -150,10 +151,6 @@ body > .symbols {
 	padding: var(--padding);
 	margin-right: -1px;
 	background: canvas;
-	box-shadow:
-		inset 4px -4px 4px canvas,
-		inset -4px -4px 4px canvas,
-		inset 0 4px 4px -4px #AAA;
 }
 .ui .grid thead td .card .uid {
 	color: var(--light-text-color);
