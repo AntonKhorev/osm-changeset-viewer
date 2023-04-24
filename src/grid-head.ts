@@ -3,6 +3,7 @@ import type {ChangesetViewerDBReader, UserDbRecord} from './db'
 import type Grid from './grid'
 import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
+import installTabDragListeners from './grid-head-drag'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
@@ -408,72 +409,20 @@ export default class GridHead {
 	private rewriteUserEntriesInHead(): void {
 		this.$tabRow.replaceChildren()
 		this.$cardRow.replaceChildren()
-		for (const [iActive,{$tab,$card}] of this.userEntries.entries()) {
-			this.$tabRow.append(makeElement('th')()($tab))
-			this.$cardRow.append(makeElement('td')()($card))
-			let grab: {
-				pointerId: number
-				startX: number
-			} | undefined
-			$tab.onpointerdown=ev=>{
-				if (grab) return
-				if (ev.target instanceof Element && ev.target.closest('button')) return
-				grab={
-					pointerId: ev.pointerId,
-					startX: ev.clientX
-				}
-				$tab.setPointerCapture(ev.pointerId)
-				$tab.classList.add('grabbed')
-				$card.classList.add('grabbed')
-				this.grid.$grid.classList.add('with-grabbed-tab')
-			}
-			$tab.onpointerup=$tab.onpointercancel=ev=>{
-				if (!grab || grab.pointerId!=ev.pointerId) return
-				grab=undefined
-				for (const {$tab,$card} of this.userEntries) {
-					$tab.style.removeProperty('translate')
-					$card.style.removeProperty('translate')
-				}
-				$tab.classList.remove('grabbed')
-				$card.classList.remove('grabbed')
-				this.grid.$grid.classList.remove('with-grabbed-tab')
-			}
-			$tab.onpointermove=ev=>{
-				if (!grab || grab.pointerId!=ev.pointerId) return
-				const $tabCells=[...this.$tabRow.cells]
-				const cellStartX=$tabCells[iActive].offsetLeft
-				const minOffsetX=$tabCells[0].offsetLeft-cellStartX
-				const maxOffsetX=$tabCells[$tabCells.length-1].offsetLeft-cellStartX
-				const offsetX=Math.max(
-					minOffsetX,
-				Math.min(
-					maxOffsetX,
-					ev.clientX-grab.startX
-				))
-				$tab.style.translate=`${offsetX}px`
-				$card.style.translate=`${offsetX}px`
-				const cellOffsetX=cellStartX+offsetX
-				let iShiftTo=0
-				for (;iShiftTo<$tabCells.length;iShiftTo++) {
-					const $shiftToCell=$tabCells[iShiftTo]
-					if (cellOffsetX<$shiftToCell.offsetLeft+$shiftToCell.offsetWidth/2) {
-						break
-					}
-				}
-				for (let iShuffle=0;iShuffle<$tabCells.length;iShuffle++) {
-					if (iShuffle==iActive) continue
-					let shuffleX=0
-					if (iShuffle>=iShiftTo && iShuffle<iActive) {
-						shuffleX=$tabCells[iShuffle+1].offsetLeft-$tabCells[iShuffle].offsetLeft
-					}
-					if (iShuffle>iActive && iShuffle<=iShiftTo) {
-						shuffleX=$tabCells[iShuffle-1].offsetLeft-$tabCells[iShuffle].offsetLeft
-					}
-					const {$tab,$card}=this.userEntries[iShuffle]
-					$tab.style.translate=`${shuffleX}px`
-					$card.style.translate=`${shuffleX}px`
-				}
-			}
+		const tabDragElements: {
+			$tabCell: HTMLTableCellElement,
+			$tab: HTMLElement,
+			$card: HTMLElement
+		}[] = []
+		for (const {$tab,$card} of this.userEntries) {
+			const $tabCell=makeElement('th')()($tab)
+			const $cardCell=makeElement('td')()($card)
+			this.$tabRow.append($tabCell)
+			this.$cardRow.append($cardCell)
+			tabDragElements.push({$tabCell,$tab,$card})
+		}
+		for (const iActive of tabDragElements.keys()) {
+			installTabDragListeners(this.grid.$grid,tabDragElements,iActive)
 		}
 		this.$cardRow.append(this.$adderCell)
 	}
