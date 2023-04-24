@@ -161,7 +161,7 @@ body > .symbols {
 }
 .ui .grid.with-grabbed-tab thead :is(.tab,.card):not(.grabbed) {
 	opacity: .5;
-	transition: transform 150ms;
+	transition: translate 100ms;
 }
 .ui .grid.with-grabbed-tab thead :is(.tab,.card).grabbed {
 	z-index: 1;

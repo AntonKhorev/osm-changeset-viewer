@@ -430,8 +430,10 @@ export default class GridHead {
 			$tab.onpointerup=$tab.onpointercancel=ev=>{
 				if (!grab || grab.pointerId!=ev.pointerId) return
 				grab=undefined
-				$tab.style.removeProperty('translate')
-				$card.style.removeProperty('translate')
+				for (const {$tab,$card} of this.userEntries) {
+					$tab.style.removeProperty('translate')
+					$card.style.removeProperty('translate')
+				}
 				$tab.classList.remove('grabbed')
 				$card.classList.remove('grabbed')
 				this.grid.$grid.classList.remove('with-grabbed-tab')
@@ -448,12 +450,26 @@ export default class GridHead {
 					maxOffsetX,
 					ev.clientX-grab.startX
 				))
-				// const cellOffsetX=cellStartX+offsetX
 				$tab.style.translate=`${offsetX}px`
 				$card.style.translate=`${offsetX}px`
-				// console.log(`current th offset`,cellOffsetX)
-				// console.log(`event offset`,ev.offsetX,`tab offset`,$tab.offsetLeft) ///
-				// console.log(`th offsets`,[...this.$tabRow.cells].map($c=>$c.offsetLeft)) ///
+				const cellOffsetX=cellStartX+offsetX
+				let iShift=0
+				for (;iShift<$tabCells.length;iShift++) {
+					const $shiftCell=$tabCells[iShift]
+					if (cellOffsetX<$shiftCell.offsetLeft+$shiftCell.offsetWidth/2) {
+						break
+					}
+				}
+				for (let iShuffle=0;iShuffle<$tabCells.length;iShuffle++) {
+					if (iShuffle==iActive) continue
+					let shuffleX=0
+					if (iShuffle>=iShift && iShuffle<iActive) {
+						shuffleX=$tabCells[iShuffle+1].offsetLeft-$tabCells[iShuffle].offsetLeft
+					}
+					const {$tab,$card}=this.userEntries[iShuffle]
+					$tab.style.translate=`${shuffleX}px`
+					$card.style.translate=`${shuffleX}px`
+				}
 			}
 		}
 		this.$cardRow.append(this.$adderCell)
