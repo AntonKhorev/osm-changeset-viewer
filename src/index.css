@@ -96,6 +96,14 @@ body > .symbols {
 .ui .grid col.adder {
 	width: var(--adder-width);
 }
+.ui .grid thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+.ui .grid thead td {
+	position: relative;
+}
 .ui .grid thead td.adder {
 	position: relative;
 	padding: 0 var(--padding);
@@ -104,7 +112,7 @@ body > .symbols {
 	width: 100%;
 	aspect-ratio: 1;
 }
-.ui .grid thead .tab {
+.ui .grid thead th .tab {
 	position: relative;
 	height: calc(1rem + 2 * var(--padding));
 	border-left: var(--frame-line);
@@ -117,10 +125,10 @@ body > .symbols {
 	touch-action: none;
 	background: canvas;
 }
-.ui .grid thead .tab > * {
+.ui .grid thead th .tab > * {
 	position: absolute;
 }
-.ui .grid thead .tab .label {
+.ui .grid thead th .tab .label {
 	display: block;
 	overflow: hidden;
 	top: var(--padding);
@@ -131,13 +139,13 @@ body > .symbols {
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
-.ui .grid thead .tab button.close {
+.ui .grid thead th .tab button.close {
 	top: var(--padding);
 	right: var(--padding);
 	width: 1rem;
 	height: 1rem;
 }
-.ui .grid thead .card {
+.ui .grid thead td .card {
 	position: relative;
 	padding: var(--padding);
 	margin-right: -1px;
@@ -147,18 +155,18 @@ body > .symbols {
 		inset -4px -4px 4px canvas,
 		inset 0 4px 4px -4px #AAA;
 }
-.ui .grid thead .card .uid {
+.ui .grid thead td .card .uid {
 	color: var(--light-text-color);
 	font-size: .8em;
 }
-.ui .grid thead .card form > [class$="-input-group"]:first-child {
+.ui .grid thead td .card form > [class$="-input-group"]:first-child {
 	margin-top: 0;
 }
-.ui .grid thead .card form > [class$="-input-group"]:last-child {
+.ui .grid thead td .card form > [class$="-input-group"]:last-child {
 	margin-bottom: 0;
 }
-.ui .grid thead .card::before,
-.ui .grid thead .card::after {
+.ui .grid thead td .card::before,
+.ui .grid thead td .card::after {
 	content: '';
 	position: absolute;
 	top: 0;
@@ -166,22 +174,35 @@ body > .symbols {
 	width: 1px;
 	background: linear-gradient(var(--frame-color), transparent);
 }
-.ui .grid thead .card::before {
+.ui .grid thead td .card::before {
 	left: 0;
 }
-.ui .grid thead .card::after {
+.ui .grid thead td .card::after {
 	right: 0;
 }
-.ui .grid thead :is(.tab,.card).settling {
-	z-index: 1;
+.ui .grid thead th.settling {
+	z-index: 3;
+}
+.ui .grid thead td.settling {
+	z-index: 2;
+}
+.ui .grid thead th.settling .tab, 
+.ui .grid thead td.settling .card {
 	transition: translate 50ms;
 }
-.ui .grid.with-grabbed-tab thead :is(.tab,.card):not(.grabbed) {
+.ui .grid.with-grabbed-tab thead th:not(.grabbed) .tab, 
+.ui .grid.with-grabbed-tab thead td:not(.grabbed) .card {
 	opacity: .5;
 	transition: translate 100ms;
 }
-.ui .grid.with-grabbed-tab thead :is(.tab,.card).grabbed {
-	z-index: 1;
+.ui .grid.with-grabbed-tab thead th.grabbed {
+	z-index: 3;
+}
+.ui .grid.with-grabbed-tab thead td.grabbed {
+	z-index: 2;
+}
+.ui .grid.with-grabbed-tab thead th.grabbed .tab, 
+.ui .grid.with-grabbed-tab thead td.grabbed .card {
 	cursor: grabbing;
 	user-select: none;
 }

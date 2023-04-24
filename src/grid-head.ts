@@ -409,6 +409,7 @@ export default class GridHead {
 		this.$cardRow.replaceChildren()
 		const tabDragElements: {
 			$tabCell: HTMLTableCellElement,
+			$cardCell: HTMLTableCellElement,
 			$tab: HTMLElement,
 			$card: HTMLElement
 		}[] = []
@@ -417,7 +418,7 @@ export default class GridHead {
 			const $cardCell=makeElement('td')()($card)
 			this.$tabRow.append($tabCell)
 			this.$cardRow.append($cardCell)
-			tabDragElements.push({$tabCell,$tab,$card})
+			tabDragElements.push({$tabCell,$cardCell,$tab,$card})
 		}
 		for (const iActive of tabDragElements.keys()) {
 			installTabDragListeners(this.grid.$grid,tabDragElements,iActive,iShiftTo=>{

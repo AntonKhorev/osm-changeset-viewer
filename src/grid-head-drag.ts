@@ -9,6 +9,7 @@ export default function installTabDragListeners(
 	$grid: HTMLTableElement,
 	elements: readonly {
 		$tabCell: HTMLTableCellElement,
+		$cardCell: HTMLTableCellElement,
 		$tab: HTMLElement,
 		$card: HTMLElement
 	}[],
@@ -16,16 +17,16 @@ export default function installTabDragListeners(
 	shiftTabCallback: (iShiftTo: number)=>void
 ) {
 	let grab: Grab | undefined
-	const {$tab,$card}=elements[iActive]
+	const {$tabCell,$cardCell,$tab,$card}=elements[iActive]
 	const translate=(x:number)=>{
 		$tab.style.translate=`${x}px`
 		$card.style.translate=`${x}px`
 	}
 	$tab.ontransitionend=()=>{
-		$tab.classList.remove('settling')
+		$tabCell.classList.remove('settling')
 	}
 	$card.ontransitionend=()=>{
-		$card.classList.remove('settling')
+		$cardCell.classList.remove('settling')
 	}
 	$tab.onpointerdown=ev=>{
 		if (grab) return
@@ -37,8 +38,8 @@ export default function installTabDragListeners(
 			relativeShiftX: 0
 		}
 		$tab.setPointerCapture(ev.pointerId)
-		$tab.classList.add('grabbed')
-		$card.classList.add('grabbed')
+		$tabCell.classList.add('grabbed')
+		$cardCell.classList.add('grabbed')
 		$grid.classList.add('with-grabbed-tab')
 	}
 	const cleanup=(grab: Grab)=>{
@@ -46,14 +47,14 @@ export default function installTabDragListeners(
 			$tab.style.removeProperty('translate')
 			$card.style.removeProperty('translate')
 		}
-		$tab.classList.remove('grabbed')
-		$card.classList.remove('grabbed')
+		$tabCell.classList.remove('grabbed')
+		$cardCell.classList.remove('grabbed')
 		$grid.classList.remove('with-grabbed-tab')
 		requestAnimationFrame(()=>{
 			translate(grab.relativeShiftX)
 			requestAnimationFrame(()=>{
-				$tab.classList.add('settling')
-				$card.classList.add('settling')
+				$tabCell.classList.add('settling')
+				$cardCell.classList.add('settling')
 				$tab.style.removeProperty('translate')
 				$card.style.removeProperty('translate')
 			})
