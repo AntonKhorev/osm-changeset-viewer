@@ -191,10 +191,7 @@ export default class GridHead {
 		return null
 	}
 	private restartStream() {
-		const columnHues=this.userEntries.map(userEntry=>userEntry.type=='query'&&userEntry.info.status=='ready'
-			? userEntry.info.user.id % 360
-			: null
-		)
+		const columnHues=this.userEntries.map(getUserEntryHue)
 		this.grid.setColumns(columnHues)
 		this.streamMessenger=undefined
 		this.restartStreamCallback()
@@ -269,10 +266,13 @@ export default class GridHead {
 			$card: HTMLElement,
 			$selector: HTMLElement
 		}[] = []
-		for (const {$tab,$card,$selector} of this.userEntries) {
+		for (const userEntry of this.userEntries) {
+			const {$tab,$card,$selector}=userEntry
 			const $tabCell=makeElement('th')()($tab)
 			const $cardCell=makeElement('td')()($card)
 			const $selectorCell=makeElement('td')()($selector)
+			const hue=getUserEntryHue(userEntry)
+			if (hue!=null) $selectorCell.style.setProperty('--hue',String(hue))
 			this.$tabRow.append($tabCell)
 			this.$cardRow.append($cardCell)
 			this.$selectorRow.append($selectorCell)
@@ -301,4 +301,11 @@ function isSameQuery(query1: ValidUserQuery, query2: ValidUserQuery): boolean {
 	} else {
 		return false
 	}
+}
+
+function getUserEntryHue(userEntry: GridUserEntry): number|null {
+	return (userEntry.type=='query'&&userEntry.info.status=='ready'
+		? userEntry.info.user.id % 360
+		: null
+	)
 }
