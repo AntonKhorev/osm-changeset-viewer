@@ -40,14 +40,23 @@ type GridBatchItem = {
 } & MuxBatchItem
 
 class MuxUserItemDbStreamMessenger {
-	$adder=makeDiv('adder')()
-	watchedUids=new Set<number>()
+	private uidToColumns=new Map<number,number[]>()
+	private watchedUids=new Set<number>()
 	constructor(
 		private host: string,
 		private worker: SharedWorker,
 		private stream: MuxUserItemDbStream,
-		private receiveBatch: (batch:MuxBatchItem[])=>void
-	) {}
+		private columnUids: (number|null)[],
+		private receiveBatch: (batch:Iterable<GridBatchItem>)=>void
+	) {
+		for (const [iColumn,uid] of columnUids.entries()) {
+			if (uid==null) continue
+			if (!this.uidToColumns.has(uid)) {
+				this.uidToColumns.set(uid,[])
+			}
+			this.uidToColumns.get(uid)?.push(iColumn)
+		}
+	}
 	async requestNextBatch(): Promise<void> {
 		const action=await this.stream.getNextAction()
 		if (action.type=='scan') {
@@ -60,7 +69,9 @@ class MuxUserItemDbStreamMessenger {
 				uid: action.uid,
 			})
 		} else if (action.type=='batch') {
-			this.receiveBatch(action.batch)
+			this.receiveBatch(
+				action.batch.map((batchItem)=>({...batchItem,iColumns:this.uidToColumns.get(batchItem.item.uid)??[]}))
+			)
 		} else if (action.type=='end') {
 			this.receiveBatch([])
 		}
@@ -210,27 +221,21 @@ export default class GridHead {
 	}
 	private startStreamIfNotStartedAndGotAllUids() {
 		if (this.streamMessenger) return
-		const uidToColumns=new Map<number,number[]>
-		for (const [i,entry] of this.userEntries.entries()) {
-			if (entry.type!='query') continue
-			if (entry.info.status=='failed') {
+		const uids=new Set<number>()
+		const columnUids: (number|null)[] = []
+		for (const entry of this.userEntries) {
+			if (entry.type!='query' || entry.info.status=='failed') {
+				columnUids.push(null)
 			} else if (entry.info.status=='ready') {
-				const uid=entry.info.user.id
-				if (!uidToColumns.has(uid)) {
-					uidToColumns.set(uid,[])
-				}
-				uidToColumns.get(uid)?.push(i)
+				uids.add(entry.info.user.id)
+				columnUids.push(entry.info.user.id)
 			} else {
 				return
 			}
 		}
-		const stream=new MuxUserItemDbStream(this.db,[...uidToColumns.keys()])
+		const stream=new MuxUserItemDbStream(this.db,uids)
 		const streamMessenger=new MuxUserItemDbStreamMessenger(
-			this.cx.server.host,this.worker,stream,batch=>{
-				this.receiveBatchCallback(
-					batch.map((muxBatchItem)=>({...muxBatchItem,iColumns:uidToColumns.get(muxBatchItem.item.uid)??[]}))
-				)
-			}
+			this.cx.server.host,this.worker,stream,columnUids,this.receiveBatchCallback
 		)
 		this.readyStreamCallback(async()=>{
 			await streamMessenger.requestNextBatch()
@@ -427,7 +432,7 @@ export default class GridHead {
 				this.userEntries.splice(iShiftTo,0,shiftedUserEntry)
 				this.rewriteUserEntriesInHead()
 				this.sendUpdatedUserQueries()
-				this.restartStream()
+				this.restartStream() // TODO reorder columns instead
 			})
 		}
 		this.$cardRow.append(this.$adderCell)

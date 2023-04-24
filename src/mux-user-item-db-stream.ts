@@ -92,9 +92,9 @@ export default class MuxUserItemDbStream {
 	private queue = new MuxUserItemPriorityQueue()
 	constructor(
 		private db: ChangesetViewerDBReader,
-		uids: number[]
+		uids: Iterable<number>
 	) {
-		this.muxEntries=uids.flatMap(uid=>((['changesets','notes'] as MuxEntry['itemType'][]).map(itemType=>({
+		this.muxEntries=[...uids].flatMap(uid=>((['changesets','notes'] as MuxEntry['itemType'][]).map(itemType=>({
 			itemType,uid,
 			lowestReachedTimestamp: +Infinity,
 			scan: null,
