@@ -1,13 +1,13 @@
 import type {Connection} from './net'
 import type {ChangesetViewerDBReader, UserDbRecord} from './db'
 import type Grid from './grid'
-import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
-import type {MuxBatchItem} from './mux-user-item-db-stream'
 import MuxUserItemDbStream from './mux-user-item-db-stream'
+import type {GridBatchItem} from './mux-user-item-db-stream-messenger'
+import MuxUserItemDbStreamMessenger from './mux-user-item-db-stream-messenger'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {makeEscapeTag} from './util/escape'
@@ -34,57 +34,6 @@ type GridUserEntry = {
 		info: UserInfo
 	}
 )
-
-type GridBatchItem = {
-	iColumns: number[]
-} & MuxBatchItem
-
-class MuxUserItemDbStreamMessenger {
-	private uidToColumns=new Map<number,number[]>()
-	private watchedUids=new Set<number>()
-	constructor(
-		private host: string,
-		private worker: SharedWorker,
-		private stream: MuxUserItemDbStream,
-		private columnUids: (number|null)[],
-		private receiveBatch: (batch:Iterable<GridBatchItem>)=>void
-	) {
-		for (const [iColumn,uid] of columnUids.entries()) {
-			if (uid==null) continue
-			if (!this.uidToColumns.has(uid)) {
-				this.uidToColumns.set(uid,[])
-			}
-			this.uidToColumns.get(uid)?.push(iColumn)
-		}
-	}
-	async requestNextBatch(): Promise<void> {
-		const action=await this.stream.getNextAction()
-		if (action.type=='scan') {
-			this.watchedUids.add(action.uid)
-			this.worker.port.postMessage({
-				type: 'scanUserItems',
-				host: this.host,
-				start: action.start,
-				itemType: action.itemType,
-				uid: action.uid,
-			})
-		} else if (action.type=='batch') {
-			this.receiveBatch(
-				action.batch.map((batchItem)=>({...batchItem,iColumns:this.uidToColumns.get(batchItem.item.uid)??[]}))
-			)
-		} else if (action.type=='end') {
-			this.receiveBatch([])
-		}
-	}
-	async receiveMessage(message: WorkerBroadcastChannelMessage): Promise<void> {
-		if (message.type=='scanUserItems') {
-			if (message.status=='ready' && this.watchedUids.has(message.uid)) {
-				this.watchedUids.delete(message.uid)
-				await this.requestNextBatch()
-			}
-		}
-	}
-}
 
 export default class GridHead {
 	private userEntries=[] as GridUserEntry[]
