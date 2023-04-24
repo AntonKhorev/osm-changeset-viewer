@@ -417,6 +417,7 @@ export default class GridHead {
 			} | undefined
 			$tab.onpointerdown=ev=>{
 				if (grab) return
+				if (ev.target instanceof Element && ev.target.closest('button')) return
 				grab={
 					pointerId: ev.pointerId,
 					startX: ev.clientX
