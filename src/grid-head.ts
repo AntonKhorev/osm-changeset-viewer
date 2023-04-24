@@ -453,18 +453,21 @@ export default class GridHead {
 				$tab.style.translate=`${offsetX}px`
 				$card.style.translate=`${offsetX}px`
 				const cellOffsetX=cellStartX+offsetX
-				let iShift=0
-				for (;iShift<$tabCells.length;iShift++) {
-					const $shiftCell=$tabCells[iShift]
-					if (cellOffsetX<$shiftCell.offsetLeft+$shiftCell.offsetWidth/2) {
+				let iShiftTo=0
+				for (;iShiftTo<$tabCells.length;iShiftTo++) {
+					const $shiftToCell=$tabCells[iShiftTo]
+					if (cellOffsetX<$shiftToCell.offsetLeft+$shiftToCell.offsetWidth/2) {
 						break
 					}
 				}
 				for (let iShuffle=0;iShuffle<$tabCells.length;iShuffle++) {
 					if (iShuffle==iActive) continue
 					let shuffleX=0
-					if (iShuffle>=iShift && iShuffle<iActive) {
+					if (iShuffle>=iShiftTo && iShuffle<iActive) {
 						shuffleX=$tabCells[iShuffle+1].offsetLeft-$tabCells[iShuffle].offsetLeft
+					}
+					if (iShuffle>iActive && iShuffle<=iShiftTo) {
+						shuffleX=$tabCells[iShuffle-1].offsetLeft-$tabCells[iShuffle].offsetLeft
 					}
 					const {$tab,$card}=this.userEntries[iShuffle]
 					$tab.style.translate=`${shuffleX}px`
