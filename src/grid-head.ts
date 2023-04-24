@@ -1,27 +1,20 @@
 import type {Connection} from './net'
-import type {ChangesetViewerDBReader, UserDbRecord} from './db'
+import type {ChangesetViewerDBReader} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
-import {makeUserTab, makeFormTab, makeFormCard} from './grid-head-item'
+import type {UserInfo} from './grid-head-item'
+import {makeUserTab, makeFormTab, makeUserCard, makeFormCard} from './grid-head-item'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import MuxUserItemDbStream from './mux-user-item-db-stream'
 import type {GridBatchItem} from './mux-user-item-db-stream-messenger'
 import MuxUserItemDbStreamMessenger from './mux-user-item-db-stream-messenger'
-import {makeDateOutput} from './date'
-import {makeElement, makeDiv, makeLink} from './util/html'
+import {makeElement} from './util/html'
 import {makeEscapeTag} from './util/escape'
 import {moveInArray} from './util/types'
 
 const e=makeEscapeTag(encodeURIComponent)
-
-type UserInfo = {
-	status: 'pending'|'running'|'failed'
-} | {
-	status: 'ready'
-	user: UserDbRecord
-}
 
 type GridUserEntry = {
 	$tab: HTMLElement
@@ -97,7 +90,12 @@ export default class GridHead {
 					} else {
 						continue
 					}
-					const $card=this.makeUserCard(userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount)
+					const $card=makeUserCard(
+						userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount,
+						name=>this.cx.server.web.getUrl(e`user/${name}`),
+						id=>this.cx.server.api.getUrl(e`user/${id}.json`),
+						query=>this.sendUserQueryToWorker(query)
+					)
 					userEntry.$card.replaceWith($card)
 					userEntry.$card=$card
 				}
@@ -133,7 +131,12 @@ export default class GridHead {
 			this.wrappedRemoveColumnClickListener,query
 		)
 		const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
-		const $card=this.makeUserCard(query,info,$downloadedChangesetsCount)
+		const $card=makeUserCard(
+			query,info,$downloadedChangesetsCount,
+			name=>this.cx.server.web.getUrl(e`user/${name}`),
+			id=>this.cx.server.api.getUrl(e`user/${id}.json`),
+			query=>this.sendUserQueryToWorker(query)
+		)
 		return {
 			$tab,$card,
 			type: 'query',
@@ -218,62 +221,6 @@ export default class GridHead {
 		const $downloadedChangesetsCount=makeElement('output')()(`???`)
 		$downloadedChangesetsCount.title=`downloaded`
 		return $downloadedChangesetsCount
-	}
-	private makeUserCard(query: ValidUserQuery, info: UserInfo, $downloadedChangesetsCount: HTMLOutputElement): HTMLElement {
-		const $card=makeDiv('card')()
-		if (info.status=='pending' || info.status=='running') {
-			$card.append(makeDiv('notice')(`waiting for user data`))
-		} else if (info.status!='ready') {
-			$card.append(makeDiv('notice')(`unable to get user data`))
-		} else {
-			const $totalChangesetsCount=makeElement('output')()()
-			const $updateButton=makeElement('button')()(`Update user info`)
-			if (info.user.visible) {
-				$totalChangesetsCount.append(String(info.user.changesets.count))
-				$totalChangesetsCount.title=`opened by the user`
-			} else {
-				$totalChangesetsCount.append(`???`)
-				$totalChangesetsCount.title=`number of changesets opened by the user is unknown because the user is deleted`
-			}
-			$card.append(
-				makeDiv('name')(
-					(info.user.visible
-						? makeLink(info.user.name,this.cx.server.web.getUrl(e`user/${info.user.name}`))
-						: `deleted user`
-					),` `,
-					makeElement('span')('uid')(
-						`(`,makeLink(`#${info.user.id}`,this.cx.server.api.getUrl(e`user/${info.user.id}.json`)),`)`
-					)
-				)
-			)
-			if (info.user.visible) {
-				$card.append(
-					makeDiv('created')(
-						`created at `,makeDateOutput(info.user.createdAt)
-					)
-				)
-			} else {
-				const $unknown=makeElement('span')()(`???`)
-				$unknown.title=`date is unknown because the user is deleted`
-				$card.append(
-					makeDiv('created')(
-						`created at `,$unknown
-					)
-				)
-			}
-			$card.append(
-				makeDiv('changesets')(
-					`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
-				),
-				makeDiv('updated')(
-					`user info updated at `,makeDateOutput(info.user.infoUpdatedAt),` `,$updateButton
-				)
-			)
-			$updateButton.onclick=()=>{
-				this.sendUserQueryToWorker(query)
-			}
-		}
-		return $card
 	}
 	private removeColumnClickListener($button: HTMLElement): void {
 		const $tab=$button.closest('.tab')

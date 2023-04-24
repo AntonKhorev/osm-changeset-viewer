@@ -1,5 +1,14 @@
 import type {UserQuery, ValidUserQuery} from './osm/query-user'
-import {makeElement, makeDiv, makeLabel} from './util/html'
+import type {UserDbRecord} from './db'
+import {makeDateOutput} from './date'
+import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
+
+export type UserInfo = {
+	status: 'pending'|'running'|'failed'
+} | {
+	status: 'ready'
+	user: UserDbRecord
+}
 
 export function makeUserTab(
 	removeColumnClickListener: (this:HTMLElement)=>void,
@@ -34,9 +43,71 @@ function makeCloseButton(
 	return $closeButton
 }
 
+export function makeUserCard(
+	query: ValidUserQuery, info: UserInfo, $downloadedChangesetsCount: HTMLOutputElement,
+	getUserNameHref: (name:string)=>string,
+	getUserIdHref: (id:number)=>string,
+	processValidUserQuery: (query:ValidUserQuery)=>void
+): HTMLElement {
+	const $card=makeDiv('card')()
+	if (info.status=='pending' || info.status=='running') {
+		$card.append(makeDiv('notice')(`waiting for user data`))
+	} else if (info.status!='ready') {
+		$card.append(makeDiv('notice')(`unable to get user data`))
+	} else {
+		const $totalChangesetsCount=makeElement('output')()()
+		const $updateButton=makeElement('button')()(`Update user info`)
+		if (info.user.visible) {
+			$totalChangesetsCount.append(String(info.user.changesets.count))
+			$totalChangesetsCount.title=`opened by the user`
+		} else {
+			$totalChangesetsCount.append(`???`)
+			$totalChangesetsCount.title=`number of changesets opened by the user is unknown because the user is deleted`
+		}
+		$card.append(
+			makeDiv('name')(
+				(info.user.visible
+					? makeLink(info.user.name,getUserNameHref(info.user.name))
+					: `deleted user`
+				),` `,
+				makeElement('span')('uid')(
+					`(`,makeLink(`#${info.user.id}`,getUserIdHref(info.user.id)),`)`
+				)
+			)
+		)
+		if (info.user.visible) {
+			$card.append(
+				makeDiv('created')(
+					`created at `,makeDateOutput(info.user.createdAt)
+				)
+			)
+		} else {
+			const $unknown=makeElement('span')()(`???`)
+			$unknown.title=`date is unknown because the user is deleted`
+			$card.append(
+				makeDiv('created')(
+					`created at `,$unknown
+				)
+			)
+		}
+		$card.append(
+			makeDiv('changesets')(
+				`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
+			),
+			makeDiv('updated')(
+				`user info updated at `,makeDateOutput(info.user.infoUpdatedAt),` `,$updateButton
+			)
+		)
+		$updateButton.onclick=()=>{
+			processValidUserQuery(query)
+		}
+	}
+	return $card
+}
+
 export function makeFormCard(
 	getUserQueryFromInputValue: (value:string)=>UserQuery,
-	processValidUserQuery: (query:ValidUserQuery)=>Promise<void>
+	processValidUserQuery: (query:ValidUserQuery)=>void
 ) {
 	const $card=makeDiv('card')()
 	const $userInput=makeElement('input')()()
@@ -66,7 +137,7 @@ export function makeFormCard(
 		ev.preventDefault()
 		const query=getUserQueryFromInputValue($userInput.value)
 		if (query.type=='invalid' || query.type=='empty') return
-		await processValidUserQuery(query)
+		processValidUserQuery(query)
 	}
 	$card.append($form)
 	return $card
