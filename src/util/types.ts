@@ -15,3 +15,7 @@ export function isArray(value: unknown): value is unknown[] {
 export function isDefined<T>(argument: T | undefined): argument is T {
 	return argument !== undefined
 }
+
+export function moveInArray<T>(a: T[], iFrom: number, iTo: number): void {
+	a.splice(iTo,0,...a.splice(iFrom,1))
+}

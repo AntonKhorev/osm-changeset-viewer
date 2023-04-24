@@ -1,7 +1,8 @@
 import {getItemCheckbox, markChangesetCardAsCombined, markChangesetCardAsUncombined} from './item'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {toIsoYearMonthString} from './date'
-import {makeElement, makeDiv} from './util/html'
+import {makeElement} from './util/html'
+import {moveInArray} from './util/types'
 
 export default class Grid {
 	$grid=makeElement('table')('grid')()
@@ -111,6 +112,15 @@ export default class Grid {
 					$cell.removeAttribute('colspan')
 				}
 			}
+		}
+	}
+	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
+		moveInArray(this.columnHues,iShiftFrom,iShiftTo)
+		for (const $row of this.$tbody.rows) {
+			if (!$row.classList.contains('item')) continue
+			const $cells=[...$row.cells]
+			moveInArray($cells,iShiftFrom,iShiftTo)
+			$row.replaceChildren(...$cells)
 		}
 	}
 	private insertRow(date: Date, type: MuxBatchItem['type'], id: number): HTMLTableRowElement {

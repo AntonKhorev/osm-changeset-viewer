@@ -1,6 +1,7 @@
 import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
 import type MuxUserItemDbStream from './mux-user-item-db-stream'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
+import {moveInArray} from './util/types'
 
 export type GridBatchItem = {
 	iColumns: number[]
@@ -16,13 +17,21 @@ export default class MuxUserItemDbStreamMessenger {
 		private columnUids: (number|null)[],
 		private receiveBatch: (batch:Iterable<GridBatchItem>)=>void
 	) {
-		for (const [iColumn,uid] of columnUids.entries()) {
+		this.updateUidToColumns()
+	}
+	private updateUidToColumns(): void {
+		this.uidToColumns.clear()
+		for (const [iColumn,uid] of this.columnUids.entries()) {
 			if (uid==null) continue
 			if (!this.uidToColumns.has(uid)) {
 				this.uidToColumns.set(uid,[])
 			}
 			this.uidToColumns.get(uid)?.push(iColumn)
 		}
+	}
+	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
+		moveInArray(this.columnUids,iShiftFrom,iShiftTo)
+		this.updateUidToColumns()
 	}
 	async requestNextBatch(): Promise<void> {
 		const action=await this.stream.getNextAction()

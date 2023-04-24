@@ -11,6 +11,7 @@ import MuxUserItemDbStreamMessenger from './mux-user-item-db-stream-messenger'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {makeEscapeTag} from './util/escape'
+import {moveInArray} from './util/types'
 
 const e=makeEscapeTag(encodeURIComponent)
 
@@ -376,12 +377,11 @@ export default class GridHead {
 		}
 		for (const iActive of tabDragElements.keys()) {
 			installTabDragListeners(this.grid.$grid,tabDragElements,iActive,iShiftTo=>{
-				const shiftedUserEntry=this.userEntries[iActive]
-				this.userEntries.splice(iActive,1)
-				this.userEntries.splice(iShiftTo,0,shiftedUserEntry)
+				moveInArray(this.userEntries,iActive,iShiftTo)
 				this.rewriteUserEntriesInHead()
 				this.sendUpdatedUserQueries()
-				this.restartStream() // TODO reorder columns instead
+				this.grid.reorderColumns(iActive,iShiftTo)
+				this.streamMessenger?.reorderColumns(iActive,iShiftTo)
 			})
 		}
 		this.$cardRow.append(this.$adderCell)
