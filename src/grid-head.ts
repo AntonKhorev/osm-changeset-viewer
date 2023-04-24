@@ -408,7 +408,7 @@ export default class GridHead {
 	private rewriteUserEntriesInHead(): void {
 		this.$tabRow.replaceChildren()
 		this.$cardRow.replaceChildren()
-		for (const {$tab,$card} of this.userEntries) {
+		for (const [iActive,{$tab,$card}] of this.userEntries.entries()) {
 			this.$tabRow.append(makeElement('th')()($tab))
 			this.$cardRow.append(makeElement('td')()($card))
 			let grab: {
@@ -437,9 +437,15 @@ export default class GridHead {
 			}
 			$tab.onpointermove=ev=>{
 				if (!grab || grab.pointerId!=ev.pointerId) return
-				const offsetX=ev.clientX-grab.startX
+				const $tabCells=[...this.$tabRow.cells]
+				const cellStartX=$tabCells[iActive].offsetLeft
+				const offsetX=Math.max(-cellStartX,ev.clientX-grab.startX)
+				// const cellOffsetX=cellStartX+offsetX
 				$tab.style.translate=`${offsetX}px`
 				$card.style.translate=`${offsetX}px`
+				// console.log(`current th offset`,cellOffsetX)
+				// console.log(`event offset`,ev.offsetX,`tab offset`,$tab.offsetLeft) ///
+				// console.log(`th offsets`,[...this.$tabRow.cells].map($c=>$c.offsetLeft)) ///
 			}
 		}
 		this.$cardRow.append(this.$adderCell)
