@@ -132,11 +132,12 @@ body > .symbols {
 .ui .grid thead th .tab .label {
 	display: block;
 	overflow: hidden;
-	top: var(--padding);
-	bottom: var(--padding);
+	top: 0;
+	bottom: 0;
 	left: calc(var(--icon-size) + 2 * var(--padding));
 	right: calc(1rem + 2 * var(--padding));
 	text-align: left;
+	line-height: 2;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
