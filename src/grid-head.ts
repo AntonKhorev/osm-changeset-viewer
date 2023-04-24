@@ -439,7 +439,14 @@ export default class GridHead {
 				if (!grab || grab.pointerId!=ev.pointerId) return
 				const $tabCells=[...this.$tabRow.cells]
 				const cellStartX=$tabCells[iActive].offsetLeft
-				const offsetX=Math.max(-cellStartX,ev.clientX-grab.startX)
+				const minOffsetX=$tabCells[0].offsetLeft-cellStartX
+				const maxOffsetX=$tabCells[$tabCells.length-1].offsetLeft-cellStartX
+				const offsetX=Math.max(
+					minOffsetX,
+				Math.min(
+					maxOffsetX,
+					ev.clientX-grab.startX
+				))
 				// const cellOffsetX=cellStartX+offsetX
 				$tab.style.translate=`${offsetX}px`
 				$card.style.translate=`${offsetX}px`
