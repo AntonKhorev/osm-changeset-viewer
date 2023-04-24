@@ -82,11 +82,12 @@ body > .symbols {
 .ui .grid {
 	--padding: .5rem;
 	--adder-width: 10ch;
-	--column-min-width: 20ch;
+	--column-min-width: 25ch;
+	--icon-size: 1.25em;
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
-	min-width: calc(var(--column-min-width) * var(--cols) + var(--adder-width));
+	min-width: calc(var(--column-min-width) * var(--columns) + var(--adder-width));
 }
 .ui .grid :is(td,th) {
 	padding: 0;
@@ -105,10 +106,7 @@ body > .symbols {
 }
 .ui .grid thead .tab {
 	position: relative;
-	display: flex;
-	height: 1rem;
-	padding: .5rem;
-	overflow: none;
+	height: calc(1rem + 2 * var(--padding));
 	border-left: var(--frame-line);
 	border-right: var(--frame-line);
 	border-top: var(--frame-line);
@@ -119,8 +117,23 @@ body > .symbols {
 	touch-action: none;
 	background: canvas;
 }
+.ui .grid thead .tab > * {
+	position: absolute;
+}
+.ui .grid thead .tab .label {
+	display: block;
+	overflow: hidden;
+	top: var(--padding);
+	bottom: var(--padding);
+	left: calc(var(--icon-size) + 2 * var(--padding));
+	right: calc(1rem + 2 * var(--padding));
+	text-align: left;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
 .ui .grid thead .tab button.close {
-	margin-left: auto;
+	top: var(--padding);
+	right: var(--padding);
 	width: 1rem;
 	height: 1rem;
 }
@@ -196,7 +209,6 @@ body > .symbols {
 
 .ui .grid tbody tr.item td {
 	--vertical-padding: .125rem;
-	--icon-size: 1.25em;
 	--accent-color: hsl(var(--hue,77) 50% 50%);
 	position: relative;
 	padding: var(--vertical-padding) var(--padding) var(--vertical-padding) calc(2 * var(--padding) + var(--icon-size));

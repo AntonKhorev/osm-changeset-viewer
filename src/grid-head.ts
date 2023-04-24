@@ -251,14 +251,12 @@ export default class GridHead {
 		return makeDiv('tab')($label,` `,$closeButton)
 	}
 	private makeFormTab(): HTMLElement {
-		const $tab=makeDiv('tab')()
-		$tab.append(`Add user`)
+		const $label=makeElement('span')('label')(`Add user`)
 		const $closeButton=makeElement('button')('close')('X')
 		$closeButton.title=`Remove form`
 		$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
 		$closeButton.addEventListener('click',this.wrappedRemoveUserClickListener)
-		$tab.append(` `,$closeButton)
-		return $tab
+		return makeDiv('tab')($label,` `,$closeButton)
 	}
 	private makeUserDownloadedChangesetsCount(): HTMLOutputElement {
 		const $downloadedChangesetsCount=makeElement('output')()(`???`)
