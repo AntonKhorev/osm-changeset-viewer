@@ -1,3 +1,10 @@
+type Grab = {
+	pointerId: number
+	startX: number
+	iShiftTo: number
+	relativeShiftX: number
+}
+
 export default function installTabDragListeners(
 	$grid: HTMLTableElement,
 	elements: readonly {
@@ -8,27 +15,27 @@ export default function installTabDragListeners(
 	iActive: number,
 	shiftTabCallback: (iShiftTo: number)=>void
 ) {
-	let grab: {
-		pointerId: number
-		startX: number
-		iShiftTo: number
-	} | undefined
+	let grab: Grab | undefined
 	const {$tab,$card}=elements[iActive]
+	const translate=(x:number)=>{
+		$tab.style.translate=`${x}px`
+		$card.style.translate=`${x}px`
+	}
 	$tab.onpointerdown=ev=>{
 		if (grab) return
 		if (ev.target instanceof Element && ev.target.closest('button')) return
 		grab={
 			pointerId: ev.pointerId,
 			startX: ev.clientX,
-			iShiftTo: iActive
+			iShiftTo: iActive,
+			relativeShiftX: 0
 		}
 		$tab.setPointerCapture(ev.pointerId)
 		$tab.classList.add('grabbed')
 		$card.classList.add('grabbed')
 		$grid.classList.add('with-grabbed-tab')
 	}
-	const cleanup=()=>{
-		grab=undefined
+	const cleanup=(grab: Grab)=>{
 		for (const {$tab,$card} of elements) {
 			$tab.style.removeProperty('translate')
 			$card.style.removeProperty('translate')
@@ -36,16 +43,29 @@ export default function installTabDragListeners(
 		$tab.classList.remove('grabbed')
 		$card.classList.remove('grabbed')
 		$grid.classList.remove('with-grabbed-tab')
+		requestAnimationFrame(()=>{
+			$tab.style.transition=`none`
+			$card.style.transition=`none`
+			translate(grab.relativeShiftX)
+			requestAnimationFrame(()=>{
+				$tab.style.removeProperty('transition')
+				$card.style.removeProperty('transition')
+				$tab.style.removeProperty('translate')
+				$card.style.removeProperty('translate')
+			})
+		})
 	}
 	$tab.onpointerup=ev=>{
 		if (!grab || grab.pointerId!=ev.pointerId) return
 		const iShiftTo=grab.iShiftTo
-		cleanup()
+		cleanup(grab)
+		grab=undefined
 		if (iShiftTo!=iActive) shiftTabCallback(iShiftTo)
 	}
 	$tab.onpointercancel=ev=>{
 		if (!grab || grab.pointerId!=ev.pointerId) return
-		cleanup()
+		cleanup(grab)
+		grab=undefined
 	}
 	$tab.onpointermove=ev=>{
 		if (!grab || grab.pointerId!=ev.pointerId) return
@@ -58,12 +78,12 @@ export default function installTabDragListeners(
 			maxOffsetX,
 			ev.clientX-grab.startX
 		))
-		$tab.style.translate=`${offsetX}px`
-		$card.style.translate=`${offsetX}px`
+		translate(offsetX)
 		const cellOffsetX=cellStartX+offsetX
 		let iShiftTo=0
 		for (;iShiftTo<elements.length;iShiftTo++) {
 			const $shiftToCell=elements[iShiftTo].$tabCell
+			grab.relativeShiftX=cellOffsetX-$shiftToCell.offsetLeft
 			if (cellOffsetX<$shiftToCell.offsetLeft+$shiftToCell.offsetWidth/2) {
 				break
 			}
