@@ -10,22 +10,35 @@ export default function installTabDragListeners(
 	elements: readonly {
 		$tabCell: HTMLTableCellElement,
 		$cardCell: HTMLTableCellElement,
+		$selectorCell: HTMLTableCellElement,
 		$tab: HTMLElement,
-		$card: HTMLElement
+		$card: HTMLElement,
+		$selector: HTMLElement
 	}[],
 	iActive: number,
 	shiftTabCallback: (iShiftTo: number)=>void
 ) {
 	let grab: Grab | undefined
-	const {$tabCell,$cardCell,$tab,$card}=elements[iActive]
+	const {
+		$tabCell,$tab,
+		$cardCell,$card,
+		$selectorCell,$selector
+	}=elements[iActive]
+	const toggleCellClass=(className:string,on:boolean)=>{
+		$tabCell.classList.toggle(className,on)
+		$cardCell.classList.toggle(className,on)
+		$selectorCell.classList.toggle(className,on)
+	}
 	const translate=(x:number,i:number=iActive)=>{
-		const {$tab,$card}=elements[i]
+		const {$tab,$card,$selector}=elements[i]
 		if (x) {
 			$tab.style.translate=`${x}px`
 			$card.style.translate=`${x}px`
+			$selector.style.translate=`${x}px`
 		} else {
 			$tab.style.removeProperty('translate')
 			$card.style.removeProperty('translate')
+			$selector.style.removeProperty('translate')
 		}
 	}
 	$tab.ontransitionend=()=>{
@@ -33,6 +46,9 @@ export default function installTabDragListeners(
 	}
 	$card.ontransitionend=()=>{
 		$cardCell.classList.remove('settling')
+	}
+	$selector.ontransitionend=()=>{
+		$selectorCell.classList.remove('settling')
 	}
 	$tab.onpointerdown=ev=>{
 		if (grab) return
@@ -44,22 +60,19 @@ export default function installTabDragListeners(
 			relativeShiftX: 0
 		}
 		$tab.setPointerCapture(ev.pointerId)
-		$tabCell.classList.add('grabbed')
-		$cardCell.classList.add('grabbed')
+		toggleCellClass('grabbed',true)
 		$grid.classList.add('with-grabbed-tab')
 	}
 	const cleanup=(grab: Grab)=>{
 		for (const i of elements.keys()) {
 			translate(0,i)
 		}
-		$tabCell.classList.remove('grabbed')
-		$cardCell.classList.remove('grabbed')
+		toggleCellClass('grabbed',false)
 		$grid.classList.remove('with-grabbed-tab')
 		requestAnimationFrame(()=>{
 			translate(grab.relativeShiftX)
 			requestAnimationFrame(()=>{
-				$tabCell.classList.add('settling')
-				$cardCell.classList.add('settling')
+				toggleCellClass('settling',true)
 				translate(0)
 			})
 		})

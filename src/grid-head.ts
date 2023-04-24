@@ -264,9 +264,10 @@ export default class GridHead {
 		const tabDragElements: {
 			$tabCell: HTMLTableCellElement,
 			$cardCell: HTMLTableCellElement,
+			$selectorCell: HTMLTableCellElement,
 			$tab: HTMLElement,
-			$card: HTMLElement
-			// TODO selector
+			$card: HTMLElement,
+			$selector: HTMLElement
 		}[] = []
 		for (const {$tab,$card,$selector} of this.userEntries) {
 			const $tabCell=makeElement('th')()($tab)
@@ -275,7 +276,7 @@ export default class GridHead {
 			this.$tabRow.append($tabCell)
 			this.$cardRow.append($cardCell)
 			this.$selectorRow.append($selectorCell)
-			tabDragElements.push({$tabCell,$cardCell,$tab,$card})
+			tabDragElements.push({$tabCell,$cardCell,$selectorCell,$tab,$card,$selector})
 		}
 		for (const iActive of tabDragElements.keys()) {
 			installTabDragListeners(this.grid.$grid,tabDragElements,iActive,iShiftTo=>{
