@@ -84,6 +84,8 @@ self.onconnect=ev=>{
 				}
 				if (changesetsApiData.length>0) {
 					uid=changesetsApiData[0].uid
+				} else {
+					failedText+=` because user has no changesets`
 				}
 			} else if (query.type=='id') {
 				text=`info of user #${query.uid}`
