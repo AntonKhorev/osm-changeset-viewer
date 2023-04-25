@@ -3,7 +3,7 @@ import type {ChangesetViewerDBReader} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
-import type {UserInfo} from './grid-head-item'
+import type {UserInfo, ReadyUserInfo} from './grid-head-item'
 import {
 	makeUserTab, makeUserCard, makeUserSelector,
 	makeFormTab, makeFormCard, makeFormSelector
@@ -87,9 +87,13 @@ export default class GridHead {
 					if (message.status=='running' || message.status=='failed') { // TODO maybe skip running?
 						userEntry.info={status:message.status}
 					} else if (message.status=='ready') {
-						userEntry.info={
-							status: message.status,
-							user: message.user
+						let info=await this.askDbForUserInfo(message.query)
+						if (info) {
+							userEntry.info=info
+						} else {
+							userEntry.info={
+								status:'failed'
+							}
 						}
 					} else {
 						continue
@@ -130,7 +134,11 @@ export default class GridHead {
 		this.restartStream()
 	}
 	private async makeQueryUserEntry(query: ValidUserQuery): Promise<GridUserEntry> {
-		const info=await this.getUserInfoForQuery(query)
+		let info: UserInfo|undefined = await this.askDbForUserInfo(query)
+		if (!info) {
+			this.sendUserQueryToWorker(query)
+			info={status:'pending'}
+		}
 		const $tab=makeUserTab(
 			this.wrappedRemoveColumnClickListener,query
 		)
@@ -169,16 +177,14 @@ export default class GridHead {
 		}
 		return userEntry
 	}
-	private async getUserInfoForQuery(query: ValidUserQuery): Promise<UserInfo> {
+	private async askDbForUserInfo(query: ValidUserQuery): Promise<ReadyUserInfo|undefined> {
 		if (query.type=='name') {
-			const user=await this.db.getUserByName(query.username)
-			if (user) return {status:'ready',user}
+			const info=await this.db.getUserInfoByName(query.username)
+			if (info) return {status:'ready',...info}
 		} else if (query.type=='id') {
-			const user=await this.db.getUserById(query.uid)
-			if (user) return {status:'ready',user}
+			const info=await this.db.getUserInfoById(query.uid)
+			if (info) return {status:'ready',...info}
 		}
-		this.sendUserQueryToWorker(query)
-		return {status:'pending'}
 	}
 	private pickFromExistingUserEntries(query: ValidUserQuery): GridUserEntry|null {
 		for (const [i,entry] of this.userEntries.entries()) {

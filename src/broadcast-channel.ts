@@ -13,23 +13,13 @@ export type WorkerBroadcastChannelMessage = {
 		status: 'ready'
 	}
 ) & (
-	(
-		{
-			type: 'getUserInfo'
-			query: ValidUserQuery
-		} & ({
-			status: 'running'|'failed'
-		} | {
-			status: 'ready'
-			user: UserDbRecord
-		})
-	) | (
-		{
-			type: 'scanUserItems'
-			uid: number
-			status: 'running'|'failed'|'ready'
-		}
-	)
+	{
+		type: 'getUserInfo'
+		query: ValidUserQuery
+	} | {
+		type: 'scanUserItems'
+		uid: number
+	}
 )
 
 class WorkerBroadcastChannel {

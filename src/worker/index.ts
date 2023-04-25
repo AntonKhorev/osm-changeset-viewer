@@ -147,8 +147,7 @@ self.onconnect=ev=>{
 			}
 			hostDataEntry.broadcastSender.postMessage({
 				type,query,text,
-				status: 'ready',
-				user
+				status: 'ready'
 			})
 		} else if (type=='scanUserItems') {
 			const host=ev.data.host

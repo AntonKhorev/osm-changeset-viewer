@@ -59,8 +59,8 @@ export type UserItemDbRecordMap = {
 
 export type UserScanDbRecord = {
 	uid: number
-	type: keyof UserItemDbRecordMap
 	stash: number // 0 = current; 1 = stashed
+	type: keyof UserItemDbRecordMap
 	items: Counter
 	beginDate: Date
 	endDate?: Date
@@ -72,6 +72,11 @@ export type UserScanDbRecord = {
 	lowerItemDate: Date
 })
 
+export type UserDbInfo = {
+	user: UserDbRecord
+	scans: Partial<{[key in UserScanDbRecord['type']]: UserScanDbRecord}>
+}
+
 export class ChangesetViewerDBReader {
 	protected closed: boolean = false
 	constructor(protected idb: IDBDatabase) {
@@ -80,30 +85,49 @@ export class ChangesetViewerDBReader {
 			this.closed=true
 		}
 	}
-	getUserById(uid: number): Promise<UserDbRecord|undefined> {
+	getUserInfoById(uid: number): Promise<UserDbInfo|undefined> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction('users','readonly')
+			const tx=this.idb.transaction(['users','userScans'],'readonly')
 			tx.onerror=()=>reject(new Error(`Database error in getUserById(): ${tx.error}`))
 			const request=tx.objectStore('users').get(uid)
-			request.onsuccess=()=>resolve(request.result)
+			request.onsuccess=()=>{
+				this.getPromisedUserWithScans(resolve,tx,request.result)
+			}
 		})
 	}
-	getUserByName(username: string): Promise<UserDbRecord|undefined> {
+	getUserInfoByName(username: string): Promise<UserDbInfo|undefined> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction('users','readonly')
+			const tx=this.idb.transaction(['users','userScans'],'readonly')
 			tx.onerror=()=>reject(new Error(`Database error in getUserById(): ${tx.error}`))
 			const request=tx.objectStore('users').index('name').get(username)
-			request.onsuccess=()=>resolve(request.result)
+			request.onsuccess=()=>{
+				this.getPromisedUserWithScans(resolve,tx,request.result)
+			}
 		})
+	}
+	private getPromisedUserWithScans(resolve: (value:UserDbInfo|undefined)=>void, tx: IDBTransaction, user: UserDbRecord|undefined): void {
+		if (!user) {
+			return resolve(undefined)
+		}
+		const request=tx.objectStore('userScans').getAll(
+			IDBKeyRange.bound([user.id,0],[user.id,1],false,true)
+		)
+		request.onsuccess=()=>{
+			const scans: UserDbInfo['scans'] = {}
+			for (const scan of request.result as UserScanDbRecord[]) {
+				scans[scan.type]=scan
+			}
+			return resolve({user,scans})
+		}
 	}
 	getCurrentUserScan(type: keyof UserItemDbRecordMap, uid: number): Promise<UserScanDbRecord|undefined> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
 			const tx=this.idb.transaction('userScans','readonly')
 			tx.onerror=()=>reject(new Error(`Database error in getCurrentUserScan(): ${tx.error}`))
-			const request=tx.objectStore('userScans').get([uid,type,0])
+			const request=tx.objectStore('userScans').get([uid,0,type])
 			request.onsuccess=()=>resolve(request.result)
 		})
 	}
@@ -141,7 +165,7 @@ export class ChangesetViewerDBReader {
 				const idb=request.result
 				const userStore=idb.createObjectStore('users',{keyPath:'id'})
 				userStore.createIndex('name','name')
-				idb.createObjectStore('userScans',{keyPath:['uid','type','stash']})
+				idb.createObjectStore('userScans',{keyPath:['uid','stash','type']})
 				const changesetStore=idb.createObjectStore('changesets',{keyPath:'id'})
 				changesetStore.createIndex('user',['uid','createdAt','id'])
 				const noteStore=idb.createObjectStore('notes',{keyPath:'id'})

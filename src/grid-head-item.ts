@@ -1,14 +1,15 @@
 import type {UserQuery, ValidUserQuery} from './osm/query-user'
-import type {UserDbRecord} from './db'
+import type {UserDbInfo} from './db'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 
+export type ReadyUserInfo = {
+	status: 'ready'
+} & UserDbInfo
+
 export type UserInfo = {
 	status: 'pending'|'running'|'failed'
-} | {
-	status: 'ready'
-	user: UserDbRecord
-}
+} | ReadyUserInfo
 
 export function makeUserTab(
 	removeColumnClickListener: (this:HTMLElement)=>void,
@@ -59,7 +60,7 @@ export function makeUserCard(
 		$card.append(makeDiv('notice')(`unable to get user data`))
 	} else {
 		const $totalChangesetsCount=makeElement('output')()()
-		const $updateButton=makeElement('button')()(`Update user info`)
+		const $updateButton=makeElement('button')()(`update`)
 		if (info.user.visible) {
 			$totalChangesetsCount.append(String(info.user.changesets.count))
 			$totalChangesetsCount.title=`opened by the user`

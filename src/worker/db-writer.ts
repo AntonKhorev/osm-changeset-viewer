@@ -16,7 +16,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 		return new Promise((resolve,reject)=>{
 			const tx=this.idb.transaction([type,'userScans'],'readonly')
 			tx.onerror=()=>reject(new Error(`Database error in getUserStreamResumeInfo(): ${tx.error}`))
-			const scanRequest=tx.objectStore('userScans').get([uid,type,0])
+			const scanRequest=tx.objectStore('userScans').get([uid,0,type])
 			scanRequest.onsuccess=()=>{
 				if (scanRequest.result==null) {
 					return resolve(undefined)
@@ -95,7 +95,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 			if (mode=='toNewScan') {
 				handleScan(makeEmptyScan())
 			} else {
-				const getScanRequest=tx.objectStore('userScans').get([uid,type,0])
+				const getScanRequest=tx.objectStore('userScans').get([uid,0,type])
 				getScanRequest.onsuccess=()=>{
 					let scan: UserScanDbRecord
 					if (getScanRequest.result==null) {
