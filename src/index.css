@@ -128,9 +128,10 @@ body > .symbols {
 .ui .grid thead td.adder {
 	position: relative;
 	padding: 0 var(--padding);
+	text-align: right;
 }
 .ui .grid thead td.adder button {
-	width: 100%;
+	width: calc(var(--adder-width) - var(--padding));
 	aspect-ratio: 1;
 }
 .ui .grid thead th .tab {
