@@ -272,7 +272,11 @@ export default class GridHead {
 			const $cardCell=makeElement('td')()($card)
 			const $selectorCell=makeElement('td')()($selector)
 			const hue=getUserEntryHue(userEntry)
-			if (hue!=null) $selectorCell.style.setProperty('--hue',String(hue))
+			if (hue!=null) {
+				$tabCell.style.setProperty('--hue',String(hue))
+				$cardCell.style.setProperty('--hue',String(hue))
+				$selectorCell.style.setProperty('--hue',String(hue))
+			}
 			this.$tabRow.append($tabCell)
 			this.$cardRow.append($cardCell)
 			this.$selectorRow.append($selectorCell)

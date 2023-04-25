@@ -14,6 +14,9 @@ export function makeUserTab(
 	removeColumnClickListener: (this:HTMLElement)=>void,
 	query: ValidUserQuery
 ): HTMLElement {
+	const $icon=makeElement('span')('icon')()
+	$icon.title=`user`
+	$icon.innerHTML=`<svg width=16 height=16><use href="#user" /></svg>`
 	const $label=makeElement('span')('label')()
 	if (query.type=='id') {
 		$label.append(`#${query.uid}`)
@@ -22,7 +25,7 @@ export function makeUserTab(
 	}
 	const $closeButton=makeCloseButton(removeColumnClickListener)
 	$closeButton.title=`Remove user`
-	return makeDiv('tab')($label,` `,$closeButton)
+	return makeDiv('tab')($icon,` `,$label,` `,$closeButton)
 }
 
 export function makeFormTab(
