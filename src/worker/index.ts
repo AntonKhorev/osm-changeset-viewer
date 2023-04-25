@@ -102,6 +102,7 @@ self.onconnect=ev=>{
 					failedText
 				})
 			}
+			failedText=`unable to get user info for given id`
 			let user: UserDbRecord|undefined
 			const now=new Date()
 			try {
@@ -113,6 +114,8 @@ self.onconnect=ev=>{
 							infoUpdatedAt: now,
 							visible: false
 						}
+					} else if (response.status==404) {
+						failedText+=` because it doesn't exist`
 					}
 				} else {
 					const json=await response.json()
