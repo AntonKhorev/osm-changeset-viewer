@@ -151,9 +151,12 @@ body > .symbols {
 	position: absolute;
 }
 .ui .grid thead th .tab .icon {
-	top: var(--padding);
-	width: 1rem;
-	height: 1rem;
+	top: calc(var(--padding) - 1px);
+	left: calc(var(--padding) - 1px);
+	background: var(--accent-color);
+}
+.ui .grid thead th .tab .icon > * {
+	background: canvas;
 	color: var(--accent-color);
 }
 .ui .grid thead th .tab .label {
@@ -161,7 +164,7 @@ body > .symbols {
 	overflow: hidden;
 	top: 0;
 	bottom: 0;
-	left: calc(var(--icon-size) + var(--padding));
+	left: calc(var(--icon-size) + 2 * var(--padding));
 	right: calc(1rem + 2 * var(--padding));
 	text-align: left;
 	line-height: 2;
