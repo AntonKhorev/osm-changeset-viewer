@@ -16,7 +16,7 @@ export function makeUserTab(
 ): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`user`
-	$icon.innerHTML=`<svg width=16 height=16><use href="#user" /></svg>`
+	$icon.innerHTML=`<svg width="16" height="16"><use href="#user" /></svg>`
 	const $label=makeElement('span')('label')()
 	if (query.type=='id') {
 		$label.append(`#${query.uid}`)
@@ -41,7 +41,7 @@ function makeCloseButton(
 	removeColumnClickListener: (this:HTMLElement)=>void
 ): HTMLButtonElement {
 	const $closeButton=makeElement('button')('close')()
-	$closeButton.innerHTML=`<svg width=16 height=16><use href="#close" /></svg>`
+	$closeButton.innerHTML=`<svg width="16" height="16"><use href="#close" /></svg>`
 	$closeButton.addEventListener('click',removeColumnClickListener)
 	return $closeButton
 }

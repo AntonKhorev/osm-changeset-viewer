@@ -36,12 +36,14 @@ export function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord
 		const $noCheckbox=makeElement('span')('no-checkbox')()
 		$noCheckbox.tabIndex=0
 		$noCheckbox.title=`closed changeset ${changeset.id}`
-		$item=makeItemCard('changeset',$noCheckbox)
+		const $icon=makeElement('span')('icon')($noCheckbox)
+		$item=makeItemCard('changeset',$icon)
 	} else {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.title=`opened changeset ${changeset.id}`
-		$item=makeItemCard('changeset',$checkbox)
+		const $icon=makeElement('span')('icon')($checkbox)
+		$item=makeItemCard('changeset',$icon)
 	}
 	$item.append(
 		makeLink(`${changeset.id}`,web.getUrl(e`changeset/${changeset.id}`)),` `,
@@ -53,7 +55,10 @@ export function makeChangesetCard(web: WebProvider, changeset: ChangesetDbRecord
 }
 
 export function makeNoteCard(web: WebProvider, note: NoteDbRecord): HTMLElement {
-	const $item=makeItemCard('note',code(`N!`))
+	const $icon=makeElement('span')('icon')()
+	$icon.innerHTML=makeNoteIconHtml()
+	$icon.title=`note ${note.id}`
+	const $item=makeItemCard('note',$icon)
 	$item.append(
 		makeLink(`${note.id}`,web.getUrl(e`note/${note.id}`)),` `,
 		makeDateOutput(note.createdAt),` `,
@@ -62,8 +67,24 @@ export function makeNoteCard(web: WebProvider, note: NoteDbRecord): HTMLElement 
 	return $item
 }
 
-function makeItemCard(type: string, $iconChild: HTMLElement): HTMLElement {
-	const $icon=makeElement('span')('icon')($iconChild)
+function makeItemCard(type: string, $icon: HTMLElement): HTMLElement {
 	const $item=makeDiv('item',type)($icon,` `)
 	return $item
+}
+
+function makeNoteIconHtml(): string {
+	const iconSize=16
+	const markerHeight=16
+	const markerWidth=8
+	const markerRadius=markerWidth/2
+	const path=`<path d="${computeMarkerOutlinePath(markerHeight,markerRadius)}" fill="currentColor" />`
+	return `<svg width="${iconSize}" height="${iconSize}" viewBox="${-iconSize/2} ${-markerRadius} ${iconSize} ${iconSize}">${path}</svg>`
+	function computeMarkerOutlinePath(h: number, r: number): string {
+		const rp=h-r
+		const y=r**2/rp
+		const x=Math.sqrt(r**2-y**2)
+		const xf=x.toFixed(2)
+		const yf=y.toFixed(2)
+		return `M0,${rp} L-${xf},${yf} A${r},${r} 0 1 1 ${xf},${yf} Z`
+	}
 }
