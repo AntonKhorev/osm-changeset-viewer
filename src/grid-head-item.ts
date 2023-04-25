@@ -62,11 +62,16 @@ export function makeUserCard(
 		const $totalChangesetsCount=makeElement('output')()()
 		const $updateButton=makeElement('button')()(`update`)
 		if (info.user.visible) {
-			$totalChangesetsCount.append(String(info.user.changesets.count))
+			$totalChangesetsCount.textContent=String(info.user.changesets.count)
 			$totalChangesetsCount.title=`opened by the user`
 		} else {
-			$totalChangesetsCount.append(`???`)
+			$totalChangesetsCount.textContent=`???`
 			$totalChangesetsCount.title=`number of changesets opened by the user is unknown because the user is deleted`
+		}
+		if (info.scans.changesets) {
+			$downloadedChangesetsCount.textContent=String(info.scans.changesets.items.count)
+		} else {
+			$downloadedChangesetsCount.textContent=`0`
 		}
 		$card.append(
 			makeDiv('name')(
