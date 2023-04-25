@@ -257,17 +257,19 @@ body > .symbols {
 	user-select: none;
 }
 
-.ui .grid tbody tr.separator td {
+.ui .grid tbody tr.separator td .month {
 	padding: var(--padding) 0;
 	text-align: center;
-	position: relative;
+	position: sticky;
+	left: 0;
+	width: var(--main-width);
 }
-.ui .grid tbody tr.separator td time {
+.ui .grid tbody tr.separator td .month time {
 	background: canvas;
 	padding: 0 .5em;
 	color: var(--light-text-color);
 }
-.ui .grid tbody tr.separator td::before {
+.ui .grid tbody tr.separator td .month::before {
 	content: '';
 	position: absolute;
 	z-index: -1;

@@ -35,9 +35,16 @@ async function main() {
 		serverList=>new HashServerSelector(serverList),
 		()=>{} // TODO event like bubbleEvent($root,'osmChangesetViewer:loginChange')
 	)
+
 	const $content=makeElement('main')()(
 		makeElement('h1')()(`Changeset viewer`)
 	)
+	const contentResizeObserver=new ResizeObserver(entries=>{
+		const mainWidth=entries[0].target.clientWidth
+		$content.style.setProperty('--main-width',`${mainWidth}px`)
+	})
+	contentResizeObserver.observe($content)
+
 	const $toolbar=makeElement('footer')()()
 	const $netDialog=makeNetDialog(net)
 	$root.append($content,$toolbar,$netDialog)

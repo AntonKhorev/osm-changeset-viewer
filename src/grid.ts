@@ -1,7 +1,7 @@
 import {getItemCheckbox, markChangesetCardAsCombined, markChangesetCardAsUncombined} from './item'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {toIsoYearMonthString} from './date'
-import {makeElement} from './util/html'
+import {makeElement, makeDiv} from './util/html'
 import {moveInArray} from './util/types'
 
 export default class Grid {
@@ -149,7 +149,9 @@ export default class Grid {
 			$row.dataset.rank='0'
 			const $cell=$row.insertCell()
 			$cell.append(
-				makeElement('time')()(yearMonthString)
+				makeDiv('month')(
+					makeElement('time')()(yearMonthString)
+				)
 			)
 			$cell.colSpan=this.nColumns+1
 			return this.$tbody.insertRow(i+2)
