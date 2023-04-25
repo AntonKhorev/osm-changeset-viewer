@@ -19,7 +19,7 @@ import {moveInArray} from './util/types'
 
 const e=makeEscapeTag(encodeURIComponent)
 
-type GridUserEntry = {
+type GridUserEntry = { // TODO change to column entry
 	$tab: HTMLElement
 	$card: HTMLElement
 	$selector: HTMLElement
@@ -29,7 +29,7 @@ type GridUserEntry = {
 	} | {
 		type: 'query'
 		query: ValidUserQuery
-		$downloadedChangesetsCount: HTMLOutputElement
+		$downloadedChangesetsCount: HTMLOutputElement // TODO change to visible changeset count
 		info: UserInfo
 	}
 )
@@ -80,6 +80,16 @@ export default class GridHead {
 		this.$adderCell.append($adderButton)
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
 		broadcastReceiver.onmessage=async({data:message})=>{
+			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
+				const $card=makeUserCard(
+					userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount,
+					name=>this.cx.server.web.getUrl(e`user/${name}`),
+					id=>this.cx.server.api.getUrl(e`user/${id}.json`),
+					query=>this.sendUserQueryToWorker(query)
+				)
+				userEntry.$card.replaceWith($card)
+				userEntry.$card=$card
+			}
 			if (message.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
 					if (userEntry.type!='query') continue
@@ -87,7 +97,7 @@ export default class GridHead {
 					if (message.status=='running' || message.status=='failed') { // TODO maybe skip running?
 						userEntry.info={status:message.status}
 					} else if (message.status=='ready') {
-						let info=await this.askDbForUserInfo(message.query)
+						const info=await this.askDbForUserInfo(message.query)
 						if (info) {
 							userEntry.info=info
 						} else {
@@ -98,16 +108,20 @@ export default class GridHead {
 					} else {
 						continue
 					}
-					const $card=makeUserCard(
-						userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount,
-						name=>this.cx.server.web.getUrl(e`user/${name}`),
-						id=>this.cx.server.api.getUrl(e`user/${id}.json`),
-						query=>this.sendUserQueryToWorker(query)
-					)
-					userEntry.$card.replaceWith($card)
-					userEntry.$card=$card
+					replaceUserCard(userEntry)
 				}
 				this.startStreamIfNotStartedAndGotAllUids()
+			} else if (message.type=='scanUserItems' && message.status=='ready') {
+				for (const userEntry of this.userEntries) {
+					if (userEntry.type!='query') continue
+					if (userEntry.info.status!='ready') continue
+					if (userEntry.info.user.id!=message.uid) continue
+					const info=await this.askDbForUserInfo({type:'id',uid:message.uid})
+					if (info) {
+						userEntry.info=info
+						replaceUserCard(userEntry)
+					}
+				}
 			}
 			if (this.streamMessenger) {
 				await this.streamMessenger.receiveMessage(message)
