@@ -248,7 +248,7 @@ body > .symbols {
 	transition: translate 100ms;
 }
 .ui .grid.with-grabbed-tab thead th:not(.grabbed) .tab > *,
-.ui .grid.with-grabbed-tab thead td:not(.grabbed) :is(.card,.selector) > * {
+.ui .grid.with-grabbed-tab thead td:not(.grabbed) .card > * { /* keep selector opaque */
 	opacity: .5;
 }
 .ui .grid.with-grabbed-tab thead th.grabbed .tab, 
