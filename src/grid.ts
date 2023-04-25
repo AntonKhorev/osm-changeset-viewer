@@ -18,8 +18,8 @@ export default class Grid {
 		return this.columnHues.length
 	}
 	setColumns(columnHues: (number|null)[]) {
-		this.columnHues=columnHues
 		this.clearItems()
+		this.setColumnHues(columnHues)
 		this.$grid.style.setProperty('--columns',String(this.nColumns))
 		this.$colgroup.replaceChildren()
 		for (let i=0;i<this.nColumns;i++) {
@@ -30,6 +30,10 @@ export default class Grid {
 		this.$colgroup.append(
 			makeElement('col')('adder')()
 		)
+	}
+	setColumnHues(columnHues: (number|null)[]) {
+		this.columnHues=columnHues
+		// TODO update existing table cells - currently not required because table is always cleared
 	}
 	addItem($masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number) {
 		if (iColumns.length==0) return

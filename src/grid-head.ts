@@ -90,6 +90,8 @@ export default class GridHead {
 				// userEntry.$card.replaceWith($card)
 				userEntry.$card=$card
 				this.rewriteUserEntriesInHead()
+				const columnHues=this.userEntries.map(getUserEntryHue)
+				this.grid.setColumnHues(columnHues)
 			}
 			if (message.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
