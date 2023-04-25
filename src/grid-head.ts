@@ -87,8 +87,9 @@ export default class GridHead {
 					id=>this.cx.server.api.getUrl(e`user/${id}.json`),
 					query=>this.sendUserQueryToWorker(query)
 				)
-				userEntry.$card.replaceWith($card)
+				// userEntry.$card.replaceWith($card)
 				userEntry.$card=$card
+				this.rewriteUserEntriesInHead()
 			}
 			if (message.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
