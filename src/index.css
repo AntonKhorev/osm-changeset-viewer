@@ -4,6 +4,8 @@
 	--hover-color: #DEF;
 
 	--frame-line: solid 1px var(--frame-color);
+	--padding: .5rem;
+	--major-button-padding: .3rem;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
@@ -34,13 +36,12 @@ body > .symbols {
 .ui main > h1,
 .ui main > h2,
 .ui main > [class$="-input-group"] {
-	padding-left: .5rem;
-	padding-right: .5rem;
+	padding-left: var(--padding);
+	padding-right: var(--padding);
 }
 
 .ui [class$="-input-group"] {
-	margin: .5rem 0;
-	--major-button-padding: .3rem;
+	margin: var(--padding) 0;
 }
 .ui .major-input-group :is(input[type=text], textarea, button):not([hidden]) {
 	display: block;
@@ -49,6 +50,18 @@ body > .symbols {
 	margin: .2em 0;
 }
 .ui .major-input-group button {
+	padding: var(--major-button-padding);
+}
+
+.ui .more {
+	position: sticky;
+	left: 0;
+	padding: var(--padding);
+}
+.ui .more button {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
 	padding: var(--major-button-padding);
 }
 
@@ -80,7 +93,6 @@ body > .symbols {
 }
 
 .ui .grid {
-	--padding: .5rem;
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
 	--icon-size: 1.25em;

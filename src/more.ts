@@ -2,7 +2,7 @@ import {makeDiv, makeElement} from './util/html'
 
 export default class More {
 	$button=makeElement('button')()(`Load more`)
-	$div=makeDiv('major-input-group')(this.$button)
+	$div=makeDiv('more')(this.$button)
 	constructor() {
 		this.changeToNothingToLoad()
 	}
