@@ -109,7 +109,8 @@ body > .symbols {
 	width: var(--adder-width);
 }
 .ui .grid .icon {
-	--accent-color: hsl(var(--hue,77) 50% 50%);
+	--temp-accent-color: hsl(var(--hue) 50% 50%);
+	--accent-color: var(--temp-accent-color,var(--light-text-color));
 	display: block;
 	position: absolute;
 	left: var(--padding);

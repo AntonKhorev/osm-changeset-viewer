@@ -351,7 +351,7 @@ function isSameQuery(query1: ValidUserQuery, query2: ValidUserQuery): boolean {
 }
 
 function getUserEntryHue(userEntry: GridUserEntry): number|null {
-	return (userEntry.type=='query'&&userEntry.info.status=='ready'
+	return (userEntry.type=='query'&&(userEntry.info.status=='ready'||userEntry.info.status=='rerunning')
 		? userEntry.info.user.id % 360
 		: null
 	)
