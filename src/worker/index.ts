@@ -5,7 +5,7 @@ import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
 import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse, hasBbox, OsmNoteApiData} from '../osm'
 import type {UserItemStreamResumeInfo} from './user-item-stream'
-import {UserChangesetStream, UserNoteStream} from './user-item-stream'
+import {UserChangesetStream, UserNoteStream, parseNoteDate} from './user-item-stream'
 import {toReadableIsoString} from '../date'
 import serverListConfig from '../server-list-config'
 import {makeEscapeTag} from '../util/escape'
@@ -276,11 +276,4 @@ function convertNoteApiDataToDbRecord(a: OsmNoteApiData): NoteDbRecord {
 		b.openingComment=c.text
 	}
 	return b
-}
-
-function parseNoteDate(a: string): Date {
-	const match=a.match(/^\d\d\d\d-\d\d-\d\d\s+\d\d:\d\d:\d\d/)
-	if (!match) throw new RangeError(`invalid date format`)
-	const [s]=match
-	return new Date(s+'Z')
 }
