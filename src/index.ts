@@ -105,7 +105,7 @@ async function main() {
 				getUserQueriesFromHash(hostlessHash)
 			)
 		},true)
-		writeToolbar($root,$toolbar,$netDialog,$grid,net.cx.server.host,()=>{
+		writeToolbar($root,$toolbar,$netDialog,$grid,more,net.cx.server.host,()=>{
 			grid.updateTableAccordingToSettings()
 		})
 	} else {

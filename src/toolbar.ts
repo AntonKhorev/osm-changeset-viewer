@@ -1,3 +1,4 @@
+import type More from './more'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {makeElement, makeDiv, makeLabel} from './util/html'
 import {strong} from './util/html-shortcuts'
@@ -7,6 +8,7 @@ export default function writeToolbar(
 	$toolbar: HTMLElement,
 	$netDialog: HTMLDialogElement,
 	$grid?: HTMLElement,
+	more?: More,
 	host?: string,
 	updateTableCallback?: ()=>void
 ): void {
@@ -29,39 +31,55 @@ export default function writeToolbar(
 			}
 		}
 	}
-	if (host) {
-		const $timeCheckbox=makeElement('input')()()
-		$timeCheckbox.type='checkbox'
-		$timeCheckbox.oninput=()=>{
-			$root.classList.toggle('with-time',$timeCheckbox.checked)
+	if (more) {
+		const $checkbox=makeElement('input')()()
+		$checkbox.type='checkbox'
+		$checkbox.oninput=()=>{
+			more.autoLoad=$checkbox.checked
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(
-				$timeCheckbox,` time`
+				$checkbox,` auto load more`
+			))
+		)
+	}
+	if (host) {
+		const $checkbox=makeElement('input')()()
+		$checkbox.type='checkbox'
+		$checkbox.oninput=()=>{
+			$root.classList.toggle('with-time',$checkbox.checked)
+		}
+		$toolbar.append(
+			makeDiv('input-group')(makeLabel()(
+				$checkbox,` time`
 			))
 		)
 	}
 	if ($grid) {
-		const $closeEventsCheckbox=makeElement('input')()()
-		$closeEventsCheckbox.type='checkbox'
-		$closeEventsCheckbox.oninput=()=>{
-			$grid.classList.toggle('with-closed-changesets',$closeEventsCheckbox.checked)
+		const $checkbox=makeElement('input')()()
+		$checkbox.type='checkbox'
+		$checkbox.oninput=()=>{
+			$grid.classList.toggle('with-closed-changesets',$checkbox.checked)
 			updateTableCallback?.()
 		}
-		const $closeEventsLabel=makeLabel()(
-			$closeEventsCheckbox,` changeset close events`
+		const $label=makeLabel()(
+			$checkbox,` changeset close events`
 		)
-		$closeEventsLabel.title=`visible only if there's some other event between changeset opening and closing`
-		const $oneColumnCheckbox=makeElement('input')()()
-		$oneColumnCheckbox.type='checkbox'
-		$oneColumnCheckbox.oninput=()=>{
-			$grid.classList.toggle('in-one-column',$oneColumnCheckbox.checked)
+		$label.title=`visible only if there's some other event between changeset opening and closing`
+		$toolbar.append(
+			makeDiv('input-group')($label)
+		)
+	}
+	if ($grid) {
+		const $checkbox=makeElement('input')()()
+		$checkbox.type='checkbox'
+		$checkbox.oninput=()=>{
+			$grid.classList.toggle('in-one-column',$checkbox.checked)
 			updateTableCallback?.()
 		}
 		$toolbar.append(
-			makeDiv('input-group')($closeEventsLabel),
 			makeDiv('input-group')(makeLabel()(
-				$oneColumnCheckbox,` one column`
+				$checkbox,` one column`
 			))
 		)
 	}
