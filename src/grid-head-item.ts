@@ -72,8 +72,15 @@ export function makeUserCard(
 		} else {
 			$downloadedChangesetsCount.textContent=`0`
 		}
+		if (info.user.visible && info.user.img) {
+			const $img=makeElement('img')()()
+			$img.src=info.user.img.href
+			$card.append(
+				makeDiv('avatar')($img)
+			)
+		}
 		$card.append(
-			makeDiv('name')(
+			makeDiv()(
 				(info.user.visible
 					? makeLink(info.user.name,getUserNameHref(info.user.name))
 					: `deleted user`

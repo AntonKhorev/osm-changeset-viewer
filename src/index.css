@@ -197,6 +197,20 @@ body > .symbols {
 	margin-right: -1px;
 	background: canvas;
 }
+.ui .grid thead td .card .avatar {
+	float: right;
+	width: 20%;
+	min-width: 2rem;
+	max-width: 100px;
+	margin-left: var(--padding);
+	margin-bottom: var(--padding);
+}
+.ui .grid thead td .card .avatar img {
+	display: block;
+	width: 100%;
+	max-height: 100px;
+	max-width: 100px;
+}
 .ui .grid thead td .card .uid {
 	color: var(--light-text-color);
 	font-size: .8em;
