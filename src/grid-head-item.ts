@@ -3,13 +3,12 @@ import type {UserScanDbRecord, UserDbInfo} from './db'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 
-export type ReadyUserInfo = {
-	status: 'ready'
+export type CompleteUserInfo = {
+	status: 'rerunning'|'ready'
 } & UserDbInfo
-
 export type UserInfo = {
-	status: 'pending'|'running'|'failed'
-} | ReadyUserInfo
+	status: 'pending'|'failed'|'running'
+} | CompleteUserInfo
 
 export function makeUserTab(
 	removeColumnClickListener: (this:HTMLElement)=>void,
@@ -51,16 +50,16 @@ export function makeUserCard(
 	query: ValidUserQuery, info: UserInfo, $downloadedChangesetsCount: HTMLOutputElement,
 	getUserNameHref: (name:string)=>string,
 	getUserIdHref: (id:number)=>string,
-	processValidUserQuery: (query:ValidUserQuery)=>void
+	processValidUserQuery: (query:ValidUserQuery)=>void,
+	rescan: (type: UserScanDbRecord['type'])=>void
 ): HTMLElement {
 	const $card=makeDiv('card')()
 	if (info.status=='pending' || info.status=='running') {
 		$card.append(makeDiv('notice')(`waiting for user data`))
-	} else if (info.status!='ready') {
-		$card.append(makeDiv('notice')(`unable to get user data`))
-	} else {
+	} else if (info.status=='rerunning' || info.status=='ready') {
 		const $totalChangesetsCount=makeElement('output')()()
 		const $updateButton=makeElement('button')()(`update`)
+		$updateButton.disabled=info.status=='rerunning'
 		if (info.user.visible) {
 			$totalChangesetsCount.textContent=String(info.user.changesets.count)
 			$totalChangesetsCount.title=`opened by the user`
@@ -106,17 +105,22 @@ export function makeUserCard(
 			makeDiv()(
 				`user info updated at `,makeDateOutput(info.user.infoUpdatedAt),` `,$updateButton
 			),
-			makeScanField('changesets',info.scans.changesets),
-			makeScanField('notes',info.scans.notes)
+			makeScanField('changesets',info.scans.changesets,rescan),
+			makeScanField('notes',info.scans.notes,rescan)
 		)
 		$updateButton.onclick=()=>{
 			processValidUserQuery(query)
 		}
+	} else {
+		$card.append(makeDiv('notice')(`unable to get user data`))
 	}
 	return $card
 }
 
-function makeScanField(type: UserScanDbRecord['type'], scan: UserScanDbRecord|undefined): HTMLElement {
+function makeScanField(
+	type: UserScanDbRecord['type'], scan: UserScanDbRecord|undefined,
+	rescan: (type: UserScanDbRecord['type'])=>void
+): HTMLElement {
 	const $field=makeDiv()(
 		`${type} scan`
 	)
@@ -132,6 +136,13 @@ function makeScanField(type: UserScanDbRecord['type'], scan: UserScanDbRecord|un
 			$field.append(
 				`, incomplete`
 			)
+		}
+		const $rescanButton=makeElement('button')()(`rescan`)
+		$field.append(
+			` `,$rescanButton
+		)
+		$rescanButton.onclick=()=>{
+			rescan(type)
 		}
 	} else {
 		$field.append(

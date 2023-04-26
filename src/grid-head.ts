@@ -3,7 +3,7 @@ import type {ChangesetViewerDBReader} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
-import type {UserInfo, ReadyUserInfo} from './grid-head-item'
+import type {UserInfo, CompleteUserInfo} from './grid-head-item'
 import {
 	makeUserTab, makeUserCard, makeUserSelector,
 	makeFormTab, makeFormCard, makeFormSelector
@@ -81,11 +81,8 @@ export default class GridHead {
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
 		broadcastReceiver.onmessage=async({data:message})=>{
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
-				const $card=makeUserCard(
-					userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount,
-					name=>this.cx.server.web.getUrl(e`user/${name}`),
-					id=>this.cx.server.api.getUrl(e`user/${id}.json`),
-					query=>this.sendUserQueryToWorker(query)
+				const $card=this.makeUserCard(
+					userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount
 				)
 				// userEntry.$card.replaceWith($card)
 				userEntry.$card=$card
@@ -97,7 +94,17 @@ export default class GridHead {
 				for (const userEntry of this.userEntries) {
 					if (userEntry.type!='query') continue
 					if (!isSameQuery(userEntry.query,message.query)) continue
-					if (message.status=='running' || message.status=='failed') { // TODO maybe skip running?
+					if (message.status=='running') {
+						if (userEntry.info.status=='rerunning' || userEntry.info.status=='ready') {
+							userEntry.info={
+								status: 'rerunning',
+								user: userEntry.info.user,
+								scans: userEntry.info.scans
+							}
+						} else {
+							userEntry.info={status:message.status}
+						}
+					} else if (message.status=='failed') {
 						userEntry.info={status:message.status}
 					} else if (message.status=='ready') {
 						const info=await this.askDbForUserInfo(message.query)
@@ -105,7 +112,7 @@ export default class GridHead {
 							userEntry.info=info
 						} else {
 							userEntry.info={
-								status:'failed'
+								status: 'failed'
 							}
 						}
 					} else {
@@ -160,11 +167,8 @@ export default class GridHead {
 			this.wrappedRemoveColumnClickListener,query
 		)
 		const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
-		const $card=makeUserCard(
-			query,info,$downloadedChangesetsCount,
-			name=>this.cx.server.web.getUrl(e`user/${name}`),
-			id=>this.cx.server.api.getUrl(e`user/${id}.json`),
-			query=>this.sendUserQueryToWorker(query)
+		const $card=this.makeUserCard(
+			query,info,$downloadedChangesetsCount
 		)
 		const $selector=makeUserSelector()
 		return {
@@ -172,6 +176,22 @@ export default class GridHead {
 			type: 'query',
 			query,$downloadedChangesetsCount,info
 		}
+	}
+	private makeUserCard(
+		query: ValidUserQuery, info: UserInfo, $downloadedChangesetsCount: HTMLOutputElement
+	): HTMLElement {
+		return makeUserCard(
+			query,info,$downloadedChangesetsCount,
+			name=>this.cx.server.web.getUrl(e`user/${name}`),
+			id=>this.cx.server.api.getUrl(e`user/${id}.json`),
+			query=>this.sendUserQueryToWorker(query),
+			type=>{
+				console.log(`TODO rescan ${type}`) ///
+				// kill user data so that stream can't be restarted
+				// kill stream
+				// send request to worker to discard existing scan
+			}
+		)
 	}
 	private makeFormUserEntry(): GridUserEntry {
 		const userEntry: GridUserEntry = {
@@ -194,7 +214,7 @@ export default class GridHead {
 		}
 		return userEntry
 	}
-	private async askDbForUserInfo(query: ValidUserQuery): Promise<ReadyUserInfo|undefined> {
+	private async askDbForUserInfo(query: ValidUserQuery): Promise<CompleteUserInfo|undefined> {
 		if (query.type=='name') {
 			const info=await this.db.getUserInfoByName(query.username)
 			if (info) return {status:'ready',...info}
