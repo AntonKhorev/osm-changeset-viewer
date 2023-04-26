@@ -1,5 +1,5 @@
 import type {UserQuery, ValidUserQuery} from './osm/query-user'
-import type {UserDbInfo} from './db'
+import type {UserScanDbRecord, UserDbInfo} from './db'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 
@@ -87,7 +87,7 @@ export function makeUserCard(
 		if (info.user.visible) {
 			$card.append(
 				makeDiv('created')(
-					`created at `,makeDateOutput(info.user.createdAt)
+					`account created at `,makeDateOutput(info.user.createdAt)
 				)
 			)
 		} else {
@@ -100,18 +100,45 @@ export function makeUserCard(
 			)
 		}
 		$card.append(
-			makeDiv('changesets')(
+			makeDiv()(
 				`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
 			),
-			makeDiv('updated')(
+			makeDiv()(
 				`user info updated at `,makeDateOutput(info.user.infoUpdatedAt),` `,$updateButton
-			)
+			),
+			makeScanField('changesets',info.scans.changesets),
+			makeScanField('notes',info.scans.notes)
 		)
 		$updateButton.onclick=()=>{
 			processValidUserQuery(query)
 		}
 	}
 	return $card
+}
+
+function makeScanField(type: UserScanDbRecord['type'], scan: UserScanDbRecord|undefined): HTMLElement {
+	const $field=makeDiv()(
+		`${type} scan`
+	)
+	if (scan) {
+		$field.append(
+			` started at `,makeDateOutput(scan.beginDate)
+		)
+		if (scan.endDate) {
+			$field.append(
+				` ended at `,makeDateOutput(scan.endDate)
+			)
+		} else {
+			$field.append(
+				`, incomplete`
+			)
+		}
+	} else {
+		$field.append(
+			` not started`
+		)
+	}
+	return $field
 }
 
 export function makeFormCard(
