@@ -46,12 +46,14 @@ abstract class UserItemStream<T> {
 		const items=this.getOsmDataFromResponseJson(json)
 		const newItems=[] as T[]
 		for (const item of items) {
-			this.modifyQueryInResponseToFetchedData(item)
-			const id=this.getItemId(item)
-			if (!this.visitedIds.has(id)) {
-				newItems.push(item)
+			if (this.acceptItem(item)) {
+				this.modifyQueryInResponseToFetchedData(item)
+				const id=this.getItemId(item)
+				if (!this.visitedIds.has(id)) {
+					newItems.push(item)
+				}
+				this.visitedIds.add(id)
 			}
-			this.visitedIds.add(id)
 			this.lowestTimestamp=this.getItemTimestamp(item)
 		}
 		return newItems
@@ -73,6 +75,7 @@ abstract class UserItemStream<T> {
 	protected abstract getFetchPath(upperBoundDate: Date|null): string
 	protected abstract getOsmDataFromResponseJson(json: unknown): T[]
 	protected modifyQueryInResponseToFetchedData(item: T): void {}
+	protected acceptItem(item: T): boolean { return true }
 	protected abstract getItemId(item: T): number
 	protected abstract getItemTimestamp(item: T): number
 }
@@ -113,17 +116,17 @@ export class UserNoteStream extends UserItemStream<OsmNoteApiData> {
 		return `notes/search.json?${this.userParameter}&sort=created_at&order=newest&closed=-1${timeParameter}`
 	}
 	protected getOsmDataFromResponseJson(json: unknown): OsmNoteApiData[] {
-		const notes=getNotesFromOsmApiResponse(json)
-		return notes.filter(note=>{
-			if (note.properties.comments.length==0) return false
-			const [openingComment]=note.properties.comments
-			if (openingComment.action!='opened') return false
-			if (this.userQuery.type=='id') {
-				return openingComment.uid==this.userQuery.uid
-			} else {
-				return openingComment.user==this.userQuery.username
-			}
-		})
+		return getNotesFromOsmApiResponse(json)
+	}
+	protected acceptItem(note: OsmNoteApiData): boolean {
+		if (note.properties.comments.length==0) return false
+		const [openingComment]=note.properties.comments
+		if (openingComment.action!='opened') return false
+		if (this.userQuery.type=='id') {
+			return openingComment.uid==this.userQuery.uid
+		} else {
+			return openingComment.user==this.userQuery.username
+		}
 	}
 	protected getItemId(note: OsmNoteApiData): number {
 		return note.properties.id
