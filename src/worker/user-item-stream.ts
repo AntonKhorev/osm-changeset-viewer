@@ -9,6 +9,8 @@ import {makeEscapeTag} from '../util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
 
+const pastDateString=`20010101T000000Z`
+
 abstract class UserItemStream<T> {
 	isEnded=false
 	boundary: StreamBoundary
@@ -89,7 +91,7 @@ export class UserChangesetStream extends UserItemStream<OsmChangesetApiData> {
 	protected getFetchPath(upperBoundDate: Date|null): string {
 		let timeParameter=''
 		if (upperBoundDate) {
-			timeParameter=e`&time=2001-01-01,${toIsoString(upperBoundDate)}`
+			timeParameter=e`&time=${pastDateString},${toIsoString(upperBoundDate,'','')}`
 		}
 		return `changesets.json?${this.userParameter}${timeParameter}`
 	}
@@ -116,7 +118,7 @@ export class UserNoteStream extends UserItemStream<OsmNoteApiData> {
 	protected getFetchPath(upperBoundDate: Date|null): string {
 		let timeParameter=''
 		if (upperBoundDate) {
-			timeParameter=e`&from=20010101T000000Z&to=${toIsoString(upperBoundDate,'','')}`
+			timeParameter=e`&from=${pastDateString}&to=${toIsoString(upperBoundDate,'','')}`
 		}
 		return `notes/search.json?${this.userParameter}&sort=created_at&closed=-1${timeParameter}`
 	}
