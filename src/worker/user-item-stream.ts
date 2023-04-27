@@ -118,7 +118,7 @@ export class UserNoteStream extends UserItemStream<OsmNoteApiData> {
 		if (upperBoundDate) {
 			timeParameter=e`&from=20010101T000000Z&to=${toIsoString(upperBoundDate,'','')}`
 		}
-		return `notes/search.json?${this.userParameter}&sort=created_at&order=newest&closed=-1${timeParameter}`
+		return `notes/search.json?${this.userParameter}&sort=created_at&closed=-1${timeParameter}`
 	}
 	protected getOsmDataFromResponseJson(json: unknown): OsmNoteApiData[] {
 		return getNotesFromOsmApiResponse(json)
