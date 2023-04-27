@@ -1,4 +1,3 @@
-import {ApiProvider} from '../net'
 import {
 	ValidUserQuery,
 	OsmChangesetApiData, getChangesetsFromOsmApiResponse,
@@ -14,7 +13,6 @@ abstract class UserItemStream<T> {
 	isEnded=false
 	boundary: StreamBoundary
 	constructor(
-		private readonly api: ApiProvider,
 		protected userQuery: ValidUserQuery,
 		boundary?: StreamBoundary
 	) {
@@ -24,7 +22,7 @@ abstract class UserItemStream<T> {
 			this.boundary=new StreamBoundary()
 		}
 	}
-	async fetch(): Promise<T[]> {
+	async fetch(fetcher: (path:string)=>Promise<Response>): Promise<T[]> {
 		let previousTimestamp=this.boundary.timestamp
 		let visitedNewItems: boolean
 		do {
@@ -32,7 +30,7 @@ abstract class UserItemStream<T> {
 			const path=this.getFetchPath(this.nextFetchUpperBoundDate)
 			let response: Response
 			try {
-				response=await this.api.fetch(path)
+				response=await fetcher(path)
 			} catch (ex) {
 				throw new TypeError(`network error`)
 			}

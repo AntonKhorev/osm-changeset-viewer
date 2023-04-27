@@ -80,6 +80,7 @@ export default class GridHead {
 		this.$adderCell.append($adderButton)
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
 		broadcastReceiver.onmessage=async({data:message})=>{
+			if (message.type!='operation') return
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
 				const $card=this.makeUserCard(
 					userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount
@@ -90,11 +91,11 @@ export default class GridHead {
 				const columnHues=this.userEntries.map(getUserEntryHue)
 				this.grid.setColumnHues(columnHues)
 			}
-			if (message.type=='getUserInfo') {
+			if (message.part.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
 					if (userEntry.type!='query') continue
-					if (!isSameQuery(userEntry.query,message.query)) continue
-					if (message.status=='running') {
+					if (!isSameQuery(userEntry.query,message.part.query)) continue
+					if (message.part.status=='running') {
 						if (userEntry.info.status=='rerunning' || userEntry.info.status=='ready') {
 							userEntry.info={
 								status: 'rerunning',
@@ -102,12 +103,12 @@ export default class GridHead {
 								scans: userEntry.info.scans
 							}
 						} else {
-							userEntry.info={status:message.status}
+							userEntry.info={status:message.part.status}
 						}
-					} else if (message.status=='failed') {
-						userEntry.info={status:message.status}
-					} else if (message.status=='ready') {
-						const info=await this.askDbForUserInfo(message.query)
+					} else if (message.part.status=='failed') {
+						userEntry.info={status:message.part.status}
+					} else if (message.part.status=='ready') {
+						const info=await this.askDbForUserInfo(message.part.query)
 						if (info) {
 							userEntry.info=info
 						} else {
@@ -121,12 +122,12 @@ export default class GridHead {
 					replaceUserCard(userEntry)
 				}
 				this.startStreamIfNotStartedAndGotAllUids()
-			} else if (message.type=='scanUserItems' && message.status=='ready') {
+			} else if (message.part.type=='scanUserItems' && message.part.status=='ready') {
 				for (const userEntry of this.userEntries) {
 					if (userEntry.type!='query') continue
 					if (userEntry.info.status!='ready') continue
-					if (userEntry.info.user.id!=message.uid) continue
-					const info=await this.askDbForUserInfo({type:'id',uid:message.uid})
+					if (userEntry.info.user.id!=message.part.uid) continue
+					const info=await this.askDbForUserInfo({type:'id',uid:message.part.uid})
 					if (info) {
 						userEntry.info=info
 						replaceUserCard(userEntry)
@@ -134,7 +135,7 @@ export default class GridHead {
 				}
 			}
 			if (this.streamMessenger) {
-				await this.streamMessenger.receiveMessage(message)
+				await this.streamMessenger.receiveMessage(message.part)
 			}
 		}
 	}

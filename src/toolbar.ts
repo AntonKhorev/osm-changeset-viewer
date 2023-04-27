@@ -20,13 +20,20 @@ export default function writeToolbar(
 		if (host) {
 			const broadcastReceiver=new WorkerBroadcastReceiver(host)
 			broadcastReceiver.onmessage=({data:message})=>{
-				$message.replaceChildren(
-					strong(message.status),` `,message.text
-				)
-				if (message.status=='failed') {
-					$message.append(
-						`: `,strong(message.failedText)
+				if (message.type=='operation') {
+					$message.replaceChildren(
+						strong(message.part.status),` `,message.part.text
 					)
+					if (message.part.status=='failed') {
+						$message.append(
+							`: `,strong(message.part.failedText)
+						)
+					}
+				} else if (message.type=='log') {
+					if (message.part.type=='fetch') {
+						// TODO write fetch log in panel if open
+						console.log(host,'<-',message.part.path)
+					}
 				}
 			}
 		}
@@ -84,7 +91,7 @@ export default function writeToolbar(
 		)
 	}
 	{
-		const $netButton=makeElement('button')()(`Manage servers and logins`)
+		const $netButton=makeElement('button')()(`Servers and logins`)
 		$netButton.onclick=()=>{
 			$netDialog.showModal()
 		}

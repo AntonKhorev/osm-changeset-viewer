@@ -1,7 +1,6 @@
 import {ValidUserQuery} from './osm'
-import type {UserDbRecord} from './db'
 
-export type WorkerBroadcastChannelMessage = {
+export type WorkerBroadcastMessageOperationPart = {
 	text: string
 } & (
 	{
@@ -22,6 +21,19 @@ export type WorkerBroadcastChannelMessage = {
 	}
 )
 
+type WorkerBroadcastMessageLogPart = {
+	type: 'fetch'
+	path: string
+}
+
+export type WorkerBroadcastMessage = {
+	type: 'operation'
+	part: WorkerBroadcastMessageOperationPart
+} | {
+	type: 'log'
+	part: WorkerBroadcastMessageLogPart
+}
+
 class WorkerBroadcastChannel {
 	protected broadcastChannel: BroadcastChannel
 	constructor(host: string) {
@@ -30,13 +42,19 @@ class WorkerBroadcastChannel {
 }
 
 export class WorkerBroadcastSender extends WorkerBroadcastChannel {
-	postMessage(message: WorkerBroadcastChannelMessage) {
+	postMessage(message: WorkerBroadcastMessage): void {
 		this.broadcastChannel.postMessage(message)
+	}
+	postOperationMessage(part: WorkerBroadcastMessageOperationPart): void {
+		this.postMessage({
+			type: 'operation',
+			part
+		})
 	}
 }
 
 export class WorkerBroadcastReceiver extends WorkerBroadcastChannel {
-	set onmessage(listener: (ev:MessageEvent<WorkerBroadcastChannelMessage>)=>void) {
+	set onmessage(listener: (ev:MessageEvent<WorkerBroadcastMessage>)=>void) {
 		this.broadcastChannel.onmessage=listener
 	}
 }

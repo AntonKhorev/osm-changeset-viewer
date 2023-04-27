@@ -1,3 +1,4 @@
+import type {Server} from '../net'
 import type {UserItemDbRecordMap, UserDbRecord, ChangesetDbRecord, NoteDbRecord} from '../db'
 import {ChangesetViewerDBWriter} from './db-writer'
 import type {ApiProvider} from '../net'
@@ -51,6 +52,19 @@ async function getHostDataEntry(host: string): Promise<HostDataEntry> {
 	return hostDataEntry
 }
 
+function getLoggedFetcher(server: Server, hostDataEntry: HostDataEntry): (path:string)=>Promise<Response> {
+	return path=>{
+		hostDataEntry.broadcastSender.postMessage({
+			type: 'log',
+			part: {
+				type: 'fetch',
+				path
+			}
+		})
+		return server.api.fetch(path)
+	}
+}
+
 self.onconnect=ev=>{
 	const port=ev.ports[0]
 	port.onmessage=async(ev)=>{
@@ -62,6 +76,7 @@ self.onconnect=ev=>{
 			const server=net.serverList.servers.get(host)
 			if (!server) throw new RangeError(`unknown host "${host}"`)
 			const hostDataEntry=await getHostDataEntry(host)
+			const fetcher=getLoggedFetcher(server,hostDataEntry)
 			const query=ev.data.query as ValidUserQuery
 			let changesetStream: UserChangesetStream|undefined
 			let changesetsApiData=[] as OsmChangesetApiData[]
@@ -70,13 +85,13 @@ self.onconnect=ev=>{
 			let failedText=`unable to get user id`
 			if (query.type=='name') {
 				text=`info of user "${query.username}"`
-				hostDataEntry.broadcastSender.postMessage({
+				hostDataEntry.broadcastSender.postOperationMessage({
 					type,query,text,
 					status: 'running',
 				})
-				changesetStream=new UserChangesetStream(server.api,query)
+				changesetStream=new UserChangesetStream(query)
 				try {
-					changesetsApiData=await changesetStream.fetch()
+					changesetsApiData=await changesetStream.fetch(fetcher)
 				} catch (ex) {
 					if (ex instanceof TypeError) {
 						failedText+=` because: ${ex.message}`
@@ -89,14 +104,14 @@ self.onconnect=ev=>{
 				}
 			} else if (query.type=='id') {
 				text=`info of user #${query.uid}`
-				hostDataEntry.broadcastSender.postMessage({
+				hostDataEntry.broadcastSender.postMessage({type:'operation',part:{
 					type,query,text,
 					status: 'running',
-				})
+				}})
 				uid=query.uid
 			}
 			if (uid==null) {
-				return hostDataEntry.broadcastSender.postMessage({
+				return hostDataEntry.broadcastSender.postOperationMessage({
 					type,query,text,
 					status: 'failed',
 					failedText
@@ -106,7 +121,7 @@ self.onconnect=ev=>{
 			let user: UserDbRecord|undefined
 			const now=new Date()
 			try {
-				const response=await server.api.fetch(e`user/${uid}.json`)
+				const response=await fetcher(e`user/${uid}.json`)
 				if (!response.ok) {
 					if (response.status==410) { // deleted user
 						user={
@@ -136,7 +151,7 @@ self.onconnect=ev=>{
 				}
 			} catch {}
 			if (user==null) {
-				return hostDataEntry.broadcastSender.postMessage({
+				return hostDataEntry.broadcastSender.postOperationMessage({
 					type,query,text,
 					status: 'failed',
 					failedText
@@ -150,7 +165,7 @@ self.onconnect=ev=>{
 					hostDataEntry.userStreams.changesets.set(user.id,changesetStream)
 				}
 			}
-			hostDataEntry.broadcastSender.postMessage({
+			hostDataEntry.broadcastSender.postOperationMessage({
 				type,query,text,
 				status: 'ready'
 			})
@@ -174,22 +189,23 @@ async function scanUserItems<T extends 'changesets'|'notes'>(itemType: T, host: 
 	const server=net.serverList.servers.get(host)
 	if (!server) throw new RangeError(`unknown host "${host}"`)
 	const hostDataEntry=await getHostDataEntry(host)
+	const fetcher=getLoggedFetcher(server,hostDataEntry)
 	const stream=await resumeUserItemStream(itemType,hostDataEntry,server.api,start,uid)
 	const text=`${start?`start `:``}scan ${stream.nextFetchUpperBoundDate
 		? `${itemType} before `+toReadableIsoString(stream.nextFetchUpperBoundDate)
 		: `latest ${itemType}`
 	} of user #${uid}`
-	hostDataEntry.broadcastSender.postMessage({
+	hostDataEntry.broadcastSender.postOperationMessage({
 		type,uid,text,
 		status: 'running',
 	})
 	const now=new Date()
 	let userItemsApiData=[] as UserItemOsmApiDataMap[T][]
 	try {
-		userItemsApiData=await stream.fetch() as UserItemOsmApiDataMap[T][]
+		userItemsApiData=await stream.fetch(fetcher) as UserItemOsmApiDataMap[T][]
 	} catch (ex) {
 		const failedText=(ex instanceof TypeError) ? ex.message : `unknown error`
-		return hostDataEntry.broadcastSender.postMessage({
+		return hostDataEntry.broadcastSender.postOperationMessage({
 			type,uid,text,
 			status: 'failed',
 			failedText
@@ -209,7 +225,7 @@ async function scanUserItems<T extends 'changesets'|'notes'>(itemType: T, host: 
 	}
 	const mode=start?'toNewScan':'toNewOrExistingScan'
 	await hostDataEntry.db.addUserItems(itemType,uid,now,userItems,stream.isEnded,mode)
-	hostDataEntry.broadcastSender.postMessage({
+	hostDataEntry.broadcastSender.postOperationMessage({
 		type,uid,text,
 		status: 'ready'
 	})
@@ -219,9 +235,9 @@ function makeNewUserItemStream<T extends 'changesets'|'notes'>(
 	itemType: T, api: ApiProvider, uid: number, streamBoundary?: StreamBoundary
 ): UserItemStreamMap[T] {
 	if (itemType=='changesets') {
-		return new UserChangesetStream(api,{type:'id',uid},streamBoundary) as UserItemStreamMap[T]
+		return new UserChangesetStream({type:'id',uid},streamBoundary) as UserItemStreamMap[T]
 	} else if (itemType=='notes') {
-		return new UserNoteStream(api,{type:'id',uid},streamBoundary) as UserItemStreamMap[T]
+		return new UserNoteStream({type:'id',uid},streamBoundary) as UserItemStreamMap[T]
 	} else {
 		throw new RangeError(`unknown item type`)
 	}

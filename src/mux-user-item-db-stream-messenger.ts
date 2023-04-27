@@ -1,4 +1,4 @@
-import type {WorkerBroadcastChannelMessage} from './broadcast-channel'
+import type {WorkerBroadcastMessageOperationPart} from './broadcast-channel'
 import type MuxUserItemDbStream from './mux-user-item-db-stream'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {moveInArray} from './util/types'
@@ -52,10 +52,10 @@ export default class MuxUserItemDbStreamMessenger {
 			this.receiveBatch([])
 		}
 	}
-	async receiveMessage(message: WorkerBroadcastChannelMessage): Promise<void> {
-		if (message.type=='scanUserItems') {
-			if (message.status=='ready' && this.watchedUids.has(message.uid)) {
-				this.watchedUids.delete(message.uid)
+	async receiveMessage(messagePart: WorkerBroadcastMessageOperationPart): Promise<void> {
+		if (messagePart.type=='scanUserItems') {
+			if (messagePart.status=='ready' && this.watchedUids.has(messagePart.uid)) {
+				this.watchedUids.delete(messagePart.uid)
 				await this.requestNextBatch()
 			}
 		}
