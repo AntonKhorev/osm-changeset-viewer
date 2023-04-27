@@ -4,7 +4,7 @@ import type {ApiProvider} from '../net'
 import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
 import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse, hasBbox, OsmNoteApiData} from '../osm'
-import type {UserItemStreamResumeInfo} from './user-item-stream'
+import StreamBoundary from '../stream-boundary'
 import {UserChangesetStream, UserNoteStream, parseNoteDate} from './user-item-stream'
 import {toReadableIsoString} from '../date'
 import serverListConfig from '../server-list-config'
@@ -216,12 +216,12 @@ async function scanUserItems<T extends 'changesets'|'notes'>(itemType: T, host: 
 }
 
 function makeNewUserItemStream<T extends 'changesets'|'notes'>(
-	itemType: T, api: ApiProvider, uid: number, resumeInfo?: UserItemStreamResumeInfo
+	itemType: T, api: ApiProvider, uid: number, streamBoundary?: StreamBoundary
 ): UserItemStreamMap[T] {
 	if (itemType=='changesets') {
-		return new UserChangesetStream(api,{type:'id',uid},resumeInfo) as UserItemStreamMap[T]
+		return new UserChangesetStream(api,{type:'id',uid},streamBoundary) as UserItemStreamMap[T]
 	} else if (itemType=='notes') {
-		return new UserNoteStream(api,{type:'id',uid},resumeInfo) as UserItemStreamMap[T]
+		return new UserNoteStream(api,{type:'id',uid},streamBoundary) as UserItemStreamMap[T]
 	} else {
 		throw new RangeError(`unknown item type`)
 	}
@@ -231,14 +231,14 @@ async function resumeUserItemStream<T extends 'changesets'|'notes'>(
 	itemType: T, hostDataEntry: HostDataEntry, api: ApiProvider, start: boolean, uid: number
 ): Promise<UserItemStreamMap[T]> {
 	const userStreamsOfType=hostDataEntry.userStreams[itemType] as Map<number,UserItemStreamMap[T]>
-	const makeAndRememberNewStream=(resumeInfo?:UserItemStreamResumeInfo)=>{
-		const newStream=makeNewUserItemStream(itemType,api,uid,resumeInfo)
+	const makeAndRememberNewStream=(streamBoundary?: StreamBoundary)=>{
+		const newStream=makeNewUserItemStream(itemType,api,uid,streamBoundary)
 		userStreamsOfType.set(uid,newStream)
 		return newStream
 	}
 	if (start) return makeAndRememberNewStream()
 	return userStreamsOfType.get(uid) ?? makeAndRememberNewStream(
-		await hostDataEntry.db.getUserItemStreamResumeInfo(itemType,uid)
+		await hostDataEntry.db.getUserItemStreamBoundary(itemType,uid)
 	)
 }
 

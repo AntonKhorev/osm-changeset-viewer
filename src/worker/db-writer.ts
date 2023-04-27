@@ -1,6 +1,6 @@
-import type {UserItemStreamResumeInfo} from './user-item-stream'
 import type {UserDbRecord, UserScanDbRecord, UserItemDbRecordMap} from '../db'
 import {ChangesetViewerDBReader} from '../db'
+import StreamBoundary from '../stream-boundary'
 
 export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	putUser(user: UserDbRecord): Promise<void> {
@@ -11,7 +11,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 			tx.objectStore('users').put(user).onsuccess=()=>resolve()
 		})
 	}
-	getUserItemStreamResumeInfo<T extends keyof UserItemDbRecordMap>(type: T, uid: number): Promise<UserItemStreamResumeInfo|undefined> {
+	getUserItemStreamBoundary<T extends keyof UserItemDbRecordMap>(type: T, uid: number): Promise<StreamBoundary> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
 			const tx=this.idb.transaction([type,'userScans'],'readonly')
@@ -19,11 +19,11 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 			const scanRequest=tx.objectStore('userScans').get([uid,0,type])
 			scanRequest.onsuccess=()=>{
 				if (scanRequest.result==null) {
-					return resolve(undefined)
+					return resolve(new StreamBoundary())
 				}
 				const scan=scanRequest.result as UserScanDbRecord
 				if (scan.empty) {
-					return resolve(undefined)
+					return resolve(new StreamBoundary())
 				}
 				const itemRequest=tx.objectStore(type).index('user').getAll(
 					IDBKeyRange.bound([uid,scan.lowerItemDate],[uid,scan.lowerItemDate,+Infinity])
@@ -37,9 +37,12 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 						return item.id
 					})
 					if (lowerItemDate) {
-						resolve({lowerItemDate,itemIdsWithLowerDate})
+						resolve(new StreamBoundary({
+							date: lowerItemDate,
+							visitedIds: itemIdsWithLowerDate
+						}))
 					} else {
-						resolve(undefined)
+						resolve(new StreamBoundary())
 					}
 				}
 			}

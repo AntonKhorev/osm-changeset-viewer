@@ -10,24 +10,16 @@ import {makeEscapeTag} from '../util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
 
-export type UserItemStreamResumeInfo = {
-	lowerItemDate: Date,
-	itemIdsWithLowerDate: Iterable<number>
-}
-
 abstract class UserItemStream<T> {
 	isEnded=false
 	boundary: StreamBoundary
 	constructor(
 		private readonly api: ApiProvider,
 		protected userQuery: ValidUserQuery,
-		resumeInfo?: UserItemStreamResumeInfo
+		boundary?: StreamBoundary
 	) {
-		if (resumeInfo) {
-			this.boundary=new StreamBoundary({
-				date: resumeInfo.lowerItemDate,
-				visitedIds: resumeInfo.itemIdsWithLowerDate
-			})
+		if (boundary) {
+			this.boundary=boundary
 		} else {
 			this.boundary=new StreamBoundary()
 		}
