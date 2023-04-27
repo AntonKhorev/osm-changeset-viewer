@@ -351,11 +351,12 @@ body > .symbols {
 .ui footer > .log ul {
 	margin: 0;
 	font-family: monospace;
+	padding-left: 1rem;
 }
 .ui footer > .toolbar {
 	height: 3rem;
 	display: flex;
-	gap: 1rem;
+	gap: var(--padding);
 	align-items: center;
 }
 .ui footer > .toolbar > .message {
