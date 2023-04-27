@@ -36,12 +36,21 @@ export default function writeFooter(
 					}
 				} else if (message.type=='log') {
 					if (message.part.type=='fetch') {
-						const href=server.api.getUrl(message.part.path)
-						$logList.append(
-							li(
-								makeLink(href,href)
-							)
+						const path=message.part.path
+						let docHref: string|undefined
+						if (path.startsWith(`changesets.json?`)) {
+							docHref=`https://wiki.openstreetmap.org/wiki/API_v0.6#Query:_GET_/api/0.6/changesets`
+						}
+						const href=server.api.getUrl(path)
+						const $li=li(
+							makeLink(href,href)
 						)
+						if (docHref) {
+							$li.append(
+								` [`,makeLink(`?`,docHref),`]`
+							)
+						}
+						$logList.append($li)
 					}
 				}
 			}
