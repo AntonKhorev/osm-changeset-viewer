@@ -36,6 +36,7 @@ export default function writeFooter(
 					}
 				} else if (message.type=='log') {
 					if (message.part.type=='fetch') {
+						const atBottom=$log.offsetHeight+$log.scrollTop>=$log.scrollHeight-16
 						const path=message.part.path
 						let docHref: string|undefined
 						if (path.startsWith(`changesets.json`)) {
@@ -55,6 +56,9 @@ export default function writeFooter(
 							)
 						}
 						$logList.append($li)
+						if (atBottom) {
+							$li.scrollIntoView()
+						}
 					}
 				}
 			}
