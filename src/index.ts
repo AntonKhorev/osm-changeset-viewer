@@ -3,7 +3,7 @@ import {ChangesetViewerDBReader} from './db'
 import type {ValidUserQuery} from './osm'
 import Grid from './grid'
 import More from './more'
-import writeToolbar from './toolbar'
+import writeFooter from './footer'
 import makeNetDialog from './net-dialog'
 import GridHead from './grid-head'
 import {makeChangesetCard, makeNoteCard} from './item'
@@ -45,9 +45,9 @@ async function main() {
 	})
 	contentResizeObserver.observe($content)
 
-	const $toolbar=makeElement('footer')()()
+	const $footer=makeElement('footer')()()
 	const $netDialog=makeNetDialog(net)
-	$root.append($content,$toolbar,$netDialog)
+	$root.append($content,$footer,$netDialog)
 	let $grid: HTMLElement|undefined
 
 	if (net.cx) {
@@ -105,7 +105,7 @@ async function main() {
 				getUserQueriesFromHash(hostlessHash)
 			)
 		},true)
-		writeToolbar($root,$toolbar,$netDialog,$grid,more,net.cx.server.host,()=>{
+		writeFooter($root,$footer,$netDialog,$grid,more,net.cx.server.host,()=>{
 			grid.updateTableAccordingToSettings()
 		})
 	} else {
@@ -113,7 +113,7 @@ async function main() {
 			makeDiv('notice')(`Please select a valid server`)
 		)
 		net.serverSelector.installHashChangeListener(net.cx,()=>{})
-		writeToolbar($root,$toolbar,$netDialog)
+		writeFooter($root,$footer,$netDialog)
 	}
 }
 

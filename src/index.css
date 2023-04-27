@@ -26,13 +26,14 @@ body > .symbols {
 	position: fixed;
 	height: 100%;
 	width: 100%;
-	display: grid;
-	grid-template-rows: 1fr 4rem;
-}
-.ui main, .ui footer {
-	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
 }
 
+.ui main {
+	flex-basis: 100%;
+	overflow-y: auto;
+}
 .ui main > h1,
 .ui main > h2,
 .ui main > [class$="-input-group"] {
@@ -332,17 +333,35 @@ body > .symbols {
 }
 
 .ui footer {
-	padding: .5rem;
+	flex-shrink: 0;
+	flex-grow: 1;
+	box-shadow: 0 0px 6px #AAA;
+}
+.ui footer > * {
+	padding: var(--padding);
 	border-top: var(--frame-line);
+}
+.ui footer:not(.with-log) > .log {
+	display: none;
+}
+.ui footer > .log {
+	height: 6rem;
+	overflow-y: auto;
+}
+.ui footer > .log ul {
+	margin: 0;
+	font-family: monospace;
+}
+.ui footer > .toolbar {
+	height: 3rem;
 	display: flex;
 	gap: 1rem;
 	align-items: center;
-	box-shadow: 0 0px 6px #AAA;
 }
-.ui footer > .message {
+.ui footer > .toolbar > .message {
 	flex-grow: 1;
 }
-.ui footer > button {
+.ui footer > .toolbar > button {
 	align-self: stretch;
 }
 

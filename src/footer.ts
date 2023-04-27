@@ -1,17 +1,21 @@
 import type More from './more'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {makeElement, makeDiv, makeLabel} from './util/html'
-import {strong} from './util/html-shortcuts'
+import {ul,li,strong} from './util/html-shortcuts'
 
-export default function writeToolbar(
+export default function writeFooter(
 	$root: HTMLElement,
-	$toolbar: HTMLElement,
+	$footer: HTMLElement,
 	$netDialog: HTMLDialogElement,
 	$grid?: HTMLElement,
 	more?: More,
 	host?: string,
 	updateTableCallback?: ()=>void
 ): void {
+	const $logList=ul()
+	const $log=makeDiv('log')($logList)
+	const $toolbar=makeDiv('toolbar')()
+	$footer.append($log,$toolbar)
 	{
 		const $message=makeDiv('message')()
 		$toolbar.append(
@@ -31,8 +35,9 @@ export default function writeToolbar(
 					}
 				} else if (message.type=='log') {
 					if (message.part.type=='fetch') {
-						// TODO write fetch log in panel if open
-						console.log(host,'<-',message.part.path)
+						$logList.append(
+							li(host,'<-',message.part.path)
+						)
 					}
 				}
 			}
@@ -90,13 +95,18 @@ export default function writeToolbar(
 			))
 		)
 	}
+	if (host) {
+		const $button=makeElement('button')()(`Fetch log`)
+		$button.onclick=()=>{
+			$footer.classList.toggle('with-log')
+		}
+		$toolbar.append($button)
+	}
 	{
-		const $netButton=makeElement('button')()(`Servers and logins`)
-		$netButton.onclick=()=>{
+		const $button=makeElement('button')()(`Servers and logins`)
+		$button.onclick=()=>{
 			$netDialog.showModal()
 		}
-		$toolbar.append(
-			$netButton
-		)
+		$toolbar.append($button)
 	}
 }
