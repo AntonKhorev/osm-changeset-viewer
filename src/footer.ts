@@ -40,6 +40,8 @@ export default function writeFooter(
 						let docHref: string|undefined
 						if (path.startsWith(`changesets.json?`)) {
 							docHref=`https://wiki.openstreetmap.org/wiki/API_v0.6#Query:_GET_/api/0.6/changesets`
+						} else if (path.match(/^user\/\d+\.json/)) {
+							docHref=`https://wiki.openstreetmap.org/wiki/API_v0.6#Details_of_a_user:_GET_/api/0.6/user/#id`
 						}
 						const href=server.api.getUrl(path)
 						const $li=li(
