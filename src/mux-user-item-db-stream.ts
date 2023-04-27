@@ -206,7 +206,7 @@ export default class MuxUserItemDbStream {
 					}
 					newLowestReachedTimestamp=changeset.createdAt.getTime()
 					this.queue.push([newLowestReachedTimestamp,CHANGESET,changeset])
-				}
+				} // TODO if empty consider that lowerDate is reached (?)
 			} else if (muxEntry.itemType=='notes') {
 				const notes=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,100,upperDate,lowerDate)
 				for (const note of notes) {
@@ -214,7 +214,7 @@ export default class MuxUserItemDbStream {
 					muxEntry.visitedItemIds.add(note.id)
 					newLowestReachedTimestamp=note.createdAt.getTime()
 					this.queue.push([newLowestReachedTimestamp,NOTE,note])
-				}
+				} // TODO if empty consider that lowerDate is reached (?)
 			}
 			if (newLowestReachedTimestamp==-Infinity && !muxEntry.scan.endDate) {
 				muxEntry.scan=null

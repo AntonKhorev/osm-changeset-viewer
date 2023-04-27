@@ -15,6 +15,7 @@ export type UserItemStreamResumeInfo = {
 }
 
 abstract class UserItemStream<T> {
+	isEnded=false
 	private lowestTimestamp: number|undefined
 	private visitedIds = new Set<number>()
 	constructor(
@@ -28,6 +29,7 @@ abstract class UserItemStream<T> {
 		}
 	}
 	async fetch(): Promise<T[]> {
+		let previousLowestTimestamp=this.lowestTimestamp
 		let visitedNewItems: boolean
 		do {
 			visitedNewItems=false
@@ -65,6 +67,9 @@ abstract class UserItemStream<T> {
 			}
 			if (newItems.length>0) {
 				return newItems
+			}
+			if (previousLowestTimestamp==this.lowestTimestamp) {
+				this.isEnded=true
 			}
 		} while (visitedNewItems)
 		return []

@@ -49,7 +49,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	 * @returns true if decided to add/update the scan
 	 */
 	addUserItems<T extends keyof UserItemDbRecordMap>(
-		type: T, uid: number, now: Date, items: UserItemDbRecordMap[T][],
+		type: T, uid: number, now: Date, items: UserItemDbRecordMap[T][], isEnded: boolean,
 		mode: 'toNewScan'|'toExistingScan'|'toNewOrExistingScan'
 	): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
@@ -76,10 +76,10 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 					}
 					scan.items.count++
 				}
-				if (items.length>0) {
-					delete scan.endDate
-				} else {
+				if (isEnded) {
 					scan.endDate=now
+				} else {
+					delete scan.endDate
 				}
 				tx.objectStore('userScans').put(scan)
 				tx.oncomplete=()=>resolve(true)

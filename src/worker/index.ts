@@ -145,7 +145,7 @@ self.onconnect=ev=>{
 			await hostDataEntry.db.putUser(user)
 			if (changesetStream) {
 				const changesets=changesetsApiData.map(convertChangesetApiDataToDbRecord)
-				const restartedScan=await hostDataEntry.db.addUserItems('changesets',user.id,now,changesets,'toExistingScan')
+				const restartedScan=await hostDataEntry.db.addUserItems('changesets',user.id,now,changesets,changesetStream.isEnded,'toExistingScan')
 				if (restartedScan) {
 					hostDataEntry.userStreams.changesets.set(user.id,changesetStream)
 				}
@@ -208,7 +208,7 @@ async function scanUserItems<T extends 'changesets'|'notes'>(itemType: T, host: 
 		throw new RangeError(`unexpected item type`)
 	}
 	const mode=start?'toNewScan':'toNewOrExistingScan'
-	await hostDataEntry.db.addUserItems(itemType,uid,now,userItems,mode)
+	await hostDataEntry.db.addUserItems(itemType,uid,now,userItems,stream.isEnded,mode)
 	hostDataEntry.broadcastSender.postMessage({
 		type,uid,text,
 		status: 'ready'
