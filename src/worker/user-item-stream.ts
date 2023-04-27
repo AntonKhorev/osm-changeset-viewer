@@ -4,6 +4,7 @@ import {
 	OsmChangesetApiData, getChangesetsFromOsmApiResponse,
 	OsmNoteApiData, getNotesFromOsmApiResponse
 } from '../osm'
+import StreamBoundary from '../stream-boundary'
 import {toIsoString} from '../date'
 import {makeEscapeTag} from '../util/escape'
 
@@ -16,20 +17,23 @@ export type UserItemStreamResumeInfo = {
 
 abstract class UserItemStream<T> {
 	isEnded=false
-	private lowestTimestamp: number|undefined
-	private visitedIds = new Set<number>()
+	boundary: StreamBoundary
 	constructor(
 		private readonly api: ApiProvider,
 		protected userQuery: ValidUserQuery,
 		resumeInfo?: UserItemStreamResumeInfo
 	) {
 		if (resumeInfo) {
-			this.lowestTimestamp=resumeInfo.lowerItemDate.getTime()
-			this.visitedIds=new Set(resumeInfo.itemIdsWithLowerDate)
+			this.boundary=new StreamBoundary({
+				date: resumeInfo.lowerItemDate,
+				visitedIds: resumeInfo.itemIdsWithLowerDate
+			})
+		} else {
+			this.boundary=new StreamBoundary()
 		}
 	}
 	async fetch(): Promise<T[]> {
-		let previousLowestTimestamp=this.lowestTimestamp
+		let previousTimestamp=this.boundary.timestamp
 		let visitedNewItems: boolean
 		do {
 			visitedNewItems=false
@@ -56,30 +60,25 @@ abstract class UserItemStream<T> {
 					this.modifyQueryInResponseToFetchedData(item)
 				}
 				const id=this.getItemId(item)
-				if (!this.visitedIds.has(id)) {
+				const date=this.getItemDate(item)
+				if (this.boundary.visit(date,id)) {
 					visitedNewItems=true
 					if (isItemAccepted) {
 						newItems.push(item)
 					}
 				}
-				this.visitedIds.add(id)
-				this.lowestTimestamp=this.getItemTimestamp(item)
 			}
 			if (newItems.length>0) {
 				return newItems
 			}
-			if (previousLowestTimestamp==this.lowestTimestamp) {
+			if (previousTimestamp==this.boundary.timestamp) {
 				this.isEnded=true
 			}
 		} while (visitedNewItems)
 		return []
 	}
 	get nextFetchUpperBoundDate(): Date|null {
-		if (this.lowestTimestamp) {
-			return new Date(this.lowestTimestamp+1000)
-		} else {
-			return null
-		}
+		return this.boundary.dateOneSecondBefore
 	}
 	protected get userParameter(): string {
 		if (this.userQuery.type=='id') {
@@ -93,7 +92,7 @@ abstract class UserItemStream<T> {
 	protected modifyQueryInResponseToFetchedData(item: T): void {}
 	protected acceptItem(item: T): boolean { return true }
 	protected abstract getItemId(item: T): number
-	protected abstract getItemTimestamp(item: T): number
+	protected abstract getItemDate(item: T): Date
 }
 
 export class UserChangesetStream extends UserItemStream<OsmChangesetApiData> {
@@ -118,8 +117,8 @@ export class UserChangesetStream extends UserItemStream<OsmChangesetApiData> {
 	protected getItemId(changeset: OsmChangesetApiData): number {
 		return changeset.id
 	}
-	protected getItemTimestamp(changeset: OsmChangesetApiData): number {
-		return Date.parse(changeset.created_at)
+	protected getItemDate(changeset: OsmChangesetApiData): Date {
+		return new Date(changeset.created_at)
 	}
 }
 
@@ -147,8 +146,8 @@ export class UserNoteStream extends UserItemStream<OsmNoteApiData> {
 	protected getItemId(note: OsmNoteApiData): number {
 		return note.properties.id
 	}
-	protected getItemTimestamp(note: OsmNoteApiData): number {
-		return parseNoteDate(note.properties.date_created).getTime()
+	protected getItemDate(note: OsmNoteApiData): Date {
+		return parseNoteDate(note.properties.date_created)
 	}
 }
 

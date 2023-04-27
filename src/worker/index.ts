@@ -238,7 +238,7 @@ async function resumeUserItemStream<T extends 'changesets'|'notes'>(
 	}
 	if (start) return makeAndRememberNewStream()
 	return userStreamsOfType.get(uid) ?? makeAndRememberNewStream(
-		await hostDataEntry.db.getUserStreamResumeInfo(itemType,uid)
+		await hostDataEntry.db.getUserItemStreamResumeInfo(itemType,uid)
 	)
 }
 
