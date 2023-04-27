@@ -67,14 +67,22 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 							...scan,
 							empty: false,
 							upperItemDate: item.createdAt,
-							lowerItemDate: item.createdAt
+							upperItemIds: [item.id],
+							lowerItemDate: item.createdAt,
+							lowerItemIds: [item.id],
 						}
 					} else {
 						if (scan.upperItemDate.getTime()<item.createdAt.getTime()) {
 							scan.upperItemDate=item.createdAt
+							scan.upperItemIds=[item.id]
+						} else if (scan.upperItemDate.getTime()==item.createdAt.getTime()) {
+							scan.upperItemIds=[item.id,...scan.upperItemIds]
 						}
 						if (scan.lowerItemDate.getTime()>item.createdAt.getTime()) {
 							scan.lowerItemDate=item.createdAt
+							scan.lowerItemIds=[item.id]
+						} else if (scan.lowerItemDate.getTime()==item.createdAt.getTime()) {
+							scan.lowerItemIds=[...scan.lowerItemIds,item.id]
 						}
 					}
 					scan.items.count++

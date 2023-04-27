@@ -69,7 +69,9 @@ export type UserScanDbRecord = {
 } | {
 	empty: false
 	upperItemDate: Date
+	upperItemIds: number[]
 	lowerItemDate: Date
+	lowerItemIds: number[]
 })
 
 export type UserDbInfo = {
