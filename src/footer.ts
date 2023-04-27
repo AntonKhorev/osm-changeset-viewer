@@ -1,7 +1,8 @@
 import type More from './more'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
-import {makeElement, makeDiv, makeLabel} from './util/html'
+import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {ul,li,strong} from './util/html-shortcuts'
+import {Server} from './net'
 
 export default function writeFooter(
 	$root: HTMLElement,
@@ -9,7 +10,7 @@ export default function writeFooter(
 	$netDialog: HTMLDialogElement,
 	$grid?: HTMLElement,
 	more?: More,
-	host?: string,
+	server?: Server,
 	updateTableCallback?: ()=>void
 ): void {
 	const $logList=ul()
@@ -21,8 +22,8 @@ export default function writeFooter(
 		$toolbar.append(
 			$message
 		)
-		if (host) {
-			const broadcastReceiver=new WorkerBroadcastReceiver(host)
+		if (server) {
+			const broadcastReceiver=new WorkerBroadcastReceiver(server.host)
 			broadcastReceiver.onmessage=({data:message})=>{
 				if (message.type=='operation') {
 					$message.replaceChildren(
@@ -35,8 +36,11 @@ export default function writeFooter(
 					}
 				} else if (message.type=='log') {
 					if (message.part.type=='fetch') {
+						const href=server.api.getUrl(message.part.path)
 						$logList.append(
-							li(host,'<-',message.part.path)
+							li(
+								makeLink(href,href)
+							)
 						)
 					}
 				}
@@ -55,7 +59,7 @@ export default function writeFooter(
 			))
 		)
 	}
-	if (host) {
+	if (server) {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.oninput=()=>{
@@ -95,7 +99,7 @@ export default function writeFooter(
 			))
 		)
 	}
-	if (host) {
+	if (server) {
 		const $button=makeElement('button')()(`Fetch log`)
 		$button.onclick=()=>{
 			$footer.classList.toggle('with-log')
