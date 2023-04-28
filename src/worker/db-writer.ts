@@ -143,7 +143,12 @@ function makeEmptyScan(uid: number, type: keyof UserItemDbRecordMap, beginDate: 
 }
 
 function addUserItemIdsAndDateToScan(scan: UserScanDbRecord, itemDate: Date, itemIds: number[]): UserScanDbRecord {
-	if (scan.empty) {
+	if (
+		scan.empty ||
+		scan.items.count==0 &&
+		scan.lowerItemDate.getTime()>itemDate.getTime() &&
+		scan.upperItemDate.getTime()>itemDate.getTime() // move upper date down if no items is inside
+	) {
 		scan={
 			...scan,
 			empty: false,
