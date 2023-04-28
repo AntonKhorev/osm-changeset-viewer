@@ -24,6 +24,16 @@ export default class StreamBoundary {
 			return true
 		}
 	}
+	finish(): void {
+		this.timestamp=-Infinity
+	}
+	get date(): Date|null {
+		if (this.timestamp<+Infinity) {
+			return new Date(this.timestamp)
+		} else {
+			return null
+		}
+	}
 	get dateOneSecondBefore(): Date|null {
 		if (this.timestamp<+Infinity) {
 			return new Date(this.timestamp+1000)

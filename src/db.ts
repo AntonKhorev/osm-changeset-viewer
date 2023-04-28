@@ -1,3 +1,5 @@
+import StreamBoundary from './stream-boundary'
+
 type Counter = {
 	count: number
 }
@@ -73,10 +75,49 @@ export type UserScanDbRecord = {
 	lowerItemDate: Date
 	lowerItemIds: number[]
 })
+export type NonEmptyUserScanDbRecord = Extract<UserScanDbRecord,{empty:false}>
 
 export type UserDbInfo = {
 	user: UserDbRecord
 	scans: Partial<{[key in UserScanDbRecord['type']]: UserScanDbRecord}>
+}
+
+class ScanBoundaryChecker {
+	private upperItemIds: Set<number>
+	private lowerItemIds: Set<number>
+	private upperItemTimestamp: number
+	private lowerItemTimestamp: number
+	constructor(scan: NonEmptyUserScanDbRecord) {
+		this.upperItemIds=new Set(scan.upperItemIds)
+		this.lowerItemIds=new Set(scan.lowerItemIds)
+		this.upperItemTimestamp=scan.upperItemDate.getTime()
+		this.lowerItemTimestamp=scan.lowerItemDate.getTime()
+		if (this.lowerItemTimestamp>this.upperItemTimestamp) {
+			throw new RangeError(`invalid scan range`)
+		}
+	}
+	isItemInside(item: UserItemDbRecord): boolean {
+		const itemTimestamp=item.createdAt.getTime()
+		if (
+			itemTimestamp<this.lowerItemTimestamp ||
+			itemTimestamp>this.upperItemTimestamp
+		) {
+			return false
+		}
+		if (
+			itemTimestamp==this.upperItemTimestamp &&
+			!this.upperItemIds.has(item.id)
+		) {
+			return false
+		}
+		if (
+			itemTimestamp==this.lowerItemTimestamp &&
+			!this.lowerItemIds.has(item.id)
+		) {
+			return false
+		}
+		return true
+	}
 }
 
 export class ChangesetViewerDBReader {
@@ -134,20 +175,36 @@ export class ChangesetViewerDBReader {
 		})
 	}
 	getUserItems<T extends keyof UserItemDbRecordMap>(
-		type: T, uid: number, limit: number, upperDate: Date, lowerDate: Date
+		type: T, uid: number, scan: UserScanDbRecord, boundary: StreamBoundary, limit: number
 	): Promise<UserItemDbRecordMap[T][]> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
+			const returnItems=(items:UserItemDbRecordMap[T][])=>{
+				if (scan.endDate) {
+					boundary.finish()
+				}
+				return resolve(items)
+			}
+			if (scan.empty) {
+				return returnItems([])
+			}
 			const tx=this.idb.transaction(type,'readonly')
 			tx.onerror=()=>reject(new Error(`Database error in getUserItems(): ${tx.error}`))
-			const range=IDBKeyRange.bound([uid,lowerDate],[uid,upperDate,+Infinity])
+			const range=IDBKeyRange.bound( // TODO combine with checker
+				[uid,scan.lowerItemDate],
+				[uid,boundary.date??scan.upperItemDate,+Infinity]
+			)
 			const items=[] as UserItemDbRecordMap[T][]
-			tx.oncomplete=()=>resolve(items)
+			tx.oncomplete=()=>returnItems(items)
+			const checker=new ScanBoundaryChecker(scan)
 			const request=tx.objectStore(type).index('user').openCursor(range,'prev')
 			request.onsuccess=()=>{
 				const cursor=request.result
 				if (!cursor) return
-				items.push(cursor.value)
+				const item=cursor.value as UserItemDbRecordMap[T]
+				if (checker.isItemInside(item) && boundary.visit(item.createdAt,item.id)) {
+					items.push(item)
+				}
 				if (items.length<limit) {
 					cursor.continue()
 				}

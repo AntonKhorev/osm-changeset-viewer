@@ -1,3 +1,4 @@
+import StreamBoundary from './stream-boundary'
 import type {ChangesetViewerDBReader, ChangesetDbRecord, NoteDbRecord, UserScanDbRecord} from './db'
 
 // { https://stackoverflow.com/a/42919752
@@ -74,9 +75,8 @@ class MuxUserItemPriorityQueue {
 type MuxEntry = {
 	itemType: 'changesets'|'notes'
 	uid: number
-	lowestReachedTimestamp: number // +Infinity before stream began, -Infinity when stream ended
 	scan: UserScanDbRecord|null
-	visitedItemIds: Set<number>
+	boundary: StreamBoundary
 }
 
 export type MuxBatchItem = {
@@ -96,9 +96,8 @@ export default class MuxUserItemDbStream {
 	) {
 		this.muxEntries=[...uids].flatMap(uid=>((['changesets','notes'] as MuxEntry['itemType'][]).map(itemType=>({
 			itemType,uid,
-			lowestReachedTimestamp: +Infinity,
 			scan: null,
-			visitedItemIds: new Set()
+			boundary: new StreamBoundary(),
 		}))))
 	}
 	async getNextAction(): Promise<{
@@ -125,7 +124,7 @@ export default class MuxUserItemDbStream {
 				}
 				muxEntry.scan=scan
 			}
-			if (muxEntry.lowestReachedTimestamp<+Infinity) continue
+			if (muxEntry.boundary.timestamp<+Infinity) continue
 			const continueScan=await this.enqueueMoreItemsAndCheckIfNeedToContinueScan(muxEntry)
 			if (continueScan) {
 				return {
@@ -146,12 +145,13 @@ export default class MuxUserItemDbStream {
 				batch.push({type:'note',item})
 			}
 		}
-		while (true) {
+		let loopLimit=100
+		while (loopLimit-->0) {
 			let upperTimestamp=-Infinity
 			let upperMuxEntry: MuxEntry|undefined
 			for (const muxEntry of this.muxEntries) {
-				if (upperTimestamp>=muxEntry.lowestReachedTimestamp) continue
-				upperTimestamp=muxEntry.lowestReachedTimestamp
+				if (upperTimestamp>=muxEntry.boundary.timestamp) continue
+				upperTimestamp=muxEntry.boundary.timestamp
 				upperMuxEntry=muxEntry
 			}
 			while (!this.queue.isEmpty) {
@@ -178,49 +178,33 @@ export default class MuxUserItemDbStream {
 				break
 			}
 		}
+		if (loopLimit<=0) {
+			throw new RangeError(`too many iterations in mux stream db/queue read loop`)
+		}
 		return {type:'end'}
 	}
 	private async enqueueMoreItemsAndCheckIfNeedToContinueScan(muxEntry: MuxEntry): Promise<boolean> {
 		if (!muxEntry.scan) throw new RangeError(`no expected user item scan`)
-		if (muxEntry.scan.empty) {
-			if (!muxEntry.scan.endDate) {
-				muxEntry.scan=null
-				return true
+		let isEmptyDbGet=true
+		if (muxEntry.itemType=='changesets') {
+			const changesets=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,muxEntry.scan,muxEntry.boundary,100)
+			for (const changeset of changesets) {
+				isEmptyDbGet=false
+				if (changeset.closedAt) {
+					this.queue.push([changeset.closedAt.getTime(),CHANGESET_CLOSE,changeset])
+				}
+				this.queue.push([changeset.createdAt.getTime(),CHANGESET,changeset])
 			}
-			muxEntry.lowestReachedTimestamp=-Infinity
-		} else {
-			const scanUpperTimestamp=muxEntry.scan.upperItemDate.getTime()
-			const upperDate=(muxEntry.lowestReachedTimestamp<scanUpperTimestamp
-				? new Date(muxEntry.lowestReachedTimestamp)
-				: muxEntry.scan.upperItemDate
-			)
-			const lowerDate=muxEntry.scan.lowerItemDate
-			let newLowestReachedTimestamp=-Infinity
-			if (muxEntry.itemType=='changesets') {
-				const changesets=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,100,upperDate,lowerDate)
-				for (const changeset of changesets) {
-					if (muxEntry.visitedItemIds.has(changeset.id)) continue
-					muxEntry.visitedItemIds.add(changeset.id)
-					if (changeset.closedAt) {
-						this.queue.push([changeset.closedAt.getTime(),CHANGESET_CLOSE,changeset])
-					}
-					newLowestReachedTimestamp=changeset.createdAt.getTime()
-					this.queue.push([newLowestReachedTimestamp,CHANGESET,changeset])
-				} // TODO if empty consider that lowerDate is reached (?)
-			} else if (muxEntry.itemType=='notes') {
-				const notes=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,100,upperDate,lowerDate)
-				for (const note of notes) {
-					if (muxEntry.visitedItemIds.has(note.id)) continue
-					muxEntry.visitedItemIds.add(note.id)
-					newLowestReachedTimestamp=note.createdAt.getTime()
-					this.queue.push([newLowestReachedTimestamp,NOTE,note])
-				} // TODO if empty consider that lowerDate is reached (?)
+		} else if (muxEntry.itemType=='notes') {
+			const notes=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,muxEntry.scan,muxEntry.boundary,100)
+			for (const note of notes) {
+				isEmptyDbGet=false
+				this.queue.push([note.createdAt.getTime(),NOTE,note])
 			}
-			if (newLowestReachedTimestamp==-Infinity && !muxEntry.scan.endDate) {
-				muxEntry.scan=null
-				return true
-			}
-			muxEntry.lowestReachedTimestamp=newLowestReachedTimestamp
+		}
+		if (isEmptyDbGet && !muxEntry.scan.endDate) {
+			muxEntry.scan=null
+			return true
 		}
 		return false
 	}
