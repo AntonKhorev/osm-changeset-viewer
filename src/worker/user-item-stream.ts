@@ -24,49 +24,37 @@ abstract class UserItemStream<T> {
 		}
 	}
 	async fetch(fetcher: (path:string)=>Promise<Response>): Promise<T[]> {
-		let previousTimestamp=this.boundary.timestamp
-		let visitedNewItems: boolean
-		do {
-			visitedNewItems=false
-			const path=this.getFetchPath(this.nextFetchUpperBoundDate)
-			let response: Response
-			try {
-				response=await fetcher(path)
-			} catch (ex) {
-				throw new TypeError(`network error`)
+		const path=this.getFetchPath(this.nextFetchUpperBoundDate)
+		let response: Response
+		try {
+			response=await fetcher(path)
+		} catch (ex) {
+			throw new TypeError(`network error`)
+		}
+		if (!response.ok) {
+			if (response.status==404) {
+				throw new TypeError(`user not found / didn't agree to contributor terms`)
+			} else {
+				throw new TypeError(`unsuccessful response from OSM API`)
 			}
-			if (!response.ok) {
-				if (response.status==404) {
-					throw new TypeError(`user not found / didn't agree to contributor terms`)
-				} else {
-					throw new TypeError(`unsuccessful response from OSM API`)
-				}
-			}
-			const json=await response.json()
-			const items=this.getOsmDataFromResponseJson(json)
-			const newItems=[] as T[]
-			for (const item of items) {
-				const isItemAccepted=this.acceptItem(item)
-				if (isItemAccepted) {
-					this.modifyQueryInResponseToFetchedData(item)
-				}
-				const id=this.getItemId(item)
-				const date=this.getItemDate(item)
-				if (this.boundary.visit(date,id)) {
-					visitedNewItems=true
-					if (isItemAccepted) {
-						newItems.push(item)
-					}
-				}
-			}
-			if (newItems.length>0) {
-				return newItems
-			}
-			if (previousTimestamp==this.boundary.timestamp) {
-				this.boundary.finish()
-			}
-		} while (visitedNewItems)
-		return []
+		}
+		const json=await response.json()
+		const items=this.getOsmDataFromResponseJson(json)
+		const newItems=[] as T[]
+		let fetchedNewItems=false
+		for (const item of items) {
+			const id=this.getItemId(item)
+			const date=this.getItemDate(item)
+			if (!this.boundary.visit(date,id)) continue
+			fetchedNewItems=true
+			if (!this.acceptItem(item)) continue
+			this.modifyQueryInResponseToFetchedData(item)
+			newItems.push(item)
+		}
+		if (!fetchedNewItems) {
+			this.boundary.finish()
+		}
+		return newItems
 	}
 	get nextFetchUpperBoundDate(): Date|null {
 		return this.boundary.dateOneSecondBefore
