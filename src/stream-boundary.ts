@@ -9,7 +9,7 @@ export default class StreamBoundary {
 			this.visitedIds=new Set(init.visitedIds)
 		}
 	}
-	visit(date: Date, id: number): boolean {
+	advance(date: Date): void {
 		const timestamp=date.getTime()
 		if (timestamp>this.timestamp) {
 			throw new RangeError(`attempt to move stream boundary up`)
@@ -17,6 +17,9 @@ export default class StreamBoundary {
 			this.visitedIds.clear()
 		}
 		this.timestamp=timestamp
+	}
+	visit(date: Date, id: number): boolean {
+		this.advance(date)
 		if (this.visitedIds.has(id)) {
 			return false
 		} else {

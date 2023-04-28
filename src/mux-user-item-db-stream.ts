@@ -185,6 +185,7 @@ export default class MuxUserItemDbStream {
 	}
 	private async enqueueMoreItemsAndCheckIfNeedToContinueScan(muxEntry: MuxEntry): Promise<boolean> {
 		if (!muxEntry.scan) throw new RangeError(`no expected user item scan`)
+		let oldBoundaryTimestamp=muxEntry.boundary.timestamp
 		let isEmptyDbGet=true
 		if (muxEntry.itemType=='changesets') {
 			const changesets=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,muxEntry.scan,muxEntry.boundary,100)
@@ -202,7 +203,7 @@ export default class MuxUserItemDbStream {
 				this.queue.push([note.createdAt.getTime(),NOTE,note])
 			}
 		}
-		if (isEmptyDbGet && !muxEntry.scan.endDate) {
+		if (isEmptyDbGet && muxEntry.boundary.timestamp>=oldBoundaryTimestamp && !muxEntry.scan.endDate) {
 			muxEntry.scan=null
 			return true
 		}
