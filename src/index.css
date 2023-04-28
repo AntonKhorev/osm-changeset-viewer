@@ -349,8 +349,22 @@ body > .symbols {
 	height: 6rem;
 	overflow-y: auto;
 }
-.ui footer > .log ul {
+.ui footer > .log > :first-child {
+	margin-top: 0;
+}
+.ui footer > .log > :last-child {
+	margin-bottom: 0;
+}
+.ui footer > .log h2 {
+	display: inline-block;
 	margin: 0;
+}
+.ui footer > .log .controls {
+	display: inline-block;
+	margin-left: var(--padding);
+	vertical-align: text-bottom;
+}
+.ui footer > .log ul {
 	font-family: monospace;
 	padding-left: 1rem;
 }

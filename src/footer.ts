@@ -14,7 +14,15 @@ export default function writeFooter(
 	updateTableCallback?: ()=>void
 ): void {
 	const $logList=ul()
-	const $log=makeDiv('log')($logList)
+	const $logClearButton=makeElement('button')()(`clear`)
+	$logClearButton.onclick=()=>{
+		$logList.replaceChildren()
+	}
+	const $log=makeElement('section')('log')(
+		makeElement('h2')()(`Fetches`),
+		makeDiv('controls')($logClearButton),
+		$logList
+	)
 	const $toolbar=makeDiv('toolbar')()
 	$footer.append($log,$toolbar)
 	{
