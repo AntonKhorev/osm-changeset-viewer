@@ -103,9 +103,9 @@ class ScanBoundary {
 		return new Date(this.lowerItemTimestamp)
 	}
 	getItemKeyRange(uid: number, streamBoundary: StreamBoundary): IDBKeyRange {
-		return IDBKeyRange.bound( // TODO combine with checker
+		return IDBKeyRange.bound(
 			[uid,this.lowerItemDate],
-			[uid,streamBoundary.date??this.upperItemDate,+Infinity]
+			[uid,streamBoundary.getOwnOrLowerDate(this.upperItemDate),+Infinity]
 		)
 	}
 	isItemInside(item: UserItemDbRecord): boolean {

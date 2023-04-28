@@ -52,7 +52,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	 * @returns true if decided to add/update the scan
 	 */
 	addUserItems<T extends keyof UserItemDbRecordMap>(
-		type: T, uid: number, now: Date, items: UserItemDbRecordMap[T][], isEnded: boolean,
+		type: T, uid: number, now: Date, items: UserItemDbRecordMap[T][], streamBoundary: StreamBoundary,
 		mode: 'toNewScan'|'toExistingScan'|'toNewOrExistingScan'
 	): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
@@ -62,32 +62,12 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 			const handleScan=(scan: UserScanDbRecord)=>{
 				for (const item of items) {
 					tx.objectStore(type).put(item)
-					if (scan.empty) {
-						scan={
-							...scan,
-							empty: false,
-							upperItemDate: item.createdAt,
-							upperItemIds: [item.id],
-							lowerItemDate: item.createdAt,
-							lowerItemIds: [item.id],
-						}
-					} else {
-						if (scan.upperItemDate.getTime()<item.createdAt.getTime()) {
-							scan.upperItemDate=item.createdAt
-							scan.upperItemIds=[item.id]
-						} else if (scan.upperItemDate.getTime()==item.createdAt.getTime()) {
-							scan.upperItemIds=[item.id,...scan.upperItemIds]
-						}
-						if (scan.lowerItemDate.getTime()>item.createdAt.getTime()) {
-							scan.lowerItemDate=item.createdAt
-							scan.lowerItemIds=[item.id]
-						} else if (scan.lowerItemDate.getTime()==item.createdAt.getTime()) {
-							scan.lowerItemIds=[...scan.lowerItemIds,item.id]
-						}
-					}
-					scan.items.count++
+					scan=addUserItemIdsAndDateToScan(scan,item.createdAt,[item.id])
 				}
-				if (isEnded) {
+				if (streamBoundary.date) {
+					scan=addUserItemIdsAndDateToScan(scan,streamBoundary.date,[])
+				}
+				if (streamBoundary.isFinished) {
 					scan.endDate=now
 				} else {
 					delete scan.endDate
@@ -125,4 +105,51 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	static open(host: string): Promise<ChangesetViewerDBWriter> {
 		return this.openWithType(host,idb=>new ChangesetViewerDBWriter(idb))
 	}
+}
+
+function addUserItemIdsAndDateToScan(scan: UserScanDbRecord, itemDate: Date, itemIds: number[]): UserScanDbRecord {
+	if (scan.empty) {
+		scan={
+			...scan,
+			empty: false,
+			upperItemDate: itemDate,
+			upperItemIds: [...itemIds],
+			lowerItemDate: itemDate,
+			lowerItemIds: [...itemIds],
+		}
+	} else {
+		if (scan.upperItemDate.getTime()<itemDate.getTime()) {
+			scan={
+				...scan,
+				upperItemDate: itemDate,
+				upperItemIds: [...itemIds],
+			}
+		} else if (scan.upperItemDate.getTime()==itemDate.getTime()) {
+			scan={
+				...scan,
+				upperItemIds: [...itemIds,...scan.upperItemIds],
+			}
+		}
+		if (scan.lowerItemDate.getTime()>itemDate.getTime()) {
+			scan={
+				...scan,
+				lowerItemDate: itemDate,
+				lowerItemIds: [...itemIds],
+			}
+		} else if (scan.lowerItemDate.getTime()==itemDate.getTime()) {
+			scan={
+				...scan,
+				lowerItemIds: [...itemIds,...scan.lowerItemIds],
+			}
+		}
+	}
+	if (itemIds.length>0) {
+		scan={
+			...scan,
+			items: {
+				count: scan.items.count+itemIds.length
+			}
+		}
+	}
+	return scan
 }

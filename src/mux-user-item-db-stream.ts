@@ -124,7 +124,7 @@ export default class MuxUserItemDbStream {
 				}
 				muxEntry.scan=scan
 			}
-			if (muxEntry.boundary.timestamp<+Infinity) continue
+			if (muxEntry.boundary.isStarted) continue
 			const continueScan=await this.enqueueMoreItemsAndCheckIfNeedToContinueScan(muxEntry)
 			if (continueScan) {
 				return {

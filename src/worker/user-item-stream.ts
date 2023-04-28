@@ -12,7 +12,6 @@ const e=makeEscapeTag(encodeURIComponent)
 const pastDateString=`20010101T000000Z`
 
 abstract class UserItemStream<T> {
-	isEnded=false
 	boundary: StreamBoundary
 	constructor(
 		protected userQuery: ValidUserQuery,
@@ -64,7 +63,7 @@ abstract class UserItemStream<T> {
 				return newItems
 			}
 			if (previousTimestamp==this.boundary.timestamp) {
-				this.isEnded=true
+				this.boundary.finish()
 			}
 		} while (visitedNewItems)
 		return []

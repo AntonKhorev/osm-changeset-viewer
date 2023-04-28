@@ -27,8 +27,14 @@ export default class StreamBoundary {
 	finish(): void {
 		this.timestamp=-Infinity
 	}
+	get isFinished(): boolean {
+		return this.timestamp==-Infinity
+	}
+	get isStarted(): boolean {
+		return this.timestamp<+Infinity
+	}
 	get date(): Date|null {
-		if (this.timestamp<+Infinity) {
+		if (this.timestamp>=0 && this.timestamp<+Infinity) {
 			return new Date(this.timestamp)
 		} else {
 			return null
@@ -39,6 +45,13 @@ export default class StreamBoundary {
 			return new Date(this.timestamp+1000)
 		} else {
 			return null
+		}
+	}
+	getOwnOrLowerDate(otherDate: Date): Date {
+		if (otherDate.getTime()<this.timestamp) {
+			return otherDate
+		} else {
+			return new Date(Math.max(0,this.timestamp))
 		}
 	}
 }
