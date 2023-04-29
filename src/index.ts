@@ -74,15 +74,21 @@ async function main() {
 			let wroteAnyItem=false
 			for (const {iColumns,type,item} of batch) {
 				let $item: HTMLElement
-				let date=item.createdAt
-				if (type=='changeset'||type=='changesetClose') {
+				let date: Date
+				if (type=='user') {
+					$item=makeDiv('item')(`TODO user`)
+					date=item.createdAt
+				} else if (type=='changeset'||type=='changesetClose') {
 					$item=makeChangesetCell(cx.server,item,type=='changesetClose')
+					date=item.createdAt
 					if (type=='changesetClose' && item.closedAt) {
 						date=item.closedAt
 					}
-				} else {
+				} else if (type=='note') {
 					$item=makeNoteCell(cx.server,item)
 					date=item.createdAt
+				} else {
+					continue
 				}
 				grid.addItem($item,iColumns,date,type,item.id)
 				wroteAnyItem=true

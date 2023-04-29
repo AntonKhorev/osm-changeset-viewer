@@ -176,12 +176,14 @@ function isElementWithSameMonth($e: HTMLElement, date: Date): boolean {
 function getItemTypeRank(type: MuxBatchItem['type']): number {
 	// 0 = rank of separators
 	switch (type) {
-	case 'changeset':
+	case 'user':
 		return 1
-	case 'changesetClose':
+	case 'changeset':
 		return 2
-	case 'note':
+	case 'changesetClose':
 		return 3
+	case 'note':
+		return 4
 	}
 }
 

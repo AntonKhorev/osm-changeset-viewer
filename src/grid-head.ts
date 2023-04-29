@@ -1,5 +1,5 @@
 import type {Connection} from './net'
-import type {ChangesetViewerDBReader, UserScanDbRecord} from './db'
+import type {ChangesetViewerDBReader, UserDbRecord, UserScanDbRecord} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
@@ -259,19 +259,19 @@ export default class GridHead {
 	}
 	private startStreamIfNotStartedAndGotAllUids() {
 		if (this.streamMessenger) return
-		const uids=new Set<number>()
+		const users=new Map<number,UserDbRecord>()
 		const columnUids: (number|null)[] = []
 		for (const entry of this.userEntries) {
 			if (entry.type!='query' || entry.info.status=='failed') {
 				columnUids.push(null)
 			} else if (entry.info.status=='ready') {
-				uids.add(entry.info.user.id)
+				users.set(entry.info.user.id,entry.info.user)
 				columnUids.push(entry.info.user.id)
 			} else {
 				return
 			}
 		}
-		const stream=new MuxUserItemDbStream(this.db,uids)
+		const stream=new MuxUserItemDbStream(this.db,[...users.values()])
 		const streamMessenger=new MuxUserItemDbStreamMessenger(
 			this.cx.server.host,this.worker,stream,columnUids,batch=>{
 				for (const {iColumns,type} of batch) {

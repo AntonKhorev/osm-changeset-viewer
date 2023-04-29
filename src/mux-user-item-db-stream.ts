@@ -1,12 +1,15 @@
 import StreamBoundary from './stream-boundary'
-import type {ChangesetViewerDBReader, ChangesetDbRecord, NoteDbRecord, UserScanDbRecord} from './db'
+import type {ChangesetViewerDBReader, UserDbRecord, ChangesetDbRecord, NoteDbRecord, UserScanDbRecord} from './db'
 
 // { https://stackoverflow.com/a/42919752
 
-const CHANGESET = 0
-const CHANGESET_CLOSE = 1
-const NOTE = 2
+const USER = 0
+const CHANGESET = 1
+const CHANGESET_CLOSE = 2
+const NOTE = 3
+type VisibleUserDbRecord = Extract<UserDbRecord,{visible:true}>
 type HeapItem =
+	[timestamp: number, type: typeof USER, user: VisibleUserDbRecord] |
 	[timestamp: number, type: typeof CHANGESET | typeof CHANGESET_CLOSE, changeset: ChangesetDbRecord] |
 	[timestamp: number, type: typeof NOTE, note: NoteDbRecord]
 
@@ -80,6 +83,9 @@ type MuxEntry = {
 }
 
 export type MuxBatchItem = {
+	type: 'user'
+	item: VisibleUserDbRecord
+} | {
 	type: 'changeset'|'changesetClose'
 	item: ChangesetDbRecord
 } | {
@@ -92,13 +98,19 @@ export default class MuxUserItemDbStream {
 	private queue = new MuxUserItemPriorityQueue()
 	constructor(
 		private db: ChangesetViewerDBReader,
-		uids: Iterable<number>
+		users: UserDbRecord[]
 	) {
-		this.muxEntries=[...uids].flatMap(uid=>((['changesets','notes'] as MuxEntry['itemType'][]).map(itemType=>({
-			itemType,uid,
+		const itemTypes: MuxEntry['itemType'][] = ['changesets','notes']
+		this.muxEntries=users.flatMap(({id})=>(itemTypes.map(itemType=>({
+			itemType,
+			uid: id,
 			scan: null,
 			boundary: new StreamBoundary(),
 		}))))
+		for (const user of users) {
+			if (!user.visible) continue
+			this.queue.push([user.createdAt.getTime(),USER,user])
+		}
 	}
 	async getNextAction(): Promise<{
 		type: 'batch'
@@ -137,7 +149,9 @@ export default class MuxUserItemDbStream {
 		const batch=[] as MuxBatchItem[]
 		const moveQueueTopToResults=()=>{
 			const [,type,item]=this.queue.pop()
-			if (type==CHANGESET) {
+			if (type==USER) {
+				batch.push({type:'user',item})
+			} else if (type==CHANGESET) {
 				batch.push({type:'changeset',item})
 			} else if (type==CHANGESET_CLOSE) {
 				batch.push({type:'changesetClose',item})

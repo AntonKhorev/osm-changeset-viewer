@@ -46,7 +46,10 @@ export default class MuxUserItemDbStreamMessenger {
 			})
 		} else if (action.type=='batch') {
 			this.receiveBatch(
-				action.batch.map((batchItem)=>({...batchItem,iColumns:this.uidToColumns.get(batchItem.item.uid)??[]}))
+				action.batch.map((batchItem)=>({
+					...batchItem,
+					iColumns: this.uidToColumns.get(getMuxBatchItem(batchItem))??[]
+				}))
 			)
 		} else if (action.type=='end') {
 			this.receiveBatch([])
@@ -59,5 +62,13 @@ export default class MuxUserItemDbStreamMessenger {
 				await this.requestNextBatch()
 			}
 		}
+	}
+}
+
+function getMuxBatchItem(batchItem: MuxBatchItem): number {
+	if (batchItem.type=='user') {
+		return batchItem.item.id
+	} else {
+		return batchItem.item.uid
 	}
 }
