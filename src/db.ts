@@ -102,10 +102,13 @@ class ScanBoundary {
 	get lowerItemDate(): Date {
 		return new Date(this.lowerItemTimestamp)
 	}
-	getItemKeyRange(uid: number, streamBoundary: StreamBoundary): IDBKeyRange {
+	getItemKeyRange(uid: number, streamBoundary: StreamBoundary): IDBKeyRange|null {
+		const lowerItemDate=this.lowerItemDate
+		const upperItemDate=streamBoundary.getOwnOrLowerDate(this.upperItemDate)
+		if (lowerItemDate.getTime()>upperItemDate.getTime()) return null
 		return IDBKeyRange.bound(
-			[uid,this.lowerItemDate],
-			[uid,streamBoundary.getOwnOrLowerDate(this.upperItemDate),+Infinity]
+			[uid,lowerItemDate],
+			[uid,upperItemDate,+Infinity]
 		)
 	}
 	isItemInside(item: UserItemDbRecord): boolean {
@@ -204,12 +207,15 @@ export class ChangesetViewerDBReader {
 			if (scan.empty) {
 				return returnItems([])
 			}
+			const scanBoundary=new ScanBoundary(scan)
+			const range=scanBoundary.getItemKeyRange(uid,streamBoundary)
+			if (!range) {
+				return returnItems([])
+			}
 			const tx=this.idb.transaction(type,'readonly')
 			tx.onerror=()=>reject(new Error(`Database error in getUserItems(): ${tx.error}`))
 			const items=[] as UserItemDbRecordMap[T][]
 			tx.oncomplete=()=>returnItems(items)
-			const scanBoundary=new ScanBoundary(scan)
-			const range=scanBoundary.getItemKeyRange(uid,streamBoundary)
 			const request=tx.objectStore(type).index('user').openCursor(range,'prev')
 			request.onsuccess=()=>{
 				const cursor=request.result
