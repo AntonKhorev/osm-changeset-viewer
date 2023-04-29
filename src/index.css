@@ -347,6 +347,14 @@ body > .symbols {
 	height: .75rem;
 	background: canvas;
 }
+.ui .grid tbody tr.item td .changes {
+	border-radius: 4px;
+	padding: 2px 4px;
+	font-family: sans-serif;
+	font-size: .8em;
+	background: #8882;
+	color: var(--light-text-color);
+}
 
 .ui footer {
 	flex-shrink: 0;

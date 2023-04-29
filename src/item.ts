@@ -30,6 +30,11 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 		const date=isClosed ? changeset.closedAt : changeset.createdAt
 		return date ? makeDateOutput(date) : `???`
 	}
+	const makeChanges=()=>{
+		const $changes=makeElement('span')('changes')(`Δ ${changeset.changes.count}`)
+		$changes.title=`number of changes`
+		return $changes
+	}
 	let $item: HTMLElement
 	if (isClosed) {
 		const $noCheckbox=makeElement('span')('no-checkbox')()
@@ -48,6 +53,7 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 		makeLink(`${changeset.id}`,server.web.getUrl(e`changeset/${changeset.id}`)),` `,
 		`(`,makeLink(`api`,server.api.getUrl(e`changeset/${changeset.id}.json?include_discussion=true`)),`) `,
 		makeDate(),` `,
+		makeChanges(),` `,
 		changeset.tags?.comment ?? ''
 	)
 	if (isClosed) $item.classList.add('closed')
