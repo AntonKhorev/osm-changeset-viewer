@@ -192,10 +192,12 @@ export class ChangesetViewerDBReader {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
 			const returnItems=(items:UserItemDbRecordMap[T][])=>{
-				if (items.length==0 && !scan.empty) { // can also check if items.length<limit
-					streamBoundary.advance(scan.lowerItemDate)
-				} else if (scan.endDate) {
-					streamBoundary.finish()
+				if (items.length==0) { // can also check if items.length<limit
+					if (scan.endDate) {
+						streamBoundary.finish()
+					} else if (!scan.empty) {
+						streamBoundary.advance(scan.lowerItemDate)
+					}
 				}
 				return resolve(items)
 			}
