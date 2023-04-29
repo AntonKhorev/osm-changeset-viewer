@@ -76,12 +76,12 @@ async function main() {
 				let $item: HTMLElement
 				let date=item.createdAt
 				if (type=='changeset'||type=='changesetClose') {
-					$item=makeChangesetCell(cx.server.web,item,type=='changesetClose')
+					$item=makeChangesetCell(cx.server,item,type=='changesetClose')
 					if (type=='changesetClose' && item.closedAt) {
 						date=item.closedAt
 					}
 				} else {
-					$item=makeNoteCell(cx.server.web,item)
+					$item=makeNoteCell(cx.server,item)
 					date=item.createdAt
 				}
 				grid.addItem($item,iColumns,date,type,item.id)

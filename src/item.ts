@@ -1,4 +1,4 @@
-import type {WebProvider} from './net'
+import type {Server} from './net'
 import {makeDateOutput} from './date'
 import type {ChangesetDbRecord, NoteDbRecord} from './db'
 import {makeElement, makeDiv, makeLink} from './util/html'
@@ -25,7 +25,7 @@ export function markChangesetCellAsUncombined($item: HTMLElement, id: number|str
 	if ($checkbox) $checkbox.title=`opened changeset ${id}`
 }
 
-export function makeChangesetCell(web: WebProvider, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
+export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
 	const makeDate=()=>{
 		const date=isClosed ? changeset.closedAt : changeset.createdAt
 		return date ? makeDateOutput(date) : `???`
@@ -45,7 +45,8 @@ export function makeChangesetCell(web: WebProvider, changeset: ChangesetDbRecord
 		$item=makeItemCell('changeset',$icon)
 	}
 	$item.append(
-		makeLink(`${changeset.id}`,web.getUrl(e`changeset/${changeset.id}`)),` `,
+		makeLink(`${changeset.id}`,server.web.getUrl(e`changeset/${changeset.id}`)),` `,
+		`(`,makeLink(`api`,server.api.getUrl(e`changeset/${changeset.id}.json?include_discussion=true`)),`) `,
 		makeDate(),` `,
 		changeset.tags?.comment ?? ''
 	)
@@ -53,13 +54,14 @@ export function makeChangesetCell(web: WebProvider, changeset: ChangesetDbRecord
 	return $item
 }
 
-export function makeNoteCell(web: WebProvider, note: NoteDbRecord): HTMLElement {
+export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.innerHTML=makeNoteIconHtml()
 	$icon.title=`note ${note.id}`
 	const $item=makeItemCell('note',$icon)
 	$item.append(
-		makeLink(`${note.id}`,web.getUrl(e`note/${note.id}`)),` `,
+		makeLink(`${note.id}`,server.web.getUrl(e`note/${note.id}`)),` `,
+		`(`,makeLink(`api`,server.api.getUrl(e`notes/${note.id}.json`)),`) `,
 		makeDateOutput(note.createdAt),` `,
 		note.openingComment ?? ''
 	)
