@@ -41,7 +41,7 @@ export function makeFormTab(
 function makeCloseButton(
 	removeColumnClickListener: (this:HTMLElement)=>void
 ): HTMLButtonElement {
-	const $closeButton=makeElement('button')('close')()
+	const $closeButton=makeElement('button')('with-icon')()
 	$closeButton.innerHTML=`<svg width="16" height="16"><use href="#close" /></svg>`
 	$closeButton.addEventListener('click',removeColumnClickListener)
 	return $closeButton
@@ -59,7 +59,9 @@ export function makeUserCard(
 		$card.append(makeDiv('notice')(`waiting for user data`))
 	} else if (info.status=='rerunning' || info.status=='ready') {
 		const $totalChangesetsCount=makeElement('output')()()
-		const $updateButton=makeElement('button')()(`update`)
+		const $updateButton=makeElement('button')('with-icon')()
+		$updateButton.title=`update`
+		$updateButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
 		$updateButton.disabled=info.status=='rerunning'
 		if (info.user.visible) {
 			$totalChangesetsCount.textContent=String(info.user.changesets.count)
@@ -146,7 +148,9 @@ function makeScanListItem(
 			$incomplete.title=`incomplete`
 			$field.append($incomplete)
 		}
-		const $rescanButton=makeElement('button')()(`rescan`)
+		const $rescanButton=makeElement('button')('with-icon')()
+		$rescanButton.title=`rescan`
+		$rescanButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
 		$field.append(` `,$rescanButton)
 		$rescanButton.onclick=()=>{
 			rescan(type)
