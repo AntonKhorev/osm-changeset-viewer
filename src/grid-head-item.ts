@@ -54,7 +54,7 @@ export function makeUserCard(
 	getUserNameHref: (name:string)=>string,
 	getUserIdHref: (id:number)=>string,
 	processValidUserQuery: (query:ValidUserQuery)=>void,
-	rescan: (type: UserScanDbRecord['type'])=>void
+	rescan: (type: UserScanDbRecord['type'], uid: number)=>void
 ): HTMLElement {
 	const $card=makeDiv('card')()
 	if (info.status=='pending' || info.status=='running') {
@@ -156,7 +156,7 @@ export function makeUserCard(
 
 function makeScanListItem(
 	type: UserScanDbRecord['type'], scan: UserScanDbRecord|undefined,
-	rescan: (type: UserScanDbRecord['type'])=>void
+	rescan: (type: UserScanDbRecord['type'], uid: number)=>void
 ): HTMLElement {
 	const $field=li(`${type}: `)
 	if (scan) {
@@ -175,7 +175,7 @@ function makeScanListItem(
 		$rescanButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
 		$field.append(` `,$rescanButton)
 		$rescanButton.onclick=()=>{
-			rescan(type)
+			rescan(type,scan.uid)
 		}
 	} else {
 		$field.append(`not started`)

@@ -1,5 +1,5 @@
 import type {Connection} from './net'
-import type {ChangesetViewerDBReader} from './db'
+import type {ChangesetViewerDBReader, UserScanDbRecord} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
@@ -198,12 +198,7 @@ export default class GridHead {
 			name=>this.cx.server.web.getUrl(e`user/${name}`),
 			id=>this.cx.server.api.getUrl(e`user/${id}.json`),
 			query=>this.sendUserQueryToWorker(query),
-			type=>{
-				console.log(`TODO rescan ${type}`) ///
-				// kill user data so that stream can't be restarted
-				// kill stream
-				// send request to worker to discard existing scan
-			}
+			(type,uid)=>this.sendRescanRequestToWorker(type,uid)
 		)
 	}
 	private makeFormUserEntry(): GridUserEntry {
@@ -330,6 +325,15 @@ export default class GridHead {
 			type: 'getUserInfo',
 			host: this.cx.server.host,
 			query
+		})
+	}
+	private sendRescanRequestToWorker(type: UserScanDbRecord['type'], uid: number): void {
+		this.worker.port.postMessage({
+			type: 'scanUserItems',
+			host: this.cx.server.host,
+			start: true,
+			itemType: type,
+			uid: uid,
 		})
 	}
 	// private appendUserEntryToHead(userEntry: GridUserEntry): void {
