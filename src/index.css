@@ -76,7 +76,8 @@ body > .symbols {
 	display: none;
 }
 
-.ui button.with-icon {
+.ui button.with-icon,
+.ui dialog button.close {
 	box-sizing: border-box;
 	border: none;
 	padding: 0;
@@ -85,10 +86,12 @@ body > .symbols {
 	border-radius: 50%;
 	cursor: pointer;
 }
-.ui button.with-icon:hover {
+.ui button.with-icon:hover,
+.ui dialog button.close:hover {
 	background: var(--hover-color);
 }
-.ui button.with-icon > svg {
+.ui button.with-icon > svg,
+.ui dialog button.close > svg {
 	width: 100%;
 	height: 100%;
 }
