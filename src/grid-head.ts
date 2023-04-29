@@ -29,8 +29,9 @@ type GridUserEntry = { // TODO change to column entry
 	} | {
 		type: 'query'
 		query: ValidUserQuery
-		$displayedChangesetsCount: HTMLOutputElement
 		info: UserInfo
+		$displayedChangesetsCount: HTMLOutputElement
+		displayedChangesetsCount: number
 	}
 )
 
@@ -175,7 +176,8 @@ export default class GridHead {
 		return {
 			$tab,$card,$selector,
 			type: 'query',
-			query,$displayedChangesetsCount,info
+			query,info,$displayedChangesetsCount,
+			displayedChangesetsCount: 0
 		}
 	}
 	private makeUserCard(
@@ -235,6 +237,12 @@ export default class GridHead {
 		return null
 	}
 	private restartStream() {
+		for (const entry of this.userEntries) {
+			if (entry.type!='query') continue
+			entry.$displayedChangesetsCount.textContent=String(
+				entry.displayedChangesetsCount=0
+			)
+		}
 		const columnHues=this.userEntries.map(getUserEntryHue)
 		this.grid.setColumns(columnHues)
 		this.streamMessenger=undefined
@@ -257,7 +265,21 @@ export default class GridHead {
 		}
 		const stream=new MuxUserItemDbStream(this.db,uids)
 		const streamMessenger=new MuxUserItemDbStreamMessenger(
-			this.cx.server.host,this.worker,stream,columnUids,this.receiveBatchCallback
+			this.cx.server.host,this.worker,stream,columnUids,batch=>{
+				for (const {iColumns,type} of batch) {
+					if (type=='changeset') {
+						for (const iColumn of iColumns) {
+							const userEntry=this.userEntries[iColumn]
+							if (userEntry && userEntry.type=='query') {
+								userEntry.$displayedChangesetsCount.textContent=String(
+									++userEntry.displayedChangesetsCount
+								)
+							}
+						}
+					}
+				}
+				this.receiveBatchCallback(batch)
+			}
 		)
 		this.readyStreamCallback(async()=>{
 			await streamMessenger.requestNextBatch()

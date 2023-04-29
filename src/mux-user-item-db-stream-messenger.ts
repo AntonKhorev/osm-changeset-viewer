@@ -15,7 +15,7 @@ export default class MuxUserItemDbStreamMessenger {
 		private worker: SharedWorker,
 		private stream: MuxUserItemDbStream,
 		private columnUids: (number|null)[],
-		private receiveBatch: (batch:Iterable<GridBatchItem>)=>void
+		private receiveBatch: (batch:GridBatchItem[])=>void
 	) {
 		this.updateUidToColumns()
 	}
