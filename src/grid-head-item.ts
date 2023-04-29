@@ -48,7 +48,9 @@ function makeCloseButton(
 }
 
 export function makeUserCard(
-	query: ValidUserQuery, info: UserInfo, $displayedChangesetsCount: HTMLOutputElement,
+	query: ValidUserQuery, info: UserInfo,
+	$displayedChangesetsCount: HTMLOutputElement,
+	$displayedNotesCount: HTMLOutputElement,
 	getUserNameHref: (name:string)=>string,
 	getUserIdHref: (id:number)=>string,
 	processValidUserQuery: (query:ValidUserQuery)=>void,
@@ -58,21 +60,6 @@ export function makeUserCard(
 	if (info.status=='pending' || info.status=='running') {
 		$card.append(makeDiv('notice')(`waiting for user data`))
 	} else if (info.status=='rerunning' || info.status=='ready') {
-		const $downloadedChangesetsCount=makeElement('output')()()
-		const $totalChangesetsCount=makeElement('output')()()
-		if (info.scans.changesets) {
-			$downloadedChangesetsCount.textContent=String(info.scans.changesets.items.count)
-		} else {
-			$downloadedChangesetsCount.textContent=`0`
-		}
-		$downloadedChangesetsCount.title=`downloaded`
-		if (info.user.visible) {
-			$totalChangesetsCount.textContent=String(info.user.changesets.count)
-			$totalChangesetsCount.title=`opened by the user`
-		} else {
-			$totalChangesetsCount.textContent=`???`
-			$totalChangesetsCount.title=`number of changesets opened by the user is unknown because the user is deleted`
-		}
 		const $updateButton=makeElement('button')('with-icon')()
 		$updateButton.title=`update`
 		$updateButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
@@ -110,11 +97,44 @@ export function makeUserCard(
 				)
 			)
 		}
-		$card.append(
-			makeDiv('field')(
-				`changesets: `,$displayedChangesetsCount,` / `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
+		{
+			const $downloadedChangesetsCount=makeElement('output')()()
+			if (info.scans.changesets) {
+				$downloadedChangesetsCount.textContent=String(info.scans.changesets.items.count)
+			} else {
+				$downloadedChangesetsCount.textContent=`0`
+			}
+			$downloadedChangesetsCount.title=`downloaded`
+			const $totalChangesetsCount=makeElement('output')()()
+			if (info.user.visible) {
+				$totalChangesetsCount.textContent=String(info.user.changesets.count)
+				$totalChangesetsCount.title=`opened by the user`
+			} else {
+				$totalChangesetsCount.textContent=`???`
+				$totalChangesetsCount.title=`number of changesets opened by the user is unknown because the user is deleted`
+			}
+			$card.append(
+				makeDiv('field')(
+					`changesets: `,$displayedChangesetsCount,` / `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
+				)
 			)
-		)
+		}{
+			const $downloadedNotesCount=makeElement('output')()()
+			if (info.scans.notes) {
+				$downloadedNotesCount.textContent=String(info.scans.notes.items.count)
+			} else {
+				$downloadedNotesCount.textContent=`0`
+			}
+			$downloadedNotesCount.title=`downloaded`
+			const $totalNotesCount=makeElement('output')()()
+			$totalNotesCount.textContent=`???`
+			$totalNotesCount.title=`number of notes created by the user is unknown because the API doesn't report it`
+			$card.append(
+				makeDiv('field')(
+					`notes: `,$displayedNotesCount,` / `,$downloadedNotesCount,` / `,$totalNotesCount
+				)
+			)
+		}
 		$card.append(
 			makeDiv('field','updates')(
 				`info updated at:`,

@@ -32,6 +32,8 @@ type GridUserEntry = { // TODO change to column entry
 		info: UserInfo
 		$displayedChangesetsCount: HTMLOutputElement
 		displayedChangesetsCount: number
+		$displayedNotesCount: HTMLOutputElement
+		displayedNotesCount: number
 	}
 )
 
@@ -84,7 +86,9 @@ export default class GridHead {
 			if (message.type!='operation') return
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
 				const $card=this.makeUserCard(
-					userEntry.query,userEntry.info,userEntry.$displayedChangesetsCount
+					userEntry.query,userEntry.info,
+					userEntry.$displayedChangesetsCount,
+					userEntry.$displayedNotesCount
 				)
 				// userEntry.$card.replaceWith($card)
 				userEntry.$card=$card
@@ -168,23 +172,29 @@ export default class GridHead {
 		const $tab=makeUserTab(
 			this.wrappedRemoveColumnClickListener,query
 		)
-		const $displayedChangesetsCount=this.makeUserDisplayedChangesetsCount()
+		const $displayedChangesetsCount=this.makeUserDisplayedItemsCount()
+		const $displayedNotesCount=this.makeUserDisplayedItemsCount()
 		const $card=this.makeUserCard(
-			query,info,$displayedChangesetsCount
+			query,info,$displayedChangesetsCount,$displayedNotesCount
 		)
 		const $selector=makeUserSelector()
 		return {
 			$tab,$card,$selector,
 			type: 'query',
-			query,info,$displayedChangesetsCount,
-			displayedChangesetsCount: 0
+			query,info,
+			$displayedChangesetsCount, displayedChangesetsCount: 0,
+			$displayedNotesCount, displayedNotesCount: 0,
 		}
 	}
 	private makeUserCard(
-		query: ValidUserQuery, info: UserInfo, $displayedChangesetsCount: HTMLOutputElement
+		query: ValidUserQuery, info: UserInfo,
+		$displayedChangesetsCount: HTMLOutputElement,
+		$displayedNotesCount: HTMLOutputElement
 	): HTMLElement {
 		return makeUserCard(
-			query,info,$displayedChangesetsCount,
+			query,info,
+			$displayedChangesetsCount,
+			$displayedNotesCount,
 			name=>this.cx.server.web.getUrl(e`user/${name}`),
 			id=>this.cx.server.api.getUrl(e`user/${id}.json`),
 			query=>this.sendUserQueryToWorker(query),
@@ -242,6 +252,9 @@ export default class GridHead {
 			entry.$displayedChangesetsCount.textContent=String(
 				entry.displayedChangesetsCount=0
 			)
+			entry.$displayedNotesCount.textContent=String(
+				entry.displayedNotesCount=0
+			)
 		}
 		const columnHues=this.userEntries.map(getUserEntryHue)
 		this.grid.setColumns(columnHues)
@@ -267,14 +280,17 @@ export default class GridHead {
 		const streamMessenger=new MuxUserItemDbStreamMessenger(
 			this.cx.server.host,this.worker,stream,columnUids,batch=>{
 				for (const {iColumns,type} of batch) {
-					if (type=='changeset') {
-						for (const iColumn of iColumns) {
-							const userEntry=this.userEntries[iColumn]
-							if (userEntry && userEntry.type=='query') {
-								userEntry.$displayedChangesetsCount.textContent=String(
-									++userEntry.displayedChangesetsCount
-								)
-							}
+					for (const iColumn of iColumns) {
+						const userEntry=this.userEntries[iColumn]
+						if (!userEntry || userEntry.type!='query') continue
+						if (type=='changeset') {
+							userEntry.$displayedChangesetsCount.textContent=String(
+								++userEntry.displayedChangesetsCount
+							)
+						} else if (type=='note') {
+							userEntry.$displayedNotesCount.textContent=String(
+								++userEntry.displayedNotesCount
+							)
 						}
 					}
 				}
@@ -286,7 +302,7 @@ export default class GridHead {
 		})
 		this.streamMessenger=streamMessenger
 	}
-	private makeUserDisplayedChangesetsCount(): HTMLOutputElement {
+	private makeUserDisplayedItemsCount(): HTMLOutputElement {
 		const $count=makeElement('output')()(`???`)
 		$count.title=`displayed`
 		return $count
