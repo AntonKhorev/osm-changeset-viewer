@@ -77,7 +77,7 @@ export function makeUserCard(
 					? makeLink(info.user.name,getUserNameHref(info.user.name))
 					: `deleted user`
 				),` `,
-				makeElement('span')('uid')(
+				makeElement('span')('api')(
 					`(`,makeLink(`#${info.user.id}`,getUserIdHref(info.user.id)),`)`
 				)
 			)

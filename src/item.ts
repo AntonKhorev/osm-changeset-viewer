@@ -35,23 +35,24 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 		$changes.title=`number of changes`
 		return $changes
 	}
-	let $item: HTMLElement
+	let $icon: HTMLElement
 	if (isClosed) {
 		const $noCheckbox=makeElement('span')('no-checkbox')()
 		$noCheckbox.tabIndex=0
 		$noCheckbox.title=`closed changeset ${changeset.id}`
-		const $icon=makeElement('span')('icon')($noCheckbox)
-		$item=makeItemCell('changeset',$icon)
+		$icon=makeElement('span')('icon')($noCheckbox)
 	} else {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.title=`opened changeset ${changeset.id}`
-		const $icon=makeElement('span')('icon')($checkbox)
-		$item=makeItemCell('changeset',$icon)
+		$icon=makeElement('span')('icon')($checkbox)
 	}
+	const $item=makeItemCell(
+		'changeset',$icon,changeset.id,
+		server.web.getUrl(e`changeset/${changeset.id}`),
+		server.api.getUrl(e`changeset/${changeset.id}.json?include_discussion=true`)
+	)
 	$item.append(
-		makeLink(`${changeset.id}`,server.web.getUrl(e`changeset/${changeset.id}`)),` `,
-		`(`,makeLink(`api`,server.api.getUrl(e`changeset/${changeset.id}.json?include_discussion=true`)),`) `,
 		makeDate(),` `,
 		makeChanges(),` `,
 		changeset.tags?.comment ?? ''
@@ -64,18 +65,29 @@ export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.innerHTML=makeNoteIconHtml()
 	$icon.title=`note ${note.id}`
-	const $item=makeItemCell('note',$icon)
+	const $item=makeItemCell(
+		'note',$icon,note.id,
+		server.web.getUrl(e`note/${note.id}`),
+		server.api.getUrl(e`notes/${note.id}.json`)
+	)
 	$item.append(
-		makeLink(`${note.id}`,server.web.getUrl(e`note/${note.id}`)),` `,
-		`(`,makeLink(`api`,server.api.getUrl(e`notes/${note.id}.json`)),`) `,
 		makeDateOutput(note.createdAt),` `,
 		note.openingComment ?? ''
 	)
 	return $item
 }
 
-function makeItemCell(type: string, $icon: HTMLElement): HTMLElement {
-	const $item=makeDiv('item',type)($icon,` `)
+function makeItemCell(
+	type: string, $icon: HTMLElement, id: number,
+	href: string, apiHref: string
+): HTMLElement {
+	const $item=makeDiv('item',type)(
+		$icon,` `,
+		makeLink(String(id),href),` `,
+		makeElement('span')('api')(
+			`(`,makeLink(`api`,apiHref),`)`
+		),` `,
+	)
 	return $item
 }
 
