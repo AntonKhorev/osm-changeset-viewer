@@ -6,7 +6,7 @@ import More from './more'
 import writeFooter from './footer'
 import makeNetDialog from './net-dialog'
 import GridHead from './grid-head'
-import {makeChangesetCard, makeNoteCard} from './item'
+import {makeChangesetCell, makeNoteCell} from './item'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv} from './util/html'
@@ -76,12 +76,12 @@ async function main() {
 				let $item: HTMLElement
 				let date=item.createdAt
 				if (type=='changeset'||type=='changesetClose') {
-					$item=makeChangesetCard(cx.server.web,item,type=='changesetClose')
+					$item=makeChangesetCell(cx.server.web,item,type=='changesetClose')
 					if (type=='changesetClose' && item.closedAt) {
 						date=item.closedAt
 					}
 				} else {
-					$item=makeNoteCard(cx.server.web,item)
+					$item=makeNoteCell(cx.server.web,item)
 					date=item.createdAt
 				}
 				grid.addItem($item,iColumns,date,type,item.id)

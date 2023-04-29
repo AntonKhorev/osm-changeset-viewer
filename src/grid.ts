@@ -1,4 +1,4 @@
-import {getItemCheckbox, markChangesetCardAsCombined, markChangesetCardAsUncombined} from './item'
+import {getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined} from './item'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
@@ -92,9 +92,9 @@ export default class Grid {
 				} else {
 					if (isConnectedWithAboveItem || !withClosedChangesets) {
 						if ($itemAbove && isConnectedWithAboveItem) $itemAbove.hidden=true
-						markChangesetCardAsCombined($item,$item.dataset.id??'???')
+						markChangesetCellAsCombined($item,$item.dataset.id??'???')
 					} else {
-						markChangesetCardAsUncombined($item,$item.dataset.id??'???')
+						markChangesetCellAsUncombined($item,$item.dataset.id??'???')
 					}
 				}
 			}
