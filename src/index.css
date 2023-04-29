@@ -213,9 +213,16 @@ body > .symbols {
 	max-height: 100px;
 	max-width: 100px;
 }
+.ui .grid thead td .card .field:nth-last-child(2n) {
+	background: #8881;
+}
 .ui .grid thead td .card .uid {
 	color: var(--light-text-color);
 	font-size: .8em;
+}
+.ui .grid thead td .card .updates ul {
+	margin: 0;
+	padding: 0 0 0 1em;
 }
 .ui .grid thead td .card form > [class$="-input-group"]:first-child {
 	margin-top: 0;

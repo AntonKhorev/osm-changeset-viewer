@@ -2,6 +2,7 @@ import type {UserQuery, ValidUserQuery} from './osm/query-user'
 import type {UserScanDbRecord, UserDbInfo} from './db'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
+import {ul,li} from './util/html-shortcuts'
 
 export type CompleteUserInfo = {
 	status: 'rerunning'|'ready'
@@ -80,7 +81,7 @@ export function makeUserCard(
 			)
 		}
 		$card.append(
-			makeDiv()(
+			makeDiv('field')(
 				(info.user.visible
 					? makeLink(info.user.name,getUserNameHref(info.user.name))
 					: `deleted user`
@@ -92,7 +93,7 @@ export function makeUserCard(
 		)
 		if (info.user.visible) {
 			$card.append(
-				makeDiv('created')(
+				makeDiv('field')(
 					`account created at `,makeDateOutput(info.user.createdAt)
 				)
 			)
@@ -100,20 +101,25 @@ export function makeUserCard(
 			const $unknown=makeElement('span')()(`???`)
 			$unknown.title=`date is unknown because the user is deleted`
 			$card.append(
-				makeDiv('created')(
+				makeDiv('field')(
 					`created at `,$unknown
 				)
 			)
 		}
 		$card.append(
-			makeDiv()(
+			makeDiv('field')(
 				`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
-			),
-			makeDiv()(
-				`user info updated at `,makeDateOutput(info.user.infoUpdatedAt),` `,$updateButton
-			),
-			makeScanField('changesets',info.scans.changesets,rescan),
-			makeScanField('notes',info.scans.notes,rescan)
+			)
+		)
+		$card.append(
+			makeDiv('field','updates')(
+				`info updated at:`,
+				ul(
+					li(`user: `,makeDateOutput(info.user.infoUpdatedAt),` `,$updateButton),
+					makeScanListItem('changesets',info.scans.changesets,rescan),
+					makeScanListItem('notes',info.scans.notes,rescan)
+				)
+			)
 		)
 		$updateButton.onclick=()=>{
 			processValidUserQuery(query)
@@ -124,37 +130,29 @@ export function makeUserCard(
 	return $card
 }
 
-function makeScanField(
+function makeScanListItem(
 	type: UserScanDbRecord['type'], scan: UserScanDbRecord|undefined,
 	rescan: (type: UserScanDbRecord['type'])=>void
 ): HTMLElement {
-	const $field=makeDiv()(
-		`${type} scan`
-	)
+	const $field=li(`${type}: `)
 	if (scan) {
 		$field.append(
-			` started at `,makeDateOutput(scan.beginDate)
+			makeDateOutput(scan.beginDate)
 		)
 		if (scan.endDate) {
-			$field.append(
-				` ended at `,makeDateOutput(scan.endDate)
-			)
+			$field.append(`..`,makeDateOutput(scan.endDate))
 		} else {
-			$field.append(
-				`, incomplete`
-			)
+			const $incomplete=makeElement('span')()(`...`)
+			$incomplete.title=`incomplete`
+			$field.append($incomplete)
 		}
 		const $rescanButton=makeElement('button')()(`rescan`)
-		$field.append(
-			` `,$rescanButton
-		)
+		$field.append(` `,$rescanButton)
 		$rescanButton.onclick=()=>{
 			rescan(type)
 		}
 	} else {
-		$field.append(
-			` not started`
-		)
+		$field.append(`not started`)
 	}
 	return $field
 }
