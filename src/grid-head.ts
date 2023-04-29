@@ -29,7 +29,7 @@ type GridUserEntry = { // TODO change to column entry
 	} | {
 		type: 'query'
 		query: ValidUserQuery
-		$downloadedChangesetsCount: HTMLOutputElement // TODO change to visible changeset count
+		$displayedChangesetsCount: HTMLOutputElement
 		info: UserInfo
 	}
 )
@@ -83,7 +83,7 @@ export default class GridHead {
 			if (message.type!='operation') return
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
 				const $card=this.makeUserCard(
-					userEntry.query,userEntry.info,userEntry.$downloadedChangesetsCount
+					userEntry.query,userEntry.info,userEntry.$displayedChangesetsCount
 				)
 				// userEntry.$card.replaceWith($card)
 				userEntry.$card=$card
@@ -167,22 +167,22 @@ export default class GridHead {
 		const $tab=makeUserTab(
 			this.wrappedRemoveColumnClickListener,query
 		)
-		const $downloadedChangesetsCount=this.makeUserDownloadedChangesetsCount()
+		const $displayedChangesetsCount=this.makeUserDisplayedChangesetsCount()
 		const $card=this.makeUserCard(
-			query,info,$downloadedChangesetsCount
+			query,info,$displayedChangesetsCount
 		)
 		const $selector=makeUserSelector()
 		return {
 			$tab,$card,$selector,
 			type: 'query',
-			query,$downloadedChangesetsCount,info
+			query,$displayedChangesetsCount,info
 		}
 	}
 	private makeUserCard(
-		query: ValidUserQuery, info: UserInfo, $downloadedChangesetsCount: HTMLOutputElement
+		query: ValidUserQuery, info: UserInfo, $displayedChangesetsCount: HTMLOutputElement
 	): HTMLElement {
 		return makeUserCard(
-			query,info,$downloadedChangesetsCount,
+			query,info,$displayedChangesetsCount,
 			name=>this.cx.server.web.getUrl(e`user/${name}`),
 			id=>this.cx.server.api.getUrl(e`user/${id}.json`),
 			query=>this.sendUserQueryToWorker(query),
@@ -264,10 +264,10 @@ export default class GridHead {
 		})
 		this.streamMessenger=streamMessenger
 	}
-	private makeUserDownloadedChangesetsCount(): HTMLOutputElement {
-		const $downloadedChangesetsCount=makeElement('output')()(`???`)
-		$downloadedChangesetsCount.title=`downloaded`
-		return $downloadedChangesetsCount
+	private makeUserDisplayedChangesetsCount(): HTMLOutputElement {
+		const $count=makeElement('output')()(`???`)
+		$count.title=`displayed`
+		return $count
 	}
 	private removeColumnClickListener($button: HTMLElement): void {
 		const $tab=$button.closest('.tab')

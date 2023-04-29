@@ -48,7 +48,7 @@ function makeCloseButton(
 }
 
 export function makeUserCard(
-	query: ValidUserQuery, info: UserInfo, $downloadedChangesetsCount: HTMLOutputElement,
+	query: ValidUserQuery, info: UserInfo, $displayedChangesetsCount: HTMLOutputElement,
 	getUserNameHref: (name:string)=>string,
 	getUserIdHref: (id:number)=>string,
 	processValidUserQuery: (query:ValidUserQuery)=>void,
@@ -58,11 +58,14 @@ export function makeUserCard(
 	if (info.status=='pending' || info.status=='running') {
 		$card.append(makeDiv('notice')(`waiting for user data`))
 	} else if (info.status=='rerunning' || info.status=='ready') {
+		const $downloadedChangesetsCount=makeElement('output')()()
 		const $totalChangesetsCount=makeElement('output')()()
-		const $updateButton=makeElement('button')('with-icon')()
-		$updateButton.title=`update`
-		$updateButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
-		$updateButton.disabled=info.status=='rerunning'
+		if (info.scans.changesets) {
+			$downloadedChangesetsCount.textContent=String(info.scans.changesets.items.count)
+		} else {
+			$downloadedChangesetsCount.textContent=`0`
+		}
+		$downloadedChangesetsCount.title=`downloaded`
 		if (info.user.visible) {
 			$totalChangesetsCount.textContent=String(info.user.changesets.count)
 			$totalChangesetsCount.title=`opened by the user`
@@ -70,11 +73,10 @@ export function makeUserCard(
 			$totalChangesetsCount.textContent=`???`
 			$totalChangesetsCount.title=`number of changesets opened by the user is unknown because the user is deleted`
 		}
-		if (info.scans.changesets) {
-			$downloadedChangesetsCount.textContent=String(info.scans.changesets.items.count)
-		} else {
-			$downloadedChangesetsCount.textContent=`0`
-		}
+		const $updateButton=makeElement('button')('with-icon')()
+		$updateButton.title=`update`
+		$updateButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
+		$updateButton.disabled=info.status=='rerunning'
 		if (info.user.visible && info.user.img) {
 			const $img=makeElement('img')()()
 			$img.src=info.user.img.href
@@ -110,7 +112,7 @@ export function makeUserCard(
 		}
 		$card.append(
 			makeDiv('field')(
-				`changesets: `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
+				`changesets: `,$displayedChangesetsCount,` / `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
 			)
 		)
 		$card.append(
