@@ -6,7 +6,7 @@ import More from './more'
 import writeFooter from './footer'
 import makeNetDialog from './net-dialog'
 import GridHead from './grid-head'
-import {makeChangesetCell, makeNoteCell} from './item'
+import {makeUserCell, makeChangesetCell, makeNoteCell} from './item'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv} from './util/html'
@@ -76,7 +76,7 @@ async function main() {
 				let $item: HTMLElement
 				let date: Date
 				if (type=='user') {
-					$item=makeDiv('item')(`TODO user`)
+					$item=makeUserCell(cx.server,item)
 					date=item.createdAt
 				} else if (type=='changeset'||type=='changesetClose') {
 					$item=makeChangesetCell(cx.server,item,type=='changesetClose')
