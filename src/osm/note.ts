@@ -8,6 +8,17 @@ export type OsmNoteCommentApiData = {
 	text?: string
 }
 
+function isOsmNoteCommentApiData(c: unknown): c is OsmNoteCommentApiData {
+	return (
+		isObject(c) &&
+		'date' in c && typeof c.date == 'string' &&
+		(!('uid' in c) || Number.isInteger(c.uid)) &&
+		(!('user' in c) || typeof c.user == 'string') &&
+		'action' in c && typeof c.action =='string' &&
+		(!('text' in c) || typeof c.text =='string')
+	)
+}
+
 export type OsmNoteApiData = {
 	// type: "Feature"
 	geometry: {
@@ -32,14 +43,7 @@ function isOsmNoteApiData(n: unknown): n is OsmNoteApiData {
 	if (!('date_created' in n.properties) || typeof n.properties.date_created != 'string') return false
 	if (!('status' in n.properties) || typeof n.properties.status != 'string') return false
 	if (!('comments' in n.properties) || !isArray(n.properties.comments)) return false
-	if (!n.properties.comments.every(c=>(
-		isObject(c) &&
-		'date' in c && typeof c.date == 'string' &&
-		(!('uid' in c) || Number.isInteger(c.uid)) &&
-		(!('user' in c) || typeof c.user == 'string') &&
-		'action' in c && typeof c.action =='string' &&
-		(!('text' in c) || typeof c.text =='string')
-	))) return false
+	if (!n.properties.comments.every(isOsmNoteCommentApiData)) return false
 	return true
 }
 

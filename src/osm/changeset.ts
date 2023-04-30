@@ -1,11 +1,29 @@
 import {OsmBaseApiData, isOsmBaseApiData} from './base'
 import {isObject, isArray} from '../util/types'
 
+export type OsmChangesetCommentApiData = {
+	date: string
+	uid?: number
+	user?: string
+	text: string
+}
+
+function isOsmChangesetCommentApiData(c: unknown): c is OsmChangesetCommentApiData {
+	return (
+		isObject(c) &&
+		'date' in c && typeof c.date == 'string' &&
+		(!('uid' in c) || Number.isInteger(c.uid)) &&
+		(!('user' in c) || typeof c.user == 'string') &&
+		(!('text' in c) || typeof c.text =='string')
+	)
+}
+
 export type OsmChangesetApiData = OsmBaseApiData & {
 	created_at: string
 	closed_at?: string
 	comments_count: number
 	changes_count: number
+	discussion?: OsmChangesetCommentApiData[]
 }
 
 export type OsmChangesetWithBboxApiData = OsmChangesetApiData & {
@@ -21,6 +39,9 @@ function isOsmChangesetApiData(c: unknown): c is OsmChangesetApiData {
 	if (('closed_at' in c) && typeof c.closed_at != 'string') return false
 	if (!('comments_count' in c) || typeof c.comments_count != 'number') return false
 	if (!('changes_count' in c) || typeof c.changes_count != 'number') return false
+	if (('discussion' in c) && (
+		!isArray(c.discussion) || !c.discussion.every(isOsmChangesetCommentApiData)
+	)) return false
 	return true
 }
 
@@ -45,7 +66,7 @@ export function getChangesetFromOsmApiResponse(data: unknown): OsmChangesetApiDa
 	} else {
 		throw new TypeError(`OSM API error: no 'changeset' or 'elements' in response data`)
 	}
-	changeset=fixBboxFormatDifferences(changeset)
+	changeset=fixChangesetFormatDifferences(changeset)
 	if (!isOsmChangesetApiData(changeset)) throw new TypeError(`OSM API error: invalid changeset in response data`)
 	return changeset
 }
@@ -53,17 +74,21 @@ export function getChangesetFromOsmApiResponse(data: unknown): OsmChangesetApiDa
 export function getChangesetsFromOsmApiResponse(data: unknown): OsmChangesetApiData[] {
 	if (!data || typeof data != 'object') throw new TypeError(`OSM API error: invalid response data`)
 	if (!('changesets' in data) || !isArray(data.changesets)) throw new TypeError(`OSM API error: no changesets array in response data`)
-	const changesetArray=data.changesets.map(fixBboxFormatDifferences)
+	const changesetArray=data.changesets.map(fixChangesetFormatDifferences)
 	if (!changesetArray.every(isOsmChangesetApiData)) throw new TypeError(`OSM API error: invalid changeset in response data`)
 	return changesetArray
 }
 
-function fixBboxFormatDifferences(inputChangeset: unknown): unknown {
+function fixChangesetFormatDifferences(inputChangeset: unknown): unknown {
 	if (!isObject(inputChangeset)) return inputChangeset
 	let changeset=inputChangeset
 	if (('min_lat' in changeset) && !('minlat' in changeset)) { const {min_lat,...rest}=changeset; changeset={minlat:min_lat,...rest} }
 	if (('min_lon' in changeset) && !('minlon' in changeset)) { const {min_lon,...rest}=changeset; changeset={minlon:min_lon,...rest} }
 	if (('max_lat' in changeset) && !('maxlat' in changeset)) { const {max_lat,...rest}=changeset; changeset={maxlat:max_lat,...rest} }
 	if (('max_lon' in changeset) && !('maxlon' in changeset)) { const {max_lon,...rest}=changeset; changeset={maxlon:max_lon,...rest} }
+	if (('comments' in changeset) && !('discussion' in changeset)) {
+		const {comments,...rest}=changeset
+		changeset={discussion:comments,...rest}
+	}
 	return changeset
 }

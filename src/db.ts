@@ -36,6 +36,26 @@ export type UserDbRecord = {
 	}
 })
 
+type UserItemCommentDbRecord = {
+	itemId: number
+	order: number
+	itemUid: number
+	uid?: number
+	createdAt: Date
+	text: string
+}
+
+export type ChangesetCommentDbRecord = UserItemCommentDbRecord
+
+export type NoteCommentDbRecord = UserItemCommentDbRecord & {
+	action: 'opened' | 'closed' | 'reopened' | 'commented' | 'hidden'
+}
+
+export type UserItemCommentDbRecordMap = {
+	changesets: ChangesetCommentDbRecord
+	notes: NoteCommentDbRecord
+}
+
 type UserItemDbRecord = {
 	id: number
 	uid: number // we get only notes of known users for now
@@ -244,6 +264,10 @@ export class ChangesetViewerDBReader {
 				const userStore=idb.createObjectStore('users',{keyPath:'id'})
 				userStore.createIndex('name','name')
 				idb.createObjectStore('userScans',{keyPath:['uid','stash','type']})
+				const changesetCommentStore=idb.createObjectStore('changesetComments',{keyPath:['itemId','order']})
+				changesetCommentStore.createIndex('user',['itemUid','createdAt','itemId','order'])
+				const noteCommentStore=idb.createObjectStore('noteComments',{keyPath:['itemId','order']})
+				noteCommentStore.createIndex('user',['itemUid','createdAt','itemId','order'])
 				const changesetStore=idb.createObjectStore('changesets',{keyPath:'id'})
 				changesetStore.createIndex('user',['uid','createdAt','id'])
 				const noteStore=idb.createObjectStore('notes',{keyPath:'id'})

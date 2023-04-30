@@ -1,4 +1,4 @@
-import type {UserDbRecord, UserScanDbRecord, UserItemDbRecordMap} from '../db'
+import type {UserDbRecord, UserScanDbRecord, UserItemDbRecordMap, UserItemCommentDbRecordMap} from '../db'
 import {ChangesetViewerDBReader} from '../db'
 import StreamBoundary from '../stream-boundary'
 
@@ -54,20 +54,21 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	 * @returns true if decided to add/update the scan
 	 */
 	addUserItemsIfNoScan<T extends keyof UserItemDbRecordMap>(
-		type: T, uid: number, now: Date, items: UserItemDbRecordMap[T][], streamBoundary: StreamBoundary
+		type: T, uid: number, now: Date,
+		itemsWithComments: [UserItemDbRecordMap[T], UserItemCommentDbRecordMap[T][]][],
+		streamBoundary: StreamBoundary
 	): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction([type,'userScans'],'readwrite')
-			tx.onerror=()=>reject(new Error(`Database error in addUserItemsIfNoScan(): ${tx.error}`))
+			const [tx,scanStore,itemStore,itemCommentStore]=this.openUserItemsTransaction(type,'addUserItemsIfNoScan',reject)
 			const handleScan=(scan: UserScanDbRecord)=>{
 				const updatedScan=this.addUserItemsToScan(
-					now,items,streamBoundary,
-					tx.objectStore(type),scan
+					now,itemsWithComments,streamBoundary,
+					scan,itemStore,itemCommentStore
 				)
-				tx.objectStore('userScans').put(updatedScan)
+				scanStore.put(updatedScan)
 			}
-			const getScanRequest=tx.objectStore('userScans').get([uid,0,type])
+			const getScanRequest=scanStore.get([uid,0,type])
 			getScanRequest.onsuccess=()=>{
 				if (getScanRequest.result==null) {
 					handleScan(makeEmptyScan(uid,type,now))
@@ -79,25 +80,26 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 		})
 	}
 	addUserItems<T extends keyof UserItemDbRecordMap>(
-		type: T, uid: number, now: Date, items: UserItemDbRecordMap[T][], streamBoundary: StreamBoundary,
+		type: T, uid: number, now: Date,
+		itemsWithComments: [UserItemDbRecordMap[T], UserItemCommentDbRecordMap[T][]][],
+		streamBoundary: StreamBoundary,
 		forceNewScan: boolean
 	): Promise<void> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const tx=this.idb.transaction([type,'userScans'],'readwrite')
-			tx.onerror=()=>reject(new Error(`Database error in addUserItemsIfNoScan(): ${tx.error}`))
+			const [tx,scanStore,itemStore,itemCommentStore]=this.openUserItemsTransaction(type,'addUserItems',reject)
 			tx.oncomplete=()=>resolve()
 			const handleScan=(scan: UserScanDbRecord)=>{
 				const updatedScan=this.addUserItemsToScan(
-					now,items,streamBoundary,
-					tx.objectStore(type),scan
+					now,itemsWithComments,streamBoundary,
+					scan,itemStore,itemCommentStore
 				)
-				tx.objectStore('userScans').put(updatedScan)
+				scanStore.put(updatedScan)
 			}
 			if (forceNewScan) {
 				handleScan(makeEmptyScan(uid,type,now))
 			} else {
-				const getScanRequest=tx.objectStore('userScans').get([uid,0,type])
+				const getScanRequest=scanStore.get([uid,0,type])
 				getScanRequest.onsuccess=()=>{
 					if (getScanRequest.result==null) {
 						handleScan(makeEmptyScan(uid,type,now))
@@ -108,12 +110,32 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 			}
 		})
 	}
+	private openUserItemsTransaction(type: keyof UserItemDbRecordMap, callerName: string, reject: (reason:any)=>void): [
+		tx: IDBTransaction, scanStore: IDBObjectStore, itemStore: IDBObjectStore, itemCommentStore: IDBObjectStore
+	] {
+		const commentsType=`${type.slice(0,-1)}Comments`
+		const tx=this.idb.transaction([type,commentsType,'userScans'],'readwrite')
+		tx.onerror=()=>reject(new Error(`Database error in ${callerName}(): ${tx.error}`))
+		return [
+			tx,
+			tx.objectStore('userScans'),
+			tx.objectStore(type),
+			tx.objectStore(commentsType),
+		]
+	}
 	private addUserItemsToScan<T extends keyof UserItemDbRecordMap>(
-		now: Date, items: UserItemDbRecordMap[T][], streamBoundary: StreamBoundary,
-		store: IDBObjectStore, scan: UserScanDbRecord
+		now: Date,
+		itemsWithComments: [UserItemDbRecordMap[T], UserItemCommentDbRecordMap[T][]][],
+		streamBoundary: StreamBoundary, scan: UserScanDbRecord,
+		itemStore: IDBObjectStore, itemCommentStore: IDBObjectStore
 	): UserScanDbRecord {
-		for (const item of items) {
-			store.put(item)
+		for (const [item,comments] of itemsWithComments) {
+			const range=IDBKeyRange.bound([item.id],[item.id,+Infinity])
+			itemCommentStore.delete(range)
+			itemStore.put(item)
+			for (const comment of comments) {
+				itemCommentStore.put(comment)
+			}
 			scan=addUserItemIdsAndDateToScan(scan,item.createdAt,[item.id])
 		}
 		if (streamBoundary.date) {

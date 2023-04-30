@@ -1,6 +1,6 @@
 import {
 	ValidUserQuery,
-	OsmChangesetApiData, getChangesetsFromOsmApiResponse,
+	OsmChangesetApiData, getChangesetsFromOsmApiResponse, getChangesetFromOsmApiResponse,
 	OsmNoteApiData, getNotesFromOsmApiResponse
 } from '../osm'
 import StreamBoundary from '../stream-boundary'
@@ -25,29 +25,21 @@ abstract class UserItemStream<T> {
 	}
 	async fetch(fetcher: (path:string)=>Promise<Response>): Promise<T[]> {
 		const path=this.getFetchPath(this.nextFetchUpperBoundDate)
-		let response: Response
-		try {
-			response=await fetcher(path)
-		} catch (ex) {
-			throw new TypeError(`network error`)
-		}
-		if (!response.ok) {
-			if (response.status==404) {
-				throw new TypeError(`user not found / didn't agree to contributor terms`)
-			} else {
-				throw new TypeError(`unsuccessful response from OSM API`)
-			}
-		}
-		const json=await response.json()
+		const json=await this.fetchJson(fetcher,path)
 		const items=this.getOsmDataFromResponseJson(json)
 		const newItems=[] as T[]
 		let fetchedNewItems=false
-		for (const item of items) {
+		for (let item of items) {
 			const id=this.getItemId(item)
 			const date=this.getItemDate(item)
 			if (!this.boundary.visit(date,id)) continue
 			fetchedNewItems=true
 			if (!this.acceptItem(item)) continue
+			const additionalPath=this.getFullFetchPathIfRequired(item)
+			if (additionalPath) {
+				const json=await this.fetchJson(fetcher,additionalPath)
+				item=this.getFullOsmDataFromResponseJson(json)
+			}
 			this.modifyQueryInResponseToFetchedData(item)
 			newItems.push(item)
 		}
@@ -67,11 +59,32 @@ abstract class UserItemStream<T> {
 		}
 	}
 	protected abstract getFetchPath(upperBoundDate: Date|null): string
+	protected getFullFetchPathIfRequired(item: T): string|null { return null }
 	protected abstract getOsmDataFromResponseJson(json: unknown): T[]
+	protected getFullOsmDataFromResponseJson(json: unknown): T { throw new TypeError(`unexpected request for full osm item data`) }
 	protected modifyQueryInResponseToFetchedData(item: T): void {}
 	protected acceptItem(item: T): boolean { return true }
 	protected abstract getItemId(item: T): number
 	protected abstract getItemDate(item: T): Date
+	private async fetchJson(
+		fetcher: (path:string)=>Promise<Response>,
+		path: string
+	): Promise<unknown> {
+		let response: Response
+		try {
+			response=await fetcher(path)
+		} catch (ex) {
+			throw new TypeError(`network error`)
+		}
+		if (!response.ok) {
+			if (response.status==404) {
+				throw new TypeError(`user not found / didn't agree to contributor terms`)
+			} else {
+				throw new TypeError(`unsuccessful response from OSM API`)
+			}
+		}
+		return await response.json()
+	}
 }
 
 export class UserChangesetStream extends UserItemStream<OsmChangesetApiData> {
@@ -82,8 +95,15 @@ export class UserChangesetStream extends UserItemStream<OsmChangesetApiData> {
 		}
 		return `changesets.json?${this.userParameter}${timeParameter}`
 	}
+	protected getFullFetchPathIfRequired(changeset: OsmChangesetApiData): string|null {
+		if (changeset.comments_count<=0) return null
+		return e`changeset/${changeset.id}.json?include_discussion=true`
+	}
 	protected getOsmDataFromResponseJson(json: unknown): OsmChangesetApiData[] {
 		return getChangesetsFromOsmApiResponse(json)
+	}
+	protected getFullOsmDataFromResponseJson(json: unknown): OsmChangesetApiData {
+		return getChangesetFromOsmApiResponse(json)
 	}
 	protected modifyQueryInResponseToFetchedData(changeset: OsmChangesetApiData) {
 		if (this.userQuery.type=='name') {
