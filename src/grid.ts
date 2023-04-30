@@ -62,11 +62,7 @@ export default class Grid {
 		}
 		if ($checkboxes.length>1) {
 			for (const $checkbox of $checkboxes) {
-				$checkbox.addEventListener('input',()=>{
-					for (const $sameItemCheckbox of $checkboxes) {
-						$sameItemCheckbox.checked=$checkbox.checked
-					}
-				})
+				$checkbox.addEventListener('input',itemCheckboxListener)
 			}
 		}
 	}
@@ -164,6 +160,16 @@ export default class Grid {
 	}
 	private get $tbody(): HTMLTableSectionElement {
 		return this.$grid.tBodies[0]
+	}
+}
+
+function itemCheckboxListener(this: HTMLInputElement): void {
+	const $checkbox=this
+	const $itemRow=$checkbox.closest('tr.item')
+	if (!$itemRow) return
+	for (const $sameItemCheckbox of $itemRow.querySelectorAll('input[type=checkbox]')) {
+		if (!($sameItemCheckbox instanceof HTMLInputElement)) continue
+		$sameItemCheckbox.checked=$checkbox.checked
 	}
 }
 
