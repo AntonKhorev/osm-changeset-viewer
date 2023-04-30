@@ -1,17 +1,25 @@
 import StreamBoundary from './stream-boundary'
-import type {ChangesetViewerDBReader, UserDbRecord, ChangesetDbRecord, NoteDbRecord, UserScanDbRecord} from './db'
-
-// { https://stackoverflow.com/a/42919752
+import type {
+	ChangesetViewerDBReader, UserDbRecord, UserScanDbRecord,
+	ChangesetDbRecord, ChangesetCommentDbRecord,
+	NoteDbRecord, NoteCommentDbRecord
+} from './db'
 
 const USER = 0
 const CHANGESET = 1
 const CHANGESET_CLOSE = 2
 const NOTE = 3
+const CHANGESET_COMMENT = 4
+const NOTE_COMMENT = 5
 type VisibleUserDbRecord = Extract<UserDbRecord,{visible:true}>
 type HeapItem =
 	[timestamp: number, type: typeof USER, user: VisibleUserDbRecord] |
 	[timestamp: number, type: typeof CHANGESET | typeof CHANGESET_CLOSE, changeset: ChangesetDbRecord] |
-	[timestamp: number, type: typeof NOTE, note: NoteDbRecord]
+	[timestamp: number, type: typeof NOTE, note: NoteDbRecord] |
+	[timestamp: number, type: typeof CHANGESET_COMMENT, comment: ChangesetCommentDbRecord] |
+	[timestamp: number, type: typeof NOTE_COMMENT, comment: NoteCommentDbRecord]
+
+// { https://stackoverflow.com/a/42919752
 
 const iTop=0
 const iParent = (i:number)=>((i+1)>>>1)-1
@@ -43,12 +51,25 @@ class MuxUserItemPriorityQueue {
 		this.siftDown()
 		return poppedValue
 	}
-	private greater(i: number, j: number) {
+	private greater(i: number, j: number): boolean {
 		const [timestamp1,type1,item1]=this.heap[i]
 		const [timestamp2,type2,item2]=this.heap[j]
 		if (timestamp1!=timestamp2) return timestamp1>timestamp2
-		if (type1!=type2) return type1>type2
-		return item1.id>item2.id
+		if (type1==CHANGESET_COMMENT || type1==NOTE_COMMENT) {
+			if (type2==CHANGESET_COMMENT || type2==NOTE_COMMENT) {
+				if (type1!=type2) return type1>type2
+				if (item1.itemUid!=item2.itemUid) return item1.itemUid>item2.itemUid
+				return item1.order>item2.order
+			} else {
+				return type1>type2
+			}
+		} else {
+			if (type2==CHANGESET_COMMENT || type2==NOTE_COMMENT) {
+				return type1>type2
+			} else {
+				return item1.id>item2.id
+			}
+		}
 	}
 	private swap(i: number, j: number) {
 		[this.heap[i],this.heap[j]]=[this.heap[j],this.heap[i]]
@@ -91,6 +112,12 @@ export type MuxBatchItem = {
 } | {
 	type: 'note'
 	item: NoteDbRecord
+} | {
+	type: 'changesetComment'
+	item: ChangesetCommentDbRecord
+} | {
+	type: 'noteComment'
+	item: NoteCommentDbRecord
 }
 
 export default class MuxUserItemDbStream {
@@ -157,6 +184,10 @@ export default class MuxUserItemDbStream {
 				batch.push({type:'changesetClose',item})
 			} else if (type==NOTE) {
 				batch.push({type:'note',item})
+			} else if (type==CHANGESET_COMMENT) {
+				batch.push({type:'changesetComment',item})
+			} else if (type==NOTE_COMMENT) {
+				batch.push({type:'noteComment',item})
 			}
 		}
 		let loopLimit=100
@@ -202,18 +233,24 @@ export default class MuxUserItemDbStream {
 		let oldBoundaryTimestamp=muxEntry.boundary.timestamp
 		let isEmptyDbGet=true
 		if (muxEntry.itemType=='changesets') {
-			const changesets=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,muxEntry.scan,muxEntry.boundary,100)
-			for (const changeset of changesets) {
+			const changesetsWithComments=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,muxEntry.scan,muxEntry.boundary,100)
+			for (const [changeset,comments] of changesetsWithComments) {
 				isEmptyDbGet=false
+				for (const comment of comments) {
+					this.queue.push([comment.createdAt.getTime(),CHANGESET_COMMENT,comment])
+				}
 				if (changeset.closedAt) {
 					this.queue.push([changeset.closedAt.getTime(),CHANGESET_CLOSE,changeset])
 				}
 				this.queue.push([changeset.createdAt.getTime(),CHANGESET,changeset])
 			}
 		} else if (muxEntry.itemType=='notes') {
-			const notes=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,muxEntry.scan,muxEntry.boundary,100)
-			for (const note of notes) {
+			const notesWithComments=await this.db.getUserItems(muxEntry.itemType,muxEntry.uid,muxEntry.scan,muxEntry.boundary,100)
+			for (const [note,comments] of notesWithComments) {
 				isEmptyDbGet=false
+				for (const comment of comments) {
+					this.queue.push([comment.createdAt.getTime(),CHANGESET_COMMENT,comment])
+				}
 				this.queue.push([note.createdAt.getTime(),NOTE,note])
 			}
 		}

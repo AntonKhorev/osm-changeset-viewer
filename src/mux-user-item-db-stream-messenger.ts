@@ -48,7 +48,7 @@ export default class MuxUserItemDbStreamMessenger {
 			this.receiveBatch(
 				action.batch.map((batchItem)=>({
 					...batchItem,
-					iColumns: this.uidToColumns.get(getMuxBatchItem(batchItem))??[]
+					iColumns: this.uidToColumns.get(getMuxBatchItemUid(batchItem))??[]
 				}))
 			)
 		} else if (action.type=='end') {
@@ -65,9 +65,11 @@ export default class MuxUserItemDbStreamMessenger {
 	}
 }
 
-function getMuxBatchItem(batchItem: MuxBatchItem): number {
+function getMuxBatchItemUid(batchItem: MuxBatchItem): number {
 	if (batchItem.type=='user') {
 		return batchItem.item.id
+	} if (batchItem.type=='changesetComment' || batchItem.type=='noteComment') {
+		return batchItem.item.itemUid
 	} else {
 		return batchItem.item.uid
 	}

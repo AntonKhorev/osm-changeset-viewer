@@ -229,6 +229,10 @@ function getItemTypeRank(type: MuxBatchItem['type']): number {
 		return 3
 	case 'note':
 		return 4
+	case 'changesetComment':
+		return 5
+	case 'noteComment':
+		return 6
 	}
 }
 

@@ -1,4 +1,4 @@
-import type {UserDbRecord, UserScanDbRecord, UserItemDbRecordMap, UserItemCommentDbRecordMap} from '../db'
+import type {UserDbRecord, UserScanDbRecord, UserItemDbRecordMap, UserItemWithCommentsDbRecord} from '../db'
 import {ChangesetViewerDBReader} from '../db'
 import StreamBoundary from '../stream-boundary'
 
@@ -55,7 +55,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	 */
 	addUserItemsIfNoScan<T extends keyof UserItemDbRecordMap>(
 		type: T, uid: number, now: Date,
-		itemsWithComments: [UserItemDbRecordMap[T], UserItemCommentDbRecordMap[T][]][],
+		itemsWithComments: UserItemWithCommentsDbRecord<T>[],
 		streamBoundary: StreamBoundary
 	): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
@@ -81,7 +81,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	}
 	addUserItems<T extends keyof UserItemDbRecordMap>(
 		type: T, uid: number, now: Date,
-		itemsWithComments: [UserItemDbRecordMap[T], UserItemCommentDbRecordMap[T][]][],
+		itemsWithComments: UserItemWithCommentsDbRecord<T>[],
 		streamBoundary: StreamBoundary,
 		forceNewScan: boolean
 	): Promise<void> {
@@ -125,13 +125,12 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	}
 	private addUserItemsToScan<T extends keyof UserItemDbRecordMap>(
 		now: Date,
-		itemsWithComments: [UserItemDbRecordMap[T], UserItemCommentDbRecordMap[T][]][],
+		itemsWithComments: UserItemWithCommentsDbRecord<T>[],
 		streamBoundary: StreamBoundary, scan: UserScanDbRecord,
 		itemStore: IDBObjectStore, itemCommentStore: IDBObjectStore
 	): UserScanDbRecord {
 		for (const [item,comments] of itemsWithComments) {
-			const range=IDBKeyRange.bound([item.id],[item.id,+Infinity])
-			itemCommentStore.delete(range)
+			itemCommentStore.delete(this.getItemCommentsRange(item))
 			itemStore.put(item)
 			for (const comment of comments) {
 				itemCommentStore.put(comment)

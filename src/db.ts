@@ -79,6 +79,10 @@ export type UserItemDbRecordMap = {
 	notes: NoteDbRecord
 }
 
+export type UserItemWithCommentsDbRecord<T extends keyof UserItemDbRecordMap> = [
+	item: UserItemDbRecordMap[T], comments: UserItemCommentDbRecordMap[T][]
+]
+
 export type UserScanDbRecord = {
 	uid: number
 	stash: number // 0 = current; 1 = stashed
@@ -211,18 +215,19 @@ export class ChangesetViewerDBReader {
 	}
 	getUserItems<T extends keyof UserItemDbRecordMap>(
 		type: T, uid: number, scan: UserScanDbRecord, streamBoundary: StreamBoundary, limit: number
-	): Promise<UserItemDbRecordMap[T][]> {
+	): Promise<UserItemWithCommentsDbRecord<T>[]> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const returnItems=(items:UserItemDbRecordMap[T][])=>{
-				if (items.length==0) { // can also check if items.length<limit
+			const commentsType=`${type.slice(0,-1)}Comments`
+			const returnItems=(itemsWithComments:UserItemWithCommentsDbRecord<T>[])=>{
+				if (itemsWithComments.length==0) { // can also check if items.length<limit
 					if (scan.endDate) {
 						streamBoundary.finish()
 					} else if (!scan.empty) {
 						streamBoundary.advance(scan.lowerItemDate)
 					}
 				}
-				return resolve(items)
+				return resolve(itemsWithComments)
 			}
 			if (scan.empty) {
 				return returnItems([])
@@ -232,19 +237,26 @@ export class ChangesetViewerDBReader {
 			if (!range) {
 				return returnItems([])
 			}
-			const tx=this.idb.transaction(type,'readonly')
+			const tx=this.idb.transaction([type,commentsType],'readonly')
 			tx.onerror=()=>reject(new Error(`Database error in getUserItems(): ${tx.error}`))
-			const items=[] as UserItemDbRecordMap[T][]
-			tx.oncomplete=()=>returnItems(items)
-			const request=tx.objectStore(type).index('user').openCursor(range,'prev')
-			request.onsuccess=()=>{
-				const cursor=request.result
+			const itemsWithComments:UserItemWithCommentsDbRecord<T>[]=[]
+			tx.oncomplete=()=>returnItems(itemsWithComments)
+			const itemCommentStore=tx.objectStore(commentsType)
+			const itemCursorRequest=tx.objectStore(type).index('user').openCursor(range,'prev')
+			let itemsCount=0
+			itemCursorRequest.onsuccess=()=>{
+				const cursor=itemCursorRequest.result
 				if (!cursor) return
 				const item=cursor.value as UserItemDbRecordMap[T]
 				if (scanBoundary.isItemInside(item) && streamBoundary.visit(item.createdAt,item.id)) {
-					items.push(item)
+					itemsCount++
+					const itemCommentsRequest=itemCommentStore.getAll(this.getItemCommentsRange(item))
+					itemCommentsRequest.onsuccess=()=>{
+						const comments=itemCommentsRequest.result as UserItemCommentDbRecordMap[T][]
+						itemsWithComments.push([item,comments])
+					}
 				}
-				if (items.length<limit) {
+				if (itemsCount<limit) {
 					cursor.continue()
 				}
 			}
@@ -280,5 +292,8 @@ export class ChangesetViewerDBReader {
 				reject(new Error(`failed to open the database because of blocked version change`)) // shouldn't happen
 			}
 		})
+	}
+	protected getItemCommentsRange(item: UserItemDbRecord): IDBKeyRange {
+		return IDBKeyRange.bound([item.id],[item.id,+Infinity])
 	}
 }
