@@ -221,9 +221,12 @@ export function makeFormCard(
 	return $card
 }
 
-export function makeUserSelector(): HTMLElement {
+export function makeUserSelector(
+	selectAllItemsListener: ($checkbox:HTMLInputElement)=>void
+): HTMLElement {
 	const $checkbox=makeElement('input')()()
 	$checkbox.type='checkbox'
+	$checkbox.oninput=()=>selectAllItemsListener($checkbox)
 	const $icon=makeElement('span')('icon')($checkbox)
 	return makeDiv('selector')($icon)
 }

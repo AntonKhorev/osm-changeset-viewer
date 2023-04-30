@@ -6,6 +6,8 @@ import {moveInArray} from './util/types'
 
 export default class Grid {
 	$grid=makeElement('table')('grid')()
+	onItemSelect: ()=>void = ()=>{}
+	private wrappedItemSelectListener: ()=>void
 	private $colgroup=makeElement('colgroup')()()
 	private columnHues: (number|null)[] = []
 	constructor() {
@@ -13,6 +15,7 @@ export default class Grid {
 		this.$grid.createTHead()
 		this.$grid.createTBody()
 		this.setColumns([])
+		this.wrappedItemSelectListener=()=>this.onItemSelect()
 	}
 	get nColumns(): number {
 		return this.columnHues.length
@@ -60,10 +63,11 @@ export default class Grid {
 			const $checkbox=getItemCheckbox($cell)
 			if ($checkbox) $checkboxes.push($checkbox)
 		}
-		if ($checkboxes.length>1) {
-			for (const $checkbox of $checkboxes) {
-				$checkbox.addEventListener('input',itemCheckboxListener)
+		for (const $checkbox of $checkboxes) {
+			if ($checkboxes.length>1) {
+				$checkbox.addEventListener('input',columnCheckboxSyncListener)
 			}
+			$checkbox.addEventListener('input',this.wrappedItemSelectListener)
 		}
 	}
 	updateTableAccordingToSettings(): void {
@@ -123,6 +127,38 @@ export default class Grid {
 			$row.replaceChildren(...$cells)
 		}
 	}
+	getColumnCheckboxStatuses(): [
+		hasChecked: boolean[],
+		hasUnchecked: boolean[]
+	] {
+		const hasChecked=this.columnHues.map(()=>false)
+		const hasUnchecked=this.columnHues.map(()=>false)
+		for (const $row of this.$tbody.rows) {
+			if (!$row.classList.contains('changeset')) continue
+			for (const [iColumn,$cell] of [...$row.cells].entries()) {
+				const $checkbox=getItemCheckbox($cell)
+				if (!$checkbox) continue
+				if ($checkbox.checked) {
+					hasChecked[iColumn]=true
+				} else {
+					hasUnchecked[iColumn]=true
+				}
+			}
+		}
+		return [hasChecked,hasUnchecked]
+	}
+	triggerColumnCheckboxes(iColumn: number, isChecked: boolean): void {
+		for (const $row of this.$tbody.rows) {
+			if (!$row.classList.contains('changeset')) continue
+			const $cell=$row.cells[iColumn]
+			if (!$cell) continue
+			const $checkbox=getItemCheckbox($cell)
+			if (!$checkbox) continue
+			$checkbox.checked=isChecked
+			syncColumnCheckboxes($checkbox)
+		}
+		this.onItemSelect()
+	}
 	private insertRow(date: Date, type: MuxBatchItem['type'], id: number): HTMLTableRowElement {
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
@@ -163,8 +199,11 @@ export default class Grid {
 	}
 }
 
-function itemCheckboxListener(this: HTMLInputElement): void {
-	const $checkbox=this
+function columnCheckboxSyncListener(this: HTMLInputElement): void {
+	syncColumnCheckboxes(this)
+}
+
+function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
 	const $itemRow=$checkbox.closest('tr.item')
 	if (!$itemRow) return
 	for (const $sameItemCheckbox of $itemRow.querySelectorAll('input[type=checkbox]')) {

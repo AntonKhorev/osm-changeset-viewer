@@ -143,6 +143,15 @@ export default class GridHead {
 				await this.streamMessenger.receiveMessage(message.part)
 			}
 		}
+		grid.onItemSelect=()=>{
+			const [hasChecked,hasUnchecked]=grid.getColumnCheckboxStatuses()
+			for (const [iColumn,{$selector}] of this.userEntries.entries()) {
+				const $checkbox=$selector.querySelector('input[type=checkbox]')
+				if (!($checkbox instanceof HTMLInputElement)) continue
+				$checkbox.checked=(hasChecked[iColumn] && !hasUnchecked[iColumn])
+				$checkbox.indeterminate=(hasChecked[iColumn] && hasUnchecked[iColumn])
+			}
+		}
 	}
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
 		const newUserEntries=[] as GridUserEntry[]
@@ -177,7 +186,12 @@ export default class GridHead {
 		const $card=this.makeUserCard(
 			query,info,$displayedChangesetsCount,$displayedNotesCount
 		)
-		const $selector=makeUserSelector()
+		const $selector=makeUserSelector($checkbox=>{
+			for (const [iColumn,userEntry] of this.userEntries.entries()) {
+				if ($selector!=userEntry.$selector) continue
+				this.grid.triggerColumnCheckboxes(iColumn,$checkbox.checked)
+			}
+		})
 		return {
 			$tab,$card,$selector,
 			type: 'query',
