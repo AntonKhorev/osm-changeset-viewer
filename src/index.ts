@@ -6,7 +6,7 @@ import More from './more'
 import writeFooter from './footer'
 import makeNetDialog from './net-dialog'
 import GridHead from './grid-head'
-import {makeUserCell, makeChangesetCell, makeNoteCell} from './item'
+import {makeUserCell, makeChangesetCell, makeChangesetCommentCell, makeNoteCell, makeNoteCommentCell} from './item'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv} from './util/html'
@@ -75,22 +75,36 @@ async function main() {
 			for (const {iColumns,type,item} of batch) {
 				let $item: HTMLElement
 				let date: Date
+				let id: number
+				let order: number|undefined
 				if (type=='user') {
 					$item=makeUserCell(cx.server,item)
 					date=item.createdAt
-				} else if (type=='changeset'||type=='changesetClose') {
+					id=item.id
+				} else if (type=='changeset' || type=='changesetClose') {
 					$item=makeChangesetCell(cx.server,item,type=='changesetClose')
 					date=item.createdAt
 					if (type=='changesetClose' && item.closedAt) {
 						date=item.closedAt
 					}
+					id=item.id
 				} else if (type=='note') {
 					$item=makeNoteCell(cx.server,item)
 					date=item.createdAt
+					id=item.id
+				} else if (type=='changesetComment' || type=='noteComment') {
+					if (type=='changesetComment') {
+						$item=makeChangesetCommentCell(cx.server,item)
+					} else {
+						$item=makeNoteCommentCell(cx.server,item)
+					}
+					date=item.createdAt
+					id=item.itemId
+					order=item.order
 				} else {
 					continue
 				}
-				grid.addItem($item,iColumns,date,type,item.id)
+				grid.addItem($item,iColumns,date,type,id,order)
 				wroteAnyItem=true
 			}
 			grid.updateTableAccordingToSettings()

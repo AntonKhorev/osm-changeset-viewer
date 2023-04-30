@@ -38,15 +38,16 @@ export default class Grid {
 		this.columnHues=columnHues
 		// TODO update existing table cells - currently not required because table is always cleared
 	}
-	addItem($masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number) {
+	addItem($masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number, order?: number) {
 		if (iColumns.length==0) return
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
-		const $row=this.insertRow(date,type,id)
+		const $row=this.insertRow(date,type,id,order)
 		$row.classList.add(...$masterItem.classList)
 		$row.dataset.timestamp=String(timestamp)
 		$row.dataset.rank=String(rank)
 		$row.dataset.id=String(id)
+		if (order!=null) $row.dataset.order=String(order)
 		const $checkboxes:HTMLInputElement[]=[]
 		const columnTemplate=this.columnHues.map(()=>false)
 		for (const iColumn of iColumns) {
@@ -159,7 +160,7 @@ export default class Grid {
 		}
 		this.onItemSelect()
 	}
-	private insertRow(date: Date, type: MuxBatchItem['type'], id: number): HTMLTableRowElement {
+	private insertRow(date: Date, type: MuxBatchItem['type'], id: number, order?: number): HTMLTableRowElement {
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
 		let $row:HTMLTableRowElement|undefined
@@ -172,6 +173,10 @@ export default class Grid {
 			if (currentRank>rank) break
 			const currentId=Number($row.dataset.id)
 			if (currentId>id) break
+			if (order!=null) {
+				const currentOrder=Number($row.dataset.order)
+				if (currentOrder>order) break
+			}
 		}
 		if (!$row || !isElementWithSameMonth($row,date)) {
 			const yearMonthString=toIsoYearMonthString(date)

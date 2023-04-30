@@ -1,6 +1,10 @@
 import type {Server} from './net'
 import {makeDateOutput} from './date'
-import type {UserDbRecord, ChangesetDbRecord, NoteDbRecord} from './db'
+import type {
+	UserDbRecord,
+	ChangesetDbRecord, ChangesetCommentDbRecord,
+	NoteDbRecord, NoteCommentDbRecord
+} from './db'
 import {makeElement, makeDiv, makeLink} from './util/html'
 import {makeEscapeTag} from './util/escape'
 
@@ -83,6 +87,26 @@ export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible
 	$icon.innerHTML=`<svg width="16" height="16"><use href="#user" /></svg>`
 	return makeDiv('item','user')(
 		$icon,` account created at `,makeDateOutput(user.createdAt)
+	)
+}
+
+export function makeChangesetCommentCell(server: Server, comment: ChangesetCommentDbRecord): HTMLElement {
+	let uid=`???`
+	if (comment.uid!=null) {
+		uid=String(comment.uid)
+	}
+	return makeDiv('item','comment')(
+		makeDateOutput(comment.createdAt),` #`,uid,` : `,comment.text
+	)
+}
+
+export function makeNoteCommentCell(server: Server, comment: NoteCommentDbRecord): HTMLElement {
+	let uid=`???`
+	if (comment.uid!=null) {
+		uid=String(comment.uid)
+	}
+	return makeDiv('item','comment')(
+		makeDateOutput(comment.createdAt),` #`,uid,` : `,comment.action,` : `,comment.text
 	)
 }
 
