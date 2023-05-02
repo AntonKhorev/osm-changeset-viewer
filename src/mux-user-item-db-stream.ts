@@ -135,7 +135,7 @@ export default class MuxUserItemDbStream {
 			boundary: new StreamBoundary(),
 		}))))
 		for (const user of users) {
-			if (!user.visible) continue
+			if (!user.withDetails || !user.visible) continue
 			this.queue.push([user.createdAt.getTime(),USER,user])
 		}
 	}

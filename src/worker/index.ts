@@ -130,8 +130,10 @@ self.onconnect=ev=>{
 					if (response.status==410) { // deleted user
 						user={
 							id: uid,
-							infoUpdatedAt: now,
-							visible: false
+							nameUpdatedAt: now,
+							detailsUpdatedAt: now,
+							withDetails: true,
+							visible: false,
 						}
 					} else if (response.status==404) {
 						failedText+=` because it doesn't exist`
@@ -141,7 +143,9 @@ self.onconnect=ev=>{
 					const userApiData=getUserFromOsmApiResponse(json)
 					user={
 						id: uid,
-						infoUpdatedAt: now,
+						nameUpdatedAt: now,
+						detailsUpdatedAt: now,
+						withDetails: true,
 						visible: true,
 						name: userApiData.display_name,
 						createdAt: new Date(userApiData.account_created),

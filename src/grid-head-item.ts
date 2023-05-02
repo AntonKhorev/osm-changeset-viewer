@@ -64,38 +64,52 @@ export function makeUserCard(
 		$updateButton.title=`update`
 		$updateButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
 		$updateButton.disabled=info.status=='rerunning'
-		if (info.user.visible && info.user.img) {
+		if (info.user.withDetails && info.user.visible && info.user.img) {
 			const $img=makeElement('img')()()
 			$img.src=info.user.img.href
 			$card.append(
 				makeDiv('avatar')($img)
 			)
 		}
+		let notKnownToBeDelelted = !info.user.withDetails || info.user.visible
+		let userNamePlaceholder: string|HTMLAnchorElement
+		if (info.user.name) {
+			if (notKnownToBeDelelted) {
+				userNamePlaceholder=makeLink(info.user.name,getUserNameHref(info.user.name))
+			} else {
+				userNamePlaceholder=info.user.name
+			}
+		} else {
+			if (notKnownToBeDelelted) {
+				userNamePlaceholder=`user without requested details`
+			} else {
+				userNamePlaceholder=`deleted user`
+			}
+		}
 		$card.append(
 			makeDiv('field')(
-				(info.user.visible
-					? makeLink(info.user.name,getUserNameHref(info.user.name))
-					: `deleted user`
-				),` `,
+				userNamePlaceholder,` `,
 				makeElement('span')('api')(
 					`(`,makeLink(`#${info.user.id}`,getUserIdHref(info.user.id)),`)`
 				)
 			)
 		)
-		if (info.user.visible) {
-			$card.append(
-				makeDiv('field')(
-					`account created at `,makeDateOutput(info.user.createdAt)
+		if (info.user.withDetails) {
+			if (info.user.visible) {
+				$card.append(
+					makeDiv('field')(
+						`account created at `,makeDateOutput(info.user.createdAt)
+					)
 				)
-			)
-		} else {
-			const $unknown=makeElement('span')()(`???`)
-			$unknown.title=`date is unknown because the user is deleted`
-			$card.append(
-				makeDiv('field')(
-					`created at `,$unknown
+			} else {
+				const $unknown=makeElement('span')()(`???`)
+				$unknown.title=`date is unknown because the user is deleted`
+				$card.append(
+					makeDiv('field')(
+						`created at `,$unknown
+					)
 				)
-			)
+			}
 		}
 		{
 			const $downloadedChangesetsCount=makeElement('output')()()
@@ -106,12 +120,15 @@ export function makeUserCard(
 			}
 			$downloadedChangesetsCount.title=`downloaded`
 			const $totalChangesetsCount=makeElement('output')()()
-			if (info.user.visible) {
+			if (info.user.withDetails && info.user.visible) {
 				$totalChangesetsCount.textContent=String(info.user.changesets.count)
 				$totalChangesetsCount.title=`opened by the user`
 			} else {
 				$totalChangesetsCount.textContent=`???`
-				$totalChangesetsCount.title=`number of changesets opened by the user is unknown because the user is deleted`
+				$totalChangesetsCount.title=`number of changesets opened by the user is unknown because `+(info.user.withDetails
+					? `user details weren't requested`
+					: `the user is deleted`
+				)
 			}
 			$card.append(
 				makeDiv('field')(
@@ -139,7 +156,11 @@ export function makeUserCard(
 			makeDiv('field','updates')(
 				`info updated at:`,
 				ul(
-					li(`user: `,makeDateOutput(info.user.infoUpdatedAt),` `,$updateButton),
+					li(`username: `,makeDateOutput(info.user.nameUpdatedAt)),
+					li(`user details: `,(info.user.withDetails
+						? makeDateOutput(info.user.detailsUpdatedAt)
+						: `not requested`
+					),` `,$updateButton),
 					makeScanListItem('changesets',info.scans.changesets,rescan),
 					makeScanListItem('notes',info.scans.notes,rescan)
 				)

@@ -15,26 +15,35 @@ type Bbox = {
 
 export type UserDbRecord = {
 	id: number
-	infoUpdatedAt: Date
-} & ({
-	visible: false // deleted account
-} | {
-	visible: true
-	// api data except for id:
-	name: string // "display_name" in api data - because sometimes it's "user" in other api data
-	createdAt: Date // "account_created" in api data - because sometimes it's "created_at" in other api data
-	description?: string
-	img?: {
-		href: string
-	}
-	roles: string[]
-	changesets: Counter
-	traces: Counter
-	blocks: {
-		received: ActiveCounter
-		issued?: ActiveCounter
-	}
-})
+	nameUpdatedAt: Date
+	name?: string // "display_name" in api data - because sometimes it's "user" in other api data - or nothing if we know that the user is deleted (but maybe we keep last known name of deleted users?)
+} & (
+	{
+		withDetails: false
+	} | {
+		withDetails: true
+		detailsUpdatedAt: Date
+	} & (
+		{
+			visible: false // deleted account
+		} | {
+			visible: true
+			// api data except for id and name:
+			createdAt: Date // "account_created" in api data - because sometimes it's "created_at" in other api data
+			description?: string
+			img?: {
+				href: string
+			}
+			roles: string[]
+			changesets: Counter
+			traces: Counter
+			blocks: {
+				received: ActiveCounter
+				issued?: ActiveCounter
+			}
+		}
+	)
+)
 
 type UserItemCommentDbRecord = {
 	itemId: number
