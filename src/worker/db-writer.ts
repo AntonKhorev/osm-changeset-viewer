@@ -1,4 +1,4 @@
-import type {UserDbRecord, UserScanDbRecord, UserItemDbRecordMap, UserItemWithCommentsDbRecord} from '../db'
+import type {UserDbRecord, UserScanDbRecord, UserItemDbRecordMap, UserItemDbInfo} from '../db'
 import {ChangesetViewerDBReader} from '../db'
 import StreamBoundary from '../stream-boundary'
 
@@ -55,18 +55,19 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	 */
 	addUserItemsIfNoScan<T extends keyof UserItemDbRecordMap>(
 		type: T, uid: number, now: Date,
-		itemsWithComments: UserItemWithCommentsDbRecord<T>[],
+		itemInfos: UserItemDbInfo<T>[],
 		streamBoundary: StreamBoundary
 	): Promise<boolean> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const [tx,scanStore,itemStore,itemCommentStore]=this.openUserItemsTransaction(type,'addUserItemsIfNoScan',reject)
+			const [tx,userStore,scanStore,itemStore,itemCommentStore]=this.openUserItemsTransaction(type,'addUserItemsIfNoScan',reject)
 			const handleScan=(scan: UserScanDbRecord)=>{
 				const updatedScan=this.addUserItemsToScan(
-					now,itemsWithComments,streamBoundary,
+					now,itemInfos,streamBoundary,
 					scan,itemStore,itemCommentStore
 				)
 				scanStore.put(updatedScan)
+				this.putUserNames(now,mergeUserNamesFromItemInfos(itemInfos),userStore)
 			}
 			const getScanRequest=scanStore.get([uid,0,type])
 			getScanRequest.onsuccess=()=>{
@@ -81,20 +82,21 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	}
 	addUserItems<T extends keyof UserItemDbRecordMap>(
 		type: T, uid: number, now: Date,
-		itemsWithComments: UserItemWithCommentsDbRecord<T>[],
+		itemInfos: UserItemDbInfo<T>[],
 		streamBoundary: StreamBoundary,
 		forceNewScan: boolean
 	): Promise<void> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const [tx,scanStore,itemStore,itemCommentStore]=this.openUserItemsTransaction(type,'addUserItems',reject)
+			const [tx,userStore,scanStore,itemStore,itemCommentStore]=this.openUserItemsTransaction(type,'addUserItems',reject)
 			tx.oncomplete=()=>resolve()
 			const handleScan=(scan: UserScanDbRecord)=>{
 				const updatedScan=this.addUserItemsToScan(
-					now,itemsWithComments,streamBoundary,
+					now,itemInfos,streamBoundary,
 					scan,itemStore,itemCommentStore
 				)
 				scanStore.put(updatedScan)
+				this.putUserNames(now,mergeUserNamesFromItemInfos(itemInfos),userStore)
 			}
 			if (forceNewScan) {
 				handleScan(makeEmptyScan(uid,type,now))
@@ -111,13 +113,14 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 		})
 	}
 	private openUserItemsTransaction(type: keyof UserItemDbRecordMap, callerName: string, reject: (reason:any)=>void): [
-		tx: IDBTransaction, scanStore: IDBObjectStore, itemStore: IDBObjectStore, itemCommentStore: IDBObjectStore
+		tx: IDBTransaction, userStore: IDBObjectStore, scanStore: IDBObjectStore, itemStore: IDBObjectStore, itemCommentStore: IDBObjectStore
 	] {
 		const commentsType=`${type.slice(0,-1)}Comments`
-		const tx=this.idb.transaction([type,commentsType,'userScans'],'readwrite')
+		const tx=this.idb.transaction(['users','userScans',type,commentsType],'readwrite')
 		tx.onerror=()=>reject(new Error(`Database error in ${callerName}(): ${tx.error}`))
 		return [
 			tx,
+			tx.objectStore('users'),
 			tx.objectStore('userScans'),
 			tx.objectStore(type),
 			tx.objectStore(commentsType),
@@ -125,11 +128,11 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	}
 	private addUserItemsToScan<T extends keyof UserItemDbRecordMap>(
 		now: Date,
-		itemsWithComments: UserItemWithCommentsDbRecord<T>[],
+		itemsWithComments: UserItemDbInfo<T>[],
 		streamBoundary: StreamBoundary, scan: UserScanDbRecord,
 		itemStore: IDBObjectStore, itemCommentStore: IDBObjectStore
 	): UserScanDbRecord {
-		for (const [item,comments] of itemsWithComments) {
+		for (const {item,comments} of itemsWithComments) {
 			itemCommentStore.delete(this.getItemCommentsRange(item))
 			itemStore.put(item)
 			for (const comment of comments) {
@@ -146,6 +149,36 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 			delete scan.endDate
 		}
 		return scan
+	}
+	private putUserNames(
+		now: Date,
+		usernames: Map<number,string>,
+		userStore: IDBObjectStore
+	): void {
+		for (const [id,name] of usernames) {
+			const readRequest=userStore.get(id)
+			readRequest.onsuccess=()=>{
+				const user=readRequest.result as UserDbRecord
+				if (user==null || !user.withDetails) {
+					const newUser:UserDbRecord={
+						id,
+						nameUpdatedAt: now,
+						name,
+						withDetails: false
+					}
+					userStore.put(newUser)
+				} else if (!user.visible) {
+					// don't save the name of deleted user because it's a fake "user_#" name
+				} else {
+					const newUser:UserDbRecord={
+						...user,
+						nameUpdatedAt: now,
+						name
+					}
+					userStore.put(newUser)
+				}
+			}
+		}
 	}
 	static open(host: string): Promise<ChangesetViewerDBWriter> {
 		return this.openWithType(host,idb=>new ChangesetViewerDBWriter(idb))
@@ -213,4 +246,14 @@ function addUserItemIdsAndDateToScan(scan: UserScanDbRecord, itemDate: Date, ite
 		}
 	}
 	return scan
+}
+
+function mergeUserNamesFromItemInfos(itemInfos: {usernames:Map<number,string>}[]): Map<number,string> {
+	const allUsernames=new Map<number,string>()
+	for (const {usernames} of itemInfos) {
+		for (const [uid,username] of usernames) {
+			allUsernames.set(uid,username)
+		}
+	}
+	return allUsernames
 }

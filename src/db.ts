@@ -45,7 +45,7 @@ export type UserDbRecord = {
 	)
 )
 
-type UserItemCommentDbRecord = {
+export type UserItemCommentDbRecord = {
 	itemId: number
 	order: number
 	itemUid: number
@@ -88,10 +88,6 @@ export type UserItemDbRecordMap = {
 	notes: NoteDbRecord
 }
 
-export type UserItemWithCommentsDbRecord<T extends keyof UserItemDbRecordMap> = [
-	item: UserItemDbRecordMap[T], comments: UserItemCommentDbRecordMap[T][]
-]
-
 export type UserScanDbRecord = {
 	uid: number
 	stash: number // 0 = current; 1 = stashed
@@ -113,6 +109,12 @@ export type NonEmptyUserScanDbRecord = Extract<UserScanDbRecord,{empty:false}>
 export type UserDbInfo = {
 	user: UserDbRecord
 	scans: Partial<{[key in UserScanDbRecord['type']]: UserScanDbRecord}>
+}
+
+export type UserItemDbInfo<T extends keyof UserItemDbRecordMap> = {
+	item: UserItemDbRecordMap[T]
+	comments: UserItemCommentDbRecordMap[T][]
+	usernames: Map<number,string>
 }
 
 class ScanBoundary {
@@ -222,13 +224,31 @@ export class ChangesetViewerDBReader {
 			request.onsuccess=()=>resolve(request.result)
 		})
 	}
+	getUserNames(uids: Iterable<number>): Promise<Map<number,string>> {
+		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
+		return new Promise((resolve,reject)=>{
+			const tx=this.idb.transaction('users','readonly')
+			tx.onerror=()=>reject(new Error(`Database error in getUserNames(): ${tx.error}`))
+			const usernames=new Map<number,string>()
+			tx.oncomplete=()=>resolve(usernames)
+			const userStore=tx.objectStore('users')
+			for (const uid of uids) {
+				const request=userStore.get(uid)
+				request.onsuccess=()=>{
+					const user=request.result as UserDbRecord
+					if (user==null || user.name==null) return
+					usernames.set(uid,user.name)
+				}
+			}
+		})
+	}
 	getUserItems<T extends keyof UserItemDbRecordMap>(
 		type: T, uid: number, scan: UserScanDbRecord, streamBoundary: StreamBoundary, limit: number
-	): Promise<UserItemWithCommentsDbRecord<T>[]> {
+	): Promise<[UserItemDbRecordMap[T],UserItemCommentDbRecordMap[T][]][]> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
 			const commentsType=`${type.slice(0,-1)}Comments`
-			const returnItems=(itemsWithComments:UserItemWithCommentsDbRecord<T>[])=>{
+			const returnItems=(itemsWithComments:[UserItemDbRecordMap[T],UserItemCommentDbRecordMap[T][]][])=>{
 				if (itemsWithComments.length==0) { // can also check if items.length<limit
 					if (scan.endDate) {
 						streamBoundary.finish()
@@ -248,7 +268,7 @@ export class ChangesetViewerDBReader {
 			}
 			const tx=this.idb.transaction([type,commentsType],'readonly')
 			tx.onerror=()=>reject(new Error(`Database error in getUserItems(): ${tx.error}`))
-			const itemsWithComments:UserItemWithCommentsDbRecord<T>[]=[]
+			const itemsWithComments:[UserItemDbRecordMap[T],UserItemCommentDbRecordMap[T][]][]=[]
 			tx.oncomplete=()=>returnItems(itemsWithComments)
 			const itemCommentStore=tx.objectStore(commentsType)
 			const itemCursorRequest=tx.objectStore(type).index('user').openCursor(range,'prev')

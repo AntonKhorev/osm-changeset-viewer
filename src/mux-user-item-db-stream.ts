@@ -142,6 +142,7 @@ export default class MuxUserItemDbStream {
 	async getNextAction(): Promise<{
 		type: 'batch'
 		batch: MuxBatchItem[]
+		usernames: Map<number,string>
 	} | {
 		type: 'scan'
 		start: boolean
@@ -173,6 +174,7 @@ export default class MuxUserItemDbStream {
 				}
 			}
 		}
+		const commenterUids=new Set<number>()
 		const batch=[] as MuxBatchItem[]
 		const moveQueueTopToResults=()=>{
 			const [,type,item]=this.queue.pop()
@@ -186,8 +188,10 @@ export default class MuxUserItemDbStream {
 				batch.push({type:'note',item})
 			} else if (type==CHANGESET_COMMENT) {
 				batch.push({type:'changesetComment',item})
+				if (item.uid!=null) commenterUids.add(item.uid)
 			} else if (type==NOTE_COMMENT) {
 				batch.push({type:'noteComment',item})
+				if (item.uid!=null) commenterUids.add(item.uid)
 			}
 		}
 		let loopLimit=100
@@ -207,7 +211,8 @@ export default class MuxUserItemDbStream {
 			if (batch.length>0) {
 				return {
 					type: 'batch',
-					batch
+					batch,
+					usernames: await this.db.getUserNames(commenterUids)
 				}
 			}
 			if (upperMuxEntry) {
@@ -249,7 +254,7 @@ export default class MuxUserItemDbStream {
 			for (const [note,comments] of notesWithComments) {
 				isEmptyDbGet=false
 				for (const comment of comments) {
-					this.queue.push([comment.createdAt.getTime(),CHANGESET_COMMENT,comment])
+					this.queue.push([comment.createdAt.getTime(),NOTE_COMMENT,comment])
 				}
 				this.queue.push([note.createdAt.getTime(),NOTE,note])
 			}

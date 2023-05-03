@@ -56,7 +56,8 @@ export default class GridHead {
 			requestNextBatch: ()=>void
 		) => void,
 		private receiveBatchCallback: (
-			batch: Iterable<GridBatchItem>
+			batch: Iterable<GridBatchItem>,
+			usernames: Map<number,string>
 		) => void
 	) {
 		{
@@ -287,7 +288,7 @@ export default class GridHead {
 		}
 		const stream=new MuxUserItemDbStream(this.db,[...users.values()])
 		const streamMessenger=new MuxUserItemDbStreamMessenger(
-			this.cx.server.host,this.worker,stream,columnUids,batch=>{
+			this.cx.server.host,this.worker,stream,columnUids,(batch,usernames)=>{
 				for (const {iColumns,type} of batch) {
 					for (const iColumn of iColumns) {
 						const userEntry=this.userEntries[iColumn]
@@ -303,7 +304,7 @@ export default class GridHead {
 						}
 					}
 				}
-				this.receiveBatchCallback(batch)
+				this.receiveBatchCallback(batch,usernames)
 			}
 		)
 		this.readyStreamCallback(async()=>{

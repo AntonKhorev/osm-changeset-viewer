@@ -15,7 +15,10 @@ export default class MuxUserItemDbStreamMessenger {
 		private worker: SharedWorker,
 		private stream: MuxUserItemDbStream,
 		private columnUids: (number|null)[],
-		private receiveBatch: (batch:GridBatchItem[])=>void
+		private receiveBatch: (
+			batch: GridBatchItem[],
+			usernames: Map<number,string>
+		)=>void
 	) {
 		this.updateUidToColumns()
 	}
@@ -49,10 +52,11 @@ export default class MuxUserItemDbStreamMessenger {
 				action.batch.map((batchItem)=>({
 					...batchItem,
 					iColumns: this.uidToColumns.get(getMuxBatchItemUid(batchItem))??[]
-				}))
+				})),
+				action.usernames
 			)
 		} else if (action.type=='end') {
-			this.receiveBatch([])
+			this.receiveBatch([],new Map())
 		}
 	}
 	async receiveMessage(messagePart: WorkerBroadcastMessageOperationPart): Promise<void> {

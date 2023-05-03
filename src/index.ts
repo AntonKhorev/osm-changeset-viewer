@@ -70,7 +70,7 @@ async function main() {
 				more.changeToLoading()
 				requestNextBatch()
 			}
-		},(batch)=>{
+		},(batch,usernames)=>{
 			let wroteAnyItem=false
 			for (const {iColumns,type,item} of batch) {
 				let $item: HTMLElement
@@ -93,10 +93,14 @@ async function main() {
 					date=item.createdAt
 					id=item.id
 				} else if (type=='changesetComment' || type=='noteComment') {
+					let username: string|undefined
+					if (item.uid) {
+						username=usernames.get(item.uid)
+					}
 					if (type=='changesetComment') {
-						$item=makeChangesetCommentCell(cx.server,item)
+						$item=makeChangesetCommentCell(cx.server,item,username)
 					} else {
-						$item=makeNoteCommentCell(cx.server,item)
+						$item=makeNoteCommentCell(cx.server,item,username)
 					}
 					date=item.createdAt
 					id=item.itemId

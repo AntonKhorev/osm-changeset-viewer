@@ -1,7 +1,7 @@
 import type {Server} from './net'
 import {makeDateOutput} from './date'
 import type {
-	UserDbRecord,
+	UserDbRecord, UserItemCommentDbRecord,
 	ChangesetDbRecord, ChangesetCommentDbRecord,
 	NoteDbRecord, NoteCommentDbRecord
 } from './db'
@@ -90,23 +90,31 @@ export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible
 	)
 }
 
-export function makeChangesetCommentCell(server: Server, comment: ChangesetCommentDbRecord): HTMLElement {
-	let uid=`???`
-	if (comment.uid!=null) {
-		uid=String(comment.uid)
-	}
-	return makeDiv('item','comment')(
-		makeDateOutput(comment.createdAt),` #`,uid,` : `,comment.text
+export function makeChangesetCommentCell(server: Server, comment: ChangesetCommentDbRecord, username?: string): HTMLElement {
+	const $cell=makeCommentCell(comment,username)
+	$cell.append(
+		` : `,comment.text
 	)
+	return $cell
 }
 
-export function makeNoteCommentCell(server: Server, comment: NoteCommentDbRecord): HTMLElement {
-	let uid=`???`
-	if (comment.uid!=null) {
-		uid=String(comment.uid)
+export function makeNoteCommentCell(server: Server, comment: NoteCommentDbRecord, username?: string): HTMLElement {
+	const $cell=makeCommentCell(comment,username)
+	$cell.append(
+		` : `,comment.action,` : `,comment.text
+	)
+	return $cell
+}
+
+function makeCommentCell(comment: UserItemCommentDbRecord, username?: string): HTMLElement {
+	let userString=`???`
+	if (username!=null) {
+		userString=username
+	} else if (comment.uid!=null) {
+		userString=`#{comment.uid}`
 	}
 	return makeDiv('item','comment')(
-		makeDateOutput(comment.createdAt),` #`,uid,` : `,comment.action,` : `,comment.text
+		makeDateOutput(comment.createdAt),` `,userString
 	)
 }
 

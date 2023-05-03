@@ -1,6 +1,6 @@
 import type {Server} from '../net'
 import type {
-	UserItemDbRecordMap, UserItemCommentDbRecordMap, UserDbRecord,
+	UserDbRecord, UserItemDbInfo,
 	ChangesetDbRecord, ChangesetCommentDbRecord,
 	NoteDbRecord, NoteCommentDbRecord
 } from '../db'
@@ -219,19 +219,19 @@ async function scanUserItems<T extends 'changesets'|'notes'>(itemType: T, host: 
 			failedText
 		})
 	}
-	let userItemsWithComments: [UserItemDbRecordMap[T],UserItemCommentDbRecordMap[T][]][]
+	let userItemDbInfos: UserItemDbInfo<T>[]
 	if (itemType=='changesets') {
 		const changesetsApiData=userItemsApiData as OsmChangesetApiData[]
-		const changesetsWithComments=changesetsApiData.map(convertChangesetApiDataToDbRecordWithComments) as [UserItemDbRecordMap[T],UserItemCommentDbRecordMap[T][]][]
-		userItemsWithComments=changesetsWithComments
+		const changesetInfos=changesetsApiData.map(convertChangesetApiDataToDbRecordWithComments) as UserItemDbInfo<T>[]
+		userItemDbInfos=changesetInfos
 	} else if (itemType=='notes') {
 		const notesApiData=userItemsApiData as OsmNoteApiData[]
-		const notesWithComments=notesApiData.map(convertNoteApiDataToDbRecordWithComments) as [UserItemDbRecordMap[T],UserItemCommentDbRecordMap[T][]][]
-		userItemsWithComments=notesWithComments
+		const noteInfos=notesApiData.map(convertNoteApiDataToDbRecordWithComments) as UserItemDbInfo<T>[]
+		userItemDbInfos=noteInfos
 	} else {
 		throw new RangeError(`unexpected item type`)
 	}
-	await hostDataEntry.db.addUserItems(itemType,uid,now,userItemsWithComments,stream.boundary,start)
+	await hostDataEntry.db.addUserItems(itemType,uid,now,userItemDbInfos,stream.boundary,start)
 	hostDataEntry.broadcastSender.postOperationMessage({
 		type,uid,text,
 		status: 'ready'
@@ -265,8 +265,8 @@ async function resumeUserItemStream<T extends 'changesets'|'notes'>(
 	)
 }
 
-function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): [ChangesetDbRecord,ChangesetCommentDbRecord[]] {
-	const b: ChangesetDbRecord = {
+function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): UserItemDbInfo<'changesets'> {
+	const item: ChangesetDbRecord = {
 		id: a.id,
 		uid: a.uid,
 		createdAt: new Date(a.created_at),
@@ -275,60 +275,68 @@ function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): 
 		changes: {count:a.changes_count}
 	}
 	if (a.closed_at!=null) {
-		b.closedAt=new Date(a.closed_at)
+		item.closedAt=new Date(a.closed_at)
 	}
 	if (hasBbox(a)) {
-		b.bbox={
+		item.bbox={
 			minLat: a.minlat, maxLat: a.maxlat,
 			minLon: a.minlon, maxLon: a.maxlon,
 		}
 	}
-	let bcs:ChangesetCommentDbRecord[]=[]
+	const usernames=new Map<number,string>()
+	let comments:ChangesetCommentDbRecord[]=[]
 	if (a.discussion) {
-		bcs=a.discussion.map((ac,order)=>{
-			const bc:ChangesetCommentDbRecord={
-				itemId: b.id,
+		comments=a.discussion.map((ac,order)=>{
+			const comment:ChangesetCommentDbRecord={
+				itemId: item.id,
 				order,
-				itemUid: b.uid,
+				itemUid: item.uid,
 				createdAt: new Date(ac.date),
 				text: ac.text,
 			}
 			if (ac.uid!=null) {
-				bc.uid=ac.uid
+				comment.uid=ac.uid
+				if (ac.user!=null) {
+					usernames.set(ac.uid,ac.user)
+				}
 			}
-			return bc
+			return comment
 		})
 	}
-	return [b,bcs]
+	return {item,comments,usernames}
 }
 
-function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): [NoteDbRecord,NoteCommentDbRecord[]] {
+function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDbInfo<'notes'> {
 	if (a.properties.comments.length==0) throw new RangeError(`unexpected note without comments`)
 	const [ac0]=a.properties.comments
 	if (ac0.uid==null) throw new RangeError(`unexpected note without an author`)
-	const b: NoteDbRecord = {
+	const item: NoteDbRecord = {
 		id: a.properties.id,
 		uid: ac0.uid,
 		createdAt: parseNoteDate(a.properties.date_created),
 	}
 	if (ac0.text!=null) {
-		b.openingComment=ac0.text
+		item.openingComment=ac0.text
 	}
-	let bcs:NoteCommentDbRecord[]=[]
+	const usernames=new Map<number,string>()
+	let comments:NoteCommentDbRecord[]=[]
 	for (const [i,ac] of a.properties.comments.entries()) {
-		if (i==0) continue // 0th comment already saved as b.openingComment
-		const bc:NoteCommentDbRecord={
-			itemId: b.id,
+		if (i==0) continue // 0th comment already saved as item.openingComment
+		const comment:NoteCommentDbRecord={
+			itemId: item.id,
 			order: i-1,
-			itemUid: b.uid,
+			itemUid: item.uid,
 			createdAt: parseNoteDate(ac.date),
 			text: ac.text??'',
 			action: ac.action,
 		}
 		if (ac.uid!=null) {
-			bc.uid=ac.uid
+			comment.uid=ac.uid
+			if (ac.user!=null) {
+				usernames.set(ac.uid,ac.user)
+			}
 		}
-		bcs.push(bc)
+		comments.push(comment)
 	}
-	return [b,bcs]
+	return {item,comments,usernames}
 }
