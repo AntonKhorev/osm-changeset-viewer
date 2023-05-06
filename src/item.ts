@@ -140,11 +140,12 @@ function makeItemCell(
 
 function makeNoteIconHtml(): string {
 	const iconSize=16
-	const markerHeight=16
-	const markerWidth=8
+	const iconTopPadding=2
+	const markerHeight=iconSize-iconTopPadding
+	const markerWidth=7
 	const markerRadius=markerWidth/2
 	const path=`<path d="${computeMarkerOutlinePath(markerHeight,markerRadius)}" fill="currentColor" />`
-	return `<svg width="${iconSize}" height="${iconSize}" viewBox="${-iconSize/2} ${-markerRadius} ${iconSize} ${iconSize}">${path}</svg>`
+	return `<svg width="${iconSize}" height="${iconSize}" viewBox="${-iconSize/2} ${-iconTopPadding-markerRadius} ${iconSize} ${iconSize}">${path}</svg>`
 	function computeMarkerOutlinePath(h: number, r: number): string {
 		const rp=h-r
 		const y=r**2/rp
