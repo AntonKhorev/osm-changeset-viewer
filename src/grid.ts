@@ -4,12 +4,23 @@ import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
 import {moveInArray} from './util/types'
 
+type Column = {
+	hue: number|null
+	$timelineCutoffRow: HTMLTableRowElement|null
+}
+
+type CellTimelineRelation = {
+	filled: boolean
+	withTimelineAbove: boolean
+	withTimelineBelow: boolean
+}
+
 export default class Grid {
 	$grid=makeElement('table')('grid')()
 	onItemSelect: ()=>void = ()=>{}
 	private wrappedItemSelectListener: ()=>void
 	private $colgroup=makeElement('colgroup')()()
-	private columnHues: (number|null)[] = []
+	private columns: Column[] = []
 	constructor() {
 		this.$grid.append(this.$colgroup)
 		this.$grid.createTHead()
@@ -18,11 +29,14 @@ export default class Grid {
 		this.wrappedItemSelectListener=()=>this.onItemSelect()
 	}
 	get nColumns(): number {
-		return this.columnHues.length
+		return this.columns.length
 	}
 	setColumns(columnHues: (number|null)[]) {
+		this.columns=columnHues.map(hue=>({
+			hue,
+			$timelineCutoffRow: null
+		}))
 		this.clearItems()
-		this.setColumnHues(columnHues)
 		this.$grid.style.setProperty('--columns',String(this.nColumns))
 		this.$colgroup.replaceChildren()
 		for (let i=0;i<this.nColumns;i++) {
@@ -35,31 +49,31 @@ export default class Grid {
 		)
 	}
 	setColumnHues(columnHues: (number|null)[]) {
-		this.columnHues=columnHues
+		for (const [iColumn,hue] of columnHues.entries()) {
+			this.columns[iColumn].hue=hue
+		}
 		// TODO update existing table cells - currently not required because table is always cleared
 	}
 	addItem($masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number, order?: number) {
 		if (iColumns.length==0) return
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
-		const $row=this.insertRow(date,type,id,order)
+		const [$row,cellTimelineRelations]=this.insertRow(iColumns,date,type,id,order)
 		$row.classList.add(...$masterItem.classList)
 		$row.dataset.timestamp=String(timestamp)
 		$row.dataset.rank=String(rank)
 		$row.dataset.id=String(id)
 		if (order!=null) $row.dataset.order=String(order)
 		const $checkboxes:HTMLInputElement[]=[]
-		const columnTemplate=this.columnHues.map(()=>false)
-		for (const iColumn of iColumns) {
-			columnTemplate[iColumn]=true
-		}
-		for (const [iColumn,fillCell] of columnTemplate.entries()) {
+		for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
 			const $cell=$row.insertCell()
-			if (!fillCell) continue
-			const hue=this.columnHues[iColumn]
+			$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
+			$cell.classList.toggle('with-timeline-below',cellTimelineRelation.withTimelineBelow)
+			const hue=this.columns[iColumn].hue
 			if (hue!=null) {
 				$cell.style.setProperty('--hue',String(hue))
 			}
+			if (!cellTimelineRelation.filled) continue
 			$cell.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
 			const $checkbox=getItemCheckbox($cell)
 			if ($checkbox) $checkboxes.push($checkbox)
@@ -120,7 +134,7 @@ export default class Grid {
 		}
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
-		moveInArray(this.columnHues,iShiftFrom,iShiftTo)
+		moveInArray(this.columns,iShiftFrom,iShiftTo)
 		for (const $row of this.$tbody.rows) {
 			if (!$row.classList.contains('item')) continue
 			const $cells=[...$row.cells]
@@ -132,8 +146,8 @@ export default class Grid {
 		hasChecked: boolean[],
 		hasUnchecked: boolean[]
 	] {
-		const hasChecked=this.columnHues.map(()=>false)
-		const hasUnchecked=this.columnHues.map(()=>false)
+		const hasChecked=this.columns.map(()=>false)
+		const hasUnchecked=this.columns.map(()=>false)
 		for (const $row of this.$tbody.rows) {
 			if (!$row.classList.contains('changeset')) continue
 			for (const [iColumn,$cell] of [...$row.cells].entries()) {
@@ -160,41 +174,65 @@ export default class Grid {
 		}
 		this.onItemSelect()
 	}
-	private insertRow(date: Date, type: MuxBatchItem['type'], id: number, order?: number): HTMLTableRowElement {
+	private insertRow(iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number, order?: number): [
+		$row: HTMLTableRowElement, cellTimelineRelations: CellTimelineRelation[]
+	] {
+		const iColumnSet=new Set(iColumns)
+		const cellTimelineRelations:CellTimelineRelation[]=this.columns.map(({$timelineCutoffRow},iColumn)=>({
+			filled: iColumnSet.has(iColumn),
+			withTimelineAbove: $timelineCutoffRow==null,
+			withTimelineBelow: $timelineCutoffRow==null,
+		}))
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
-		let $row:HTMLTableRowElement|undefined
+		let $precedingRow:HTMLTableRowElement|undefined
 		let i=this.$tbody.rows.length-1
 		for (;i>=0;i--) {
-			$row=this.$tbody.rows[i]
-			const currentTimestamp=Number($row.dataset.timestamp)
+			$precedingRow=this.$tbody.rows[i]
+			const currentTimestamp=Number($precedingRow.dataset.timestamp)
 			if (currentTimestamp>timestamp) break
-			const currentRank=Number($row.dataset.rank)
+			const currentRank=Number($precedingRow.dataset.rank)
 			if (currentRank>rank) break
-			const currentId=Number($row.dataset.id)
+			const currentId=Number($precedingRow.dataset.id)
 			if (currentId>id) break
 			if (order!=null) {
-				const currentOrder=Number($row.dataset.order)
+				const currentOrder=Number($precedingRow.dataset.order)
 				if (currentOrder>order) break
 			}
 		}
-		if (!$row || !isElementWithSameMonth($row,date)) {
+		let $itemRow: HTMLTableRowElement
+		if (!$precedingRow || !isElementWithSameMonth($precedingRow,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
-			$row=this.$tbody.insertRow(i+1)
-			$row.classList.add('separator')
-			$row.dataset.timestamp=String(getLastTimestampOfMonth(date))
-			$row.dataset.rank='0'
-			const $cell=$row.insertCell()
+			$precedingRow=this.$tbody.insertRow(i+1)
+			$precedingRow.classList.add('separator')
+			$precedingRow.dataset.timestamp=String(getLastTimestampOfMonth(date))
+			$precedingRow.dataset.rank='0'
+			const $cell=$precedingRow.insertCell()
 			$cell.append(
 				makeDiv('month')(
 					makeElement('time')()(yearMonthString)
 				)
 			)
 			$cell.colSpan=this.nColumns+1
-			return this.$tbody.insertRow(i+2)
+			$itemRow=this.$tbody.insertRow(i+2)
 		} else {
-			return this.$tbody.insertRow(i+1)
+			$itemRow=this.$tbody.insertRow(i+1)
 		}
+		if (type=='user') {
+			for (const iColumn of iColumns) {
+				this.columns[iColumn].$timelineCutoffRow=$itemRow
+				cellTimelineRelations[iColumn].withTimelineBelow=false
+			}
+			for (let $followingRow=$itemRow.nextElementSibling;$followingRow;$followingRow=$followingRow.nextElementSibling) {
+				if (!($followingRow instanceof HTMLTableRowElement)) continue
+				if (!$followingRow.classList.contains('item')) continue
+				for (const [iColumn,$cell] of [...$followingRow.cells].entries()) {
+					if (!iColumnSet.has(iColumn)) continue
+					$cell.classList.remove('with-timeline-above','with-timeline-below')
+				}
+			}
+		}
+		return [$itemRow,cellTimelineRelations]
 	}
 	private clearItems(): void {
 		this.$tbody.replaceChildren()
