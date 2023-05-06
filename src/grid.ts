@@ -103,10 +103,12 @@ export default class Grid {
 			)
 			if ($item.classList.contains('changeset')) {
 				if ($item.classList.contains('closed')) {
-					$item.hidden=!withClosedChangesets
+					$item.classList.toggle('hidden-as-closed',!withClosedChangesets)
 				} else {
 					if (isConnectedWithAboveItem || !withClosedChangesets) {
-						if ($itemAbove && isConnectedWithAboveItem) $itemAbove.hidden=true
+						if ($itemAbove && isConnectedWithAboveItem) {
+							$itemAbove.classList.add('hidden-as-closed')
+						}
 						markChangesetCellAsCombined($item,$item.dataset.id??'???')
 					} else {
 						markChangesetCellAsUncombined($item,$item.dataset.id??'???')

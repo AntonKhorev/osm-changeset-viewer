@@ -51,15 +51,15 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 		$checkbox.title=`opened changeset ${changeset.id}`
 		$icon=makeElement('span')('icon')($checkbox)
 	}
-	const $item=makeItemCell(
+	const [$item,$flow]=makeItemCell(
 		'changeset',$icon,changeset.id,
 		server.web.getUrl(e`changeset/${changeset.id}`),
 		server.api.getUrl(e`changeset/${changeset.id}.json?include_discussion=true`)
 	)
-	$item.append(
+	$flow.append(
 		makeDate(),` `,
 		makeChanges(),` `,
-		changeset.tags?.comment ?? ''
+		makeElement('span')()(changeset.tags?.comment ?? '')
 	)
 	if (isClosed) $item.classList.add('closed')
 	return $item
@@ -69,12 +69,12 @@ export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.innerHTML=makeNoteIconHtml()
 	$icon.title=`note ${note.id}`
-	const $item=makeItemCell(
+	const [$item,$flow]=makeItemCell(
 		'note',$icon,note.id,
 		server.web.getUrl(e`note/${note.id}`),
 		server.api.getUrl(e`notes/${note.id}.json`)
 	)
-	$item.append(
+	$flow.append(
 		makeDateOutput(note.createdAt),` `,
 		note.openingComment ?? ''
 	)
@@ -85,51 +85,57 @@ export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`user ${user.id}`
 	$icon.innerHTML=`<svg width="16" height="16"><use href="#user" /></svg>`
+	const $flow=makeElement('span')('flow')(
+		`account created at `,makeDateOutput(user.createdAt)
+	)
 	return makeDiv('item','user')(
-		$icon,` account created at `,makeDateOutput(user.createdAt)
+		$icon,` `,$flow
 	)
 }
 
 export function makeChangesetCommentCell(server: Server, comment: ChangesetCommentDbRecord, username?: string): HTMLElement {
-	const $cell=makeCommentCell(comment,username)
-	$cell.append(
+	const [$cell,$flow]=makeCommentCell(comment,username)
+	$flow.append(
 		` : `,comment.text
 	)
 	return $cell
 }
 
 export function makeNoteCommentCell(server: Server, comment: NoteCommentDbRecord, username?: string): HTMLElement {
-	const $cell=makeCommentCell(comment,username)
-	$cell.append(
+	const [$cell,$flow]=makeCommentCell(comment,username)
+	$flow.append(
 		` : `,comment.action,` : `,comment.text
 	)
 	return $cell
 }
 
-function makeCommentCell(comment: UserItemCommentDbRecord, username?: string): HTMLElement {
+function makeCommentCell(comment: UserItemCommentDbRecord, username?: string): [$item:HTMLElement,$flow:HTMLElement] {
 	let userString=`???`
 	if (username!=null) {
 		userString=username
 	} else if (comment.uid!=null) {
 		userString=`#{comment.uid}`
 	}
-	return makeDiv('item','comment')(
+	const $flow=makeElement('span')('flow')(
 		makeDateOutput(comment.createdAt),` `,userString
 	)
+	return [makeDiv('item','comment')($flow),$flow]
 }
 
 function makeItemCell(
 	type: string, $icon: HTMLElement, id: number,
 	href: string, apiHref: string
-): HTMLElement {
-	const $item=makeDiv('item',type)(
-		$icon,` `,
+): [$item:HTMLElement,$flow:HTMLElement] {
+	const $flow=makeElement('span')('flow')(
 		makeLink(String(id),href),` `,
 		makeElement('span')('api')(
 			`(`,makeLink(`api`,apiHref),`)`
 		),` `,
 	)
-	return $item
+	const $item=makeDiv('item',type)(
+		$icon,` `,$flow
+	)
+	return [$item,$flow]
 }
 
 function makeNoteIconHtml(): string {

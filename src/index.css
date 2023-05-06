@@ -295,6 +295,7 @@ body > .symbols {
 	position: sticky;
 	left: 0;
 	width: var(--main-width);
+	height: 1rem;
 }
 .ui .grid tbody tr.separator td .month time {
 	background: canvas;
@@ -315,9 +316,15 @@ body > .symbols {
 .ui .grid tbody tr.item td {
 	--vertical-padding: .125rem;
 	--timeline-width: .125rem;
+	--timeline-above-height: 1em;
+	--timeline-extra-height: 0px;
 	position: relative;
 	padding: var(--vertical-padding) var(--padding) var(--vertical-padding) calc(2 * var(--padding) + var(--icon-size));
 	min-height: var(--icon-size);
+}
+.ui .grid tbody tr.item td .flow {
+	display: inline-block;
+	max-width: 100%;
 	text-overflow: ellipsis;
 	overflow: hidden;
 }
@@ -332,13 +339,23 @@ body > .symbols {
 	z-index: -1;
 }
 .ui .grid tbody tr.item td.with-timeline-above::before {
-	top: 0;
-	height: 1em;
+	top: calc(0px - var(--timeline-extra-height));
+	height: calc(var(--timeline-above-height) + var(--timeline-extra-height));
 }
 .ui .grid tbody tr.item td.with-timeline-below::after {
-	top: 1em;
-	height: calc(100% - 1em);
+	top: var(--timeline-above-height);
+	height: calc(100% - var(--timeline-above-height));
 }
+.ui .grid tbody tr.separator + tr.item td.with-timeline-above::before {
+	--timeline-extra-height: calc(1rem + 2 * var(--padding));
+}
+.ui .grid tbody tr.item.hidden-as-closed td {
+	--vertical-padding: 0;
+}
+.ui .grid tbody tr.item.hidden-as-closed td > * {
+	display: none;
+}
+
 .ui .grid tbody tr.item.changeset td .icon::before {
 	content: '';
 	display: block;
