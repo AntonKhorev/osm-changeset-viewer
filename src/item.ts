@@ -51,7 +51,7 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 		$checkbox.title=`opened changeset ${changeset.id}`
 		$icon=makeElement('span')('icon')($checkbox)
 	}
-	const [$item,$flow]=makeItemCell(
+	const [$cell,$flow]=makePrimaryItemCell(
 		'changeset',$icon,changeset.id,
 		server.web.getUrl(e`changeset/${changeset.id}`),
 		server.api.getUrl(e`changeset/${changeset.id}.json?include_discussion=true`)
@@ -61,15 +61,15 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 		makeChanges(),` `,
 		makeElement('span')()(changeset.tags?.comment ?? '')
 	)
-	if (isClosed) $item.classList.add('closed')
-	return $item
+	if (isClosed) $cell.classList.add('closed')
+	return $cell
 }
 
 export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.innerHTML=makeNoteIconHtml()
 	$icon.title=`note ${note.id}`
-	const [$item,$flow]=makeItemCell(
+	const [$cell,$flow]=makePrimaryItemCell(
 		'note',$icon,note.id,
 		server.web.getUrl(e`note/${note.id}`),
 		server.api.getUrl(e`notes/${note.id}.json`)
@@ -78,7 +78,7 @@ export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 		makeDateOutput(note.createdAt),` `,
 		note.openingComment ?? ''
 	)
-	return $item
+	return $cell
 }
 
 export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
@@ -109,33 +109,41 @@ export function makeNoteCommentCell(server: Server, comment: NoteCommentDbRecord
 	return $cell
 }
 
-function makeCommentCell(comment: UserItemCommentDbRecord, username?: string): [$item:HTMLElement,$flow:HTMLElement] {
+function makeCommentCell(comment: UserItemCommentDbRecord, username?: string): [$cell:HTMLElement,$flow:HTMLElement] {
 	let userString=`???`
 	if (username!=null) {
 		userString=username
 	} else if (comment.uid!=null) {
 		userString=`#{comment.uid}`
 	}
+	const r=4
+	const $icon=makeElement('span')('icon')()
+	$icon.innerHTML=`<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}"><circle r=${r} fill="var(--accent-color)" /></svg>`
 	const $flow=makeElement('span')('flow')(
 		makeDateOutput(comment.createdAt),` `,userString
 	)
-	return [makeDiv('item','comment')($flow),$flow]
+	const $cell=makeItemCell('comment',$icon,$flow)
+	return [$cell,$flow]
 }
 
-function makeItemCell(
+function makePrimaryItemCell(
 	type: string, $icon: HTMLElement, id: number,
 	href: string, apiHref: string
-): [$item:HTMLElement,$flow:HTMLElement] {
+): [$cell:HTMLElement,$flow:HTMLElement] {
 	const $flow=makeElement('span')('flow')(
 		makeLink(String(id),href),` `,
 		makeElement('span')('api')(
 			`(`,makeLink(`api`,apiHref),`)`
 		),` `,
 	)
-	const $item=makeDiv('item',type)(
+	const $cell=makeItemCell(type,$icon,$flow)
+	return [$cell,$flow]
+}
+
+function makeItemCell(type: string, $icon: HTMLElement, $flow: HTMLElement): HTMLElement {
+	return makeDiv('item',type)(
 		$icon,` `,$flow
 	)
-	return [$item,$flow]
 }
 
 function makeNoteIconHtml(): string {
