@@ -372,11 +372,13 @@ body > .symbols {
 	top: 0;
 	bottom: 0;
 }
+.ui .grid tbody tr.item:is(.note,.user,.comment) td .icon {
+	color: var(--accent-color);
+}
 .ui .grid tbody tr.item:is(.note,.user) td .icon {
 	box-sizing: border-box;
 	border: solid 2px var(--accent-color);
 	border-radius: 50%;
-	color: var(--accent-color);
 	background: canvas;
 }
 .ui .grid tbody tr.item td .icon > .no-checkbox {

@@ -118,7 +118,7 @@ function makeCommentCell(comment: UserItemCommentDbRecord, username?: string): [
 	}
 	const r=4
 	const $icon=makeElement('span')('icon')()
-	$icon.innerHTML=`<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}"><circle r=${r} fill="var(--accent-color)" /></svg>`
+	$icon.innerHTML=`<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}"><circle r=${r} fill="currentColor" /></svg>`
 	const $flow=makeElement('span')('flow')(
 		makeDateOutput(comment.createdAt),` `,userString
 	)
