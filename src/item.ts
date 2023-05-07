@@ -137,7 +137,14 @@ function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $f
 	$flow.prepend(
 		date?makeDateOutput(date):`???`,` `
 	)
-	const $disclosure=makeElement('button')('disclosure')(`+`)
+	const $disclosure=makeElement('button')('disclosure')()
+	$disclosure.title=`Expand item info`
+	const r=6.5
+	const s=5
+	$disclosure.innerHTML=`<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">`+
+		`<line x1="${-s}" x2="${s}" stroke="currentColor" />`+
+		`<line y1="${-s}" y2="${s}" stroke="currentColor" />`+
+		`</svg>`
 	return makeDiv('item',type)(
 		$icon,` `,$disclosure,` `,$flow
 	)
