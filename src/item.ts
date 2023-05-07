@@ -63,7 +63,7 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 
 export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	const $icon=makeElement('span')('icon')()
-	$icon.innerHTML=makeNoteIconHtml()
+	$icon.innerHTML=makeNoteIconSvg()
 	$icon.title=`note ${note.id}`
 	const [$cell,$flow]=makePrimaryItemCell(
 		'note',note.createdAt,$icon,note.id,
@@ -102,35 +102,34 @@ function makePrimaryItemCell(
 	return [$cell,$flow]
 }
 
-export function makeChangesetCommentCell(server: Server, comment: ChangesetCommentDbRecord, username?: string): HTMLElement {
-	const [$cell,$flow]=makeCommentCell(comment,username)
-	$flow.append(
-		` : `,comment.text
-	)
-	return $cell
-}
-
-export function makeNoteCommentCell(server: Server, comment: NoteCommentDbRecord, username?: string): HTMLElement {
-	const [$cell,$flow]=makeCommentCell(comment,username)
-	$flow.append(
-		` : `,comment.action,` : `,comment.text
-	)
-	return $cell
-}
-
-function makeCommentCell(comment: UserItemCommentDbRecord, username?: string): [$cell:HTMLElement,$flow:HTMLElement] {
+export function makeCommentCell(server: Server, comment: UserItemCommentDbRecord, username?: string, action?: string): HTMLElement {
 	let userString=`???`
 	if (username!=null) {
 		userString=username
 	} else if (comment.uid!=null) {
 		userString=`#{comment.uid}`
 	}
-	const r=4
 	const $icon=makeElement('span')('icon')()
-	$icon.innerHTML=`<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}"><circle r=${r} fill="currentColor" /></svg>`
+	if (action==null) {
+		const r=4
+		$icon.innerHTML=makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
+	} else if (action=='closed') {
+		$icon.innerHTML=makeCenteredSvg(16,`<path d="M-8,0 L0,8 L8,-8" fill="none" stroke="currentColor" stroke-width="4" />`)
+	} else if (action=='reopened') {
+		$icon.innerHTML=makeCenteredSvg(16,
+			`<line x1="-8" x2="8" y1="-8" y2="8" stroke="currentColor" stroke-width="4" />`+
+			`<line x1="-8" x2="8" y1="8" y2="-8" stroke="currentColor" stroke-width="4" />`
+		)
+	}
 	const $flow=makeElement('span')('flow')(userString)
 	const $cell=makeItemCell('comment',comment.createdAt,$icon,$flow)
-	return [$cell,$flow]
+	if (action!=null) {
+		$cell.classList.add(action)
+	}
+	$flow.append(
+		` : `,comment.text
+	)
+	return $cell
 }
 
 function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement): HTMLElement {
@@ -141,16 +140,16 @@ function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $f
 	$disclosure.title=`Expand item info`
 	const r=5.5
 	const s=3.5
-	$disclosure.innerHTML=`<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">`+
+	$disclosure.innerHTML=makeCenteredSvg(r,
 		`<line x1="${-s}" x2="${s}" stroke="currentColor" />`+
-		`<line y1="${-s}" y2="${s}" stroke="currentColor" />`+
-		`</svg>`
+		`<line y1="${-s}" y2="${s}" stroke="currentColor" />`
+	)
 	return makeDiv('item',type)(
 		$icon,` `,$disclosure,` `,$flow
 	)
 }
 
-function makeNoteIconHtml(): string {
+function makeNoteIconSvg(): string {
 	const iconSize=16
 	const iconTopPadding=2
 	const markerHeight=iconSize-iconTopPadding
@@ -166,4 +165,8 @@ function makeNoteIconHtml(): string {
 		const yf=y.toFixed(2)
 		return `M0,${rp} L-${xf},${yf} A${r},${r} 0 1 1 ${xf},${yf} Z`
 	}
+}
+
+function makeCenteredSvg(r: number, content: string): string {
+	return `<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">${content}</svg>`
 }

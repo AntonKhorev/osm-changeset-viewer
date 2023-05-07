@@ -6,7 +6,7 @@ import More from './more'
 import writeFooter from './footer'
 import makeNetDialog from './net-dialog'
 import GridHead from './grid-head'
-import {makeUserCell, makeChangesetCell, makeChangesetCommentCell, makeNoteCell, makeNoteCommentCell} from './item'
+import {makeUserCell, makeChangesetCell, makeNoteCell, makeCommentCell} from './item'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv} from './util/html'
@@ -97,10 +97,10 @@ async function main() {
 					if (item.uid) {
 						username=usernames.get(item.uid)
 					}
-					if (type=='changesetComment') {
-						$item=makeChangesetCommentCell(cx.server,item,username)
+					if (type=='noteComment') {
+						$item=makeCommentCell(cx.server,item,username,item.action)
 					} else {
-						$item=makeNoteCommentCell(cx.server,item,username)
+						$item=makeCommentCell(cx.server,item,username)
 					}
 					date=item.createdAt
 					id=item.itemId
