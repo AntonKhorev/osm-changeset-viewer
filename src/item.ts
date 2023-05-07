@@ -110,16 +110,18 @@ export function makeCommentCell(server: Server, comment: UserItemCommentDbRecord
 		userString=`#{comment.uid}`
 	}
 	const $icon=makeElement('span')('icon')()
-	if (action==null) {
+	if (action=='closed') {
+		const s=6
+		$icon.innerHTML=makeCenteredSvg(12,`<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" stroke="currentColor" stroke-width="4" />`)
+	} else if (action=='reopened') {
+		const s=6
+		$icon.innerHTML=makeCenteredSvg(12,
+			`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="4" />`+
+			`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" stroke="currentColor" stroke-width="4" />`
+		)
+	} else {
 		const r=4
 		$icon.innerHTML=makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
-	} else if (action=='closed') {
-		$icon.innerHTML=makeCenteredSvg(16,`<path d="M-8,0 L0,8 L8,-8" fill="none" stroke="currentColor" stroke-width="4" />`)
-	} else if (action=='reopened') {
-		$icon.innerHTML=makeCenteredSvg(16,
-			`<line x1="-8" x2="8" y1="-8" y2="8" stroke="currentColor" stroke-width="4" />`+
-			`<line x1="-8" x2="8" y1="8" y2="-8" stroke="currentColor" stroke-width="4" />`
-		)
 	}
 	const $flow=makeElement('span')('flow')(userString)
 	const $cell=makeItemCell('comment',comment.createdAt,$icon,$flow)

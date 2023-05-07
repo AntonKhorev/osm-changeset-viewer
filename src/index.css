@@ -99,7 +99,8 @@ body > .symbols {
 .ui .grid {
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
-	--icon-size: 1.25rem;
+	--icon-outer-size: 1.25rem;
+	--icon-inner-size: 1.25rem;
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
@@ -117,9 +118,9 @@ body > .symbols {
 .ui .grid .icon {
 	display: block;
 	position: absolute;
-	left: var(--spacer);
-	width: var(--icon-size);
-	height: var(--icon-size);
+	left: calc(var(--spacer) + .5 * var(--icon-outer-size) - .5 * var(--icon-inner-size));
+	width: var(--icon-inner-size);
+	height: var(--icon-inner-size);
 }
 .ui .grid .icon > * {
 	position: absolute;
@@ -186,7 +187,7 @@ body > .symbols {
 	overflow: hidden;
 	top: 0;
 	bottom: 0;
-	left: calc(var(--icon-size) + 2 * var(--spacer));
+	left: calc(var(--icon-outer-size) + 2 * var(--spacer));
 	right: calc(1rem + 2 * var(--spacer));
 	text-align: left;
 	line-height: 2;
@@ -260,7 +261,7 @@ body > .symbols {
 	pointer-events: none;
 }
 .ui .grid thead tr.selectors td .selector {
-	height: var(--icon-size);
+	height: var(--icon-outer-size);
 }
 .ui .grid thead tr.selectors td .selector .icon {
 	background: var(--accent-color);
@@ -319,11 +320,11 @@ body > .symbols {
 	--timeline-above-height: 1em;
 	--timeline-extra-height: 0px;
 	--disclosure-size: 13px;
-	--disclosure-left-offset: calc(2 * var(--spacer) + var(--icon-size));
+	--disclosure-left-offset: calc(2 * var(--spacer) + var(--icon-outer-size));
 	--left-padding: calc(var(--disclosure-left-offset) + var(--spacer) + var(--disclosure-size));
 	position: relative;
 	padding: var(--vertical-padding) var(--spacer) var(--vertical-padding) var(--left-padding);
-	min-height: var(--icon-size);
+	min-height: var(--icon-outer-size);
 }
 .ui .grid tbody tr.item td .flow {
 	display: inline-block;
@@ -337,7 +338,7 @@ body > .symbols {
 	display: block;
 	position: absolute;
 	width: var(--timeline-width);
-	left: calc(var(--spacer) + (var(--icon-size) - var(--timeline-width)) / 2);
+	left: calc(var(--spacer) + (var(--icon-outer-size) - var(--timeline-width)) / 2);
 	background: var(--accent-color);
 	z-index: -1;
 }
@@ -384,6 +385,10 @@ body > .symbols {
 	border-radius: 50%;
 	background: canvas;
 }
+.ui .grid tbody tr.item:is(.comment.closed,.comment.reopened) td .icon {
+	--icon-inner-size: 1rem;
+	top: calc(var(--vertical-padding) + .5 * var(--icon-outer-size) - .5 * var(--icon-inner-size));
+}
 .ui .grid tbody tr.item td .icon > .no-checkbox {
 	width: .75rem;
 	height: .75rem;
@@ -395,7 +400,7 @@ body > .symbols {
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
 	position: absolute;
-	top: calc(var(--vertical-padding) + (var(--icon-size) - var(--disclosure-size)) / 2);
+	top: calc(var(--vertical-padding) + (var(--icon-outer-size) - var(--disclosure-size)) / 2);
 	left: var(--disclosure-left-offset);
 	padding: 0;
 	border: var(--frame-line);
