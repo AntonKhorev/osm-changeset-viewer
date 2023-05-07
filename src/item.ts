@@ -139,8 +139,8 @@ function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $f
 	)
 	const $disclosure=makeElement('button')('disclosure')()
 	$disclosure.title=`Expand item info`
-	const r=6.5
-	const s=5
+	const r=5.5
+	const s=3.5
 	$disclosure.innerHTML=`<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">`+
 		`<line x1="${-s}" x2="${s}" stroke="currentColor" />`+
 		`<line y1="${-s}" y2="${s}" stroke="currentColor" />`+

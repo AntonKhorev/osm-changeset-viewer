@@ -318,7 +318,7 @@ body > .symbols {
 	--timeline-width: .125rem;
 	--timeline-above-height: 1em;
 	--timeline-extra-height: 0px;
-	--disclosure-size: 15px;
+	--disclosure-size: 13px;
 	--disclosure-left-offset: calc(2 * var(--spacer) + var(--icon-size));
 	--left-padding: calc(var(--disclosure-left-offset) + var(--spacer) + var(--disclosure-size));
 	position: relative;
@@ -403,6 +403,10 @@ body > .symbols {
 }
 .ui .grid tbody tr.item td button.disclosure:hover {
 	background: var(--hover-color);
+}
+.ui .grid tbody tr.item td button.disclosure > * {
+	position: absolute;
+	inset: 0;
 }
 
 .ui .grid tbody tr.item td .changes {
