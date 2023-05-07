@@ -141,8 +141,9 @@ function makePrimaryItemCell(
 }
 
 function makeItemCell(type: string, $icon: HTMLElement, $flow: HTMLElement): HTMLElement {
+	const $disclosure=makeElement('button')('disclosure')(`+`)
 	return makeDiv('item',type)(
-		$icon,` `,$flow
+		$icon,` `,$disclosure,` `,$flow
 	)
 }
 

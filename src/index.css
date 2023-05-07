@@ -4,7 +4,7 @@
 	--hover-color: #DEF;
 
 	--frame-line: solid 1px var(--frame-color);
-	--padding: .5rem;
+	--spacer: .5rem;
 	--major-button-padding: .3rem;
 }
 @media (prefers-color-scheme: dark) {
@@ -37,12 +37,12 @@ body > .symbols {
 .ui main > h1,
 .ui main > h2,
 .ui main > [class$="-input-group"] {
-	padding-left: var(--padding);
-	padding-right: var(--padding);
+	padding-left: var(--spacer);
+	padding-right: var(--spacer);
 }
 
 .ui [class$="-input-group"] {
-	margin: var(--padding) 0;
+	margin: var(--spacer) 0;
 }
 .ui .major-input-group :is(input[type=text], textarea, button):not([hidden]) {
 	display: block;
@@ -57,7 +57,7 @@ body > .symbols {
 .ui .more {
 	position: sticky;
 	left: 0;
-	padding: var(--padding);
+	padding: var(--spacer);
 }
 .ui .more button {
 	display: block;
@@ -99,7 +99,7 @@ body > .symbols {
 .ui .grid {
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
-	--icon-size: 1.25em;
+	--icon-size: 1.25rem;
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
@@ -117,7 +117,7 @@ body > .symbols {
 .ui .grid .icon {
 	display: block;
 	position: absolute;
-	left: var(--padding);
+	left: var(--spacer);
 	width: var(--icon-size);
 	height: var(--icon-size);
 }
@@ -148,21 +148,21 @@ body > .symbols {
 }
 .ui .grid thead td.adder {
 	position: relative;
-	padding: var(--padding);
+	padding: var(--spacer);
 	text-align: right;
 }
 .ui .grid thead td.adder button {
-	width: calc(var(--adder-width) - var(--padding));
+	width: calc(var(--adder-width) - var(--spacer));
 	aspect-ratio: 1;
 }
 .ui .grid thead th .tab {
 	position: relative;
-	height: calc(1rem + 2 * var(--padding));
+	height: calc(1rem + 2 * var(--spacer));
 	border-left: var(--frame-line);
 	border-right: var(--frame-line);
 	border-top: var(--frame-line);
-	border-top-left-radius: var(--padding);
-	border-top-right-radius: var(--padding);
+	border-top-left-radius: var(--spacer);
+	border-top-right-radius: var(--spacer);
 	margin-right: -1px;
 	cursor: grab;
 	touch-action: none;
@@ -173,8 +173,8 @@ body > .symbols {
 	position: absolute;
 }
 .ui .grid thead th .tab .icon {
-	top: calc(var(--padding) - 1px);
-	left: calc(var(--padding) - 1px);
+	top: calc(var(--spacer) - 1px);
+	left: calc(var(--spacer) - 1px);
 	background: var(--accent-color);
 }
 .ui .grid thead th .tab .icon > * {
@@ -186,22 +186,22 @@ body > .symbols {
 	overflow: hidden;
 	top: 0;
 	bottom: 0;
-	left: calc(var(--icon-size) + 2 * var(--padding));
-	right: calc(1rem + 2 * var(--padding));
+	left: calc(var(--icon-size) + 2 * var(--spacer));
+	right: calc(1rem + 2 * var(--spacer));
 	text-align: left;
 	line-height: 2;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 }
 .ui .grid thead th .tab button {
-	top: var(--padding);
-	right: var(--padding);
+	top: var(--spacer);
+	right: var(--spacer);
 	width: 1rem;
 	height: 1rem;
 }
 .ui .grid thead td .card {
 	position: relative;
-	padding: var(--padding);
+	padding: var(--spacer);
 	margin-right: -1px;
 	background: canvas;
 }
@@ -210,8 +210,8 @@ body > .symbols {
 	width: 20%;
 	min-width: 2rem;
 	max-width: 100px;
-	margin-left: var(--padding);
-	margin-bottom: var(--padding);
+	margin-left: var(--spacer);
+	margin-bottom: var(--spacer);
 	border: var(--frame-line);
 }
 .ui .grid thead td .card .avatar img {
@@ -256,7 +256,7 @@ body > .symbols {
 .ui .grid thead tr.selectors td {
 	--base-z-index: 2;
 	position: sticky;
-	top: var(--padding);
+	top: var(--spacer);
 	pointer-events: none;
 }
 .ui .grid thead tr.selectors td .selector {
@@ -290,7 +290,7 @@ body > .symbols {
 }
 
 .ui .grid tbody tr.separator td .month {
-	padding: var(--padding) 0;
+	padding: var(--spacer) 0;
 	text-align: center;
 	position: sticky;
 	left: 0;
@@ -318,8 +318,11 @@ body > .symbols {
 	--timeline-width: .125rem;
 	--timeline-above-height: 1em;
 	--timeline-extra-height: 0px;
+	--disclosure-size: 1rem;
+	--disclosure-left-offset: calc(2 * var(--spacer) + var(--icon-size));
+	--left-padding: calc(var(--disclosure-left-offset) + var(--spacer) + var(--disclosure-size));
 	position: relative;
-	padding: var(--vertical-padding) var(--padding) var(--vertical-padding) calc(2 * var(--padding) + var(--icon-size));
+	padding: var(--vertical-padding) var(--spacer) var(--vertical-padding) var(--left-padding);
 	min-height: var(--icon-size);
 }
 .ui .grid tbody tr.item td .flow {
@@ -334,7 +337,7 @@ body > .symbols {
 	display: block;
 	position: absolute;
 	width: var(--timeline-width);
-	left: calc(var(--padding) + (var(--icon-size) - var(--timeline-width)) / 2);
+	left: calc(var(--spacer) + (var(--icon-size) - var(--timeline-width)) / 2);
 	background: var(--accent-color);
 	z-index: -1;
 }
@@ -347,7 +350,7 @@ body > .symbols {
 	height: calc(100% - var(--timeline-above-height));
 }
 .ui .grid tbody tr.separator + tr.item td.with-timeline-above::before {
-	--timeline-extra-height: calc(1rem + 2 * var(--padding));
+	--timeline-extra-height: calc(1rem + 2 * var(--spacer));
 }
 .ui .grid tbody tr.item.hidden-as-closed td {
 	--vertical-padding: 0;
@@ -386,6 +389,17 @@ body > .symbols {
 	height: .75rem;
 	background: canvas;
 }
+
+.ui .grid tbody tr.item td button.disclosure {
+	box-sizing: border-box;
+	width: var(--disclosure-size);
+	height: var(--disclosure-size);
+	position: absolute;
+	top: calc(var(--vertical-padding) + (var(--icon-size) - var(--disclosure-size)) / 2);
+	left: var(--disclosure-left-offset);
+	padding: 0;
+}
+
 .ui .grid tbody tr.item td .changes {
 	border-radius: 4px;
 	padding: 2px 4px;
@@ -401,7 +415,7 @@ body > .symbols {
 	box-shadow: 0 0px 6px #AAA;
 }
 .ui footer > * {
-	padding: var(--padding);
+	padding: var(--spacer);
 	border-top: var(--frame-line);
 }
 .ui footer:not(.with-log) > .log {
@@ -423,7 +437,7 @@ body > .symbols {
 }
 .ui footer > .log .controls {
 	display: inline-block;
-	margin-left: var(--padding);
+	margin-left: var(--spacer);
 	vertical-align: text-bottom;
 }
 .ui footer > .log ul {
@@ -433,7 +447,7 @@ body > .symbols {
 .ui footer > .toolbar {
 	height: 3rem;
 	display: flex;
-	gap: var(--padding);
+	gap: var(--spacer);
 	align-items: center;
 }
 .ui footer > .toolbar > .message {
