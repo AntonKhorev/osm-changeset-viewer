@@ -315,13 +315,12 @@ body > .symbols {
 }
 
 .ui .grid tbody tr.item td {
-	--vertical-padding: .125rem;
 	--timeline-width: .125rem;
-	--timeline-above-height: 1em;
+	--timeline-above-height: 1rem;
 	--timeline-extra-height: 0px;
+	--icon-ballon-difference: calc(2 * var(--spacer) - .5 * var(--icon-outer-size));
 	position: relative;
-	padding: var(--vertical-padding) var(--spacer) var(--vertical-padding) calc(2 * var(--spacer) + var(--icon-outer-size));
-	min-height: var(--icon-outer-size);
+	padding-left: calc(var(--spacer) + var(--icon-outer-size));
 }
 .ui .grid tbody tr.item td.with-timeline-above::before,
 .ui .grid tbody tr.item td.with-timeline-below::after {
@@ -329,7 +328,7 @@ body > .symbols {
 	display: block;
 	position: absolute;
 	width: var(--timeline-width);
-	left: calc(var(--spacer) + (var(--icon-outer-size) - var(--timeline-width)) / 2);
+	left: calc(var(--spacer) + .5 * var(--icon-outer-size) - .5 * var(--timeline-width));
 	background: var(--accent-color);
 	z-index: -1;
 }
@@ -344,13 +343,13 @@ body > .symbols {
 .ui .grid tbody tr.separator + tr.item td.with-timeline-above::before {
 	--timeline-extra-height: calc(1rem + 2 * var(--spacer));
 }
-.ui .grid tbody tr.item.hidden-as-closed td {
-	--vertical-padding: 0;
-}
-.ui .grid tbody tr.item.hidden-as-closed td > * {
+
+.ui .grid tbody tr.item.hidden-as-closed td .icon {
 	display: none;
 }
-
+.ui .grid tbody tr.item td .icon {
+	top: var(--icon-ballon-difference);
+}
 .ui .grid tbody tr.item.changeset td .icon::before {
 	content: '';
 	display: block;
@@ -378,7 +377,7 @@ body > .symbols {
 }
 .ui .grid tbody tr.item:is(.comment.closed,.comment.reopened,.comment.hidden) td .icon {
 	--icon-inner-size: 1rem;
-	top: calc(var(--vertical-padding) + .5 * var(--icon-outer-size) - .5 * var(--icon-inner-size));
+	top: calc(var(--icon-ballon-difference) + .5 * var(--icon-outer-size) - .5 * var(--icon-inner-size));
 }
 .ui .grid tbody tr.item td .icon > .no-checkbox {
 	width: .75rem;
@@ -387,13 +386,29 @@ body > .symbols {
 }
 
 .ui .grid tbody tr.item td .flow {
+	--flow-vertical-padding: .375rem;
 	--disclosure-size: 13px;
+	--border-pixel-replacement: 1px;
 	position: relative;
-	display: inline-block;
+	display: block;
+	box-sizing: border-box;
+	min-height: calc(2 * var(--icon-ballon-difference) + var(--icon-outer-size) + 2px);
 	max-width: 100%;
 	text-overflow: ellipsis;
 	overflow: hidden;
-	padding-left: calc(var(--disclosure-size) + var(--spacer));
+	padding:
+		calc(var(--border-pixel-replacement) + var(--flow-vertical-padding))
+		calc(var(--border-pixel-replacement) + var(--spacer))
+		calc(var(--border-pixel-replacement) + var(--flow-vertical-padding))
+		calc(var(--border-pixel-replacement) + var(--spacer) + var(--disclosure-size) + var(--spacer));
+}
+.ui .grid tbody tr.item.hidden-as-closed td .flow {
+	display: none;
+}
+.ui .grid tbody tr.item.comment td .flow {
+	--border-pixel-replacement: 0px;
+	border: var(--frame-line);
+	border-radius: var(--spacer);
 }
 
 .ui .grid tbody tr.item td .flow button.disclosure {
@@ -401,8 +416,8 @@ body > .symbols {
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
 	position: absolute;
-	top: calc(.5 * var(--icon-outer-size) - .5 * var(--disclosure-size));
-	left: 0;
+	top: calc(var(--icon-ballon-difference) + .5 * var(--icon-outer-size) - .5 * var(--disclosure-size) + var(--border-pixel-replacement));
+	left: calc(var(--spacer) + var(--border-pixel-replacement));
 	padding: 0;
 	border: var(--frame-line);
 	background: canvas;
