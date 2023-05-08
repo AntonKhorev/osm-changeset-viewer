@@ -102,7 +102,7 @@ function makePrimaryItemCell(
 	return [$cell,$flow]
 }
 
-export function makeCommentCell(server: Server, itemType: string, comment: UserItemCommentDbRecord, username: string|undefined, action?: string): HTMLElement {
+export function makeCommentCell(server: Server, itemType: 'note'|'changeset', comment: UserItemCommentDbRecord, username: string|undefined, action?: string): HTMLElement {
 	let userString=`???`
 	if (username!=null) {
 		userString=username
@@ -122,7 +122,11 @@ export function makeCommentCell(server: Server, itemType: string, comment: UserI
 	} else if (action=='hidden') {
 	} else {
 		const r=4
-		$icon.innerHTML=makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
+		if (itemType=='changeset') {
+			$icon.innerHTML=makeCenteredSvg(r,`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`)
+		} else {
+			$icon.innerHTML=makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
+		}
 	}
 	if (action==null) {
 		$icon.title=`comment for ${itemType} ${comment.itemId}`
