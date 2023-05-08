@@ -393,7 +393,7 @@ body > .symbols {
 	display: block;
 	box-sizing: border-box;
 	min-height: calc(2 * var(--icon-ballon-difference) + var(--icon-outer-size) + 2px);
-	max-width: 100%;
+	margin-right: -1px;
 	text-overflow: ellipsis;
 	overflow: hidden;
 	padding:
