@@ -86,8 +86,7 @@ export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible
 	$icon.title=`user ${user.id}`
 	$icon.innerHTML=makeCenteredSvg(10,
 		`<path d="${computeNewOutlinePath(9,7,10)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
-		`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />`+
-		`<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`
+		makeUserSvgElements()
 	)
 	const $flow=makeElement('span')('flow')(
 		`account created at `,makeDateOutput(user.createdAt)
@@ -178,7 +177,7 @@ function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $f
 	)
 }
 
-function makeCenteredSvg(r: number, content: string): string {
+export function makeCenteredSvg(r: number, content: string): string {
 	return `<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">${content}</svg>`
 }
 
@@ -202,4 +201,11 @@ function computeNewOutlinePath(R: number, r: number, n: number): string {
 	}
 	outline+='Z'
 	return outline
+}
+
+export function makeUserSvgElements(): string {
+	return (
+		`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />`+
+		`<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`
+	)
 }

@@ -1,5 +1,6 @@
 import type {UserQuery, ValidUserQuery} from './osm/query-user'
 import type {UserScanDbRecord, UserDbInfo} from './db'
+import {makeCenteredSvg, makeUserSvgElements} from './item'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {ul,li} from './util/html-shortcuts'
@@ -17,7 +18,7 @@ export function makeUserTab(
 ): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`user`
-	$icon.innerHTML=`<svg width="16" height="16"><use href="#user" /></svg>`
+	$icon.innerHTML=makeCenteredSvg(8,makeUserSvgElements())
 	const $label=makeElement('span')('label')()
 	if (query.type=='id') {
 		$label.append(`#${query.uid}`)
