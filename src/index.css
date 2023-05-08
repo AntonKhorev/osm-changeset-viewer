@@ -379,13 +379,13 @@ body > .symbols {
 .ui .grid tbody tr.item:is(.note,.user,.comment) td .icon {
 	color: var(--accent-color);
 }
-.ui .grid tbody tr.item:is(.user,.note,.comment.closed,.comment.reopened) td .icon {
+.ui .grid tbody tr.item:is(.user,.note,.comment.closed,.comment.reopened,.comment.hidden) td .icon {
 	box-sizing: border-box;
 	border: solid 2px var(--accent-color);
 	border-radius: 50%;
 	background: canvas;
 }
-.ui .grid tbody tr.item:is(.comment.closed,.comment.reopened) td .icon {
+.ui .grid tbody tr.item:is(.comment.closed,.comment.reopened,.comment.hidden) td .icon {
 	--icon-inner-size: 1rem;
 	top: calc(var(--vertical-padding) + .5 * var(--icon-outer-size) - .5 * var(--icon-inner-size));
 }

@@ -98,9 +98,9 @@ async function main() {
 						username=usernames.get(item.uid)
 					}
 					if (type=='noteComment') {
-						$item=makeCommentCell(cx.server,item,username,item.action)
+						$item=makeCommentCell(cx.server,'note',item,username,item.action)
 					} else {
-						$item=makeCommentCell(cx.server,item,username)
+						$item=makeCommentCell(cx.server,'changeset',item,username)
 					}
 					date=item.createdAt
 					id=item.itemId

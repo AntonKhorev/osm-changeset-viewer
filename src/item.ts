@@ -102,7 +102,7 @@ function makePrimaryItemCell(
 	return [$cell,$flow]
 }
 
-export function makeCommentCell(server: Server, comment: UserItemCommentDbRecord, username?: string, action?: string): HTMLElement {
+export function makeCommentCell(server: Server, itemType: string, comment: UserItemCommentDbRecord, username: string|undefined, action?: string): HTMLElement {
 	let userString=`???`
 	if (username!=null) {
 		userString=username
@@ -119,9 +119,15 @@ export function makeCommentCell(server: Server, comment: UserItemCommentDbRecord
 			`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="4" />`+
 			`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" stroke="currentColor" stroke-width="4" />`
 		)
+	} else if (action=='hidden') {
 	} else {
 		const r=4
 		$icon.innerHTML=makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
+	}
+	if (action==null) {
+		$icon.title=`comment for ${itemType} ${comment.itemId}`
+	} else {
+		$icon.title=`${action} ${itemType} ${comment.itemId}`
 	}
 	const $flow=makeElement('span')('flow')(userString)
 	const $cell=makeItemCell('comment',comment.createdAt,$icon,$flow)
