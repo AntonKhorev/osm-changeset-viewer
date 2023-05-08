@@ -2,8 +2,7 @@ import type {Server} from './net'
 import {makeDateOutput} from './date'
 import type {
 	UserDbRecord, UserItemCommentDbRecord,
-	ChangesetDbRecord, ChangesetCommentDbRecord,
-	NoteDbRecord, NoteCommentDbRecord
+	ChangesetDbRecord, NoteDbRecord
 } from './db'
 import {makeElement, makeDiv, makeLink} from './util/html'
 import {makeEscapeTag} from './util/escape'
@@ -63,8 +62,14 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 
 export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	const $icon=makeElement('span')('icon')()
-	$icon.innerHTML=makeNoteIconSvg()
 	$icon.title=`note ${note.id}`
+	const s=3
+	$icon.innerHTML=makeCenteredSvg(10,
+		`<path d="${computeNewOutlinePath(9.5,8,10)}" fill="none" stroke="currentColor" stroke-width="1" />`+
+		`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
+		`<line x1="${-s}" x2="${s}" stroke="currentColor" stroke-width="2" />`+
+		`<line y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="2" />`
+	)
 	const [$cell,$flow]=makePrimaryItemCell(
 		'note',note.createdAt,$icon,note.id,
 		server.web.getUrl(e`note/${note.id}`),
@@ -79,7 +84,11 @@ export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`user ${user.id}`
-	$icon.innerHTML=`<svg width="16" height="16"><use href="#user" /></svg>`
+	$icon.innerHTML=makeCenteredSvg(10,
+		`<path d="${computeNewOutlinePath(9,7,10)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
+		`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />`+
+		`<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`
+	)
 	const $flow=makeElement('span')('flow')(
 		`account created at `,makeDateOutput(user.createdAt)
 	)
@@ -110,23 +119,30 @@ export function makeCommentCell(server: Server, itemType: 'note'|'changeset', co
 		userString=`#{comment.uid}`
 	}
 	const $icon=makeElement('span')('icon')()
-	if (action=='closed') {
-		const s=6
-		$icon.innerHTML=makeCenteredSvg(12,`<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" stroke="currentColor" stroke-width="4" />`)
-	} else if (action=='reopened') {
-		const s=6
-		$icon.innerHTML=makeCenteredSvg(12,
-			`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="4" />`+
-			`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" stroke="currentColor" stroke-width="4" />`
-		)
-	} else if (action=='hidden') {
-	} else {
-		const r=4
-		if (itemType=='changeset') {
-			$icon.innerHTML=makeCenteredSvg(r,`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`)
+	if (itemType=='note') {
+		const s=2.5
+		let actionGlyph: string|undefined
+		if (action=='closed') {
+			actionGlyph=`<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" stroke="currentColor" stroke-width="2" />`
+		} else if (action=='reopened') {
+			actionGlyph=
+				`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="2" />`+
+				`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" stroke="currentColor" stroke-width="2" />`
+		} else if (action=='hidden') {
+			actionGlyph=``
+		}
+		if (actionGlyph!=null) {
+			$icon.innerHTML=makeCenteredSvg(10,
+				`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
+				actionGlyph
+			)
 		} else {
+			const r=4
 			$icon.innerHTML=makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
 		}
+	} else {
+		const r=4
+		$icon.innerHTML=makeCenteredSvg(r,`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`)
 	}
 	if (action==null) {
 		$icon.title=`comment for ${itemType} ${comment.itemId}`
@@ -162,24 +178,28 @@ function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $f
 	)
 }
 
-function makeNoteIconSvg(): string {
-	const iconSize=16
-	const iconTopPadding=2
-	const markerHeight=iconSize-iconTopPadding
-	const markerWidth=7
-	const markerRadius=markerWidth/2
-	const path=`<path d="${computeMarkerOutlinePath(markerHeight,markerRadius)}" fill="currentColor" />`
-	return `<svg width="${iconSize}" height="${iconSize}" viewBox="${-iconSize/2} ${-iconTopPadding-markerRadius} ${iconSize} ${iconSize}">${path}</svg>`
-	function computeMarkerOutlinePath(h: number, r: number): string {
-		const rp=h-r
-		const y=r**2/rp
-		const x=Math.sqrt(r**2-y**2)
-		const xf=x.toFixed(2)
-		const yf=y.toFixed(2)
-		return `M0,${rp} L-${xf},${yf} A${r},${r} 0 1 1 ${xf},${yf} Z`
-	}
-}
-
 function makeCenteredSvg(r: number, content: string): string {
 	return `<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">${content}</svg>`
+}
+
+function computeMarkerOutlinePath(h: number, r: number): string {
+	const rp=h-r
+	const y=r**2/rp
+	const x=Math.sqrt(r**2-y**2)
+	const xf=x.toFixed(2)
+	const yf=y.toFixed(2)
+	return `M0,${rp} L-${xf},${yf} A${r},${r} 0 1 1 ${xf},${yf} Z`
+}
+
+function computeNewOutlinePath(R: number, r: number, n: number): string {
+	let outline=``
+	for (let i=0;i<n*2;i++) {
+		const a=Math.PI*i/n
+		const s=i&1?r:R
+		outline+=(i?'L':'M')+
+			(s*Math.cos(a)).toFixed(2)+','+
+			(s*Math.sin(a)).toFixed(2)
+	}
+	outline+='Z'
+	return outline
 }

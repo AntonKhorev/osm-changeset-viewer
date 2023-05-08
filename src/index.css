@@ -99,8 +99,7 @@ body > .symbols {
 .ui .grid {
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
-	--icon-outer-size: 1.25rem;
-	--icon-inner-size: 1.25rem;
+	--icon-size: 1.25rem;
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
@@ -118,9 +117,9 @@ body > .symbols {
 .ui .grid .icon {
 	display: block;
 	position: absolute;
-	left: calc(var(--spacer) + .5 * var(--icon-outer-size) - .5 * var(--icon-inner-size));
-	width: var(--icon-inner-size);
-	height: var(--icon-inner-size);
+	left: var(--spacer);
+	width: var(--icon-size);
+	height: var(--icon-size);
 }
 .ui .grid .icon > * {
 	position: absolute;
@@ -187,7 +186,7 @@ body > .symbols {
 	overflow: hidden;
 	top: 0;
 	bottom: 0;
-	left: calc(var(--icon-outer-size) + 2 * var(--spacer));
+	left: calc(var(--icon-size) + 2 * var(--spacer));
 	right: calc(1rem + 2 * var(--spacer));
 	text-align: left;
 	line-height: 2;
@@ -261,7 +260,7 @@ body > .symbols {
 	pointer-events: none;
 }
 .ui .grid thead tr.selectors td .selector {
-	height: var(--icon-outer-size);
+	height: var(--icon-size);
 }
 .ui .grid thead tr.selectors td .selector .icon {
 	background: var(--accent-color);
@@ -318,9 +317,9 @@ body > .symbols {
 	--timeline-width: .125rem;
 	--timeline-above-height: 1rem;
 	--timeline-extra-height: 0px;
-	--icon-ballon-difference: calc(2 * var(--spacer) - .5 * var(--icon-outer-size));
+	--icon-ballon-difference: calc(2 * var(--spacer) - .5 * var(--icon-size));
 	position: relative;
-	padding-left: calc(var(--spacer) + var(--icon-outer-size));
+	padding-left: calc(var(--spacer) + var(--icon-size));
 }
 .ui .grid tbody tr.item td.with-timeline-above::before,
 .ui .grid tbody tr.item td.with-timeline-below::after {
@@ -328,7 +327,7 @@ body > .symbols {
 	display: block;
 	position: absolute;
 	width: var(--timeline-width);
-	left: calc(var(--spacer) + .5 * var(--icon-outer-size) - .5 * var(--timeline-width));
+	left: calc(var(--spacer) + .5 * var(--icon-size) - .5 * var(--timeline-width));
 	background: var(--accent-color);
 	z-index: -1;
 }
@@ -369,16 +368,6 @@ body > .symbols {
 .ui .grid tbody tr.item:is(.note,.user,.comment) td .icon {
 	color: var(--accent-color);
 }
-.ui .grid tbody tr.item:is(.user,.note,.comment.closed,.comment.reopened,.comment.hidden) td .icon {
-	box-sizing: border-box;
-	border: solid 2px var(--accent-color);
-	border-radius: 50%;
-	background: canvas;
-}
-.ui .grid tbody tr.item:is(.comment.closed,.comment.reopened,.comment.hidden) td .icon {
-	--icon-inner-size: 1rem;
-	top: calc(var(--icon-ballon-difference) + .5 * var(--icon-outer-size) - .5 * var(--icon-inner-size));
-}
 .ui .grid tbody tr.item td .icon > .no-checkbox {
 	width: .75rem;
 	height: .75rem;
@@ -392,7 +381,7 @@ body > .symbols {
 	position: relative;
 	display: block;
 	box-sizing: border-box;
-	min-height: calc(2 * var(--icon-ballon-difference) + var(--icon-outer-size) + 2px);
+	min-height: calc(2 * var(--icon-ballon-difference) + var(--icon-size) + 2px);
 	margin-right: -1px;
 	text-overflow: ellipsis;
 	overflow: hidden;
@@ -416,7 +405,7 @@ body > .symbols {
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
 	position: absolute;
-	top: calc(var(--icon-ballon-difference) + .5 * var(--icon-outer-size) - .5 * var(--disclosure-size) + var(--border-pixel-replacement));
+	top: calc(var(--icon-ballon-difference) + .5 * var(--icon-size) - .5 * var(--disclosure-size) + var(--border-pixel-replacement));
 	left: calc(var(--spacer) + var(--border-pixel-replacement));
 	padding: 0;
 	border: var(--frame-line);
