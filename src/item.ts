@@ -141,9 +141,6 @@ export function makeCommentCell(server: Server, itemType: string, comment: UserI
 }
 
 function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement): HTMLElement {
-	$flow.prepend(
-		date?makeDateOutput(date):`???`,` `
-	)
 	const $disclosure=makeElement('button')('disclosure')()
 	$disclosure.title=`Expand item info`
 	const r=5.5
@@ -152,8 +149,12 @@ function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $f
 		`<line x1="${-s}" x2="${s}" stroke="currentColor" />`+
 		`<line y1="${-s}" y2="${s}" stroke="currentColor" />`
 	)
+	$flow.prepend(
+		$disclosure,` `,
+		date?makeDateOutput(date):`???`,` `
+	)
 	return makeDiv('item',type)(
-		$icon,` `,$disclosure,` `,$flow
+		$icon,` `,$flow
 	)
 }
 

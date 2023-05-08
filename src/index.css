@@ -319,18 +319,9 @@ body > .symbols {
 	--timeline-width: .125rem;
 	--timeline-above-height: 1em;
 	--timeline-extra-height: 0px;
-	--disclosure-size: 13px;
-	--disclosure-left-offset: calc(2 * var(--spacer) + var(--icon-outer-size));
-	--left-padding: calc(var(--disclosure-left-offset) + var(--spacer) + var(--disclosure-size));
 	position: relative;
-	padding: var(--vertical-padding) var(--spacer) var(--vertical-padding) var(--left-padding);
+	padding: var(--vertical-padding) var(--spacer) var(--vertical-padding) calc(2 * var(--spacer) + var(--icon-outer-size));
 	min-height: var(--icon-outer-size);
-}
-.ui .grid tbody tr.item td .flow {
-	display: inline-block;
-	max-width: 100%;
-	text-overflow: ellipsis;
-	overflow: hidden;
 }
 .ui .grid tbody tr.item td.with-timeline-above::before,
 .ui .grid tbody tr.item td.with-timeline-below::after {
@@ -395,26 +386,36 @@ body > .symbols {
 	background: canvas;
 }
 
-.ui .grid tbody tr.item td button.disclosure {
+.ui .grid tbody tr.item td .flow {
+	--disclosure-size: 13px;
+	position: relative;
+	display: inline-block;
+	max-width: 100%;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	padding-left: calc(var(--disclosure-size) + var(--spacer));
+}
+
+.ui .grid tbody tr.item td .flow button.disclosure {
 	box-sizing: border-box;
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
 	position: absolute;
-	top: calc(var(--vertical-padding) + (var(--icon-outer-size) - var(--disclosure-size)) / 2);
-	left: var(--disclosure-left-offset);
+	top: calc(.5 * var(--icon-outer-size) - .5 * var(--disclosure-size));
+	left: 0;
 	padding: 0;
 	border: var(--frame-line);
 	background: canvas;
 }
-.ui .grid tbody tr.item td button.disclosure:hover {
+.ui .grid tbody tr.item td .flow button.disclosure:hover {
 	background: var(--hover-color);
 }
-.ui .grid tbody tr.item td button.disclosure > * {
+.ui .grid tbody tr.item td .flow button.disclosure > * {
 	position: absolute;
 	inset: 0;
 }
 
-.ui .grid tbody tr.item td .changes {
+.ui .grid tbody tr.item td .flow .changes {
 	border-radius: 4px;
 	padding: 2px 4px;
 	font-family: sans-serif;
