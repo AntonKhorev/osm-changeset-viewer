@@ -464,9 +464,11 @@ body > .symbols {
 }
 
 .ui .grid tbody tr.item td .ballon .flow {
-	display: block;
 	text-overflow: ellipsis;
 	overflow: hidden;
+	-webkit-line-clamp: 5;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
 }
 .ui .grid tbody tr.item td .ballon .flow .from {
 	float: right;
