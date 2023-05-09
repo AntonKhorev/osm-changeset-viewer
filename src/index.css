@@ -381,17 +381,17 @@ body > .symbols {
 	display: none;
 }
 .ui .grid tbody tr.item td .ballon {
-	--flow-vertical-padding: .375rem;
+	--flow-vertical-padding: calc(1.75 * var(--spacer) - .5 * var(--icon-size));
 	--disclosure-size: 13px;
 	position: relative;
 	display: block;
 	box-sizing: border-box;
 	margin:
-		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - 2 * var(--spacer) - 1px)
+		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - 1.75 * var(--spacer) - 1px)
 		-1px
-		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - 2 * var(--spacer) - 1px)
+		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - 1.75 * var(--spacer) - 1px)
 		0px;
-	min-height: calc(4 * var(--spacer));
+	min-height: calc(2 * 1.75 * var(--spacer));
 	padding: var(--flow-vertical-padding) var(--spacer) var(--flow-vertical-padding)
 		calc(var(--spacer) + var(--disclosure-size) + var(--spacer));
 	border: solid 1px transparent;
@@ -407,7 +407,7 @@ body > .symbols {
 	position: absolute;
 	top: var(--spacer);
 	border-style: solid;
-	border-width: var(--spacer) var(--spacer) var(--spacer) 0;
+	border-width: calc(.75 * var(--spacer)) var(--spacer) calc(.75 * var(--spacer)) 0;
 }
 .ui .grid tbody tr.item.comment td .ballon::before {
 	left: calc(-1 * var(--spacer));
@@ -423,7 +423,7 @@ body > .symbols {
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
 	position: absolute;
-	top: calc(2 * var(--spacer) - .5 * var(--disclosure-size));
+	top: calc(1.75 * var(--spacer) - .5 * var(--disclosure-size));
 	left: var(--spacer);
 	padding: 0;
 	border: var(--frame-line);
