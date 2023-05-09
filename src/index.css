@@ -397,22 +397,20 @@ body > .symbols {
 	border: var(--frame-line);
 	border-radius: var(--spacer);
 }
-.ui .grid tbody tr.item.comment td .ballon::before {
-	content: '';
-	position: absolute;
-	top: var(--spacer);
-	left: calc(-1 * var(--spacer));
-	border-style: solid;
-	border-width: var(--spacer) var(--spacer) var(--spacer) 0;
-	border-color: transparent var(--frame-color) transparent transparent;
-}
+.ui .grid tbody tr.item.comment td .ballon::before,
 .ui .grid tbody tr.item.comment td .ballon::after {
 	content: '';
 	position: absolute;
 	top: var(--spacer);
-	left: calc(-1 * var(--spacer) + 1px);
 	border-style: solid;
 	border-width: var(--spacer) var(--spacer) var(--spacer) 0;
+}
+.ui .grid tbody tr.item.comment td .ballon::before {
+	left: calc(-1 * var(--spacer));
+	border-color: transparent var(--frame-color) transparent transparent;
+}
+.ui .grid tbody tr.item.comment td .ballon::after {
+	left: calc(-1 * var(--spacer) + 1px);
 	border-color: transparent canvas transparent transparent;
 }
 
