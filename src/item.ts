@@ -89,11 +89,9 @@ export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible
 		makeUserSvgElements()
 	)
 	const $flow=makeElement('span')('flow')(
-		`account created at `,makeDateOutput(user.createdAt)
+		`account created`
 	)
-	return makeDiv('item','user')(
-		$icon,` `,$flow
-	)
+	return makeItemCell('user',user.createdAt,$icon,$flow)
 }
 
 function makePrimaryItemCell(
