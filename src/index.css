@@ -381,18 +381,20 @@ body > .symbols {
 	display: none;
 }
 .ui .grid tbody tr.item td .ballon {
-	--flow-vertical-padding: calc(1.75 * var(--spacer) - .5 * var(--icon-size));
+	--ballon-tip-height: calc(1.5 * var(--spacer));
+	--ballon-min-height: calc(2 * var(--spacer) + var(--ballon-tip-height));
+	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * var(--icon-size));
 	--disclosure-size: 13px;
 	position: relative;
 	display: block;
 	box-sizing: border-box;
 	margin:
-		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - 1.75 * var(--spacer) - 1px)
+		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px)
 		-1px
-		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - 1.75 * var(--spacer) - 1px)
+		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px)
 		0px;
-	min-height: calc(2 * 1.75 * var(--spacer));
-	padding: var(--flow-vertical-padding) var(--spacer) var(--flow-vertical-padding)
+	min-height: var(--ballon-min-height);
+	padding: var(--ballon-vertical-padding) var(--spacer) var(--ballon-vertical-padding)
 		calc(var(--spacer) + var(--disclosure-size) + var(--spacer));
 	border: solid 1px transparent;
 }
@@ -407,7 +409,7 @@ body > .symbols {
 	position: absolute;
 	top: var(--spacer);
 	border-style: solid;
-	border-width: calc(.75 * var(--spacer)) var(--spacer) calc(.75 * var(--spacer)) 0;
+	border-width: calc(.5 * var(--ballon-tip-height)) var(--spacer) calc(.5 * var(--ballon-tip-height)) 0;
 }
 .ui .grid tbody tr.item.comment td .ballon::before {
 	left: calc(-1 * var(--spacer));
@@ -423,7 +425,7 @@ body > .symbols {
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
 	position: absolute;
-	top: calc(1.75 * var(--spacer) - .5 * var(--disclosure-size));
+	top: calc(.5 * var(--ballon-min-height) - .5 * var(--disclosure-size));
 	left: var(--spacer);
 	padding: 0;
 	border: var(--frame-line);
