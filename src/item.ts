@@ -151,6 +151,9 @@ export function makeCommentCell(server: Server, itemType: 'note'|'changeset', co
 	if (action!=null) {
 		$cell.classList.add(action)
 	}
+	if (comment.uid!=comment.itemUid) {
+		$cell.classList.add('incoming')
+	}
 	$flow.append(
 		` : `,comment.text
 	)

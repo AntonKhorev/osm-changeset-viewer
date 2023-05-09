@@ -318,8 +318,13 @@ body > .symbols {
 	--timeline-width: 2px;
 	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
 	--timeline-previous-row-covering-height: 0px;
+	isolation: isolate;
 	position: relative;
 	padding-left: calc(var(--spacer) + var(--icon-size));
+}
+.ui .grid tbody tr.item.comment.incoming td {
+	padding-left: var(--icon-size);
+	padding-right: var(--spacer);
 }
 .ui .grid tbody tr.item:not(.hidden-as-closed) td {
 	height: calc(var(--icon-vertical-margin) + var(--icon-size) + var(--icon-vertical-margin));
@@ -403,6 +408,9 @@ body > .symbols {
 	border-radius: var(--spacer);
 	background: canvas;
 }
+.ui .grid tbody tr.item.comment.incoming td .ballon {
+	z-index: -1;
+}
 .ui .grid tbody tr.item.comment td .ballon::before,
 .ui .grid tbody tr.item.comment td .ballon::after {
 	content: '';
@@ -410,14 +418,28 @@ body > .symbols {
 	top: var(--spacer);
 	border-style: solid;
 	border-width: calc(.5 * var(--ballon-tip-height)) var(--spacer) calc(.5 * var(--ballon-tip-height)) 0;
+	border-color: transparent;
 }
-.ui .grid tbody tr.item.comment td .ballon::before {
+.ui .grid tbody tr.item.comment.incoming td .ballon::before,
+.ui .grid tbody tr.item.comment.incoming td .ballon::after {
+	border-right-width: 0;
+	border-left-width: var(--spacer);
+}
+.ui .grid tbody tr.item.comment:not(.incoming) td .ballon::before {
 	left: calc(-1 * var(--spacer));
-	border-color: transparent var(--frame-color) transparent transparent;
+	border-right-color: var(--frame-color);
 }
-.ui .grid tbody tr.item.comment td .ballon::after {
+.ui .grid tbody tr.item.comment.incoming td .ballon::before {
+	right: calc(-1 * var(--spacer));
+	border-left-color: var(--frame-color);
+}
+.ui .grid tbody tr.item.comment:not(.incoming) td .ballon::after {
 	left: calc(-1 * var(--spacer) + 1px);
-	border-color: transparent canvas transparent transparent;
+	border-right-color: canvas;
+}
+.ui .grid tbody tr.item.comment.incoming td .ballon::after {
+	right: calc(-1 * var(--spacer) + 1px);
+	border-left-color: canvas;
 }
 
 .ui .grid tbody tr.item td .ballon button.disclosure {
