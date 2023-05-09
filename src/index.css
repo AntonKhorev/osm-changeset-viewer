@@ -314,12 +314,15 @@ body > .symbols {
 }
 
 .ui .grid tbody tr.item td {
-	--timeline-width: .125rem;
-	--timeline-above-height: 1rem;
-	--timeline-extra-height: 0px;
-	--icon-ballon-difference: calc(2 * var(--spacer) - .5 * var(--icon-size));
+	--icon-vertical-margin: 3px;
+	--timeline-width: 2px;
+	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
+	--timeline-previous-row-covering-height: 0px;
 	position: relative;
 	padding-left: calc(var(--spacer) + var(--icon-size));
+}
+.ui .grid tbody tr.item:not(.hidden-as-closed) td {
+	height: calc(var(--icon-vertical-margin) + var(--icon-size) + var(--icon-vertical-margin));
 }
 .ui .grid tbody tr.item td.with-timeline-above::before,
 .ui .grid tbody tr.item td.with-timeline-below::after {
@@ -332,22 +335,22 @@ body > .symbols {
 	z-index: -1;
 }
 .ui .grid tbody tr.item td.with-timeline-above::before {
-	top: calc(0px - var(--timeline-extra-height));
-	height: calc(var(--timeline-above-height) + var(--timeline-extra-height));
+	top: calc(0px - var(--timeline-previous-row-covering-height));
+	height: calc(var(--timeline-above-height) + var(--timeline-previous-row-covering-height));
 }
 .ui .grid tbody tr.item td.with-timeline-below::after {
 	top: var(--timeline-above-height);
 	height: calc(100% - var(--timeline-above-height));
 }
 .ui .grid tbody tr.separator + tr.item td.with-timeline-above::before {
-	--timeline-extra-height: calc(1rem + 2 * var(--spacer));
+	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
 }
 
 .ui .grid tbody tr.item.hidden-as-closed td .icon {
 	display: none;
 }
 .ui .grid tbody tr.item td .icon {
-	top: var(--icon-ballon-difference);
+	top: var(--icon-vertical-margin);
 }
 .ui .grid tbody tr.item.changeset td .icon::before {
 	content: '';
@@ -383,8 +386,12 @@ body > .symbols {
 	position: relative;
 	display: block;
 	box-sizing: border-box;
-	margin-right: -1px;
-	min-height: calc(2 * var(--icon-ballon-difference) + var(--icon-size) + 2px);
+	margin:
+		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - 2 * var(--spacer) - 1px)
+		-1px
+		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - 2 * var(--spacer) - 1px)
+		0px;
+	min-height: calc(4 * var(--spacer));
 	padding: var(--flow-vertical-padding) var(--spacer) var(--flow-vertical-padding)
 		calc(var(--spacer) + var(--disclosure-size) + var(--spacer));
 	border: solid 1px transparent;
@@ -392,6 +399,7 @@ body > .symbols {
 .ui .grid tbody tr.item.comment td .ballon {
 	border: var(--frame-line);
 	border-radius: var(--spacer);
+	background: canvas;
 }
 .ui .grid tbody tr.item.comment td .ballon::before,
 .ui .grid tbody tr.item.comment td .ballon::after {
@@ -415,7 +423,7 @@ body > .symbols {
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
 	position: absolute;
-	top: calc(var(--icon-ballon-difference) + .5 * var(--icon-size) - .5 * var(--disclosure-size));
+	top: calc(2 * var(--spacer) - .5 * var(--disclosure-size));
 	left: var(--spacer);
 	padding: 0;
 	border: var(--frame-line);
