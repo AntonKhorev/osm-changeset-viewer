@@ -109,12 +109,6 @@ function makePrimaryItemCell(
 }
 
 export function makeCommentCell(server: Server, itemType: 'note'|'changeset', comment: UserItemCommentDbRecord, username: string|undefined, action?: string): HTMLElement {
-	let userString=`???`
-	if (username!=null) {
-		userString=username
-	} else if (comment.uid!=null) {
-		userString=`#{comment.uid}`
-	}
 	const $icon=makeElement('span')('icon')()
 	if (itemType=='note') {
 		const s=2.5
@@ -146,16 +140,26 @@ export function makeCommentCell(server: Server, itemType: 'note'|'changeset', co
 	} else {
 		$icon.title=`${action} ${itemType} ${comment.itemId}`
 	}
-	const $flow=makeElement('span')('flow')(userString)
+	const $flow=makeElement('span')('flow')()
 	const $cell=makeItemCell('comment',comment.createdAt,$icon,$flow)
 	if (action!=null) {
 		$cell.classList.add(action)
 	}
 	if (comment.uid!=comment.itemUid) {
 		$cell.classList.add('incoming')
+		let from:string|HTMLElement=`???`
+		if (username!=null) {
+			from=makeLink(username,server.web.getUrl(e`user/${username}`))
+			
+		} else if (comment.uid!=null) {
+			from=`#{comment.uid}`
+		}
+		$flow.prepend(
+			makeElement('span')('from')(from),` `
+		)
 	}
 	$flow.append(
-		` : `,comment.text
+		` `,comment.text
 	)
 	return $cell
 }
