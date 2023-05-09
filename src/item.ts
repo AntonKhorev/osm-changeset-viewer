@@ -169,11 +169,10 @@ function makeItemCell(type: string, date: Date|undefined, $icon: HTMLElement, $f
 		`<line y1="${-s}" y2="${s}" stroke="currentColor" />`
 	)
 	$flow.prepend(
-		$disclosure,` `,
 		date?makeDateOutput(date):`???`,` `
 	)
 	return makeDiv('item',type)(
-		$icon,` `,$flow
+		$icon,` `,makeElement('span')('ballon')($disclosure,` `,$flow)
 	)
 }
 
