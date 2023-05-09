@@ -374,26 +374,22 @@ body > .symbols {
 	background: canvas;
 }
 
+.ui .grid tbody tr.item.hidden-as-closed td .ballon {
+	display: none;
+}
 .ui .grid tbody tr.item td .ballon {
 	--flow-vertical-padding: .375rem;
 	--disclosure-size: 13px;
-	--border-pixel-replacement: 1px;
 	position: relative;
 	display: block;
 	box-sizing: border-box;
 	margin-right: -1px;
 	min-height: calc(2 * var(--icon-ballon-difference) + var(--icon-size) + 2px);
-	padding:
-		calc(var(--border-pixel-replacement) + var(--flow-vertical-padding))
-		calc(var(--border-pixel-replacement) + var(--spacer))
-		calc(var(--border-pixel-replacement) + var(--flow-vertical-padding))
-		calc(var(--border-pixel-replacement) + var(--spacer) + var(--disclosure-size) + var(--spacer));
-}
-.ui .grid tbody tr.item.hidden-as-closed td .ballon {
-	display: none;
+	padding: var(--flow-vertical-padding) var(--spacer) var(--flow-vertical-padding)
+		calc(var(--spacer) + var(--disclosure-size) + var(--spacer));
+	border: solid 1px transparent;
 }
 .ui .grid tbody tr.item.comment td .ballon {
-	--border-pixel-replacement: 0px;
 	border: var(--frame-line);
 	border-radius: var(--spacer);
 }
@@ -419,8 +415,8 @@ body > .symbols {
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
 	position: absolute;
-	top: calc(var(--icon-ballon-difference) + .5 * var(--icon-size) - .5 * var(--disclosure-size) + var(--border-pixel-replacement));
-	left: calc(var(--spacer) + var(--border-pixel-replacement));
+	top: calc(var(--icon-ballon-difference) + .5 * var(--icon-size) - .5 * var(--disclosure-size));
+	left: var(--spacer);
 	padding: 0;
 	border: var(--frame-line);
 	background: canvas;
