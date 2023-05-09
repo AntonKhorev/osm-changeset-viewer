@@ -132,6 +132,9 @@ body > .symbols {
 	color: var(--light-text-color);
 	font-size: .8em;
 }
+.ui .grid tbody {
+	isolation: isolate;
+}
 
 .ui .grid thead {
 	--base-z-index: 0;
@@ -318,7 +321,6 @@ body > .symbols {
 	--timeline-width: 2px;
 	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
 	--timeline-previous-row-covering-height: 0px;
-	isolation: isolate;
 	position: relative;
 	padding-left: calc(var(--spacer) + var(--icon-size));
 }
@@ -356,6 +358,9 @@ body > .symbols {
 }
 .ui .grid tbody tr.item td .icon {
 	top: var(--icon-vertical-margin);
+}
+.ui .grid tbody tr.item.comment.incoming td .icon {
+	z-index: 1;
 }
 .ui .grid tbody tr.item.changeset td .icon::before {
 	content: '';
@@ -407,9 +412,6 @@ body > .symbols {
 	border: var(--frame-line);
 	border-radius: var(--spacer);
 	background: canvas;
-}
-.ui .grid tbody tr.item.comment.incoming td .ballon {
-	z-index: -1;
 }
 .ui .grid tbody tr.item.comment td .ballon::before,
 .ui .grid tbody tr.item.comment td .ballon::after {
