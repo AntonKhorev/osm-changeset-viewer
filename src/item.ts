@@ -48,10 +48,8 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 	}
 	const date = isClosed ? changeset.closedAt : changeset.createdAt
 	const $flow=makeElement('span')('flow')()
-	const $cell=makeLinkedItemCell(
-		'changeset',date,$icon,$flow,changeset.id,
-		server.web.getUrl(e`changeset/${changeset.id}`),
-		server.api.getUrl(e`changeset/${changeset.id}.json?include_discussion=true`)
+	const $cell=makeBasicChangesetCell(
+		server,'changeset',date,$icon,$flow,changeset.id
 	)
 	$flow.append(
 		makeChanges(),` `,
@@ -72,11 +70,8 @@ export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 		`<line y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="2" />`
 	)
 	const $flow=makeElement('span')('flow')()
-	const $cell=makeLinkedItemCell(
-		'note',note.createdAt,$icon,$flow,
-		note.id,
-		server.web.getUrl(e`note/${note.id}`),
-		server.api.getUrl(e`notes/${note.id}.json`)
+	const $cell=makeBasicNoteCell(
+		server,'note',note.createdAt,$icon,$flow,note.id
 	)
 	$flow.append(
 		note.openingComment ?? ''
@@ -134,7 +129,9 @@ export function makeCommentCell(
 		$icon.title=`${action} ${itemType} ${comment.itemId}`
 	}
 	const $flow=makeElement('span')('flow')()
-	const $cell=makeItemCell('comment',comment.createdAt,$icon,$flow)
+	const $cell=(itemType=='note' ? makeBasicNoteCell : makeBasicChangesetCell)(
+		server,'comment',comment.createdAt,$icon,$flow,comment.itemId
+	)
 	if (action!=null) {
 		$cell.classList.add(action)
 	}
@@ -155,6 +152,30 @@ export function makeCommentCell(
 		` `,comment.text
 	)
 	return $cell
+}
+
+function makeBasicChangesetCell(
+	server: Server,
+	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement,
+	id: number
+): HTMLElement {
+	return makeLinkedItemCell(
+		type,date,$icon,$flow,id,
+		server.web.getUrl(e`changeset/${id}`),
+		server.api.getUrl(e`changeset/${id}.json?include_discussion=true`)
+	)
+}
+
+function makeBasicNoteCell(
+	server: Server,
+	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement,
+	id: number
+): HTMLElement {
+	return makeLinkedItemCell(
+		type,date,$icon,$flow,id,
+		server.web.getUrl(e`note/${id}`),
+		server.api.getUrl(e`notes/${id}.json`)
+	)
 }
 
 function makeLinkedItemCell(
