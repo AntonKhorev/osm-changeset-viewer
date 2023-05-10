@@ -2,7 +2,7 @@ import type {Connection} from './net'
 import type {ChangesetViewerDBReader, UserDbRecord, UserScanDbRecord} from './db'
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
-import installTabDragListeners from './grid-head-drag'
+import installTabDragListeners from './grid/head-drag'
 import type {UserInfo, CompleteUserInfo} from './grid/head-item'
 import {
 	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
