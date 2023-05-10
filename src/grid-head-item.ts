@@ -77,6 +77,16 @@ export function makeUserCard(
 		}
 		return $button
 	}
+	const makeUpdatesLi=(type:UserScanDbRecord['type'])=>makeElement('li')(type)(
+		`${type}: `,at(),` `,makeUpdateButton(
+			`rescan`,()=>{
+				const uid=$card.dataset.uid
+				if (uid!=null) {
+					rescan(type,Number(uid))
+				}
+			}
+		)
+	)
 	const $card=makeDiv('card')(
 		hide(makeDiv('notice')()),
 		hide(makeDiv('avatar')()),
@@ -93,22 +103,8 @@ export function makeUserCard(
 				makeElement('li')('details')(`user details: `,at(),` `,makeUpdateButton(
 					`update`,update
 				)),
-				makeElement('li')('changesets')(`changesets: `,at(),` `,makeUpdateButton(
-					`rescan`,()=>{
-						const uid=$card.dataset.uid
-						if (uid!=null) {
-							rescan('changesets',Number(uid))
-						}
-					}
-				)),
-				makeElement('li')('notes')(`notes: `,at(),` `,makeUpdateButton(
-					`rescan`,()=>{
-						const uid=$card.dataset.uid
-						if (uid!=null) {
-							rescan('notes',Number(uid))
-						}
-					}
-				)),
+				makeUpdatesLi('changesets'),
+				makeUpdatesLi('notes')
 			)
 		))
 	)
