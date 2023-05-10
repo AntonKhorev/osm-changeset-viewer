@@ -408,6 +408,9 @@ body > .symbols {
 		calc(var(--spacer) + var(--disclosure-size) + var(--spacer));
 	border: solid 1px transparent;
 }
+.ui .grid tbody tr.item td[colspan] .ballon {
+	margin-right: 0;
+}
 .ui .grid tbody tr.item.comment td .ballon {
 	border: var(--frame-line);
 	border-radius: var(--spacer);
