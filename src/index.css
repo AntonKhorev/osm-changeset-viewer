@@ -485,6 +485,7 @@ body > .symbols {
 	font-size: .8em;
 	background: #8882;
 	color: var(--light-text-color);
+	white-space: nowrap;
 }
 
 .ui footer {
