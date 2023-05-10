@@ -1,11 +1,11 @@
-import type {Server} from './net'
-import {makeDateOutput} from './date'
+import type {Server} from '../net'
+import {makeDateOutput} from '../date'
 import type {
 	UserDbRecord, UserItemCommentDbRecord,
 	ChangesetDbRecord, NoteDbRecord
-} from './db'
-import {makeElement, makeDiv, makeLink} from './util/html'
-import {makeEscapeTag} from './util/escape'
+} from '../db'
+import {makeElement, makeDiv, makeLink} from '../util/html'
+import {makeEscapeTag} from '../util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
 

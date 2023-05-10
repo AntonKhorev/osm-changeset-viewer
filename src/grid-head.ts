@@ -3,11 +3,11 @@ import type {ChangesetViewerDBReader, UserDbRecord, UserScanDbRecord} from './db
 import type Grid from './grid'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
-import type {UserInfo, CompleteUserInfo} from './grid-head-item'
+import type {UserInfo, CompleteUserInfo} from './grid/head-item'
 import {
 	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
 	makeFormTab, makeFormCard, makeFormSelector
-} from './grid-head-item'
+} from './grid/head-item'
 import {ValidUserQuery} from './osm'
 import {toUserQuery} from './osm'
 import MuxUserItemDbStream from './mux-user-item-db-stream'

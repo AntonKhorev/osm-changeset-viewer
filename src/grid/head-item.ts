@@ -1,9 +1,9 @@
-import type {UserQuery, ValidUserQuery} from './osm/query-user'
-import type {UserScanDbRecord, UserDbInfo} from './db'
-import {makeCenteredSvg, makeUserSvgElements} from './item'
-import {makeDateOutput} from './date'
-import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
-import {ul} from './util/html-shortcuts'
+import type {UserQuery, ValidUserQuery} from '../osm/query-user'
+import type {UserScanDbRecord, UserDbInfo} from '../db'
+import {makeCenteredSvg, makeUserSvgElements} from './body-item'
+import {makeDateOutput} from '../date'
+import {makeElement, makeDiv, makeLabel, makeLink} from '../util/html'
+import {ul} from '../util/html-shortcuts'
 
 export type CompleteUserInfo = {
 	status: 'rerunning'|'ready'

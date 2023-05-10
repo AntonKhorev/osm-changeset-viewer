@@ -1,4 +1,4 @@
-import {getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined} from './item'
+import {getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined} from './grid/body-item'
 import type {MuxBatchItem} from './mux-user-item-db-stream'
 import {toIsoYearMonthString} from './date'
 import {makeElement, makeDiv} from './util/html'
