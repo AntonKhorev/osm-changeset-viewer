@@ -3,7 +3,7 @@ import type {UserScanDbRecord, UserDbInfo} from './db'
 import {makeCenteredSvg, makeUserSvgElements} from './item'
 import {makeDateOutput} from './date'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
-import {ul,li} from './util/html-shortcuts'
+import {ul} from './util/html-shortcuts'
 
 export type CompleteUserInfo = {
 	status: 'rerunning'|'ready'
@@ -49,162 +49,271 @@ function makeCloseButton(
 }
 
 export function makeUserCard(
-	query: ValidUserQuery, info: UserInfo,
 	$displayedChangesetsCount: HTMLOutputElement,
 	$displayedNotesCount: HTMLOutputElement,
-	getUserNameHref: (name:string)=>string,
-	getUserIdHref: (id:number)=>string,
-	processValidUserQuery: (query:ValidUserQuery)=>void,
+	update: ()=>void,
 	rescan: (type: UserScanDbRecord['type'], uid: number)=>void
 ): HTMLElement {
-	const $card=makeDiv('card')()
-	if (info.status=='pending' || info.status=='running') {
-		$card.append(makeDiv('notice')(`waiting for user data`))
-	} else if (info.status=='rerunning' || info.status=='ready') {
-		const $updateButton=makeElement('button')('with-icon')()
-		$updateButton.title=`update`
-		$updateButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
-		$updateButton.disabled=info.status=='rerunning'
-		if (info.user.withDetails && info.user.visible && info.user.img) {
+	const hide=($e:HTMLElement)=>{
+		$e.hidden=true
+		return $e
+	}
+	const makeCountsField=(className: string, title: string, $displayedCount: HTMLOutputElement)=>{
+		// $displayedCount.classList.add('displayed')
+		const $downloadedCount=makeElement('output')('downloaded')()
+		const $totalCount=makeElement('output')('total')()
+		return makeDiv('field',className)(
+			`${title}: `,$displayedCount,` / `,$downloadedCount,` / `,$totalCount
+		)
+	}
+	const at=()=>makeElement('output')('at')()
+	const makeUpdateButton=(title:string,callback:()=>void)=>{
+		const $button=makeElement('button')('with-icon')()
+		$button.title=title
+		$button.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
+		$button.onclick=()=>{
+			callback()
+			rotateButton($button)
+		}
+		return $button
+	}
+	const $card=makeDiv('card')(
+		hide(makeDiv('notice')()),
+		hide(makeDiv('avatar')()),
+		hide(makeDiv('field','name')()),
+		hide(makeDiv('field','created-at')(
+			`account created at `,at()
+		)),
+		hide(makeCountsField('changesets',`changesets`,$displayedChangesetsCount)),
+		hide(makeCountsField('notes',`notes`,$displayedNotesCount)),
+		hide(makeDiv('field','updates')(
+			`info updated at:`,
+			ul(
+				makeElement('li')('name')(`username: `,at()),
+				makeElement('li')('details')(`user details: `,at(),` `,makeUpdateButton(
+					`update`,update
+				)),
+				makeElement('li')('changesets')(`changesets: `,at(),` `,makeUpdateButton(
+					`rescan`,()=>{
+						const uid=$card.dataset.uid
+						if (uid!=null) {
+							rescan('changesets',Number(uid))
+						}
+					}
+				)),
+				makeElement('li')('notes')(`notes: `,at(),` `,makeUpdateButton(
+					`rescan`,()=>{
+						const uid=$card.dataset.uid
+						if (uid!=null) {
+							rescan('notes',Number(uid))
+						}
+					}
+				)),
+			)
+		))
+	)
+	return $card
+}
+
+export function updateUserCard(
+	$card: HTMLElement, info: UserInfo,
+	getUserNameHref: (name:string)=>string,
+	getUserIdHref: (id:number)=>string
+): void {
+	if (info.status=='rerunning' || info.status=='ready') {
+		$card.dataset.uid=String(info.user.id)
+	} else {
+		delete $card.dataset.uid
+	}
+	const $notice=$card.querySelector(':scope > .notice')
+	const $avatar=$card.querySelector(':scope > .avatar')
+	const $nameField=$card.querySelector(':scope > .field.name')
+	const $createdAtField=$card.querySelector(':scope > .field.created-at')
+	const $changesetsField=$card.querySelector(':scope > .field.changesets')
+	const $notesField=$card.querySelector(':scope > .field.notes')
+	const $updatesField=$card.querySelector(':scope > .field.updates')
+	if ($notice instanceof HTMLElement) {
+		if (info.status=='pending' || info.status=='running') {
+			$notice.hidden=false
+			$notice.textContent=`waiting for user data`
+		} else if (info.status=='failed') {
+			$notice.hidden=false
+			$notice.textContent=`unable to get user data`
+		} else {
+			$notice.hidden=true
+			$notice.textContent=``
+		}
+	}
+	if ($avatar instanceof HTMLElement) {
+		if (
+			(info.status=='rerunning' || info.status=='ready') &&
+			info.user.withDetails && info.user.visible && info.user.img
+		) {
+			$avatar.hidden=false
 			const $img=makeElement('img')()()
 			$img.src=info.user.img.href
-			$card.append(
-				makeDiv('avatar')($img)
-			)
-		}
-		let notKnownToBeDelelted = !info.user.withDetails || info.user.visible
-		let userNamePlaceholder: string|HTMLAnchorElement
-		if (info.user.name) {
-			if (notKnownToBeDelelted) {
-				userNamePlaceholder=makeLink(info.user.name,getUserNameHref(info.user.name))
-			} else {
-				userNamePlaceholder=info.user.name
-			}
+			$avatar.replaceChildren($img)
 		} else {
-			if (notKnownToBeDelelted) {
-				userNamePlaceholder=`user without requested details`
-			} else {
-				userNamePlaceholder=`deleted user`
-			}
+			$avatar.hidden=true
+			$avatar.replaceChildren()
 		}
-		$card.append(
-			makeDiv('field')(
-				userNamePlaceholder,` `,
+	}
+	if ($nameField instanceof HTMLElement) {
+		if (
+			info.status=='rerunning' || info.status=='ready'
+		) {
+			$nameField.hidden=false
+			const notKnownToBeDelelted = !info.user.withDetails || info.user.visible
+			let namePlaceholder: string|HTMLAnchorElement
+			if (info.user.name) {
+				if (notKnownToBeDelelted) {
+					namePlaceholder=makeLink(info.user.name,getUserNameHref(info.user.name))
+				} else {
+					namePlaceholder=info.user.name
+				}
+			} else {
+				if (notKnownToBeDelelted) {
+					namePlaceholder=`user without requested details`
+				} else {
+					namePlaceholder=`deleted user`
+				}
+			}
+			$nameField.replaceChildren(
+				namePlaceholder,` `,
 				makeElement('span')('api')(
 					`(`,makeLink(`#${info.user.id}`,getUserIdHref(info.user.id)),`)`
 				)
 			)
-		)
-		if (info.user.withDetails) {
-			if (info.user.visible) {
-				$card.append(
-					makeDiv('field')(
-						`account created at `,makeDateOutput(info.user.createdAt)
-					)
-				)
-			} else {
-				const $unknown=makeElement('span')()(`???`)
-				$unknown.title=`date is unknown because the user is deleted`
-				$card.append(
-					makeDiv('field')(
-						`created at `,$unknown
-					)
-				)
-			}
-		}
-		{
-			const $downloadedChangesetsCount=makeElement('output')()()
-			if (info.scans.changesets) {
-				$downloadedChangesetsCount.textContent=String(info.scans.changesets.items.count)
-			} else {
-				$downloadedChangesetsCount.textContent=`0`
-			}
-			$downloadedChangesetsCount.title=`downloaded`
-			const $totalChangesetsCount=makeElement('output')()()
-			if (info.user.withDetails && info.user.visible) {
-				$totalChangesetsCount.textContent=String(info.user.changesets.count)
-				$totalChangesetsCount.title=`opened by the user`
-			} else {
-				$totalChangesetsCount.textContent=`???`
-				$totalChangesetsCount.title=`number of changesets opened by the user is unknown because `+(info.user.withDetails
-					? `user details weren't requested`
-					: `the user is deleted`
-				)
-			}
-			$card.append(
-				makeDiv('field')(
-					`changesets: `,$displayedChangesetsCount,` / `,$downloadedChangesetsCount,` / `,$totalChangesetsCount
-				)
-			)
-		}{
-			const $downloadedNotesCount=makeElement('output')()()
-			if (info.scans.notes) {
-				$downloadedNotesCount.textContent=String(info.scans.notes.items.count)
-			} else {
-				$downloadedNotesCount.textContent=`0`
-			}
-			$downloadedNotesCount.title=`downloaded`
-			const $totalNotesCount=makeElement('output')()()
-			$totalNotesCount.textContent=`???`
-			$totalNotesCount.title=`number of notes created by the user is unknown because the API doesn't report it`
-			$card.append(
-				makeDiv('field')(
-					`notes: `,$displayedNotesCount,` / `,$downloadedNotesCount,` / `,$totalNotesCount
-				)
-			)
-		}
-		$card.append(
-			makeDiv('field','updates')(
-				`info updated at:`,
-				ul(
-					li(`username: `,makeDateOutput(info.user.nameUpdatedAt)),
-					li(`user details: `,(info.user.withDetails
-						? makeDateOutput(info.user.detailsUpdatedAt)
-						: `not requested`
-					),` `,$updateButton),
-					makeScanListItem('changesets',info.scans.changesets,rescan),
-					makeScanListItem('notes',info.scans.notes,rescan)
-				)
-			)
-		)
-		$updateButton.onclick=()=>{
-			processValidUserQuery(query)
-			rotateButton($updateButton)
-		}
-	} else {
-		$card.append(makeDiv('notice')(`unable to get user data`))
-	}
-	return $card
-}
-
-function makeScanListItem(
-	type: UserScanDbRecord['type'], scan: UserScanDbRecord|undefined,
-	rescan: (type: UserScanDbRecord['type'], uid: number)=>void
-): HTMLElement {
-	const $field=li(`${type}: `)
-	if (scan) {
-		$field.append(
-			makeDateOutput(scan.beginDate)
-		)
-		if (scan.endDate) {
-			$field.append(`..`,makeDateOutput(scan.endDate))
 		} else {
-			const $incomplete=makeElement('span')()(`...`)
-			$incomplete.title=`incomplete`
-			$field.append($incomplete)
+			$nameField.hidden=true
+			$nameField.replaceChildren()
 		}
-		const $rescanButton=makeElement('button')('with-icon')()
-		$rescanButton.title=`rescan`
-		$rescanButton.innerHTML=`<svg width="16" height="16"><use href="#repeat" /></svg>`
-		$field.append(` `,$rescanButton)
-		$rescanButton.onclick=()=>{
-			rescan(type,scan.uid)
-			rotateButton($rescanButton)
-		}
-	} else {
-		$field.append(`not started`)
 	}
-	return $field
+	if ($createdAtField instanceof HTMLElement) {
+		if (
+			(info.status=='rerunning' || info.status=='ready') &&
+			info.user.withDetails
+		) {
+			$createdAtField.hidden=false
+			const $at=$createdAtField.querySelector(':scope > output.at')
+			if ($at instanceof HTMLElement) {
+				if (info.user.visible) {
+					$at.replaceChildren(
+						makeDateOutput(info.user.createdAt)
+					)
+				} else {
+					const $unknown=makeElement('span')()(`???`)
+					$unknown.title=`date is unknown because the user is deleted`
+					$at.replaceChildren(
+						$unknown
+					)
+				}
+			}
+		} else {
+			$createdAtField.hidden=true
+		}
+	}
+	if ($changesetsField instanceof HTMLElement) {
+		if (
+			info.status=='rerunning' || info.status=='ready'
+		) {
+			$changesetsField.hidden=false
+			const $downloadedCount=$changesetsField.querySelector(':scope > output.downloaded')
+			if ($downloadedCount instanceof HTMLElement) {
+				$downloadedCount.textContent=(info.scans.changesets
+					? String(info.scans.changesets.items.count)
+					: `0`
+				)
+				$downloadedCount.title=`downloaded`
+			}
+			const $totalCount=$changesetsField.querySelector(':scope > output.total')
+			if ($totalCount instanceof HTMLElement) {
+				if (info.user.withDetails && info.user.visible) {
+					$totalCount.textContent=String(info.user.changesets.count)
+					$totalCount.title=`opened by the user`
+				} else {
+					$totalCount.textContent=`???`
+					$totalCount.title=`number of changesets opened by the user is unknown because `+(info.user.withDetails
+						? `user details weren't requested`
+						: `the user is deleted`
+					)
+				}
+			}
+		} else {
+			$changesetsField.hidden=true
+		}
+	}
+	if ($notesField instanceof HTMLElement) {
+		if (
+			info.status=='rerunning' || info.status=='ready'
+		) {
+			$notesField.hidden=false
+			const $downloadedCount=$notesField.querySelector(':scope > output.downloaded')
+			if ($downloadedCount instanceof HTMLElement) {
+				$downloadedCount.textContent=(info.scans.notes
+					? String(info.scans.notes.items.count)
+					: `0`
+				)
+				$downloadedCount.title=`downloaded`
+			}
+			const $totalCount=$notesField.querySelector(':scope > output.total')
+			if ($totalCount instanceof HTMLElement) {
+				$totalCount.textContent=`???`
+				$totalCount.title=`number of notes created by the user is unknown because the API doesn't report it`
+			}
+		} else {
+			$notesField.hidden=true
+		}
+	}
+	if ($updatesField instanceof HTMLElement) {
+		if (
+			info.status=='rerunning' || info.status=='ready'
+		) {
+			$updatesField.hidden=false
+			const $nameAt=$updatesField.querySelector(':scope > ul > li.name > output.at')
+			if ($nameAt instanceof HTMLElement) {
+				$nameAt.replaceChildren(
+					makeDateOutput(info.user.nameUpdatedAt)
+				)
+			}
+			const $updateDetailsButton=$updatesField.querySelector(':scope > ul > li.details > button')
+			if ($updateDetailsButton instanceof HTMLButtonElement) {
+				$updateDetailsButton.disabled=info.status=='rerunning'
+			}
+			const $detailsAt=$updatesField.querySelector(':scope > ul > li.details > output.at')
+			if ($detailsAt instanceof HTMLElement) {
+				$detailsAt.replaceChildren(info.user.withDetails
+					? makeDateOutput(info.user.detailsUpdatedAt)
+					: `not requested`
+				)
+			}
+			const updateScan=($at:HTMLElement,scan:UserScanDbRecord|undefined)=>{
+				$at.replaceChildren()
+				if (!scan) {
+					$at.append(`not started`)
+					return
+				}
+				$at.append(makeDateOutput(scan.beginDate))
+				if (scan.endDate) {
+					$at.append(`..`,makeDateOutput(scan.endDate))
+				} else {
+					const $incomplete=makeElement('span')()(`...`)
+					$incomplete.title=`incomplete`
+					$at.append($incomplete)
+				}
+			}
+			const $changesetsAt=$updatesField.querySelector(':scope > ul > li.changesets > output.at')
+			if ($changesetsAt instanceof HTMLElement) {
+				updateScan($changesetsAt,info.scans.changesets)
+			}
+			const $notesAt=$updatesField.querySelector(':scope > ul > li.notes > output.at')
+			if ($notesAt instanceof HTMLElement) {
+				updateScan($notesAt,info.scans.notes)
+			}
+		} else {
+			$updatesField.hidden=true
+		}
+	}
 }
 
 export function makeFormCard(

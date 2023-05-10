@@ -5,7 +5,7 @@ import {WorkerBroadcastReceiver} from './broadcast-channel'
 import installTabDragListeners from './grid-head-drag'
 import type {UserInfo, CompleteUserInfo} from './grid-head-item'
 import {
-	makeUserTab, makeUserCard, makeUserSelector,
+	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
 	makeFormTab, makeFormCard, makeFormSelector
 } from './grid-head-item'
 import {ValidUserQuery} from './osm'
@@ -86,14 +86,7 @@ export default class GridHead {
 		broadcastReceiver.onmessage=async({data:message})=>{
 			if (message.type!='operation') return
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
-				const $card=this.makeUserCard(
-					userEntry.query,userEntry.info,
-					userEntry.$displayedChangesetsCount,
-					userEntry.$displayedNotesCount
-				)
-				// userEntry.$card.replaceWith($card)
-				userEntry.$card=$card
-				this.rewriteUserEntriesInHead()
+				this.updateUserCard(userEntry.$card,userEntry.info)
 				const columnHues=this.userEntries.map(getUserEntryHue)
 				this.grid.setColumnHues(columnHues)
 			}
@@ -184,9 +177,12 @@ export default class GridHead {
 		)
 		const $displayedChangesetsCount=this.makeUserDisplayedItemsCount()
 		const $displayedNotesCount=this.makeUserDisplayedItemsCount()
-		const $card=this.makeUserCard(
-			query,info,$displayedChangesetsCount,$displayedNotesCount
+		const $card=makeUserCard(
+			$displayedChangesetsCount,$displayedNotesCount,
+			()=>this.sendUserQueryToWorker(query),
+			(type,uid)=>this.sendRescanRequestToWorker(type,uid)
 		)
+		this.updateUserCard($card,info)
 		const $selector=makeUserSelector($checkbox=>{
 			for (const [iColumn,userEntry] of this.userEntries.entries()) {
 				if ($selector!=userEntry.$selector) continue
@@ -201,19 +197,10 @@ export default class GridHead {
 			$displayedNotesCount, displayedNotesCount: 0,
 		}
 	}
-	private makeUserCard(
-		query: ValidUserQuery, info: UserInfo,
-		$displayedChangesetsCount: HTMLOutputElement,
-		$displayedNotesCount: HTMLOutputElement
-	): HTMLElement {
-		return makeUserCard(
-			query,info,
-			$displayedChangesetsCount,
-			$displayedNotesCount,
+	private updateUserCard($card: HTMLElement, info: UserInfo): void {
+		updateUserCard($card,info,
 			name=>this.cx.server.web.getUrl(e`user/${name}`),
-			id=>this.cx.server.api.getUrl(e`user/${id}.json`),
-			query=>this.sendUserQueryToWorker(query),
-			(type,uid)=>this.sendRescanRequestToWorker(type,uid)
+			id=>this.cx.server.api.getUrl(e`user/${id}.json`)
 		)
 	}
 	private makeFormUserEntry(): GridUserEntry {
