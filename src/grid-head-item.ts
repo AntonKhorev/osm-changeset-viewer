@@ -169,6 +169,7 @@ export function makeUserCard(
 		)
 		$updateButton.onclick=()=>{
 			processValidUserQuery(query)
+			rotateButton($updateButton)
 		}
 	} else {
 		$card.append(makeDiv('notice')(`unable to get user data`))
@@ -198,6 +199,7 @@ function makeScanListItem(
 		$field.append(` `,$rescanButton)
 		$rescanButton.onclick=()=>{
 			rescan(type,scan.uid)
+			rotateButton($rescanButton)
 		}
 	} else {
 		$field.append(`not started`)
@@ -255,4 +257,15 @@ export function makeUserSelector(
 
 export function makeFormSelector(): HTMLElement {
 	return makeDiv('selector')()
+}
+
+function rotateButton($button: HTMLElement): void {
+	requestAnimationFrame(()=>{
+		$button.style.removeProperty('transition')
+		$button.style.removeProperty('rotate')
+		requestAnimationFrame(()=>{
+			$button.style.transition=`rotate 200ms`
+			$button.style.rotate=`1turn`
+		})
+	})
 }
