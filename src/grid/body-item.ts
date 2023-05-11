@@ -29,6 +29,39 @@ export function markChangesetCellAsUncombined($item: HTMLElement, id: number|str
 	if ($checkbox) $checkbox.title=`opened changeset ${id}`
 }
 
+export function renderCollapsedItem(
+	server: Server,
+	{type,item}: GridBatchItem,
+	usernames: Map<number, string>
+): HTMLElement|null {
+	let id: number
+	let $icon: HTMLElement
+	if (type=='user') {
+		id=item.id
+		$icon=makeUserIcon(id)
+	} else if (type=='changeset' || type=='changesetClose') {
+		id=item.id
+		$icon=makeChangesetIcon(id,type=='changesetClose')
+	} else if (type=='note') {
+		id=item.id
+		$icon=makeNoteIcon(id)
+	} else if (type=='changesetComment' || type=='noteComment') {
+		id=item.itemId
+		if (type=='noteComment') {
+			$icon=makeCommentIcon(id,'note',item.action)
+		} else {
+			$icon=makeCommentIcon(id,'changeset')
+		}
+	} else {
+		return null
+	}
+	return makeElement('span')('collection-item')(
+		$icon,` `,makeElement('span')('ballon')(
+			makeDisclosureButton(),` `,String(id) // TODO item links
+		)
+	)
+}
+
 export function renderExpandedItem(
 	server: Server,
 	{type,item}: GridBatchItem,
@@ -61,18 +94,7 @@ function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, isClose
 		$changes.title=`number of changes`
 		return $changes
 	}
-	let $icon: HTMLElement
-	if (isClosed) {
-		const $noCheckbox=makeElement('span')('no-checkbox')()
-		$noCheckbox.tabIndex=0
-		$noCheckbox.title=`closed changeset ${changeset.id}`
-		$icon=makeElement('span')('icon')($noCheckbox)
-	} else {
-		const $checkbox=makeElement('input')()()
-		$checkbox.type='checkbox'
-		$checkbox.title=`opened changeset ${changeset.id}`
-		$icon=makeElement('span')('icon')($checkbox)
-	}
+	const $icon=makeChangesetIcon(changeset.id,isClosed)
 	const date = isClosed ? changeset.closedAt : changeset.createdAt
 	const $flow=makeElement('span')('flow')()
 	const $cell=makeBasicChangesetCell(
@@ -86,17 +108,23 @@ function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, isClose
 	return $cell
 }
 
+function makeChangesetIcon(id: number, isClosed: boolean): HTMLElement {
+	if (isClosed) {
+		const $noCheckbox=makeElement('span')('no-checkbox')()
+		$noCheckbox.tabIndex=0
+		$noCheckbox.title=`closed changeset ${id}`
+		return makeElement('span')('icon')($noCheckbox)
+	} else {
+		const $checkbox=makeElement('input')()()
+		$checkbox.type='checkbox'
+		$checkbox.title=`opened changeset ${id}`
+		return makeElement('span')('icon')($checkbox)
+	}
+}
+
 function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
-	const $icon=makeElement('span')('icon')()
-	$icon.title=`note ${note.id}`
-	const s=3
-	$icon.innerHTML=makeCenteredSvg(10,
-		`<path d="${computeNewOutlinePath(9.5,8,10)}" fill="none" stroke="currentColor" stroke-width="1" />`+
-		`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
-		`<line x1="${-s}" x2="${s}" stroke="currentColor" stroke-width="2" />`+
-		`<line y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="2" />`
-	)
 	const $flow=makeElement('span')('flow')()
+	const $icon=makeNoteIcon(note.id)
 	const $cell=makeBasicNoteCell(
 		server,'note',note.createdAt,$icon,$flow,note.id
 	)
@@ -106,17 +134,35 @@ function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	return $cell
 }
 
-function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
+function makeNoteIcon(id: number): HTMLElement {
 	const $icon=makeElement('span')('icon')()
-	$icon.title=`user ${user.id}`
+	$icon.title=`note ${id}`
+	const s=3
+	$icon.innerHTML=makeCenteredSvg(10,
+		`<path d="${computeNewOutlinePath(9.5,8,10)}" fill="none" stroke="currentColor" stroke-width="1" />`+
+		`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
+		`<line x1="${-s}" x2="${s}" stroke="currentColor" stroke-width="2" />`+
+		`<line y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="2" />`
+	)
+	return $icon
+}
+
+function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
+	const $flow=makeElement('span')('flow')(
+		`account created`
+	)
+	const $icon=makeUserIcon(user.id)
+	return makeItemCell('user',user.createdAt,$icon,$flow)
+}
+
+function makeUserIcon(id: number): HTMLElement {
+	const $icon=makeElement('span')('icon')()
+	$icon.title=`user ${id}`
 	$icon.innerHTML=makeCenteredSvg(10,
 		`<path d="${computeNewOutlinePath(9,7,10)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
 		makeUserSvgElements()
 	)
-	const $flow=makeElement('span')('flow')(
-		`account created`
-	)
-	return makeItemCell('user',user.createdAt,$icon,$flow)
+	return $icon
 }
 
 function makeCommentCell(
@@ -124,6 +170,34 @@ function makeCommentCell(
 	comment: UserItemCommentDbRecord, username: string|undefined,
 	action?: string
 ): HTMLElement {
+	const $flow=makeElement('span')('flow')()
+	const $icon=makeCommentIcon(comment.itemId,itemType,action)
+	const $cell=(itemType=='note' ? makeBasicNoteCell : makeBasicChangesetCell)(
+		server,'comment',comment.createdAt,$icon,$flow,comment.itemId
+	)
+	if (action!=null) {
+		$cell.classList.add(action)
+	}
+	if (comment.uid!=comment.itemUid) {
+		$cell.classList.add('incoming')
+		let from:string|HTMLElement=`???`
+		if (username!=null) {
+			from=makeLink(username,server.web.getUrl(e`user/${username}`))
+			
+		} else if (comment.uid!=null) {
+			from=`#{comment.uid}`
+		}
+		$flow.prepend(
+			makeElement('span')('from')(from),` `
+		)
+	}
+	$flow.append(
+		` `,comment.text
+	)
+	return $cell
+}
+
+function makeCommentIcon(id: number, itemType: 'note'|'changeset', action?: string): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	if (itemType=='note') {
 		const s=2.5
@@ -151,34 +225,11 @@ function makeCommentCell(
 		$icon.innerHTML=makeCenteredSvg(r,`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`)
 	}
 	if (action==null) {
-		$icon.title=`comment for ${itemType} ${comment.itemId}`
+		$icon.title=`comment for ${itemType} ${id}`
 	} else {
-		$icon.title=`${action} ${itemType} ${comment.itemId}`
+		$icon.title=`${action} ${itemType} ${id}`
 	}
-	const $flow=makeElement('span')('flow')()
-	const $cell=(itemType=='note' ? makeBasicNoteCell : makeBasicChangesetCell)(
-		server,'comment',comment.createdAt,$icon,$flow,comment.itemId
-	)
-	if (action!=null) {
-		$cell.classList.add(action)
-	}
-	if (comment.uid!=comment.itemUid) {
-		$cell.classList.add('incoming')
-		let from:string|HTMLElement=`???`
-		if (username!=null) {
-			from=makeLink(username,server.web.getUrl(e`user/${username}`))
-			
-		} else if (comment.uid!=null) {
-			from=`#{comment.uid}`
-		}
-		$flow.prepend(
-			makeElement('span')('from')(from),` `
-		)
-	}
-	$flow.append(
-		` `,comment.text
-	)
-	return $cell
+	return $icon
 }
 
 function makeBasicChangesetCell(
@@ -221,6 +272,16 @@ function makeLinkedItemCell(
 function makeItemCell(
 	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement
 ): HTMLElement {
+	const $disclosure=makeDisclosureButton()
+	$flow.prepend(
+		date?makeDateOutput(date):`???`,` `
+	)
+	return makeDiv('item',type)(
+		$icon,` `,makeElement('span')('ballon')($disclosure,` `,$flow)
+	)
+}
+
+function makeDisclosureButton(): HTMLButtonElement {
 	const $disclosure=makeElement('button')('disclosure')()
 	$disclosure.title=`Expand item info`
 	const r=5.5
@@ -229,12 +290,7 @@ function makeItemCell(
 		`<line x1="${-s}" x2="${s}" stroke="currentColor" />`+
 		`<line y1="${-s}" y2="${s}" stroke="currentColor" />`
 	)
-	$flow.prepend(
-		date?makeDateOutput(date):`???`,` `
-	)
-	return makeDiv('item',type)(
-		$icon,` `,makeElement('span')('ballon')($disclosure,` `,$flow)
-	)
+	return $disclosure
 }
 
 export function makeCenteredSvg(r: number, content: string): string {
