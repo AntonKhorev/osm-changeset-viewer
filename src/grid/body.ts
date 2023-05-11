@@ -56,7 +56,7 @@ export default class GridBody {
 		isCollapsed: boolean
 	): void {
 		if (iColumns.length==0) return
-		const $cells=this.insertRow(columnHues,iColumns,sequenceInfo,isCollapsed,[...$masterItem.classList])
+		const $cells=this.insertItemCells(columnHues,iColumns,sequenceInfo,isCollapsed,[...$masterItem.classList])
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $cell of $cells) {
 			$cell.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
@@ -159,7 +159,7 @@ export default class GridBody {
 		}
 		this.onItemSelect()
 	}
-	private insertRow(
+	private insertItemCells(
 		columnHues: (number|null)[],
 		iColumns: number[],
 		sequenceInfo: ItemSequenceInfo,
@@ -172,30 +172,29 @@ export default class GridBody {
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
 		}))
-		let $precedingRow:HTMLTableRowElement|undefined
-		let i=this.$gridBody.rows.length-1
-		for (;i>=0;i--) {
-			$precedingRow=this.$gridBody.rows[i]
-			const precedingSequenceInfo=readItemSequenceInfo($precedingRow)
-			if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) break
-		}
-		let $row: HTMLTableRowElement
+		const preceding=this.getPrecedingElement(sequenceInfo)
+		const $row=makeElement('tr')()()
 		const date=new Date(sequenceInfo.timestamp)
-		if (!$precedingRow || !readItemSequenceInfoAndCheckIfInSameMonth($precedingRow,date)) {
+		if (preceding.type=='absent' || !readItemSequenceInfoAndCheckIfInSameMonth(preceding.$row,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
-			$precedingRow=this.$gridBody.insertRow(i+1)
-			$precedingRow.classList.add('separator')
-			writeSeparatorSequenceInfo($precedingRow,date)
-			const $cell=$precedingRow.insertCell()
+			let $separator:HTMLTableRowElement
+			if (preceding.type=='absent') {
+				$separator=this.$gridBody.insertRow(0)
+			} else {
+				preceding.$row.after($separator=makeElement('tr')()())
+			}
+			$separator.classList.add('separator')
+			writeSeparatorSequenceInfo($separator,date)
+			const $cell=$separator.insertCell()
 			$cell.append(
 				makeDiv('month')(
 					makeElement('time')()(yearMonthString)
 				)
 			)
 			$cell.colSpan=this.nColumns+1
-			$row=this.$gridBody.insertRow(i+2)
+			$separator.after($row)
 		} else {
-			$row=this.$gridBody.insertRow(i+1)
+			preceding.$row.after($row)
 		}
 		if (sequenceInfo.type=='user') {
 			for (const iColumn of iColumns) {
@@ -226,6 +225,29 @@ export default class GridBody {
 			$cells.push($cell)
 		}
 		return $cells
+	}
+	getPrecedingElement(sequenceInfo: ItemSequenceInfo): {
+		type: 'absent'
+	} | {
+		type: 'item'
+		$row: HTMLTableRowElement
+	} | {
+		type: 'collection'
+		$row: HTMLTableRowElement
+		$cells: HTMLElement[]
+	} {
+		for (let i=this.$gridBody.rows.length-1;i>=0;i--) {
+			const $row=this.$gridBody.rows[i]
+			if ($row.classList.contains('collection')) {
+				// TODO
+			} else {
+				const precedingSequenceInfo=readItemSequenceInfo($row)
+				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
+					return {type:'item',$row}
+				}
+			}
+		}
+		return {type:'absent'}
 	}
 }
 
