@@ -20,6 +20,17 @@ type CellTimelineRelation = {
 	withTimelineBelow: boolean
 }
 
+type PrecedingElement = {
+	type: 'absent'
+} | {
+	type: 'item'
+	$row: HTMLTableRowElement
+} | {
+	type: 'collection'
+	$row: HTMLTableRowElement
+	$cells: (HTMLElement|null)[]
+}
+
 export default class GridBody {
 	$gridBody=makeElement('tbody')()()
 	onItemSelect: ()=>void = ()=>{}
@@ -177,12 +188,7 @@ export default class GridBody {
 		const date=new Date(sequenceInfo.timestamp)
 		if (preceding.type=='absent' || !readItemSequenceInfoAndCheckIfInSameMonth(preceding.$row,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
-			let $separator:HTMLTableRowElement
-			if (preceding.type=='absent') {
-				$separator=this.$gridBody.insertRow(0)
-			} else {
-				preceding.$row.after($separator=makeElement('tr')()())
-			}
+			const $separator=this.insertRow(preceding)
 			$separator.classList.add('separator')
 			writeSeparatorSequenceInfo($separator,date)
 			const $cell=$separator.insertCell()
@@ -226,16 +232,7 @@ export default class GridBody {
 		}
 		return $cells
 	}
-	getPrecedingElement(sequenceInfo: ItemSequenceInfo): {
-		type: 'absent'
-	} | {
-		type: 'item'
-		$row: HTMLTableRowElement
-	} | {
-		type: 'collection'
-		$row: HTMLTableRowElement
-		$cells: (HTMLElement|null)[]
-	} {
+	private getPrecedingElement(sequenceInfo: ItemSequenceInfo): PrecedingElement {
 		const findPrecedingCollectionCell=($rowCell:HTMLTableCellElement)=>{
 			const $cells=$rowCell.querySelectorAll(':scope > .cell')
 			for (let i=$cells.length-1;i>=0;i++) {
@@ -263,6 +260,37 @@ export default class GridBody {
 			}
 		}
 		return {type:'absent'}
+	}
+	private insertRow(preceding: PrecedingElement): HTMLTableRowElement {
+		if (preceding.type=='absent') {
+			return this.$gridBody.insertRow(0)
+		}
+		const $row=makeElement('tr')()()
+		preceding.$row.after($row)
+		if (preceding.type=='collection') {
+			const $rowCellChildrenAfters=preceding.$cells.map(($precedingCell,i)=>{
+				const $rowCell=preceding.$row.cells[i]
+				const $rowCellChildrenAfter:Element[]=[]
+				let metPrecedingCell=$precedingCell!=null
+				for (const $rowCellChild of $rowCell.children) {
+					if (metPrecedingCell) {
+						$rowCellChildrenAfter.push($rowCellChild)
+					}
+					if ($rowCellChild==$precedingCell) {
+						metPrecedingCell=true
+					}
+				}
+				return $rowCellChildrenAfter
+			})
+			if ($rowCellChildrenAfters.some($rowCellChildrenAfter=>$rowCellChildrenAfter.length>0)) {
+				const $rowAfter=makeElement('tr')('collection')()
+				for (const $rowCellChildrenAfter of $rowCellChildrenAfters) {
+					$rowAfter.insertCell().append(...$rowCellChildrenAfter)
+				}
+				$row.after($rowAfter)
+			}
+		}
+		return $row
 	}
 }
 
