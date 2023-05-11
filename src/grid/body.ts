@@ -1,13 +1,13 @@
-import {getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined} from './grid/body-item'
-import type {MuxBatchItem} from './mux-user-item-db-stream'
-import {toIsoYearMonthString} from './date'
-import {makeElement, makeDiv} from './util/html'
-import {moveInArray} from './util/types'
-
-type Column = {
-	hue: number|null
-	$timelineCutoffRow: HTMLTableRowElement|null
-}
+import type {Connection} from '../net'
+import {
+	getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined,
+	makeUserCell, makeChangesetCell, makeNoteCell, makeCommentCell
+} from './body-item'
+import type {MuxBatchItem} from '../mux-user-item-db-stream'
+import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
+import {toIsoYearMonthString} from '../date'
+import {makeElement, makeDiv} from '../util/html'
+import {moveInArray} from '../util/types'
 
 type CellTimelineRelation = {
 	filled: boolean
@@ -15,46 +15,68 @@ type CellTimelineRelation = {
 	withTimelineBelow: boolean
 }
 
-export default class Grid {
-	$grid=makeElement('table')('grid')()
+export default class GridBody {
+	$gridBody=makeElement('tbody')()()
 	onItemSelect: ()=>void = ()=>{}
 	private wrappedItemSelectListener: ()=>void
-	private $colgroup=makeElement('colgroup')()()
-	private columns: Column[] = []
+	private $timelineCutoffRows: (HTMLTableRowElement|null)[] = []
 	constructor() {
-		this.$grid.append(this.$colgroup)
-		this.$grid.createTHead()
-		this.$grid.createTBody()
-		this.setColumns([])
 		this.wrappedItemSelectListener=()=>this.onItemSelect()
 	}
 	get nColumns(): number {
-		return this.columns.length
+		return this.$timelineCutoffRows.length
 	}
-	setColumns(columnHues: (number|null)[]) {
-		this.columns=columnHues.map(hue=>({
-			hue,
-			$timelineCutoffRow: null
-		}))
-		this.clearItems()
-		this.$grid.style.setProperty('--columns',String(this.nColumns))
-		this.$colgroup.replaceChildren()
-		for (let i=0;i<this.nColumns;i++) {
-			this.$colgroup.append(
-				makeElement('col')()()
-			)
+	setColumns(nColumns: number): void {
+		this.$timelineCutoffRows=new Array(nColumns).fill(null)
+		this.$gridBody.replaceChildren()
+	}
+	makeAndAddItem(
+		cx: Connection, columnHues: (number|null)[],
+		{iColumns,type,item}: GridBatchItem,
+		usernames: Map<number, string>
+	): boolean {
+		let $item: HTMLElement
+		let date: Date
+		let id: number
+		let order: number|undefined
+		if (type=='user') {
+			$item=makeUserCell(cx.server,item)
+			date=item.createdAt
+			id=item.id
+		} else if (type=='changeset' || type=='changesetClose') {
+			$item=makeChangesetCell(cx.server,item,type=='changesetClose')
+			date=item.createdAt
+			if (type=='changesetClose' && item.closedAt) {
+				date=item.closedAt
+			}
+			id=item.id
+		} else if (type=='note') {
+			$item=makeNoteCell(cx.server,item)
+			date=item.createdAt
+			id=item.id
+		} else if (type=='changesetComment' || type=='noteComment') {
+			let username: string|undefined
+			if (item.uid) {
+				username=usernames.get(item.uid)
+			}
+			if (type=='noteComment') {
+				$item=makeCommentCell(cx.server,'note',item,username,item.action)
+			} else {
+				$item=makeCommentCell(cx.server,'changeset',item,username)
+			}
+			date=item.createdAt
+			id=item.itemId
+			order=item.order
+		} else {
+			return false
 		}
-		this.$colgroup.append(
-			makeElement('col')('adder')()
-		)
+		this.addItem(columnHues,$item,iColumns,date,type,id,order)
+		return true
 	}
-	setColumnHues(columnHues: (number|null)[]) {
-		for (const [iColumn,hue] of columnHues.entries()) {
-			this.columns[iColumn].hue=hue
-		}
-		// TODO update existing table cells - currently not required because table is always cleared
-	}
-	addItem($masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number, order?: number) {
+	private addItem(
+		columnHues: (number|null)[],
+		$masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number, order?: number
+	): void {
 		if (iColumns.length==0) return
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
@@ -69,7 +91,7 @@ export default class Grid {
 			const $cell=$row.insertCell()
 			$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
 			$cell.classList.toggle('with-timeline-below',cellTimelineRelation.withTimelineBelow)
-			const hue=this.columns[iColumn].hue
+			const hue=columnHues[iColumn]
 			if (hue!=null) {
 				$cell.style.setProperty('--hue',String(hue))
 			}
@@ -85,11 +107,9 @@ export default class Grid {
 			$checkbox.addEventListener('input',this.wrappedItemSelectListener)
 		}
 	}
-	updateTableAccordingToSettings(): void {
-		const inOneColumn=this.$grid.classList.contains('in-one-column')
-		const withClosedChangesets=this.$grid.classList.contains('with-closed-changesets')
+	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
 		let $itemAbove: HTMLElement|undefined
-		for (const $item of this.$tbody.rows) {
+		for (const $item of this.$gridBody.rows) {
 			if (!$item.classList.contains('item')) {
 				$itemAbove=undefined
 				continue
@@ -136,8 +156,8 @@ export default class Grid {
 		}
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
-		moveInArray(this.columns,iShiftFrom,iShiftTo)
-		for (const $row of this.$tbody.rows) {
+		moveInArray(this.$timelineCutoffRows,iShiftFrom,iShiftTo)
+		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('item')) continue
 			const $cells=[...$row.cells]
 			moveInArray($cells,iShiftFrom,iShiftTo)
@@ -148,9 +168,9 @@ export default class Grid {
 		hasChecked: boolean[],
 		hasUnchecked: boolean[]
 	] {
-		const hasChecked=this.columns.map(()=>false)
-		const hasUnchecked=this.columns.map(()=>false)
-		for (const $row of this.$tbody.rows) {
+		const hasChecked=this.$timelineCutoffRows.map(()=>false)
+		const hasUnchecked=this.$timelineCutoffRows.map(()=>false)
+		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('changeset')) continue
 			for (const [iColumn,$cell] of [...$row.cells].entries()) {
 				const $checkbox=getItemCheckbox($cell)
@@ -165,7 +185,7 @@ export default class Grid {
 		return [hasChecked,hasUnchecked]
 	}
 	triggerColumnCheckboxes(iColumn: number, isChecked: boolean): void {
-		for (const $row of this.$tbody.rows) {
+		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('changeset')) continue
 			const $cell=$row.cells[iColumn]
 			if (!$cell) continue
@@ -180,7 +200,7 @@ export default class Grid {
 		$row: HTMLTableRowElement, cellTimelineRelations: CellTimelineRelation[]
 	] {
 		const iColumnSet=new Set(iColumns)
-		const cellTimelineRelations:CellTimelineRelation[]=this.columns.map(({$timelineCutoffRow},iColumn)=>({
+		const cellTimelineRelations:CellTimelineRelation[]=this.$timelineCutoffRows.map(($timelineCutoffRow,iColumn)=>({
 			filled: iColumnSet.has(iColumn),
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
@@ -188,9 +208,9 @@ export default class Grid {
 		const timestamp=date.getTime()
 		const rank=getItemTypeRank(type)
 		let $precedingRow:HTMLTableRowElement|undefined
-		let i=this.$tbody.rows.length-1
+		let i=this.$gridBody.rows.length-1
 		for (;i>=0;i--) {
-			$precedingRow=this.$tbody.rows[i]
+			$precedingRow=this.$gridBody.rows[i]
 			const currentTimestamp=Number($precedingRow.dataset.timestamp)
 			if (currentTimestamp>timestamp) break
 			const currentRank=Number($precedingRow.dataset.rank)
@@ -205,7 +225,7 @@ export default class Grid {
 		let $itemRow: HTMLTableRowElement
 		if (!$precedingRow || !isElementWithSameMonth($precedingRow,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
-			$precedingRow=this.$tbody.insertRow(i+1)
+			$precedingRow=this.$gridBody.insertRow(i+1)
 			$precedingRow.classList.add('separator')
 			$precedingRow.dataset.timestamp=String(getLastTimestampOfMonth(date))
 			$precedingRow.dataset.rank='0'
@@ -216,13 +236,13 @@ export default class Grid {
 				)
 			)
 			$cell.colSpan=this.nColumns+1
-			$itemRow=this.$tbody.insertRow(i+2)
+			$itemRow=this.$gridBody.insertRow(i+2)
 		} else {
-			$itemRow=this.$tbody.insertRow(i+1)
+			$itemRow=this.$gridBody.insertRow(i+1)
 		}
 		if (type=='user') {
 			for (const iColumn of iColumns) {
-				this.columns[iColumn].$timelineCutoffRow=$itemRow
+				this.$timelineCutoffRows[iColumn]=$itemRow
 				cellTimelineRelations[iColumn].withTimelineBelow=false
 			}
 			for (let $followingRow=$itemRow.nextElementSibling;$followingRow;$followingRow=$followingRow.nextElementSibling) {
@@ -235,12 +255,6 @@ export default class Grid {
 			}
 		}
 		return [$itemRow,cellTimelineRelations]
-	}
-	private clearItems(): void {
-		this.$tbody.replaceChildren()
-	}
-	private get $tbody(): HTMLTableSectionElement {
-		return this.$grid.tBodies[0]
 	}
 }
 

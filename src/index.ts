@@ -5,8 +5,6 @@ import Grid from './grid'
 import More from './more'
 import writeFooter from './footer'
 import makeNetDialog from './net-dialog'
-import GridHead from './grid-head'
-import {makeUserCell, makeChangesetCell, makeNoteCell, makeCommentCell} from './grid/body-item'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv} from './util/html'
@@ -55,9 +53,7 @@ async function main() {
 		const db=await ChangesetViewerDBReader.open(cx.server.host)
 		const worker=new SharedWorker('worker.js')
 		const more=new More()
-		const grid=new Grid()
-		$grid=grid.$grid
-		const gridHead=new GridHead(cx,db,worker,grid,userQueries=>{
+		const grid=new Grid(cx,db,worker,userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)
 			)
@@ -70,62 +66,20 @@ async function main() {
 				more.changeToLoading()
 				requestNextBatch()
 			}
-		},(batch,usernames)=>{
-			let wroteAnyItem=false
-			for (const {iColumns,type,item} of batch) {
-				let $item: HTMLElement
-				let date: Date
-				let id: number
-				let order: number|undefined
-				if (type=='user') {
-					$item=makeUserCell(cx.server,item)
-					date=item.createdAt
-					id=item.id
-				} else if (type=='changeset' || type=='changesetClose') {
-					$item=makeChangesetCell(cx.server,item,type=='changesetClose')
-					date=item.createdAt
-					if (type=='changesetClose' && item.closedAt) {
-						date=item.closedAt
-					}
-					id=item.id
-				} else if (type=='note') {
-					$item=makeNoteCell(cx.server,item)
-					date=item.createdAt
-					id=item.id
-				} else if (type=='changesetComment' || type=='noteComment') {
-					let username: string|undefined
-					if (item.uid) {
-						username=usernames.get(item.uid)
-					}
-					if (type=='noteComment') {
-						$item=makeCommentCell(cx.server,'note',item,username,item.action)
-					} else {
-						$item=makeCommentCell(cx.server,'changeset',item,username)
-					}
-					date=item.createdAt
-					id=item.itemId
-					order=item.order
-				} else {
-					continue
-				}
-				grid.addItem($item,iColumns,date,type,id,order)
-				wroteAnyItem=true
-			}
-			grid.updateTableAccordingToSettings()
-			if (wroteAnyItem) {
-				more.changeToLoadMore()
-			} else {
-				more.changeToLoadedAll()
-				more.$button.onclick=null
-			}
+		},()=>{
+			more.changeToLoadMore()
+		},()=>{
+			more.changeToLoadedAll()
+			more.$button.onclick=null
 		})
+		$grid=grid.$grid
 		$content.append(
 			makeElement('h2')()(`Select users and changesets`),
 			grid.$grid,
 			more.$div
 		)
 		net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
-			gridHead.receiveUpdatedUserQueries(
+			grid.receiveUpdatedUserQueries(
 				getUserQueriesFromHash(hostlessHash)
 			)
 		},true)

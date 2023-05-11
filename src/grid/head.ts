@@ -1,21 +1,21 @@
-import type {Connection} from './net'
-import type {ChangesetViewerDBReader, UserDbRecord, UserScanDbRecord} from './db'
-import type Grid from './grid'
-import {WorkerBroadcastReceiver} from './broadcast-channel'
-import installTabDragListeners from './grid/head-drag'
-import type {UserInfo, CompleteUserInfo} from './grid/head-item'
+import type GridBody from './body'
+import type {Connection} from '../net'
+import type {ChangesetViewerDBReader, UserDbRecord, UserScanDbRecord} from '../db'
+import {WorkerBroadcastReceiver} from '../broadcast-channel'
+import installTabDragListeners from './head-drag'
+import type {UserInfo, CompleteUserInfo} from './head-item'
 import {
 	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
 	makeFormTab, makeFormCard, makeFormSelector
-} from './grid/head-item'
-import {ValidUserQuery} from './osm'
-import {toUserQuery} from './osm'
-import MuxUserItemDbStream from './mux-user-item-db-stream'
-import type {GridBatchItem} from './mux-user-item-db-stream-messenger'
-import MuxUserItemDbStreamMessenger from './mux-user-item-db-stream-messenger'
-import {makeElement} from './util/html'
-import {makeEscapeTag} from './util/escape'
-import {moveInArray} from './util/types'
+} from './head-item'
+import {ValidUserQuery} from '../osm'
+import {toUserQuery} from '../osm'
+import MuxUserItemDbStream from '../mux-user-item-db-stream'
+import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
+import MuxUserItemDbStreamMessenger from '../mux-user-item-db-stream-messenger'
+import {makeElement} from '../util/html'
+import {makeEscapeTag} from '../util/escape'
+import {moveInArray} from '../util/types'
 
 const e=makeEscapeTag(encodeURIComponent)
 
@@ -38,6 +38,7 @@ type GridUserEntry = { // TODO change to column entry
 )
 
 export default class GridHead {
+	$gridHead=makeElement('thead')()()
 	private userEntries=[] as GridUserEntry[]
 	private wrappedRemoveColumnClickListener: (this:HTMLElement)=>void
 	private streamMessenger: MuxUserItemDbStreamMessenger|undefined
@@ -49,7 +50,12 @@ export default class GridHead {
 		private cx: Connection,
 		private db: ChangesetViewerDBReader,
 		private worker: SharedWorker,
-		private grid: Grid,
+		private body: GridBody,
+		// former direct grid method calls:
+		private setColumns: (columnHues:(number|null)[])=>void,
+		setColumnHues: (columnHues:(number|null)[])=>void,
+		private reorderColumns: (iShiftFrom:number,iShiftTo:number)=>void,
+		// former main callbacks:
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
 		private restartStreamCallback: ()=>void,
 		private readyStreamCallback: (
@@ -66,10 +72,9 @@ export default class GridHead {
 				that.removeColumnClickListener(this)
 			}
 		}
-		if (!grid.$grid.tHead) throw new RangeError(`no table head section`)
-		this.$tabRow=grid.$grid.tHead.insertRow()
-		this.$cardRow=grid.$grid.tHead.insertRow()
-		this.$selectorRow=grid.$grid.tHead.insertRow()
+		this.$tabRow=this.$gridHead.insertRow()
+		this.$cardRow=this.$gridHead.insertRow()
+		this.$selectorRow=this.$gridHead.insertRow()
 		this.$selectorRow.classList.add('selectors')
 		this.$adderCell=this.$cardRow.insertCell()
 		this.$adderCell.classList.add('adder')
@@ -88,7 +93,7 @@ export default class GridHead {
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
 				this.updateUserCard(userEntry.$card,userEntry.info)
 				const columnHues=this.userEntries.map(getUserEntryHue)
-				this.grid.setColumnHues(columnHues)
+				setColumnHues(columnHues)
 			}
 			if (message.part.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
@@ -137,8 +142,8 @@ export default class GridHead {
 				await this.streamMessenger.receiveMessage(message.part)
 			}
 		}
-		grid.onItemSelect=()=>{
-			const [hasChecked,hasUnchecked]=grid.getColumnCheckboxStatuses()
+		this.body.onItemSelect=()=>{
+			const [hasChecked,hasUnchecked]=this.body.getColumnCheckboxStatuses()
 			for (const [iColumn,{$selector}] of this.userEntries.entries()) {
 				const $checkbox=$selector.querySelector('input[type=checkbox]')
 				if (!($checkbox instanceof HTMLInputElement)) continue
@@ -186,7 +191,7 @@ export default class GridHead {
 		const $selector=makeUserSelector($checkbox=>{
 			for (const [iColumn,userEntry] of this.userEntries.entries()) {
 				if ($selector!=userEntry.$selector) continue
-				this.grid.triggerColumnCheckboxes(iColumn,$checkbox.checked)
+				this.body.triggerColumnCheckboxes(iColumn,$checkbox.checked)
 			}
 		})
 		return {
@@ -254,7 +259,7 @@ export default class GridHead {
 			)
 		}
 		const columnHues=this.userEntries.map(getUserEntryHue)
-		this.grid.setColumns(columnHues)
+		this.setColumns(columnHues)
 		this.streamMessenger=undefined
 		this.restartStreamCallback()
 		this.startStreamIfNotStartedAndGotAllUids()
@@ -371,11 +376,11 @@ export default class GridHead {
 			tabDragElements.push({$tabCell,$cardCell,$selectorCell,$tab,$card,$selector})
 		}
 		for (const iActive of tabDragElements.keys()) {
-			installTabDragListeners(this.grid.$grid,tabDragElements,iActive,iShiftTo=>{
+			installTabDragListeners(this.$gridHead,tabDragElements,iActive,iShiftTo=>{
 				moveInArray(this.userEntries,iActive,iShiftTo)
 				this.rewriteUserEntriesInHead()
 				this.sendUpdatedUserQueries()
-				this.grid.reorderColumns(iActive,iShiftTo)
+				this.reorderColumns(iActive,iShiftTo)
 				this.streamMessenger?.reorderColumns(iActive,iShiftTo)
 			})
 		}

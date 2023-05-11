@@ -6,7 +6,7 @@ type Grab = {
 }
 
 export default function installTabDragListeners(
-	$grid: HTMLTableElement,
+	$gridHead: HTMLTableSectionElement,
 	elements: readonly {
 		$tabCell: HTMLTableCellElement,
 		$cardCell: HTMLTableCellElement,
@@ -61,14 +61,14 @@ export default function installTabDragListeners(
 		}
 		$tab.setPointerCapture(ev.pointerId)
 		toggleCellClass('grabbed',true)
-		$grid.classList.add('with-grabbed-tab')
+		$gridHead.classList.add('with-grabbed-tab')
 	}
 	const cleanup=(grab: Grab)=>{
 		for (const i of elements.keys()) {
 			translate(0,i)
 		}
 		toggleCellClass('grabbed',false)
-		$grid.classList.remove('with-grabbed-tab')
+		$gridHead.classList.remove('with-grabbed-tab')
 		if (!grab.relativeShiftX) return
 		requestAnimationFrame(()=>{
 			translate(grab.relativeShiftX)
