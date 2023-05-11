@@ -7,7 +7,7 @@ import {
 } from './sequence'
 import {
 	getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined,
-	renderExpandedItem
+	renderCollapsedItem, renderExpandedItem
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import {toIsoYearMonthString} from '../date'
@@ -42,30 +42,23 @@ export default class GridBody {
 	): boolean {
 		const sequenceInfo=getItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
+		// const $item=renderCollapsedItem(server,batchItem,usernames)
 		const $item=renderExpandedItem(server,batchItem,usernames)
 		if (!$item) return false
-		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo)
+		// this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,true)
+		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,false)
 		return true
 	}
 	private insertItem(
 		columnHues: (number|null)[],
 		$masterItem: HTMLElement, iColumns: number[],
-		sequenceInfo: ItemSequenceInfo
+		sequenceInfo: ItemSequenceInfo,
+		isCollapsed: boolean
 	): void {
 		if (iColumns.length==0) return
-		const [$row,cellTimelineRelations]=this.insertRow(iColumns,sequenceInfo)
-		$row.classList.add(...$masterItem.classList)
-		writeItemSequenceInfo($row,sequenceInfo)
+		const $cells=this.insertRow(columnHues,iColumns,sequenceInfo,isCollapsed,[...$masterItem.classList])
 		const $checkboxes:HTMLInputElement[]=[]
-		for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
-			const $cell=$row.insertCell()
-			$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
-			$cell.classList.toggle('with-timeline-below',cellTimelineRelation.withTimelineBelow)
-			const hue=columnHues[iColumn]
-			if (hue!=null) {
-				$cell.style.setProperty('--hue',String(hue))
-			}
-			if (!cellTimelineRelation.filled) continue
+		for (const $cell of $cells) {
 			$cell.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
 			const $checkbox=getItemCheckbox($cell)
 			if ($checkbox) $checkboxes.push($checkbox)
@@ -167,11 +160,12 @@ export default class GridBody {
 		this.onItemSelect()
 	}
 	private insertRow(
+		columnHues: (number|null)[],
 		iColumns: number[],
-		sequenceInfo: ItemSequenceInfo
-	): [
-		$row: HTMLTableRowElement, cellTimelineRelations: CellTimelineRelation[]
-	] {
+		sequenceInfo: ItemSequenceInfo,
+		isCollapsed: boolean,
+		classNames: string[]
+	): HTMLElement[] {
 		const iColumnSet=new Set(iColumns)
 		const cellTimelineRelations:CellTimelineRelation[]=this.$timelineCutoffRows.map(($timelineCutoffRow,iColumn)=>({
 			filled: iColumnSet.has(iColumn),
@@ -185,7 +179,7 @@ export default class GridBody {
 			const precedingSequenceInfo=readItemSequenceInfo($precedingRow)
 			if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) break
 		}
-		let $itemRow: HTMLTableRowElement
+		let $row: HTMLTableRowElement
 		const date=new Date(sequenceInfo.timestamp)
 		if (!$precedingRow || !readItemSequenceInfoAndCheckIfInSameMonth($precedingRow,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
@@ -199,16 +193,16 @@ export default class GridBody {
 				)
 			)
 			$cell.colSpan=this.nColumns+1
-			$itemRow=this.$gridBody.insertRow(i+2)
+			$row=this.$gridBody.insertRow(i+2)
 		} else {
-			$itemRow=this.$gridBody.insertRow(i+1)
+			$row=this.$gridBody.insertRow(i+1)
 		}
 		if (sequenceInfo.type=='user') {
 			for (const iColumn of iColumns) {
-				this.$timelineCutoffRows[iColumn]=$itemRow
+				this.$timelineCutoffRows[iColumn]=$row
 				cellTimelineRelations[iColumn].withTimelineBelow=false
 			}
-			for (let $followingRow=$itemRow.nextElementSibling;$followingRow;$followingRow=$followingRow.nextElementSibling) {
+			for (let $followingRow=$row.nextElementSibling;$followingRow;$followingRow=$followingRow.nextElementSibling) {
 				if (!($followingRow instanceof HTMLTableRowElement)) continue
 				if (!$followingRow.classList.contains('item')) continue
 				for (const [iColumn,$cell] of [...$followingRow.cells].entries()) {
@@ -217,7 +211,21 @@ export default class GridBody {
 				}
 			}
 		}
-		return [$itemRow,cellTimelineRelations]
+		$row.classList.add(...classNames)
+		writeItemSequenceInfo($row,sequenceInfo)
+		const $cells:HTMLElement[]=[]
+		for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
+			const $cell=$row.insertCell()
+			$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
+			$cell.classList.toggle('with-timeline-below',cellTimelineRelation.withTimelineBelow)
+			const hue=columnHues[iColumn]
+			if (hue!=null) {
+				$cell.style.setProperty('--hue',String(hue))
+			}
+			if (!cellTimelineRelation.filled) continue
+			$cells.push($cell)
+		}
+		return $cells
 	}
 }
 
