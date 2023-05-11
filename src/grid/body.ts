@@ -234,12 +234,27 @@ export default class GridBody {
 	} | {
 		type: 'collection'
 		$row: HTMLTableRowElement
-		$cells: HTMLElement[]
+		$cells: (HTMLElement|null)[]
 	} {
+		const findPrecedingCollectionCell=($rowCell:HTMLTableCellElement)=>{
+			const $cells=$rowCell.querySelectorAll(':scope > .cell')
+			for (let i=$cells.length-1;i>=0;i++) {
+				const $cell=$cells[i]
+				if (!($cell instanceof HTMLElement)) continue
+				const precedingSequenceInfo=readItemSequenceInfo($cell)
+				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
+					return $cell
+				}
+			}
+			return null
+		}
 		for (let i=this.$gridBody.rows.length-1;i>=0;i--) {
 			const $row=this.$gridBody.rows[i]
 			if ($row.classList.contains('collection')) {
-				// TODO
+				const $cells=[...$row.cells].map(findPrecedingCollectionCell)
+				if (!$cells.every($cell=>$cell==null)) {
+					return {type:'collection',$row,$cells}
+				}
 			} else {
 				const precedingSequenceInfo=readItemSequenceInfo($row)
 				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
