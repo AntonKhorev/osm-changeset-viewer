@@ -17,13 +17,13 @@ export function getItemCheckbox($item: HTMLElement): HTMLInputElement|undefined 
 	}
 }
 
-export function markChangesetCellAsCombined($item: HTMLElement, id: number|string): void {
+export function markChangesetItemAsCombined($item: HTMLElement, id: number|string): void {
 	$item.classList.add('combined')
 	const $checkbox=getItemCheckbox($item)
 	if ($checkbox) $checkbox.title=`changeset ${id}`
 }
 
-export function markChangesetCellAsUncombined($item: HTMLElement, id: number|string): void {
+export function markChangesetItemAsUncombined($item: HTMLElement, id: number|string): void {
 	$item.classList.remove('combined')
 	const $checkbox=getItemCheckbox($item)
 	if ($checkbox) $checkbox.title=`opened changeset ${id}`
@@ -68,27 +68,27 @@ export function renderExpandedItem(
 	usernames: Map<number, string>
 ): HTMLElement|null {
 	if (type=='user') {
-		return makeUserCell(server,item)
+		return makeUserItem(server,item)
 	} else if (type=='changeset' || type=='changesetClose') {
-		return makeChangesetCell(server,item,type=='changesetClose')
+		return makeChangesetItem(server,item,type=='changesetClose')
 	} else if (type=='note') {
-		return makeNoteCell(server,item)
+		return makeNoteItem(server,item)
 	} else if (type=='changesetComment' || type=='noteComment') {
 		let username: string|undefined
 		if (item.uid) {
 			username=usernames.get(item.uid)
 		}
 		if (type=='noteComment') {
-			return makeCommentCell(server,'note',item,username,item.action)
+			return makeCommentItem(server,'note',item,username,item.action)
 		} else {
-			return makeCommentCell(server,'changeset',item,username)
+			return makeCommentItem(server,'changeset',item,username)
 		}
 	} else {
 		return null
 	}
 }
 
-function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
+function makeChangesetItem(server: Server, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
 	const makeChanges=()=>{
 		const $changes=makeElement('span')('changes')(`Δ ${changeset.changes.count}`)
 		$changes.title=`number of changes`
@@ -97,15 +97,15 @@ function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, isClose
 	const $icon=makeChangesetIcon(changeset.id,isClosed)
 	const date = isClosed ? changeset.closedAt : changeset.createdAt
 	const $flow=makeElement('span')('flow')()
-	const $cell=makeBasicChangesetCell(
+	const $item=makeBasicChangesetItem(
 		server,'changeset',date,$icon,$flow,changeset.id
 	)
 	$flow.append(
 		makeChanges(),` `,
 		makeElement('span')()(changeset.tags?.comment ?? '')
 	)
-	if (isClosed) $cell.classList.add('closed')
-	return $cell
+	if (isClosed) $item.classList.add('closed')
+	return $item
 }
 
 function makeChangesetIcon(id: number, isClosed: boolean): HTMLElement {
@@ -122,16 +122,16 @@ function makeChangesetIcon(id: number, isClosed: boolean): HTMLElement {
 	}
 }
 
-function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
+function makeNoteItem(server: Server, note: NoteDbRecord): HTMLElement {
 	const $flow=makeElement('span')('flow')()
 	const $icon=makeNoteIcon(note.id)
-	const $cell=makeBasicNoteCell(
+	const $item=makeBasicNoteItem(
 		server,'note',note.createdAt,$icon,$flow,note.id
 	)
 	$flow.append(
 		note.openingComment ?? ''
 	)
-	return $cell
+	return $item
 }
 
 function makeNoteIcon(id: number): HTMLElement {
@@ -147,12 +147,12 @@ function makeNoteIcon(id: number): HTMLElement {
 	return $icon
 }
 
-function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
+function makeUserItem(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
 	const $flow=makeElement('span')('flow')(
 		`account created`
 	)
 	const $icon=makeUserIcon(user.id)
-	return makeItemCell('user',user.createdAt,$icon,$flow)
+	return makeItemItem('user',user.createdAt,$icon,$flow)
 }
 
 function makeUserIcon(id: number): HTMLElement {
@@ -165,21 +165,21 @@ function makeUserIcon(id: number): HTMLElement {
 	return $icon
 }
 
-function makeCommentCell(
+function makeCommentItem(
 	server: Server, itemType: 'note'|'changeset',
 	comment: UserItemCommentDbRecord, username: string|undefined,
 	action?: string
 ): HTMLElement {
 	const $flow=makeElement('span')('flow')()
 	const $icon=makeCommentIcon(comment.itemId,itemType,action)
-	const $cell=(itemType=='note' ? makeBasicNoteCell : makeBasicChangesetCell)(
+	const $item=(itemType=='note' ? makeBasicNoteItem : makeBasicChangesetItem)(
 		server,'comment',comment.createdAt,$icon,$flow,comment.itemId
 	)
 	if (action!=null) {
-		$cell.classList.add(action)
+		$item.classList.add(action)
 	}
 	if (comment.uid!=comment.itemUid) {
-		$cell.classList.add('incoming')
+		$item.classList.add('incoming')
 		let from:string|HTMLElement=`???`
 		if (username!=null) {
 			from=makeLink(username,server.web.getUrl(e`user/${username}`))
@@ -194,7 +194,7 @@ function makeCommentCell(
 	$flow.append(
 		` `,comment.text
 	)
-	return $cell
+	return $item
 }
 
 function makeCommentIcon(id: number, itemType: 'note'|'changeset', action?: string): HTMLElement {
@@ -232,31 +232,31 @@ function makeCommentIcon(id: number, itemType: 'note'|'changeset', action?: stri
 	return $icon
 }
 
-function makeBasicChangesetCell(
+function makeBasicChangesetItem(
 	server: Server,
 	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement,
 	id: number
 ): HTMLElement {
-	return makeLinkedItemCell(
+	return makeLinkedItem(
 		type,date,$icon,$flow,id,
 		server.web.getUrl(e`changeset/${id}`),
 		server.api.getUrl(e`changeset/${id}.json?include_discussion=true`)
 	)
 }
 
-function makeBasicNoteCell(
+function makeBasicNoteItem(
 	server: Server,
 	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement,
 	id: number
 ): HTMLElement {
-	return makeLinkedItemCell(
+	return makeLinkedItem(
 		type,date,$icon,$flow,id,
 		server.web.getUrl(e`note/${id}`),
 		server.api.getUrl(e`notes/${id}.json`)
 	)
 }
 
-function makeLinkedItemCell(
+function makeLinkedItem(
 	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement,
 	id: number, href: string, apiHref: string
 ): HTMLElement {
@@ -266,10 +266,10 @@ function makeLinkedItemCell(
 			`(`,makeLink(`api`,apiHref),`)`
 		),` `,
 	)
-	return makeItemCell(type,date,$icon,$flow)
+	return makeItemItem(type,date,$icon,$flow)
 }
 
-function makeItemCell(
+function makeItemItem(
 	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement
 ): HTMLElement {
 	const $disclosure=makeDisclosureButton()

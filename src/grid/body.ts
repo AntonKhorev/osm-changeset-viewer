@@ -6,7 +6,7 @@ import {
 	writeItemSequenceInfo, writeSeparatorSequenceInfo
 } from './sequence'
 import {
-	getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined,
+	getItemCheckbox, markChangesetItemAsCombined, markChangesetItemAsUncombined,
 	renderCollapsedItem, renderExpandedItem
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
@@ -28,7 +28,7 @@ type GridPosition = {
 } | {
 	type: 'insideRow'
 	$row: HTMLTableRowElement
-	$cells: (HTMLElement|null)[]
+	$items: (HTMLElement|null)[]
 }
 
 export default class GridBody {
@@ -60,27 +60,6 @@ export default class GridBody {
 		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,false)
 		return true
 	}
-	private insertItem(
-		columnHues: (number|null)[],
-		$masterItem: HTMLElement, iColumns: number[],
-		sequenceInfo: ItemSequenceInfo,
-		isCollapsed: boolean
-	): void {
-		if (iColumns.length==0) return
-		const $cells=this.insertItemCells(columnHues,iColumns,sequenceInfo,isCollapsed,[...$masterItem.classList])
-		const $checkboxes:HTMLInputElement[]=[]
-		for (const $cell of $cells) {
-			$cell.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
-			const $checkbox=getItemCheckbox($cell)
-			if ($checkbox) $checkboxes.push($checkbox)
-		}
-		for (const $checkbox of $checkboxes) {
-			if ($checkboxes.length>1) {
-				$checkbox.addEventListener('input',columnCheckboxSyncListener)
-			}
-			$checkbox.addEventListener('input',this.wrappedItemSelectListener)
-		}
-	}
 	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
 		let $itemAbove: HTMLElement|undefined
 		for (const $item of this.$gridBody.rows) {
@@ -103,9 +82,9 @@ export default class GridBody {
 						if ($itemAbove && isConnectedWithAboveItem) {
 							$itemAbove.classList.add('hidden-as-closed')
 						}
-						markChangesetCellAsCombined($item,$item.dataset.id??'???')
+						markChangesetItemAsCombined($item,$item.dataset.id??'???')
 					} else {
-						markChangesetCellAsUncombined($item,$item.dataset.id??'???')
+						markChangesetItemAsUncombined($item,$item.dataset.id??'???')
 					}
 				}
 			}
@@ -170,7 +149,28 @@ export default class GridBody {
 		}
 		this.onItemSelect()
 	}
-	private insertItemCells(
+	private insertItem(
+		columnHues: (number|null)[],
+		$masterItem: HTMLElement, iColumns: number[],
+		sequenceInfo: ItemSequenceInfo,
+		isCollapsed: boolean
+	): void {
+		if (iColumns.length==0) return
+		const $placeholders=this.insertItemPlaceholders(columnHues,iColumns,sequenceInfo,isCollapsed,[...$masterItem.classList])
+		const $checkboxes:HTMLInputElement[]=[]
+		for (const $placeholder of $placeholders) {
+			$placeholder.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
+			const $checkbox=getItemCheckbox($placeholder)
+			if ($checkbox) $checkboxes.push($checkbox)
+		}
+		for (const $checkbox of $checkboxes) {
+			if ($checkboxes.length>1) {
+				$checkbox.addEventListener('input',columnCheckboxSyncListener)
+			}
+			$checkbox.addEventListener('input',this.wrappedItemSelectListener)
+		}
+	}
+	private insertItemPlaceholders(
 		columnHues: (number|null)[],
 		iColumns: number[],
 		sequenceInfo: ItemSequenceInfo,
@@ -233,14 +233,14 @@ export default class GridBody {
 		return $cells
 	}
 	private getGridPosition(sequenceInfo: ItemSequenceInfo): GridPosition {
-		const findPrecedingCollectionCell=($rowCell:HTMLTableCellElement)=>{
-			const $cells=$rowCell.querySelectorAll(':scope > .cell')
-			for (let i=$cells.length-1;i>=0;i++) {
-				const $cell=$cells[i]
-				if (!($cell instanceof HTMLElement)) continue
-				const precedingSequenceInfo=readItemSequenceInfo($cell)
+		const findPrecedingCollectionItem=($cell:HTMLTableCellElement)=>{
+			const $items=$cell.querySelectorAll(':scope > .item')
+			for (let i=$items.length-1;i>=0;i++) {
+				const $item=$items[i]
+				if (!($item instanceof HTMLElement)) continue
+				const precedingSequenceInfo=readItemSequenceInfo($item)
 				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
-					return $cell
+					return $item
 				}
 			}
 			return null
@@ -248,9 +248,9 @@ export default class GridBody {
 		for (let i=this.$gridBody.rows.length-1;i>=0;i--) {
 			const $row=this.$gridBody.rows[i]
 			if ($row.classList.contains('collection')) {
-				const $cells=[...$row.cells].map(findPrecedingCollectionCell)
-				if (!$cells.every($cell=>$cell==null)) {
-					return {type:'insideRow',$row,$cells}
+				const $items=[...$row.cells].map(findPrecedingCollectionItem)
+				if ($items.some($item=>$item!=null)) {
+					return {type:'insideRow',$row,$items}
 				}
 			} else {
 				const precedingSequenceInfo=readItemSequenceInfo($row)
@@ -268,24 +268,24 @@ export default class GridBody {
 		const $row=makeElement('tr')()()
 		preceding.$row.after($row)
 		if (preceding.type=='insideRow') {
-			const $rowCellChildrenAfters=preceding.$cells.map(($precedingCell,i)=>{
-				const $rowCell=preceding.$row.cells[i]
-				const $rowCellChildrenAfter:Element[]=[]
-				let metPrecedingCell=$precedingCell!=null
-				for (const $rowCellChild of $rowCell.children) {
-					if (metPrecedingCell) {
-						$rowCellChildrenAfter.push($rowCellChild)
+			const $cellChildrenAfterInColumns=preceding.$items.map(($precedingItem,i)=>{
+				const $cell=preceding.$row.cells[i]
+				const $cellChildrenAfter:Element[]=[]
+				let metPrecedingItem=$precedingItem!=null
+				for (const $cellChild of $cell.children) {
+					if (metPrecedingItem) {
+						$cellChildrenAfter.push($cellChild)
 					}
-					if ($rowCellChild==$precedingCell) {
-						metPrecedingCell=true
+					if ($cellChild==$precedingItem) {
+						metPrecedingItem=true
 					}
 				}
-				return $rowCellChildrenAfter
+				return $cellChildrenAfter
 			})
-			if ($rowCellChildrenAfters.some($rowCellChildrenAfter=>$rowCellChildrenAfter.length>0)) {
+			if ($cellChildrenAfterInColumns.some($cellChildrenAfter=>$cellChildrenAfter.length>0)) {
 				const $rowAfter=makeElement('tr')('collection')()
-				for (const $rowCellChildrenAfter of $rowCellChildrenAfters) {
-					$rowAfter.insertCell().append(...$rowCellChildrenAfter)
+				for (const $cellChildrenAfter of $cellChildrenAfterInColumns) {
+					$rowAfter.insertCell().append(...$cellChildrenAfter)
 				}
 				$row.after($rowAfter)
 			}
