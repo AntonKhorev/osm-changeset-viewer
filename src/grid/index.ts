@@ -2,6 +2,7 @@ import GridHead from './head'
 import GridBody from './body'
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader} from '../db'
+import type More from '../more'
 import type {ValidUserQuery} from '../osm'
 import {makeElement} from '../util/html'
 import {moveInArray} from '../util/types'
@@ -16,15 +17,10 @@ export default class Grid {
 		cx: Connection,
 		db: ChangesetViewerDBReader,
 		worker: SharedWorker,
+		more: More,
 		sendUpdatedUserQueriesReceiver: (
 			userQueries: ValidUserQuery[]
-		)=>void,
-		restartStreamCallback: ()=>void,
-		readyStreamCallback: (
-			requestNextBatch: ()=>void
-		) => void,
-		readyForMoreStreamCallback: ()=>void,
-		finishStreamCallback: ()=>void
+		)=>void
 	) {
 		this.body=new GridBody()
 		this.head=new GridHead(
@@ -33,9 +29,16 @@ export default class Grid {
 			columnHues=>this.columnHues=columnHues, // TODO update existing table cells - currently not required because table is always cleared
 			(iShiftFrom,iShiftTo)=>this.reorderColumns(iShiftFrom,iShiftTo),
 			sendUpdatedUserQueriesReceiver,
-			restartStreamCallback,
-			readyStreamCallback,
-			(batch,usernames)=>{
+			()=>{
+				more.changeToNothingToLoad()
+				more.$button.onclick=null
+			},(requestNextBatch)=>{
+				more.changeToLoad()
+				more.$button.onclick=()=>{
+					more.changeToLoading()
+					requestNextBatch()
+				}
+			},(batch,usernames)=>{
 				let wroteAnyItem=false
 				for (const batchItem of batch) {
 					const wroteItem=this.body.makeAndAddItem(cx,this.columnHues,batchItem,usernames)
@@ -43,9 +46,10 @@ export default class Grid {
 				}
 				if (wroteAnyItem) {
 					this.updateTableAccordingToSettings()
-					readyForMoreStreamCallback()
+					more.changeToLoadMore()
 				} else {
-					finishStreamCallback()
+					more.changeToLoadedAll()
+					more.$button.onclick=null
 				}
 			}
 		)

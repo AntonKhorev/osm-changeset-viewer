@@ -53,24 +53,10 @@ async function main() {
 		const db=await ChangesetViewerDBReader.open(cx.server.host)
 		const worker=new SharedWorker('worker.js')
 		const more=new More()
-		const grid=new Grid(cx,db,worker,userQueries=>{
+		const grid=new Grid(cx,db,worker,more,userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)
 			)
-		},()=>{
-			more.changeToNothingToLoad()
-			more.$button.onclick=null
-		},(requestNextBatch)=>{
-			more.changeToLoad()
-			more.$button.onclick=()=>{
-				more.changeToLoading()
-				requestNextBatch()
-			}
-		},()=>{
-			more.changeToLoadMore()
-		},()=>{
-			more.changeToLoadedAll()
-			more.$button.onclick=null
 		})
 		$grid=grid.$grid
 		$content.append(
