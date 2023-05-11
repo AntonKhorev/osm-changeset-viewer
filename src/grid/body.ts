@@ -20,13 +20,13 @@ type CellTimelineRelation = {
 	withTimelineBelow: boolean
 }
 
-type PrecedingElement = {
-	type: 'absent'
+type GridPosition = {
+	type: 'inFront'
 } | {
-	type: 'item'
+	type: 'afterRow'
 	$row: HTMLTableRowElement
 } | {
-	type: 'collection'
+	type: 'insideRow'
 	$row: HTMLTableRowElement
 	$cells: (HTMLElement|null)[]
 }
@@ -183,10 +183,10 @@ export default class GridBody {
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
 		}))
-		const preceding=this.getPrecedingElement(sequenceInfo)
+		const preceding=this.getGridPosition(sequenceInfo)
 		const $row=makeElement('tr')()()
 		const date=new Date(sequenceInfo.timestamp)
-		if (preceding.type=='absent' || !readItemSequenceInfoAndCheckIfInSameMonth(preceding.$row,date)) {
+		if (preceding.type=='inFront' || !readItemSequenceInfoAndCheckIfInSameMonth(preceding.$row,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
 			const $separator=this.insertRow(preceding)
 			$separator.classList.add('separator')
@@ -232,7 +232,7 @@ export default class GridBody {
 		}
 		return $cells
 	}
-	private getPrecedingElement(sequenceInfo: ItemSequenceInfo): PrecedingElement {
+	private getGridPosition(sequenceInfo: ItemSequenceInfo): GridPosition {
 		const findPrecedingCollectionCell=($rowCell:HTMLTableCellElement)=>{
 			const $cells=$rowCell.querySelectorAll(':scope > .cell')
 			for (let i=$cells.length-1;i>=0;i++) {
@@ -250,24 +250,24 @@ export default class GridBody {
 			if ($row.classList.contains('collection')) {
 				const $cells=[...$row.cells].map(findPrecedingCollectionCell)
 				if (!$cells.every($cell=>$cell==null)) {
-					return {type:'collection',$row,$cells}
+					return {type:'insideRow',$row,$cells}
 				}
 			} else {
 				const precedingSequenceInfo=readItemSequenceInfo($row)
 				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
-					return {type:'item',$row}
+					return {type:'afterRow',$row}
 				}
 			}
 		}
-		return {type:'absent'}
+		return {type:'inFront'}
 	}
-	private insertRow(preceding: PrecedingElement): HTMLTableRowElement {
-		if (preceding.type=='absent') {
+	private insertRow(preceding: GridPosition): HTMLTableRowElement {
+		if (preceding.type=='inFront') {
 			return this.$gridBody.insertRow(0)
 		}
 		const $row=makeElement('tr')()()
 		preceding.$row.after($row)
-		if (preceding.type=='collection') {
+		if (preceding.type=='insideRow') {
 			const $rowCellChildrenAfters=preceding.$cells.map(($precedingCell,i)=>{
 				const $rowCell=preceding.$row.cells[i]
 				const $rowCellChildrenAfter:Element[]=[]
