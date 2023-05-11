@@ -183,12 +183,12 @@ export default class GridBody {
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
 		}))
-		const preceding=this.getGridPosition(sequenceInfo)
+		const position=this.getGridPosition(sequenceInfo)
 		const $row=makeElement('tr')()()
 		const date=new Date(sequenceInfo.timestamp)
-		if (preceding.type=='inFront' || !readItemSequenceInfoAndCheckIfInSameMonth(preceding.$row,date)) {
+		if (position.type=='inFront' || !readItemSequenceInfoAndCheckIfInSameMonth(position.$row,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
-			const $separator=this.insertRow(preceding)
+			const $separator=this.insertRow(position)
 			$separator.classList.add('separator')
 			writeSeparatorSequenceInfo($separator,date)
 			const $cell=$separator.insertCell()
@@ -200,7 +200,7 @@ export default class GridBody {
 			$cell.colSpan=this.nColumns+1
 			$separator.after($row)
 		} else {
-			preceding.$row.after($row)
+			position.$row.after($row)
 		}
 		if (sequenceInfo.type=='user') {
 			for (const iColumn of iColumns) {
@@ -261,15 +261,15 @@ export default class GridBody {
 		}
 		return {type:'inFront'}
 	}
-	private insertRow(preceding: GridPosition): HTMLTableRowElement {
-		if (preceding.type=='inFront') {
+	private insertRow(position: GridPosition): HTMLTableRowElement {
+		if (position.type=='inFront') {
 			return this.$gridBody.insertRow(0)
 		}
 		const $row=makeElement('tr')()()
-		preceding.$row.after($row)
-		if (preceding.type=='insideRow') {
-			const $cellChildrenAfterInColumns=preceding.$items.map(($precedingItem,i)=>{
-				const $cell=preceding.$row.cells[i]
+		position.$row.after($row)
+		if (position.type=='insideRow') {
+			const $cellChildrenAfterInColumns=position.$items.map(($precedingItem,i)=>{
+				const $cell=position.$row.cells[i]
 				const $cellChildrenAfter:Element[]=[]
 				let metPrecedingItem=$precedingItem!=null
 				for (const $cellChild of $cell.children) {
