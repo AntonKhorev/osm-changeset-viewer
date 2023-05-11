@@ -9,6 +9,14 @@ export type ItemSequenceInfo = {
 	order: number
 }
 
+export function isGreaterItemSequenceInfo(a: ItemSequenceInfo, b: ItemSequenceInfo): boolean {
+	if (a.timestamp>b.timestamp) return true
+	// if (a.rank>b.rank) return true
+	if (getItemTypeRank(a.type)>getItemTypeRank(b.type)) return true
+	if (a.id>b.id) return true
+	return a.order>b.order
+}
+
 function getItemTypeRank(type: ItemSequenceInfo['type']): number {
 	// 0 = rank of separators
 	switch (type) {
@@ -78,10 +86,22 @@ export function writeItemSequenceInfo($e: HTMLElement, info: ItemSequenceInfo): 
 	$e.dataset.order=String(info.order)
 }
 
-export function isGreaterItemSequenceInfo(a: ItemSequenceInfo, b: ItemSequenceInfo): boolean {
-	if (a.timestamp>b.timestamp) return true
-	// if (a.rank>b.rank) return true
-	if (getItemTypeRank(a.type)>getItemTypeRank(b.type)) return true
-	if (a.id>b.id) return true
-	return a.order>b.order
+export function writeSeparatorSequenceInfo($e: HTMLElement, date: Date): void {
+	writeItemSequenceInfo($e,{
+		timestamp: getLastTimestampOfMonth(date),
+		type: 'separator',
+		id: 0,
+		order: 0
+	})
+}
+
+function getLastTimestampOfMonth(date: Date): number {
+	let monthIndex=date.getUTCMonth()
+	let year=date.getUTCFullYear()
+	monthIndex++
+	if (monthIndex>=12) {
+		monthIndex=0
+		year++
+	}
+	return Date.UTC(year,monthIndex)-1
 }

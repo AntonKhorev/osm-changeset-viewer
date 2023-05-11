@@ -1,6 +1,9 @@
 import type {Server} from '../net'
 import type {ItemSequenceInfo} from './sequence'
-import {getItemSequenceInfo, writeItemSequenceInfo, readItemSequenceInfo, isGreaterItemSequenceInfo} from './sequence'
+import {
+	isGreaterItemSequenceInfo, getItemSequenceInfo, readItemSequenceInfo,
+	writeItemSequenceInfo, writeSeparatorSequenceInfo
+} from './sequence'
 import {
 	getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined,
 	makeUserCell, makeChangesetCell, makeNoteCell, makeCommentCell
@@ -212,12 +215,7 @@ export default class GridBody {
 			const yearMonthString=toIsoYearMonthString(date)
 			$precedingRow=this.$gridBody.insertRow(i+1)
 			$precedingRow.classList.add('separator')
-			writeItemSequenceInfo($precedingRow,{
-				timestamp: getLastTimestampOfMonth(date),
-				type: 'separator',
-				id: 0,
-				order: 0
-			})
+			writeSeparatorSequenceInfo($precedingRow,date)
 			const $cell=$precedingRow.insertCell()
 			$cell.append(
 				makeDiv('month')(
@@ -264,15 +262,4 @@ function isElementWithSameMonth($e: HTMLElement, date: Date): boolean {
 	if ($e.dataset.timestamp==null) return false
 	const elementDate=new Date(Number($e.dataset.timestamp))
 	return elementDate.getUTCFullYear()==date.getFullYear() && elementDate.getUTCMonth()==date.getUTCMonth()
-}
-
-function getLastTimestampOfMonth(date: Date): number {
-	let monthIndex=date.getUTCMonth()
-	let year=date.getUTCFullYear()
-	monthIndex++
-	if (monthIndex>=12) {
-		monthIndex=0
-		year++
-	}
-	return Date.UTC(year,monthIndex)-1
 }
