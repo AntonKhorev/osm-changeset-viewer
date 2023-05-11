@@ -1,9 +1,8 @@
-import type {Connection} from '../net'
+import type {Server} from '../net'
 import {
 	getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined,
 	makeUserCell, makeChangesetCell, makeNoteCell, makeCommentCell
 } from './body-item'
-import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
@@ -13,6 +12,60 @@ type CellTimelineRelation = {
 	filled: boolean
 	withTimelineAbove: boolean
 	withTimelineBelow: boolean
+}
+
+type ItemSequenceInfo = {
+	timestamp: number
+	// rank: number
+	// type: MuxBatchItem['type'] | 'separator'
+	type: string,
+	id: number
+	order: number
+}
+
+function getItemTypeRank(type: ItemSequenceInfo['type']): number {
+	// 0 = rank of separators
+	switch (type) {
+	case 'user':
+		return 1
+	case 'changeset':
+		return 2
+	case 'changesetClose':
+		return 3
+	case 'note':
+		return 4
+	case 'changesetComment':
+		return 5
+	case 'noteComment':
+		return 6
+	}
+	return +Infinity
+}
+
+function readItemSequenceInfo($e: HTMLElement): ItemSequenceInfo {
+	return {
+		timestamp: Number($e.dataset.timestamp),
+		// rank: Number($e.dataset.rank),
+		type: $e.dataset.type??'',
+		id: Number($e.dataset.id),
+		order: Number($e.dataset.order)
+	}
+}
+
+function writeItemSequenceInfo($e: HTMLElement, info: ItemSequenceInfo): void {
+	$e.dataset.timestamp=String(info.timestamp)
+	// $e.dataset.rank=String(info.rank)
+	$e.dataset.rank=info.type
+	$e.dataset.id=String(info.id)
+	$e.dataset.order=String(info.order)
+}
+
+function isGreaterItemSequenceInfo(a: ItemSequenceInfo, b: ItemSequenceInfo): boolean {
+	if (a.timestamp>b.timestamp) return true
+	// if (a.rank>b.rank) return true
+	if (getItemTypeRank(a.type)>getItemTypeRank(b.type)) return true
+	if (a.id>b.id) return true
+	return a.order>b.order
 }
 
 export default class GridBody {
@@ -31,61 +84,84 @@ export default class GridBody {
 		this.$gridBody.replaceChildren()
 	}
 	makeAndAddItem(
-		cx: Connection, columnHues: (number|null)[],
-		{iColumns,type,item}: GridBatchItem,
+		server: Server, columnHues: (number|null)[],
+		batchItem: GridBatchItem,
 		usernames: Map<number, string>
 	): boolean {
-		let $item: HTMLElement
+		const sequenceInfo=this.getItemSequenceInfo(batchItem)
+		if (!sequenceInfo) return false
+		const $item=this.renderExpandedItem(server,batchItem,usernames)
+		if (!$item) return false
+		this.addItem(columnHues,$item,batchItem.iColumns,sequenceInfo)
+		return true
+	}
+	private getItemSequenceInfo(
+		{type,item}: GridBatchItem
+	): ItemSequenceInfo|null {
 		let date: Date
 		let id: number
-		let order: number|undefined
+		let order=0
 		if (type=='user') {
-			$item=makeUserCell(cx.server,item)
 			date=item.createdAt
 			id=item.id
 		} else if (type=='changeset' || type=='changesetClose') {
-			$item=makeChangesetCell(cx.server,item,type=='changesetClose')
 			date=item.createdAt
 			if (type=='changesetClose' && item.closedAt) {
 				date=item.closedAt
 			}
 			id=item.id
 		} else if (type=='note') {
-			$item=makeNoteCell(cx.server,item)
 			date=item.createdAt
 			id=item.id
+		} else if (type=='changesetComment' || type=='noteComment') {
+			date=item.createdAt
+			id=item.itemId
+			order=item.order
+		} else {
+			return null
+		}
+		return {
+			timestamp: date.getTime(),
+			// rank: getItemTypeRank(type),
+			type,
+			id,
+			order
+		}
+	}
+	private renderExpandedItem(
+		server: Server,
+		{type,item}: GridBatchItem,
+		usernames: Map<number, string>
+	): HTMLElement|null {
+		if (type=='user') {
+			return makeUserCell(server,item)
+		} else if (type=='changeset' || type=='changesetClose') {
+			return makeChangesetCell(server,item,type=='changesetClose')
+		} else if (type=='note') {
+			return makeNoteCell(server,item)
 		} else if (type=='changesetComment' || type=='noteComment') {
 			let username: string|undefined
 			if (item.uid) {
 				username=usernames.get(item.uid)
 			}
 			if (type=='noteComment') {
-				$item=makeCommentCell(cx.server,'note',item,username,item.action)
+				return makeCommentCell(server,'note',item,username,item.action)
 			} else {
-				$item=makeCommentCell(cx.server,'changeset',item,username)
+				return makeCommentCell(server,'changeset',item,username)
 			}
-			date=item.createdAt
-			id=item.itemId
-			order=item.order
 		} else {
-			return false
+			return null
 		}
-		this.addItem(columnHues,$item,iColumns,date,type,id,order)
-		return true
 	}
 	private addItem(
 		columnHues: (number|null)[],
-		$masterItem: HTMLElement, iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number, order?: number
+		$masterItem: HTMLElement, iColumns: number[],
+		sequenceInfo: ItemSequenceInfo
 	): void {
 		if (iColumns.length==0) return
-		const timestamp=date.getTime()
-		const rank=getItemTypeRank(type)
-		const [$row,cellTimelineRelations]=this.insertRow(iColumns,date,type,id,order)
+		const [$row,cellTimelineRelations]=this.insertRow(iColumns,sequenceInfo)
 		$row.classList.add(...$masterItem.classList)
-		$row.dataset.timestamp=String(timestamp)
-		$row.dataset.rank=String(rank)
-		$row.dataset.id=String(id)
-		if (order!=null) $row.dataset.order=String(order)
+		writeItemSequenceInfo($row,sequenceInfo)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
 			const $cell=$row.insertCell()
@@ -196,7 +272,10 @@ export default class GridBody {
 		}
 		this.onItemSelect()
 	}
-	private insertRow(iColumns: number[], date: Date, type: MuxBatchItem['type'], id: number, order?: number): [
+	private insertRow(
+		iColumns: number[],
+		sequenceInfo: ItemSequenceInfo
+	): [
 		$row: HTMLTableRowElement, cellTimelineRelations: CellTimelineRelation[]
 	] {
 		const iColumnSet=new Set(iColumns)
@@ -205,30 +284,25 @@ export default class GridBody {
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
 		}))
-		const timestamp=date.getTime()
-		const rank=getItemTypeRank(type)
 		let $precedingRow:HTMLTableRowElement|undefined
 		let i=this.$gridBody.rows.length-1
 		for (;i>=0;i--) {
 			$precedingRow=this.$gridBody.rows[i]
-			const currentTimestamp=Number($precedingRow.dataset.timestamp)
-			if (currentTimestamp>timestamp) break
-			const currentRank=Number($precedingRow.dataset.rank)
-			if (currentRank>rank) break
-			const currentId=Number($precedingRow.dataset.id)
-			if (currentId>id) break
-			if (order!=null) {
-				const currentOrder=Number($precedingRow.dataset.order)
-				if (currentOrder>order) break
-			}
+			const precedingSequenceInfo=readItemSequenceInfo($precedingRow)
+			if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) break
 		}
 		let $itemRow: HTMLTableRowElement
+		const date=new Date(sequenceInfo.timestamp)
 		if (!$precedingRow || !isElementWithSameMonth($precedingRow,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
 			$precedingRow=this.$gridBody.insertRow(i+1)
 			$precedingRow.classList.add('separator')
-			$precedingRow.dataset.timestamp=String(getLastTimestampOfMonth(date))
-			$precedingRow.dataset.rank='0'
+			writeItemSequenceInfo($precedingRow,{
+				timestamp: getLastTimestampOfMonth(date),
+				type: 'separator',
+				id: 0,
+				order: 0
+			})
 			const $cell=$precedingRow.insertCell()
 			$cell.append(
 				makeDiv('month')(
@@ -240,7 +314,7 @@ export default class GridBody {
 		} else {
 			$itemRow=this.$gridBody.insertRow(i+1)
 		}
-		if (type=='user') {
+		if (sequenceInfo.type=='user') {
 			for (const iColumn of iColumns) {
 				this.$timelineCutoffRows[iColumn]=$itemRow
 				cellTimelineRelations[iColumn].withTimelineBelow=false
@@ -275,24 +349,6 @@ function isElementWithSameMonth($e: HTMLElement, date: Date): boolean {
 	if ($e.dataset.timestamp==null) return false
 	const elementDate=new Date(Number($e.dataset.timestamp))
 	return elementDate.getUTCFullYear()==date.getFullYear() && elementDate.getUTCMonth()==date.getUTCMonth()
-}
-
-function getItemTypeRank(type: MuxBatchItem['type']): number {
-	// 0 = rank of separators
-	switch (type) {
-	case 'user':
-		return 1
-	case 'changeset':
-		return 2
-	case 'changesetClose':
-		return 3
-	case 'note':
-		return 4
-	case 'changesetComment':
-		return 5
-	case 'noteComment':
-		return 6
-	}
 }
 
 function getLastTimestampOfMonth(date: Date): number {
