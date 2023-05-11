@@ -7,7 +7,7 @@ import {
 } from './sequence'
 import {
 	getItemCheckbox, markChangesetCellAsCombined, markChangesetCellAsUncombined,
-	makeUserCell, makeChangesetCell, makeNoteCell, makeCommentCell
+	renderExpandedItem
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import {toIsoYearMonthString} from '../date'
@@ -35,44 +35,19 @@ export default class GridBody {
 		this.$timelineCutoffRows=new Array(nColumns).fill(null)
 		this.$gridBody.replaceChildren()
 	}
-	makeAndAddItem(
+	addItem(
 		server: Server, columnHues: (number|null)[],
 		batchItem: GridBatchItem,
 		usernames: Map<number, string>
 	): boolean {
 		const sequenceInfo=getItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
-		const $item=this.renderExpandedItem(server,batchItem,usernames)
+		const $item=renderExpandedItem(server,batchItem,usernames)
 		if (!$item) return false
-		this.addItem(columnHues,$item,batchItem.iColumns,sequenceInfo)
+		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo)
 		return true
 	}
-	private renderExpandedItem(
-		server: Server,
-		{type,item}: GridBatchItem,
-		usernames: Map<number, string>
-	): HTMLElement|null {
-		if (type=='user') {
-			return makeUserCell(server,item)
-		} else if (type=='changeset' || type=='changesetClose') {
-			return makeChangesetCell(server,item,type=='changesetClose')
-		} else if (type=='note') {
-			return makeNoteCell(server,item)
-		} else if (type=='changesetComment' || type=='noteComment') {
-			let username: string|undefined
-			if (item.uid) {
-				username=usernames.get(item.uid)
-			}
-			if (type=='noteComment') {
-				return makeCommentCell(server,'note',item,username,item.action)
-			} else {
-				return makeCommentCell(server,'changeset',item,username)
-			}
-		} else {
-			return null
-		}
-	}
-	private addItem(
+	private insertItem(
 		columnHues: (number|null)[],
 		$masterItem: HTMLElement, iColumns: number[],
 		sequenceInfo: ItemSequenceInfo

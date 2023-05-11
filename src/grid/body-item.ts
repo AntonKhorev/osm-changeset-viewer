@@ -4,6 +4,7 @@ import type {
 	UserDbRecord, UserItemCommentDbRecord,
 	ChangesetDbRecord, NoteDbRecord
 } from '../db'
+import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import {makeElement, makeDiv, makeLink} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
 
@@ -28,7 +29,33 @@ export function markChangesetCellAsUncombined($item: HTMLElement, id: number|str
 	if ($checkbox) $checkbox.title=`opened changeset ${id}`
 }
 
-export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
+export function renderExpandedItem(
+	server: Server,
+	{type,item}: GridBatchItem,
+	usernames: Map<number, string>
+): HTMLElement|null {
+	if (type=='user') {
+		return makeUserCell(server,item)
+	} else if (type=='changeset' || type=='changesetClose') {
+		return makeChangesetCell(server,item,type=='changesetClose')
+	} else if (type=='note') {
+		return makeNoteCell(server,item)
+	} else if (type=='changesetComment' || type=='noteComment') {
+		let username: string|undefined
+		if (item.uid) {
+			username=usernames.get(item.uid)
+		}
+		if (type=='noteComment') {
+			return makeCommentCell(server,'note',item,username,item.action)
+		} else {
+			return makeCommentCell(server,'changeset',item,username)
+		}
+	} else {
+		return null
+	}
+}
+
+function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
 	const makeChanges=()=>{
 		const $changes=makeElement('span')('changes')(`Δ ${changeset.changes.count}`)
 		$changes.title=`number of changes`
@@ -59,7 +86,7 @@ export function makeChangesetCell(server: Server, changeset: ChangesetDbRecord, 
 	return $cell
 }
 
-export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
+function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`note ${note.id}`
 	const s=3
@@ -79,7 +106,7 @@ export function makeNoteCell(server: Server, note: NoteDbRecord): HTMLElement {
 	return $cell
 }
 
-export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
+function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`user ${user.id}`
 	$icon.innerHTML=makeCenteredSvg(10,
@@ -92,7 +119,7 @@ export function makeUserCell(server: Server, user: Extract<UserDbRecord,{visible
 	return makeItemCell('user',user.createdAt,$icon,$flow)
 }
 
-export function makeCommentCell(
+function makeCommentCell(
 	server: Server, itemType: 'note'|'changeset',
 	comment: UserItemCommentDbRecord, username: string|undefined,
 	action?: string
