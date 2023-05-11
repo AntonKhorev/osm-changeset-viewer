@@ -1,7 +1,8 @@
 import type {Server} from '../net'
 import type {ItemSequenceInfo} from './sequence'
 import {
-	isGreaterItemSequenceInfo, getItemSequenceInfo, readItemSequenceInfo,
+	isGreaterItemSequenceInfo, getItemSequenceInfo,
+	readItemSequenceInfo, readItemSequenceInfoAndCheckIfInSameMonth,
 	writeItemSequenceInfo, writeSeparatorSequenceInfo
 } from './sequence'
 import {
@@ -211,7 +212,7 @@ export default class GridBody {
 		}
 		let $itemRow: HTMLTableRowElement
 		const date=new Date(sequenceInfo.timestamp)
-		if (!$precedingRow || !isElementWithSameMonth($precedingRow,date)) {
+		if (!$precedingRow || !readItemSequenceInfoAndCheckIfInSameMonth($precedingRow,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
 			$precedingRow=this.$gridBody.insertRow(i+1)
 			$precedingRow.classList.add('separator')
@@ -256,10 +257,4 @@ function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
 		if (!($sameItemCheckbox instanceof HTMLInputElement)) continue
 		$sameItemCheckbox.checked=$checkbox.checked
 	}
-}
-
-function isElementWithSameMonth($e: HTMLElement, date: Date): boolean {
-	if ($e.dataset.timestamp==null) return false
-	const elementDate=new Date(Number($e.dataset.timestamp))
-	return elementDate.getUTCFullYear()==date.getFullYear() && elementDate.getUTCMonth()==date.getUTCMonth()
 }
