@@ -73,8 +73,8 @@ export function readItemSequenceInfo($e: HTMLElement): ItemSequenceInfo {
 		timestamp: Number($e.dataset.timestamp),
 		// rank: Number($e.dataset.rank),
 		type: $e.dataset.type??'',
-		id: Number($e.dataset.id),
-		order: Number($e.dataset.order)
+		id: Number($e.dataset.id??'0'),
+		order: Number($e.dataset.order??'0')
 	}
 }
 
@@ -82,8 +82,16 @@ export function writeItemSequenceInfo($e: HTMLElement, info: ItemSequenceInfo): 
 	$e.dataset.timestamp=String(info.timestamp)
 	// $e.dataset.rank=String(info.rank)
 	$e.dataset.type=info.type
-	$e.dataset.id=String(info.id)
-	$e.dataset.order=String(info.order)
+	if (info.id) {
+		$e.dataset.id=String(info.id)
+	} else {
+		delete $e.dataset.id
+	}
+	if (info.order) {
+		$e.dataset.order=String(info.order)
+	} else {
+		delete $e.dataset.order
+	}
 }
 
 export function writeSeparatorSequenceInfo($e: HTMLElement, date: Date): void {
