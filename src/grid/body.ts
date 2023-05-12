@@ -2,8 +2,7 @@ import type {Server} from '../net'
 import type {ItemSequenceInfo} from './sequence'
 import {
 	isGreaterItemSequenceInfo, getItemSequenceInfo,
-	readItemSequenceInfo, readItemSequenceInfoAndCheckIfInSameMonth,
-	writeItemSequenceInfo, writeSeparatorSequenceInfo
+	readItemSequenceInfo, writeItemSequenceInfo, writeSeparatorSequenceInfo
 } from './sequence'
 import {
 	getItemCheckbox, markChangesetItemAsCombined, markChangesetItemAsUncombined,
@@ -21,8 +20,6 @@ type CellTimelineRelation = {
 }
 
 type GridPosition = {
-	type: 'inFront'
-} | {
 	type: 'afterRow'
 	$row: HTMLTableRowElement
 } | {
@@ -183,22 +180,7 @@ export default class GridBody {
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
 		}))
-		let position=this.getGridPosition(sequenceInfo)
-		const date=new Date(sequenceInfo.timestamp)
-		if (position.type=='inFront' || !readItemSequenceInfoAndCheckIfInSameMonth(position.$row,date)) {
-			const yearMonthString=toIsoYearMonthString(date)
-			const $separator=this.insertRow(position)
-			$separator.classList.add('separator')
-			writeSeparatorSequenceInfo($separator,date)
-			const $cell=$separator.insertCell()
-			$cell.append(
-				makeDiv('month')(
-					makeElement('time')()(yearMonthString)
-				)
-			)
-			$cell.colSpan=this.nColumns+1
-			position={type:'afterRow',$row:$separator}
-		}
+		let position=this.getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo)
 		let $row:HTMLTableRowElement
 		let isNewRow:boolean
 		if (isCollapsed && position.type=='insideRow') {
@@ -265,43 +247,90 @@ export default class GridBody {
 			return $cells
 		}
 	}
-	private getGridPosition(sequenceInfo: ItemSequenceInfo): GridPosition {
-		const findPrecedingCollectionItem=($cell:HTMLTableCellElement)=>{
-			const $items=$cell.querySelectorAll(':scope > .item')
-			for (let i=$items.length-1;i>=0;i++) {
-				const $item=$items[i]
-				if (!($item instanceof HTMLElement)) continue
-				const precedingSequenceInfo=readItemSequenceInfo($item)
-				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
-					return $item
-				}
+	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ItemSequenceInfo): GridPosition {
+		const insertSeparatorRow=($precedingRow?:HTMLTableRowElement)=>{
+			const date=new Date(sequenceInfo.timestamp)
+			const yearMonthString=toIsoYearMonthString(date)
+			const $separator=makeElement('tr')('separator')()
+			if ($precedingRow) {
+				$precedingRow.after($separator)
+			} else {
+				this.$gridBody.prepend($separator)
 			}
-			return null
+			writeSeparatorSequenceInfo($separator,date)
+			const $cell=$separator.insertCell()
+			$cell.append(
+				makeDiv('month')(
+					makeElement('time')()(yearMonthString)
+				)
+			)
+			$cell.colSpan=this.nColumns+1
+			return $separator
 		}
+		let $followingSameMonthCollectionRow:HTMLTableRowElement|undefined
 		for (let i=this.$gridBody.rows.length-1;i>=0;i--) {
 			const $row=this.$gridBody.rows[i]
 			if ($row.classList.contains('collection')) {
-				const $items=[...$row.cells].map(findPrecedingCollectionItem)
-				if ($items.some($item=>$item!=null)) {
-					return {type:'insideRow',$row,$items}
+				let isSameMonthRow=true
+				const $items=[...$row.cells].map(($cell:HTMLTableCellElement)=>{
+					const $items=$cell.querySelectorAll(':scope > .item')
+					for (let i=$items.length-1;i>=0;i++) {
+						const $item=$items[i]
+						if (!($item instanceof HTMLElement)) continue
+						const precedingSequenceInfo=readItemSequenceInfo($item)
+						if (!isSameMonthTimestamps(precedingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
+							isSameMonthRow=false
+						}
+						if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
+							return $item
+						}
+					}
+					return null
+				})
+				if (isSameMonthRow) {
+					if ($items.some($item=>$item!=null)) {
+						return {
+							type: 'insideRow',
+							$row,
+							$items
+						}
+					} else {
+						$followingSameMonthCollectionRow=$row
+					}
+				} else {
+					$followingSameMonthCollectionRow=undefined
 				}
-				// TODO not quite, may want to insert inside a collection in front of every item if they share a month:
-				// - check if next row is greater/absent
-				// - if so check if collection is same month
-				// - if so set position in front of the collection
 			} else {
 				const precedingSequenceInfo=readItemSequenceInfo($row)
 				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
-					return {type:'afterRow',$row}
+					if (!isSameMonthTimestamps(precedingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
+						return {
+							type: 'afterRow',
+							$row: insertSeparatorRow($row)
+						}
+					} else if ($followingSameMonthCollectionRow) {
+						return {
+							type: 'insideRow',
+							$row: $followingSameMonthCollectionRow,
+							$items: [...$followingSameMonthCollectionRow.cells].map(_=>null)
+						}
+					} else {
+						return {
+							type: 'afterRow',
+							$row
+						}
+					}
+				} else {
+					$followingSameMonthCollectionRow=undefined
 				}
 			}
 		}
-		return {type:'inFront'}
+		return {
+			type: 'afterRow',
+			$row: insertSeparatorRow()
+		}
 	}
 	private insertRow(position: GridPosition): HTMLTableRowElement {
-		if (position.type=='inFront') {
-			return this.$gridBody.insertRow(0)
-		}
 		const $row=makeElement('tr')()()
 		position.$row.after($row)
 		if (position.type=='insideRow') {
@@ -342,4 +371,10 @@ function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
 		if (!($sameItemCheckbox instanceof HTMLInputElement)) continue
 		$sameItemCheckbox.checked=$checkbox.checked
 	}
+}
+
+function isSameMonthTimestamps(t1: number, t2: number): boolean {
+	const d1=new Date(t1)
+	const d2=new Date(t2)
+	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
 }

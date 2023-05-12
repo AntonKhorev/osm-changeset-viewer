@@ -113,9 +113,3 @@ function getLastTimestampOfMonth(date: Date): number {
 	}
 	return Date.UTC(year,monthIndex)-1
 }
-
-export function readItemSequenceInfoAndCheckIfInSameMonth($e: HTMLElement, date: Date): boolean {
-	if ($e.dataset.timestamp==null) return false
-	const elementDate=new Date(Number($e.dataset.timestamp))
-	return elementDate.getUTCFullYear()==date.getFullYear() && elementDate.getUTCMonth()==date.getUTCMonth()
-}
