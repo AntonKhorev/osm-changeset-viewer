@@ -62,7 +62,7 @@ export default class GridBody {
 	}
 	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
 		let $itemAbove: HTMLElement|undefined
-		for (const $item of this.$gridBody.rows) {
+		for (const $item of this.$gridBody.rows) { // TODO update for collapsed items
 			if (!$item.classList.contains('item')) {
 				$itemAbove=undefined
 				continue
@@ -183,8 +183,7 @@ export default class GridBody {
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
 		}))
-		const position=this.getGridPosition(sequenceInfo)
-		const $row=makeElement('tr')()()
+		let position=this.getGridPosition(sequenceInfo)
 		const date=new Date(sequenceInfo.timestamp)
 		if (position.type=='inFront' || !readItemSequenceInfoAndCheckIfInSameMonth(position.$row,date)) {
 			const yearMonthString=toIsoYearMonthString(date)
@@ -198,9 +197,16 @@ export default class GridBody {
 				)
 			)
 			$cell.colSpan=this.nColumns+1
-			$separator.after($row)
+			position={type:'afterRow',$row:$separator}
+		}
+		let $row:HTMLTableRowElement
+		let isNewRow:boolean
+		if (isCollapsed && position.type=='insideRow') {
+			$row=position.$row
+			isNewRow=false
 		} else {
-			position.$row.after($row)
+			$row=this.insertRow(position)
+			isNewRow=true
 		}
 		if (sequenceInfo.type=='user') {
 			for (const iColumn of iColumns) {
@@ -216,21 +222,48 @@ export default class GridBody {
 				}
 			}
 		}
-		$row.classList.add(...classNames)
-		writeItemSequenceInfo($row,sequenceInfo)
-		const $cells:HTMLElement[]=[]
-		for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
-			const $cell=$row.insertCell()
-			$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
-			$cell.classList.toggle('with-timeline-below',cellTimelineRelation.withTimelineBelow)
-			const hue=columnHues[iColumn]
-			if (hue!=null) {
-				$cell.style.setProperty('--hue',String(hue))
+		let $cells:HTMLElement[]
+		if (isNewRow) {
+			$cells=[]
+			for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
+				const $cell=$row.insertCell()
+				$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
+				$cell.classList.toggle('with-timeline-below',cellTimelineRelation.withTimelineBelow)
+				const hue=columnHues[iColumn]
+				if (hue!=null) {
+					$cell.style.setProperty('--hue',String(hue))
+				}
+				if (!cellTimelineRelation.filled) continue
+				$cells.push($cell)
 			}
-			if (!cellTimelineRelation.filled) continue
-			$cells.push($cell)
+		} else {
+			$cells=[...$row.cells]
 		}
-		return $cells
+		if (isCollapsed) {
+			$row.classList.add('collection')
+			const $placeholders:HTMLElement[]=[]
+			for (let i=0;i<$cells.length;i++) {
+				const $placeholder=makeElement('span')()()
+				writeItemSequenceInfo($placeholder,sequenceInfo)
+				const $cell=$cells[i]
+				if (position.type=='insideRow') {
+					const $precedingItem=position.$items[i]
+					if ($precedingItem==null) {
+						$cell.prepend($placeholder)
+					} else {
+						$precedingItem.after($placeholder)
+					}
+				} else {
+					$cell.append($placeholder)
+				}
+				$placeholders.push($placeholder)
+			}
+			return $placeholders
+		} else {
+			$row.classList.add(...classNames)
+			writeItemSequenceInfo($row,sequenceInfo)
+			return $cells
+		}
 	}
 	private getGridPosition(sequenceInfo: ItemSequenceInfo): GridPosition {
 		const findPrecedingCollectionItem=($cell:HTMLTableCellElement)=>{
@@ -252,6 +285,10 @@ export default class GridBody {
 				if ($items.some($item=>$item!=null)) {
 					return {type:'insideRow',$row,$items}
 				}
+				// TODO not quite, may want to insert inside a collection in front of every item if they share a month:
+				// - check if next row is greater/absent
+				// - if so check if collection is same month
+				// - if so set position in front of the collection
 			} else {
 				const precedingSequenceInfo=readItemSequenceInfo($row)
 				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
