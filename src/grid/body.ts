@@ -14,7 +14,6 @@ import {makeElement, makeDiv} from '../util/html'
 import {moveInArray} from '../util/types'
 
 type CellTimelineRelation = {
-	filled: boolean
 	withTimelineAbove: boolean
 	withTimelineBelow: boolean
 }
@@ -176,7 +175,6 @@ export default class GridBody {
 	): HTMLElement[] {
 		const iColumnSet=new Set(iColumns)
 		const cellTimelineRelations:CellTimelineRelation[]=this.$timelineCutoffRows.map(($timelineCutoffRow,iColumn)=>({
-			filled: iColumnSet.has(iColumn),
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
 		}))
@@ -204,9 +202,7 @@ export default class GridBody {
 				}
 			}
 		}
-		let $cells:HTMLElement[]
 		if (isNewRow) {
-			$cells=[]
 			for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
 				const $cell=$row.insertCell()
 				$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
@@ -215,19 +211,15 @@ export default class GridBody {
 				if (hue!=null) {
 					$cell.style.setProperty('--hue',String(hue))
 				}
-				if (!cellTimelineRelation.filled) continue
-				$cells.push($cell)
 			}
-		} else {
-			$cells=[...$row.cells]
 		}
 		if (isCollapsed) {
 			$row.classList.add('collection')
 			const $placeholders:HTMLElement[]=[]
-			for (let i=0;i<$cells.length;i++) {
+			for (const i of iColumnSet) {
 				const $placeholder=makeElement('span')()()
 				writeItemSequenceInfo($placeholder,sequenceInfo)
-				const $cell=$cells[i]
+				const $cell=$row.cells[i]
 				if (position.type=='insideRow') {
 					const $precedingItem=position.$items[i]
 					if ($precedingItem==null) {
@@ -244,7 +236,7 @@ export default class GridBody {
 		} else {
 			$row.classList.add(...classNames)
 			writeItemSequenceInfo($row,sequenceInfo)
-			return $cells
+			return [...iColumnSet].map(i=>$row.cells[i])
 		}
 	}
 	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ItemSequenceInfo): GridPosition {
