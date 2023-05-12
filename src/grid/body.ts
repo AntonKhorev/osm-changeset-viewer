@@ -216,7 +216,7 @@ export default class GridBody {
 			$row.classList.add('collection')
 			const $placeholders:HTMLElement[]=[]
 			for (const i of iColumnSet) {
-				const $placeholder=makeElement('span')()()
+				const $placeholder=makeElement('span')(...classNames)()
 				writeItemSequenceInfo($placeholder,sequenceInfo)
 				const $cell=$row.cells[i]
 				if (position.type=='insideRow') {

@@ -55,7 +55,7 @@ export function renderCollapsedItem(
 	} else {
 		return null
 	}
-	return makeElement('span')('collection-item')(
+	return makeElement('span')('item')(
 		$icon,` `,makeElement('span')('ballon')(
 			makeDisclosureButton(),` `,String(id) // TODO item links
 		)
