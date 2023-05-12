@@ -265,7 +265,7 @@ export default class GridBody {
 				let isSameMonthRow=true
 				const $items=[...$row.cells].map(($cell:HTMLTableCellElement)=>{
 					const $items=$cell.querySelectorAll(':scope > .item')
-					for (let i=$items.length-1;i>=0;i++) {
+					for (let i=$items.length-1;i>=0;i--) {
 						const $item=$items[i]
 						if (!($item instanceof HTMLElement)) continue
 						const precedingSequenceInfo=readItemSequenceInfo($item)
