@@ -45,15 +45,14 @@ export default class GridBody {
 	addItem(
 		server: Server, columnHues: (number|null)[],
 		batchItem: GridBatchItem,
-		usernames: Map<number, string>
+		usernames: Map<number, string>,
+		isCollapsed: boolean
 	): boolean {
 		const sequenceInfo=getItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
-		// const $item=renderCollapsedItem(server,batchItem,usernames)
-		const $item=renderExpandedItem(server,batchItem,usernames)
+		const $item=(isCollapsed?renderCollapsedItem:renderExpandedItem)(server,batchItem,usernames)
 		if (!$item) return false
-		// this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,true)
-		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,false)
+		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,isCollapsed)
 		return true
 	}
 	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
@@ -279,18 +278,25 @@ export default class GridBody {
 					}
 					return null
 				})
-				if (isSameMonthRow) {
-					if ($items.some($item=>$item!=null)) {
+				if ($items.some($item=>$item!=null)) {
+					if (isSameMonthRow) {
 						return {
 							type: 'insideRow',
 							$row,
 							$items
 						}
 					} else {
-						$followingSameMonthCollectionRow=$row
+						return {
+							type: 'afterRow',
+							$row: insertSeparatorRow($row)
+						}
 					}
 				} else {
-					$followingSameMonthCollectionRow=undefined
+					if (isSameMonthRow) {
+						$followingSameMonthCollectionRow=$row
+					} else {
+						$followingSameMonthCollectionRow=undefined
+					}
 				}
 			} else {
 				const precedingSequenceInfo=readItemSequenceInfo($row)

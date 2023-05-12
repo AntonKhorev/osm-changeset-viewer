@@ -41,7 +41,7 @@ export default class Grid {
 			},(batch,usernames)=>{
 				let wroteAnyItem=false
 				for (const batchItem of batch) {
-					const wroteItem=this.body.addItem(cx.server,this.columnHues,batchItem,usernames)
+					const wroteItem=this.body.addItem(cx.server,this.columnHues,batchItem,usernames,false)
 					wroteAnyItem||=wroteItem
 				}
 				if (wroteAnyItem) {
