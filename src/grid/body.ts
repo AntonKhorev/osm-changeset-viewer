@@ -6,7 +6,7 @@ import {
 } from './sequence'
 import {
 	getItemCheckbox, markChangesetItemAsCombined, markChangesetItemAsUncombined,
-	renderCollapsedItem, renderExpandedItem
+	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import {toIsoYearMonthString} from '../date'
@@ -50,8 +50,14 @@ export default class GridBody {
 	): boolean {
 		const sequenceInfo=getItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
-		const $item=(isCollapsed?renderCollapsedItem:renderExpandedItem)(server,batchItem,usernames)
-		if (!$item) return false
+		const $itemAndFlow=makeItemShell(batchItem)
+		if (!$itemAndFlow) return false
+		const [$item,$flow]=$itemAndFlow
+		if (isCollapsed) {
+			writeCollapsedItemFlow($flow,server,batchItem,usernames)
+		} else {
+			writeExpandedItemFlow($flow,server,batchItem,usernames)
+		}
 		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,isCollapsed)
 		return true
 	}

@@ -1,11 +1,7 @@
 import type {Server} from '../net'
 import {makeDateOutput} from '../date'
-import type {
-	UserDbRecord, UserItemCommentDbRecord,
-	ChangesetDbRecord, NoteDbRecord
-} from '../db'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
-import {makeElement, makeDiv, makeLink} from '../util/html'
+import {makeElement, makeLink} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
@@ -29,113 +25,188 @@ export function markChangesetItemAsUncombined($item: HTMLElement, id: number|str
 	if ($checkbox) $checkbox.title=`opened changeset ${id}`
 }
 
-export function renderCollapsedItem(
-	server: Server,
-	{type,item}: GridBatchItem,
-	usernames: Map<number, string>
-): HTMLElement|null {
+export function makeItemShell(
+	{type,item}: GridBatchItem
+): [$item: HTMLElement, $flow: HTMLElement] | null {
 	let id: number
-	let $icon: HTMLElement
+	let typeClasses: string[] = []
+	const $icon=makeElement('span')('icon')()
 	if (type=='user') {
+		typeClasses=['user']
 		id=item.id
-		$icon=makeUserIcon(id)
+		writeUserIcon($icon,id)
 	} else if (type=='changeset' || type=='changesetClose') {
+		typeClasses=['changeset']
 		id=item.id
-		$icon=makeChangesetIcon(id,type=='changesetClose')
+		writeChangesetIcon($icon,id,type=='changesetClose')
+		if (type=='changesetClose') typeClasses.push('closed')
 	} else if (type=='note') {
+		typeClasses=['note']
 		id=item.id
-		$icon=makeNoteIcon(id)
+		writeNoteIcon($icon,id)
 	} else if (type=='changesetComment' || type=='noteComment') {
+		typeClasses=['comment']
 		id=item.itemId
 		if (type=='noteComment') {
-			$icon=makeCommentIcon(id,'note',item.action)
+			typeClasses.push(item.action)
+			writeCommentIcon($icon,id,'note',item.action)
 		} else {
-			$icon=makeCommentIcon(id,'changeset')
+			writeCommentIcon($icon,id,'changeset')
+		}
+		if (item.uid!=item.itemUid) {
+			typeClasses.push('incoming')
 		}
 	} else {
 		return null
 	}
-	return makeElement('span')('item')(
+	const $flow=makeElement('span')('flow')()
+	return [makeElement('span')('item',...typeClasses)(
 		$icon,` `,makeElement('span')('ballon')(
-			makeDisclosureButton(),` `,String(id) // TODO item links
+			makeDisclosureButton(),` `,$flow
 		)
-	)
+	),$flow]
 }
 
-export function renderExpandedItem(
+export function writeCollapsedItemFlow(
+	$flow: HTMLElement,
 	server: Server,
 	{type,item}: GridBatchItem,
 	usernames: Map<number, string>
-): HTMLElement|null {
+): void {
+	let id: number
 	if (type=='user') {
-		return makeUserItem(server,item)
+		id=item.id
 	} else if (type=='changeset' || type=='changesetClose') {
-		return makeChangesetItem(server,item,type=='changesetClose')
+		id=item.id
 	} else if (type=='note') {
-		return makeNoteItem(server,item)
+		id=item.id
 	} else if (type=='changesetComment' || type=='noteComment') {
+		id=item.itemId
+	} else {
+		return
+	}
+	$flow.replaceChildren(
+		String(id) // TODO item links
+	)
+}
+
+export function writeExpandedItemFlow(
+	$flow: HTMLElement,
+	server: Server,
+	{type,item}: GridBatchItem,
+	usernames: Map<number, string>
+): void {
+	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
+		$flow.replaceChildren(
+			makeLink(String(id),href),` `,
+			makeElement('span')('api')(
+				`(`,makeLink(`api`,apiHref),`)`
+			)
+		)
+	}
+	const rewriteWithChangesetLinks=(id: number)=>{
+		rewriteWithLinks(id,
+			server.web.getUrl(e`changeset/${id}`),
+			server.api.getUrl(e`changeset/${id}.json?include_discussion=true`)
+		)
+	}
+	const rewriteWithNoteLinks=(id: number)=>{
+		rewriteWithLinks(id,
+			server.web.getUrl(e`note/${id}`),
+			server.api.getUrl(e`notes/${id}.json`)
+		)
+	}
+	let from: string|HTMLElement|undefined
+	let date: Date|undefined
+	if (type=='user') {
+		date=item.createdAt
+		$flow.replaceChildren(`account created`)
+	} else if (type=='changeset' || type=='changesetClose') {
+		const makeChanges=()=>{
+			const $changes=makeElement('span')('changes')(`Δ ${item.changes.count}`)
+			$changes.title=`number of changes`
+			return $changes
+		}
+		date = type=='changesetClose' ? item.closedAt : item.createdAt
+		rewriteWithChangesetLinks(item.id)
+		$flow.append(
+			` `,makeChanges(),
+			` `,makeElement('span')()(item.tags?.comment ?? '')
+		)
+	} else if (type=='note') {
+		date=item.createdAt
+		rewriteWithNoteLinks(item.id)
+		if (item.openingComment) {
+			$flow.append(
+				` `,item.openingComment
+			)
+		}
+	} else if (type=='changesetComment' || type=='noteComment') {
+		date=item.createdAt
 		let username: string|undefined
 		if (item.uid) {
 			username=usernames.get(item.uid)
 		}
-		if (type=='noteComment') {
-			return makeCommentItem(server,'note',item,username,item.action)
+		let action: string|undefined
+		if (type=='changesetComment') {
+			rewriteWithChangesetLinks(item.itemId)
+		} else if (type=='noteComment') {
+			rewriteWithNoteLinks(item.itemId)
+			action=item.action
 		} else {
-			return makeCommentItem(server,'changeset',item,username)
+			return
+		}
+		if (item.uid!=item.itemUid) {
+			if (username!=null) {
+				from=makeLink(username,server.web.getUrl(e`user/${username}`))
+				
+			} else if (item.uid!=null) {
+				from=`#{comment.uid}`
+			} else {
+				from=`anonymous`
+			}
+		}
+		if (item.text) {
+			$flow.append(
+				` `,item.text
+			)
 		}
 	} else {
-		return null
+		return
+	}
+	$flow.prepend(
+		date?makeDateOutput(date):`???`,` `
+	)
+	if (from!=null) {
+		$flow.prepend(
+			makeElement('span')('from')(from),` `
+		)
 	}
 }
 
-function makeChangesetItem(server: Server, changeset: ChangesetDbRecord, isClosed: boolean): HTMLElement {
-	const makeChanges=()=>{
-		const $changes=makeElement('span')('changes')(`Δ ${changeset.changes.count}`)
-		$changes.title=`number of changes`
-		return $changes
-	}
-	const $icon=makeChangesetIcon(changeset.id,isClosed)
-	const date = isClosed ? changeset.closedAt : changeset.createdAt
-	const $flow=makeElement('span')('flow')()
-	const $item=makeBasicChangesetItem(
-		server,'changeset',date,$icon,$flow,changeset.id
+function writeUserIcon($icon: HTMLElement, id: number): void {
+	$icon.title=`user ${id}`
+	$icon.innerHTML=makeCenteredSvg(10,
+		`<path d="${computeNewOutlinePath(9,7,10)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
+		makeUserSvgElements()
 	)
-	$flow.append(
-		makeChanges(),` `,
-		makeElement('span')()(changeset.tags?.comment ?? '')
-	)
-	if (isClosed) $item.classList.add('closed')
-	return $item
 }
 
-function makeChangesetIcon(id: number, isClosed: boolean): HTMLElement {
+function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean): void {
 	if (isClosed) {
 		const $noCheckbox=makeElement('span')('no-checkbox')()
 		$noCheckbox.tabIndex=0
 		$noCheckbox.title=`closed changeset ${id}`
-		return makeElement('span')('icon')($noCheckbox)
+		$icon.append($noCheckbox)
 	} else {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.title=`opened changeset ${id}`
-		return makeElement('span')('icon')($checkbox)
+		$icon.append($checkbox)
 	}
 }
 
-function makeNoteItem(server: Server, note: NoteDbRecord): HTMLElement {
-	const $flow=makeElement('span')('flow')()
-	const $icon=makeNoteIcon(note.id)
-	const $item=makeBasicNoteItem(
-		server,'note',note.createdAt,$icon,$flow,note.id
-	)
-	$flow.append(
-		note.openingComment ?? ''
-	)
-	return $item
-}
-
-function makeNoteIcon(id: number): HTMLElement {
-	const $icon=makeElement('span')('icon')()
+function writeNoteIcon($icon: HTMLElement, id: number): void {
 	$icon.title=`note ${id}`
 	const s=3
 	$icon.innerHTML=makeCenteredSvg(10,
@@ -144,61 +215,9 @@ function makeNoteIcon(id: number): HTMLElement {
 		`<line x1="${-s}" x2="${s}" stroke="currentColor" stroke-width="2" />`+
 		`<line y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="2" />`
 	)
-	return $icon
 }
 
-function makeUserItem(server: Server, user: Extract<UserDbRecord,{visible:true}>): HTMLElement {
-	const $flow=makeElement('span')('flow')(
-		`account created`
-	)
-	const $icon=makeUserIcon(user.id)
-	return makeItemItem('user',user.createdAt,$icon,$flow)
-}
-
-function makeUserIcon(id: number): HTMLElement {
-	const $icon=makeElement('span')('icon')()
-	$icon.title=`user ${id}`
-	$icon.innerHTML=makeCenteredSvg(10,
-		`<path d="${computeNewOutlinePath(9,7,10)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
-		makeUserSvgElements()
-	)
-	return $icon
-}
-
-function makeCommentItem(
-	server: Server, itemType: 'note'|'changeset',
-	comment: UserItemCommentDbRecord, username: string|undefined,
-	action?: string
-): HTMLElement {
-	const $flow=makeElement('span')('flow')()
-	const $icon=makeCommentIcon(comment.itemId,itemType,action)
-	const $item=(itemType=='note' ? makeBasicNoteItem : makeBasicChangesetItem)(
-		server,'comment',comment.createdAt,$icon,$flow,comment.itemId
-	)
-	if (action!=null) {
-		$item.classList.add(action)
-	}
-	if (comment.uid!=comment.itemUid) {
-		$item.classList.add('incoming')
-		let from:string|HTMLElement=`???`
-		if (username!=null) {
-			from=makeLink(username,server.web.getUrl(e`user/${username}`))
-			
-		} else if (comment.uid!=null) {
-			from=`#{comment.uid}`
-		}
-		$flow.prepend(
-			makeElement('span')('from')(from),` `
-		)
-	}
-	$flow.append(
-		` `,comment.text
-	)
-	return $item
-}
-
-function makeCommentIcon(id: number, itemType: 'note'|'changeset', action?: string): HTMLElement {
-	const $icon=makeElement('span')('icon')()
+function writeCommentIcon($icon: HTMLElement, id: number, itemType: 'note'|'changeset', action?: string): void {
 	if (itemType=='note') {
 		const s=2.5
 		let actionGlyph: string|undefined
@@ -229,56 +248,6 @@ function makeCommentIcon(id: number, itemType: 'note'|'changeset', action?: stri
 	} else {
 		$icon.title=`${action} ${itemType} ${id}`
 	}
-	return $icon
-}
-
-function makeBasicChangesetItem(
-	server: Server,
-	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement,
-	id: number
-): HTMLElement {
-	return makeLinkedItem(
-		type,date,$icon,$flow,id,
-		server.web.getUrl(e`changeset/${id}`),
-		server.api.getUrl(e`changeset/${id}.json?include_discussion=true`)
-	)
-}
-
-function makeBasicNoteItem(
-	server: Server,
-	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement,
-	id: number
-): HTMLElement {
-	return makeLinkedItem(
-		type,date,$icon,$flow,id,
-		server.web.getUrl(e`note/${id}`),
-		server.api.getUrl(e`notes/${id}.json`)
-	)
-}
-
-function makeLinkedItem(
-	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement,
-	id: number, href: string, apiHref: string
-): HTMLElement {
-	$flow.append(
-		makeLink(String(id),href),` `,
-		makeElement('span')('api')(
-			`(`,makeLink(`api`,apiHref),`)`
-		),` `,
-	)
-	return makeItemItem(type,date,$icon,$flow)
-}
-
-function makeItemItem(
-	type: string, date: Date|undefined, $icon: HTMLElement, $flow: HTMLElement
-): HTMLElement {
-	const $disclosure=makeDisclosureButton()
-	$flow.prepend(
-		date?makeDateOutput(date):`???`,` `
-	)
-	return makeDiv('item',type)(
-		$icon,` `,makeElement('span')('ballon')($disclosure,` `,$flow)
-	)
 }
 
 function makeDisclosureButton(): HTMLButtonElement {
