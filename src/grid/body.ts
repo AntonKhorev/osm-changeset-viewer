@@ -140,14 +140,11 @@ export default class GridBody {
 		const hasChecked=this.$timelineCutoffRows.map(()=>false)
 		const hasUnchecked=this.$timelineCutoffRows.map(()=>false)
 		for (const $row of this.$gridBody.rows) {
-			if (!$row.classList.contains('changeset')) continue
+			if (!$row.classList.contains('collection') && !$row.classList.contains('changeset')) continue
 			for (const [iColumn,$cell] of [...$row.cells].entries()) {
-				const $checkbox=getItemCheckbox($cell)
-				if (!$checkbox) continue
-				if ($checkbox.checked) {
-					hasChecked[iColumn]=true
-				} else {
-					hasUnchecked[iColumn]=true
+				for (const $checkbox of listCellCheckboxes($cell,$row.classList.contains('collection'))) {
+					hasChecked[iColumn]||=$checkbox.checked
+					hasUnchecked[iColumn]||=!$checkbox.checked
 				}
 			}
 		}
@@ -155,13 +152,13 @@ export default class GridBody {
 	}
 	triggerColumnCheckboxes(iColumn: number, isChecked: boolean): void {
 		for (const $row of this.$gridBody.rows) {
-			if (!$row.classList.contains('changeset')) continue
+			if (!$row.classList.contains('collection') && !$row.classList.contains('changeset')) continue
 			const $cell=$row.cells[iColumn]
 			if (!$cell) continue
-			const $checkbox=getItemCheckbox($cell)
-			if (!$checkbox) continue
-			$checkbox.checked=isChecked
-			syncColumnCheckboxes($checkbox)
+			for (const $checkbox of listCellCheckboxes($cell,$row.classList.contains('collection'))) {
+				$checkbox.checked=isChecked
+				syncColumnCheckboxes($checkbox) // TODO support collected
+			}
 		}
 		this.onItemSelect()
 	}
@@ -381,6 +378,19 @@ export default class GridBody {
 
 function columnCheckboxSyncListener(this: HTMLInputElement): void {
 	syncColumnCheckboxes(this)
+}
+
+function *listCellCheckboxes($cell: HTMLTableCellElement, isCollection: boolean): Iterable<HTMLInputElement> {
+	if (isCollection) {
+		for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
+			if (!($changeset instanceof HTMLElement)) continue
+			const $checkbox=getItemCheckbox($changeset)
+			if ($checkbox) yield $checkbox
+		}
+	} else {
+		const $checkbox=getItemCheckbox($cell)
+		if ($checkbox) yield $checkbox
+	}
 }
 
 function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
