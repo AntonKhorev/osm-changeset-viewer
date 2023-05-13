@@ -1,16 +1,17 @@
+import type {Server} from './net'
+import type Grid from './grid'
 import type More from './more'
 import {WorkerBroadcastReceiver} from './broadcast-channel'
 import {makeElement, makeDiv, makeLabel, makeLink} from './util/html'
 import {ul,li,strong} from './util/html-shortcuts'
-import {Server} from './net'
 
 export default function writeFooter(
 	$root: HTMLElement,
 	$footer: HTMLElement,
 	$netDialog: HTMLDialogElement,
-	$grid?: HTMLElement,
-	more?: More,
 	server?: Server,
+	grid?: Grid,
+	more?: More,
 	updateTableCallback?: ()=>void
 ): void {
 	const $logList=ul()
@@ -96,11 +97,11 @@ export default function writeFooter(
 			))
 		)
 	}
-	if ($grid) {
+	if (grid) {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.oninput=()=>{
-			$grid.classList.toggle('with-closed-changesets',$checkbox.checked)
+			grid.$grid.classList.toggle('with-closed-changesets',$checkbox.checked)
 			updateTableCallback?.()
 		}
 		const $label=makeLabel()(
@@ -111,16 +112,28 @@ export default function writeFooter(
 			makeDiv('input-group')($label)
 		)
 	}
-	if ($grid) {
+	if (grid) {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.oninput=()=>{
-			$grid.classList.toggle('in-one-column',$checkbox.checked)
+			grid.$grid.classList.toggle('in-one-column',$checkbox.checked)
 			updateTableCallback?.()
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(
 				$checkbox,` one column`
+			))
+		)
+	}
+	if (grid) {
+		const $checkbox=makeElement('input')()()
+		$checkbox.type='checkbox'
+		$checkbox.oninput=()=>{
+			grid.addCollapsedItems=$checkbox.checked
+		}
+		$toolbar.append(
+			makeDiv('input-group')(makeLabel()(
+				$checkbox,` add collapsed items`
 			))
 		)
 	}

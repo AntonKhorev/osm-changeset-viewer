@@ -69,7 +69,7 @@ async function main() {
 				getUserQueriesFromHash(hostlessHash)
 			)
 		},true)
-		writeFooter($root,$footer,$netDialog,$grid,more,net.cx.server,()=>{
+		writeFooter($root,$footer,$netDialog,net.cx.server,grid,more,()=>{
 			grid.updateTableAccordingToSettings()
 		})
 	} else {
