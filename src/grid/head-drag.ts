@@ -30,24 +30,24 @@ export default function installTabDragListeners(
 		$selectorCell.classList.toggle(className,on)
 	}
 	const translate=(x:number,i:number=iActive)=>{
-		const {$tab,$card,$selector}=elements[i]
+		const {$tabCell,$cardCell,$selectorCell}=elements[i]
 		if (x) {
-			$tab.style.translate=`${x}px`
-			$card.style.translate=`${x}px`
-			$selector.style.translate=`${x}px`
+			$tabCell.style.translate=`${x}px`
+			$cardCell.style.translate=`${x}px`
+			$selectorCell.style.translate=`${x}px`
 		} else {
-			$tab.style.removeProperty('translate')
-			$card.style.removeProperty('translate')
-			$selector.style.removeProperty('translate')
+			$tabCell.style.removeProperty('translate')
+			$cardCell.style.removeProperty('translate')
+			$selectorCell.style.removeProperty('translate')
 		}
 	}
-	$tab.ontransitionend=()=>{
+	$tabCell.ontransitionend=()=>{
 		$tabCell.classList.remove('settling')
 	}
-	$card.ontransitionend=()=>{
+	$cardCell.ontransitionend=()=>{
 		$cardCell.classList.remove('settling')
 	}
-	$selector.ontransitionend=()=>{
+	$selectorCell.ontransitionend=()=>{
 		$selectorCell.classList.remove('settling')
 	}
 	$tab.onpointerdown=ev=>{

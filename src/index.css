@@ -273,16 +273,16 @@ body > .symbols {
 .ui .grid thead.with-grabbed-tab :is(th,td).grabbed {
 	z-index: calc(var(--base-z-index) + 10);
 }
-.ui .grid thead th.settling .tab, 
-.ui .grid thead td.settling :is(.card,.selector) {
+.ui .grid thead th.settling.tab, 
+.ui .grid thead td.settling:is(.card,.selector) {
 	transition: translate 50ms;
 }
-.ui .grid thead.with-grabbed-tab th:not(.grabbed) .tab,
-.ui .grid thead.with-grabbed-tab td:not(.grabbed) :is(.card,.selector) {
+.ui .grid thead.with-grabbed-tab th:not(.grabbed).tab,
+.ui .grid thead.with-grabbed-tab td:not(.grabbed):is(.card,.selector) {
 	transition: translate 100ms;
 }
-.ui .grid thead.with-grabbed-tab th:not(.grabbed) .tab > *,
-.ui .grid thead.with-grabbed-tab td:not(.grabbed) .card > * { /* keep selector opaque */
+.ui .grid thead.with-grabbed-tab th:not(.grabbed).tab > *,
+.ui .grid thead.with-grabbed-tab td:not(.grabbed).card > * { /* keep selector opaque */
 	opacity: .5;
 }
 .ui .grid thead.with-grabbed-tab th.grabbed .tab, 
