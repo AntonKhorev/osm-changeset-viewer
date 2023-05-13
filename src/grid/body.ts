@@ -348,28 +348,29 @@ export default class GridBody {
 	}
 	private insertRow(position: GridPosition): HTMLTableRowElement {
 		const $row=makeElement('tr')()()
-		position.$row.after($row)
-		if (position.type=='insideRow') {
-			const $cellChildrenAfterInColumns=position.$items.map(($precedingItem,i)=>{
-				const $cell=position.$row.cells[i]
-				const $cellChildrenAfter:Element[]=[]
-				let metPrecedingItem=$precedingItem!=null
-				for (const $cellChild of $cell.children) {
-					if (metPrecedingItem) {
-						$cellChildrenAfter.push($cellChild)
+		if (position.type=='afterRow') {
+			position.$row.after($row)
+		} else if (position.type=='insideRow') {
+			if (position.$items.every($item=>$item==null)) {
+				position.$row.before($row)
+			} else {
+				position.$row.after($row)
+				const $cellChildrenAfterInColumns=position.$items.map($precedingItem=>{
+					if (!$precedingItem) return []
+					const $cellChildrenAfter:Element[]=[]
+					let $child:Element|null=$precedingItem
+					while ($child=$child?.nextElementSibling) {
+						$cellChildrenAfter.push($child)
 					}
-					if ($cellChild==$precedingItem) {
-						metPrecedingItem=true
+					return $cellChildrenAfter
+				})
+				if ($cellChildrenAfterInColumns.some($cellChildrenAfter=>$cellChildrenAfter.length>0)) {
+					const $rowAfter=makeElement('tr')('collection')()
+					for (const $cellChildrenAfter of $cellChildrenAfterInColumns) {
+						$rowAfter.insertCell().append(...$cellChildrenAfter)
 					}
+					$row.after($rowAfter)
 				}
-				return $cellChildrenAfter
-			})
-			if ($cellChildrenAfterInColumns.some($cellChildrenAfter=>$cellChildrenAfter.length>0)) {
-				const $rowAfter=makeElement('tr')('collection')()
-				for (const $cellChildrenAfter of $cellChildrenAfterInColumns) {
-					$rowAfter.insertCell().append(...$cellChildrenAfter)
-				}
-				$row.after($rowAfter)
 			}
 		}
 		return $row
