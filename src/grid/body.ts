@@ -157,7 +157,7 @@ export default class GridBody {
 			if (!$cell) continue
 			for (const $checkbox of listCellCheckboxes($cell,$row.classList.contains('collection'))) {
 				$checkbox.checked=isChecked
-				syncColumnCheckboxes($checkbox) // TODO support collected
+				syncColumnCheckboxes($checkbox)
 			}
 		}
 		this.onItemSelect()
@@ -394,9 +394,21 @@ function *listCellCheckboxes($cell: HTMLTableCellElement, isCollection: boolean)
 }
 
 function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
-	const $itemRow=$checkbox.closest('tr.item')
+	const $itemRow=$checkbox.closest('tr')
 	if (!$itemRow) return
-	for (const $sameItemCheckbox of $itemRow.querySelectorAll('input[type=checkbox]')) {
+	let checkboxSelector: string
+	if ($itemRow.classList.contains('item')) {
+		checkboxSelector=`input[type=checkbox]`
+	} else if ($itemRow.classList.contains('collection')) {
+		const $item=$checkbox.closest('.item')
+		if (!($item instanceof HTMLElement)) return
+		const id=$item.dataset.id
+		if (!id) return
+		checkboxSelector=`.item[data-id="${id}"] input[type=checkbox]`
+	} else {
+		return
+	}
+	for (const $sameItemCheckbox of $itemRow.querySelectorAll(checkboxSelector)) {
 		if (!($sameItemCheckbox instanceof HTMLInputElement)) continue
 		$sameItemCheckbox.checked=$checkbox.checked
 	}
