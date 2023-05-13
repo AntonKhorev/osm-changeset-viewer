@@ -375,16 +375,19 @@ body > .symbols {
 	display: block;
 	position: absolute;
 	inset: 0;
-	top: 50%;
 	background: var(--accent-color);
 }
-.ui .grid tbody .item.changeset.closed .icon::before {
-	top: 0;
+.ui .grid tbody tr.item.changeset:not(.closed,.combined) .icon::before {
+	top: 50%;
+}
+.ui .grid tbody tr.item.changeset.closed .icon::before {
 	bottom: 50%;
 }
-.ui .grid tbody .item.changeset.combined .icon::before {
-	top: 0;
-	bottom: 0;
+.ui .grid tbody tr.collection .item.changeset:not(.closed,.combined) .icon::before {
+	left: 50%;
+}
+.ui .grid tbody tr.collection .item.changeset.closed .icon::before {
+	right: 50%;
 }
 .ui .grid tbody .item:is(.note,.user,.comment) .icon {
 	color: var(--accent-color);
