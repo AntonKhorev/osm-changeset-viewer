@@ -351,17 +351,26 @@ body > .symbols {
 .ui .grid tbody tr.separator + tr:is(.item,.collection) td.with-timeline-above::before {
 	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
 }
-
-.ui .grid tbody tr.item.hidden-as-closed td .icon {
+.ui .grid tbody tr.item.hidden-as-closed td :is(.icon,.ballon) {
 	display: none;
 }
-.ui .grid tbody tr.item td .icon {
+
+.ui .grid tbody tr.collection td .item {
+	display: inline-block;
+	position: relative;
+	padding-left: calc(var(--spacer) + var(--icon-size));
+}
+.ui .grid tbody tr.collection td .item.hidden-as-closed {
+	display: none;
+}
+
+.ui .grid tbody .item .icon {
 	top: var(--icon-vertical-margin);
 }
-.ui .grid tbody tr.item.comment.incoming td .icon {
+.ui .grid tbody .item.comment.incoming .icon {
 	z-index: 1;
 }
-.ui .grid tbody tr.item.changeset td .icon::before {
+.ui .grid tbody .item.changeset .icon::before {
 	content: '';
 	display: block;
 	position: absolute;
@@ -369,27 +378,24 @@ body > .symbols {
 	top: 50%;
 	background: var(--accent-color);
 }
-.ui .grid tbody tr.item.changeset.closed td .icon::before {
+.ui .grid tbody .item.changeset.closed .icon::before {
 	top: 0;
 	bottom: 50%;
 }
-.ui .grid tbody tr.item.changeset.combined td .icon::before {
+.ui .grid tbody .item.changeset.combined .icon::before {
 	top: 0;
 	bottom: 0;
 }
-.ui .grid tbody tr.item:is(.note,.user,.comment) td .icon {
+.ui .grid tbody .item:is(.note,.user,.comment) .icon {
 	color: var(--accent-color);
 }
-.ui .grid tbody tr.item td .icon > .no-checkbox {
+.ui .grid tbody .item .icon > .no-checkbox {
 	width: .75rem;
 	height: .75rem;
 	background: canvas;
 }
 
-.ui .grid tbody tr.item.hidden-as-closed td .ballon {
-	display: none;
-}
-.ui .grid tbody tr.item td .ballon {
+.ui .grid tbody .item .ballon {
 	--ballon-tip-height: calc(1.5 * var(--spacer));
 	--ballon-min-height: calc(2 * var(--spacer) + var(--ballon-tip-height));
 	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * var(--icon-size));
@@ -397,26 +403,22 @@ body > .symbols {
 	position: relative;
 	display: block;
 	box-sizing: border-box;
-	margin:
-		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px)
-		-1px
-		calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px)
-		0px;
+	margin: calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px) 0px;
 	min-height: var(--ballon-min-height);
 	padding: var(--ballon-vertical-padding) var(--spacer) var(--ballon-vertical-padding)
 		calc(var(--spacer) + var(--disclosure-size) + var(--spacer));
 	border: solid 1px transparent;
 }
-.ui .grid tbody tr.item td[colspan] .ballon {
-	margin-right: 0;
+.ui .grid tbody tr.item td:not([colspan]) .ballon {
+	margin-right: -1px;
 }
-.ui .grid tbody tr.item.comment td .ballon {
+.ui .grid tbody .item.comment .ballon {
 	border: var(--frame-line);
 	border-radius: var(--spacer);
 	background: canvas;
 }
-.ui .grid tbody tr.item.comment td .ballon::before,
-.ui .grid tbody tr.item.comment td .ballon::after {
+.ui .grid tbody .item.comment .ballon::before,
+.ui .grid tbody .item.comment .ballon::after {
 	content: '';
 	position: absolute;
 	top: var(--spacer);
@@ -424,29 +426,29 @@ body > .symbols {
 	border-width: calc(.5 * var(--ballon-tip-height)) var(--spacer) calc(.5 * var(--ballon-tip-height)) 0;
 	border-color: transparent;
 }
-.ui .grid tbody tr.item.comment.incoming td .ballon::before,
-.ui .grid tbody tr.item.comment.incoming td .ballon::after {
+.ui .grid tbody .item.comment.incoming .ballon::before,
+.ui .grid tbody .item.comment.incoming .ballon::after {
 	border-right-width: 0;
 	border-left-width: var(--spacer);
 }
-.ui .grid tbody tr.item.comment:not(.incoming) td .ballon::before {
+.ui .grid tbody .item.comment:not(.incoming) .ballon::before {
 	left: calc(-1 * var(--spacer));
 	border-right-color: var(--frame-color);
 }
-.ui .grid tbody tr.item.comment.incoming td .ballon::before {
+.ui .grid tbody .item.comment.incoming .ballon::before {
 	right: calc(-1 * var(--spacer));
 	border-left-color: var(--frame-color);
 }
-.ui .grid tbody tr.item.comment:not(.incoming) td .ballon::after {
+.ui .grid tbody .item.comment:not(.incoming) .ballon::after {
 	left: calc(-1 * var(--spacer) + 1px);
 	border-right-color: canvas;
 }
-.ui .grid tbody tr.item.comment.incoming td .ballon::after {
+.ui .grid tbody .item.comment.incoming .ballon::after {
 	right: calc(-1 * var(--spacer) + 1px);
 	border-left-color: canvas;
 }
 
-.ui .grid tbody tr.item td .ballon button.disclosure {
+.ui .grid tbody .item .ballon button.disclosure {
 	box-sizing: border-box;
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
@@ -457,10 +459,10 @@ body > .symbols {
 	border: var(--frame-line);
 	background: canvas;
 }
-.ui .grid tbody tr.item td .ballon button.disclosure:hover {
+.ui .grid tbody .item .ballon button.disclosure:hover {
 	background: var(--hover-color);
 }
-.ui .grid tbody tr.item td .ballon button.disclosure > * {
+.ui .grid tbody .item .ballon button.disclosure > * {
 	position: absolute;
 	inset: 0;
 }
