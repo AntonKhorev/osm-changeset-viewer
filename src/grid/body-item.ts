@@ -73,21 +73,23 @@ export function writeCollapsedItemFlow(
 	{type,item}: GridBatchItem,
 	usernames: Map<number, string>
 ): void {
-	let id: number
 	if (type=='user') {
-		id=item.id
-	} else if (type=='changeset' || type=='changesetClose') {
-		id=item.id
-	} else if (type=='note') {
-		id=item.id
-	} else if (type=='changesetComment' || type=='noteComment') {
-		id=item.itemId
-	} else {
-		return
+		$flow.replaceChildren(
+			`account created`
+		)
+	} else if (type=='changeset' || type=='changesetClose' || type=='changesetComment') {
+		const id = type=='changesetComment' ? item.itemId : item.id
+		const href=server.web.getUrl(e`changeset/${id}`)
+		$flow.replaceChildren(
+			makeLink(String(id),href)
+		)
+	} else if (type=='note' || type=='noteComment') {
+		const id = type=='noteComment' ? item.itemId : item.id
+		const href=server.web.getUrl(e`note/${id}`)
+		$flow.replaceChildren(
+			makeLink(String(id),href)
+		)
 	}
-	$flow.replaceChildren(
-		String(id) // TODO item links
-	)
 }
 
 export function writeExpandedItemFlow(
@@ -120,7 +122,9 @@ export function writeExpandedItemFlow(
 	let date: Date|undefined
 	if (type=='user') {
 		date=item.createdAt
-		$flow.replaceChildren(`account created`)
+		$flow.replaceChildren(
+			`account created`
+		)
 	} else if (type=='changeset' || type=='changesetClose') {
 		const makeChanges=()=>{
 			const $changes=makeElement('span')('changes')(`Δ ${item.changes.count}`)
