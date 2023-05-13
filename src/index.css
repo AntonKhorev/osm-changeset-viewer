@@ -203,7 +203,6 @@ body > .symbols {
 	height: 1rem;
 }
 .ui .grid thead td .card {
-	position: relative;
 	padding: var(--spacer);
 	margin-right: -1px;
 	background: canvas;
@@ -248,13 +247,13 @@ body > .symbols {
 	top: 0;
 	height: 100%;
 	width: 1px;
-	background: linear-gradient(var(--frame-color), transparent);
+	background: linear-gradient(var(--frame-color), canvas);
 }
 .ui .grid thead td .card::before {
 	left: 0;
 }
 .ui .grid thead td .card::after {
-	right: 0;
+	right: -1px;
 }
 .ui .grid thead tr.selectors td {
 	--base-z-index: 2;
