@@ -62,26 +62,20 @@ export default class GridBody {
 		return true
 	}
 	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
-		let $itemAbove: HTMLElement|undefined
-		for (const $item of this.$gridBody.rows) { // TODO update for collapsed items
-			if (!$item.classList.contains('item')) {
-				$itemAbove=undefined
-				continue
-			}
-			// combine open+close changeset
-			const isConnectedWithAboveItem=(
-				$itemAbove &&
-				$itemAbove.classList.contains('changeset') &&
-				$itemAbove.classList.contains('closed') &&
-				$item.dataset.id==$itemAbove.dataset.id
+		const combineChangesets=($item: HTMLElement, $laterItem: HTMLElement|undefined)=>{
+			const isConnectedWithLaterItem=(
+				$laterItem &&
+				$laterItem.classList.contains('changeset') &&
+				$laterItem.classList.contains('closed') &&
+				$item.dataset.id==$laterItem.dataset.id
 			)
 			if ($item.classList.contains('changeset')) {
 				if ($item.classList.contains('closed')) {
 					$item.classList.toggle('hidden-as-closed',!withClosedChangesets)
 				} else {
-					if (isConnectedWithAboveItem || !withClosedChangesets) {
-						if ($itemAbove && isConnectedWithAboveItem) {
-							$itemAbove.classList.add('hidden-as-closed')
+					if (isConnectedWithLaterItem || !withClosedChangesets) {
+						if ($laterItem && isConnectedWithLaterItem) {
+							$laterItem.classList.add('hidden-as-closed')
 						}
 						markChangesetItemAsCombined($item,$item.dataset.id??'???')
 					} else {
@@ -89,10 +83,10 @@ export default class GridBody {
 					}
 				}
 			}
-			$itemAbove=$item
-			// span columns
+		}
+		const spanColumns=($row:HTMLTableRowElement)=>{
 			let spanned=false
-			for (const $cell of $item.cells) {
+			for (const $cell of $row.cells) {
 				if (inOneColumn) {
 					if (!spanned && $cell.childNodes.length) {
 						$cell.hidden=false
@@ -106,6 +100,27 @@ export default class GridBody {
 					$cell.hidden=false
 					$cell.removeAttribute('colspan')
 				}
+			}
+		}
+		let $itemRowAbove: HTMLElement|undefined
+		for (const $row of this.$gridBody.rows) {
+			if ($row.classList.contains('collection')) {
+				for (const $cell of $row.cells) {
+					let $laterItem: HTMLElement|undefined
+					for (const $item of $cell.querySelectorAll(':scope > .item')) {
+						if (!($item instanceof HTMLElement)) continue
+						combineChangesets($item,$laterItem)
+						$laterItem=$item
+					}
+				}
+				// spanColumns($row) // TODO need to merge/split collected items in cells
+				$itemRowAbove=undefined
+			} else if ($row.classList.contains('item')) {
+				combineChangesets($row,$itemRowAbove)
+				spanColumns($row)
+				$itemRowAbove=$row
+			} else {
+				$itemRowAbove=undefined
 			}
 		}
 	}
