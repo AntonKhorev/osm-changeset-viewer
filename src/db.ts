@@ -170,6 +170,19 @@ class ScanBoundary {
 	}
 }
 
+export interface SingleItemDBReader {
+	getChangeset(id: number): Promise<ChangesetDbRecord|undefined>
+	getNote(id: number): Promise<NoteDbRecord|undefined>
+	getChangesetComment(changesetId: number, order: number): Promise<{
+		comment?: ChangesetCommentDbRecord
+		username?: string
+	}>
+	getNoteComment(noteId: number, order: number): Promise<{
+		comment?: NoteCommentDbRecord
+		username?: string
+	}>
+}
+
 export class ChangesetViewerDBReader {
 	protected closed: boolean = false
 	constructor(protected idb: IDBDatabase) {
@@ -290,6 +303,48 @@ export class ChangesetViewerDBReader {
 				}
 			}
 		})
+	}
+	getSingleItemReader(): SingleItemDBReader {
+		const makeItemReader=<T extends keyof UserItemDbRecordMap>(type:T,fnName:string)=>(id:number):Promise<UserItemDbRecordMap[T]>=>{
+			if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
+			return new Promise((resolve,reject)=>{
+				const tx=this.idb.transaction(type,'readonly')
+				tx.onerror=()=>reject(new Error(`Database error in SingleItemDBReader.${fnName}(): ${tx.error}`))
+				const request=tx.objectStore(type).get(id)
+				request.onsuccess=()=>{
+					resolve(request.result)
+				}
+			})
+		}
+		const makeItemCommentReader=<T extends keyof UserItemDbRecordMap>(type:T,fnName:string)=>(itemId:number,order:number):Promise<{
+			comment?: UserItemCommentDbRecordMap[T]
+			username?: string
+		}>=>{
+			if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
+			return new Promise((resolve,reject)=>{
+				const commentsType=`${type.slice(0,-1)}Comments`
+				const tx=this.idb.transaction([commentsType,'users'],'readonly')
+				tx.onerror=()=>reject(new Error(`Database error in SingleItemDBReader.${fnName}(): ${tx.error}`))
+				const commentRequest=tx.objectStore(type).get([itemId,order])
+				commentRequest.onsuccess=()=>{
+					const comment=commentRequest.result as NoteCommentDbRecord
+					if (!comment) return resolve({})
+					if (comment.uid==null) return resolve({comment})
+					const userRequest=tx.objectStore('users').get(comment.uid)
+					userRequest.onsuccess=()=>{
+						const user=userRequest.result as UserDbRecord
+						if (!user || user.name==null) return resolve({comment})
+						resolve({comment,username:user.name})
+					}
+				}
+			})
+		}
+		return {
+			getChangeset: makeItemReader('changesets','getChangeset'),
+			getNote: makeItemReader('notes','getNote'),
+			getChangesetComment: makeItemCommentReader('changesets','getChangesetComment'),
+			getNoteComment: makeItemCommentReader('notes','getNoteComment')
+		}
 	}
 	static open(host: string): Promise<ChangesetViewerDBReader> {
 		return this.openWithType(host,idb=>new ChangesetViewerDBReader(idb))

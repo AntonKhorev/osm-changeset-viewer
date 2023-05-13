@@ -23,7 +23,9 @@ export default class Grid {
 			userQueries: ValidUserQuery[]
 		)=>void
 	) {
-		this.body=new GridBody()
+		this.body=new GridBody(
+			db.getSingleItemReader()
+		)
 		this.head=new GridHead(
 			cx,db,worker,this.body,
 			columnHues=>this.setColumns(columnHues),

@@ -1,4 +1,5 @@
 import type {Server} from '../net'
+import type {SingleItemDBReader} from '../db'
 import type {ItemSequenceInfo} from './sequence'
 import {
 	isGreaterItemSequenceInfo, getItemSequenceInfo,
@@ -32,7 +33,9 @@ export default class GridBody {
 	onItemSelect: ()=>void = ()=>{}
 	private wrappedItemSelectListener: ()=>void
 	private $timelineCutoffRows: (HTMLTableRowElement|null)[] = []
-	constructor() {
+	constructor(
+		private itemReader: SingleItemDBReader
+	) {
 		this.wrappedItemSelectListener=()=>this.onItemSelect()
 	}
 	get nColumns(): number {
