@@ -351,13 +351,10 @@ export default class GridHead {
 		this.$tabRow.replaceChildren()
 		this.$cardRow.replaceChildren()
 		this.$selectorRow.replaceChildren()
-		const tabDragElements: {
-			$tabCell: HTMLTableCellElement,
-			$cardCell: HTMLTableCellElement,
-			$selectorCell: HTMLTableCellElement,
-			$tab: HTMLElement,
-			$card: HTMLElement,
-			$selector: HTMLElement
+		const gridHeadCells: {
+			$tabCell: HTMLTableCellElement
+			$cardCell: HTMLTableCellElement
+			$selectorCell: HTMLTableCellElement
 		}[] = []
 		for (const userEntry of this.userEntries) {
 			const {$tab,$card,$selector}=userEntry
@@ -373,10 +370,10 @@ export default class GridHead {
 			this.$tabRow.append($tabCell)
 			this.$cardRow.append($cardCell)
 			this.$selectorRow.append($selectorCell)
-			tabDragElements.push({$tabCell,$cardCell,$selectorCell,$tab,$card,$selector})
+			gridHeadCells.push({$tabCell,$cardCell,$selectorCell})
 		}
-		for (const iActive of tabDragElements.keys()) {
-			installTabDragListeners(this.$gridHead,tabDragElements,iActive,iShiftTo=>{
+		for (const [iActive,{$tab}] of this.userEntries.entries()) {
+			installTabDragListeners(this.$gridHead,gridHeadCells,$tab,iActive,iShiftTo=>{
 				moveInArray(this.userEntries,iActive,iShiftTo)
 				this.rewriteUserEntriesInHead()
 				this.sendUpdatedUserQueries()
