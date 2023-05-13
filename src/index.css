@@ -315,7 +315,7 @@ body > .symbols {
 	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
 }
 
-.ui .grid tbody tr.item td {
+.ui .grid tbody tr:is(.item,.collection) td {
 	--icon-vertical-margin: 3px;
 	--timeline-width: 2px;
 	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
@@ -327,11 +327,11 @@ body > .symbols {
 	padding-left: var(--icon-size);
 	padding-right: var(--spacer);
 }
-.ui .grid tbody tr.item:not(.hidden-as-closed) td {
+.ui .grid tbody tr:is(.item,.collection):not(.hidden-as-closed) td {
 	height: calc(var(--icon-vertical-margin) + var(--icon-size) + var(--icon-vertical-margin));
 }
-.ui .grid tbody tr.item td.with-timeline-above::before,
-.ui .grid tbody tr.item td.with-timeline-below::after {
+.ui .grid tbody tr:is(.item,.collection) td.with-timeline-above::before,
+.ui .grid tbody tr:is(.item,.collection) td.with-timeline-below::after {
 	content: '';
 	display: block;
 	position: absolute;
@@ -340,15 +340,15 @@ body > .symbols {
 	background: var(--accent-color);
 	z-index: -1;
 }
-.ui .grid tbody tr.item td.with-timeline-above::before {
+.ui .grid tbody tr:is(.item,.collection) td.with-timeline-above::before {
 	top: calc(0px - var(--timeline-previous-row-covering-height));
 	height: calc(var(--timeline-above-height) + var(--timeline-previous-row-covering-height));
 }
-.ui .grid tbody tr.item td.with-timeline-below::after {
+.ui .grid tbody tr:is(.item,.collection) td.with-timeline-below::after {
 	top: var(--timeline-above-height);
 	height: calc(100% - var(--timeline-above-height));
 }
-.ui .grid tbody tr.separator + tr.item td.with-timeline-above::before {
+.ui .grid tbody tr.separator + tr:is(.item,.collection) td.with-timeline-above::before {
 	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
 }
 
