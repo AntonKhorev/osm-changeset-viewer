@@ -11,6 +11,7 @@ import {
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
+import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
 import {moveInArray} from '../util/types'
@@ -57,7 +58,13 @@ export default class GridBody {
 	): boolean {
 		const [$masterPlaceholder,classNames]=makeItemShell(batchItem)
 		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
-		return this.insertItem(columnHues,batchItem,usernames,isCollapsed,$placeholders,classNames)
+		const sequenceInfo=getItemSequenceInfo(batchItem)
+		if (!sequenceInfo) return false
+		return this.insertItem(
+			columnHues,batchItem.iColumns,sequenceInfo,
+			isCollapsed?{isCollapsed}:{isCollapsed,batchItem,usernames},
+			$placeholders,classNames
+		)
 	}
 	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
 		const combineChangesets=($item: HTMLElement, $laterItem: HTMLElement|undefined)=>{
@@ -162,28 +169,28 @@ export default class GridBody {
 	}
 	private insertItem(
 		columnHues: (number|null)[],
-		batchItem: GridBatchItem,
-		usernames: Map<number, string>,
-		isCollapsed: boolean,
+		iColumns: number[],
+		sequenceInfo: ItemSequenceInfo,
+		insertItemInfo: {
+			isCollapsed: true
+		} | {
+			isCollapsed: false
+			batchItem: MuxBatchItem
+			usernames: Map<number, string>
+		},
 		$previousPlaceholders: HTMLElement[],
 		classNames: string[]
 	): boolean {
-		if (batchItem.iColumns.length==0) return false
-		const sequenceInfo=getItemSequenceInfo(batchItem)
-		if (!sequenceInfo) return false
-		const $placeholders=this.insertItemPlaceholders(columnHues,batchItem.iColumns,sequenceInfo,isCollapsed,$previousPlaceholders,classNames)
+		if (iColumns.length==0) return false
+		const $placeholders=this.insertItemPlaceholders(columnHues,iColumns,sequenceInfo,insertItemInfo.isCollapsed,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
 			const $flow=$placeholder.querySelector('.flow')
 			if (!($flow instanceof HTMLElement)) continue
-			if (isCollapsed) {
-				const id=(batchItem.type=='changesetComment' || batchItem.type=='noteComment'
-					? batchItem.item.itemId
-					: batchItem.item.id
-				)
-				writeCollapsedItemFlow($flow,this.server,batchItem.type,id)
+			if (insertItemInfo.isCollapsed) {
+				writeCollapsedItemFlow($flow,this.server,sequenceInfo.type,sequenceInfo.id)
 			} else {
-				writeExpandedItemFlow($flow,this.server,batchItem,usernames)
+				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
 			}
 			const $checkbox=getItemCheckbox($placeholder)
 			if ($checkbox) $checkboxes.push($checkbox)
