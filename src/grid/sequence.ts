@@ -10,10 +10,11 @@ export type ItemSequenceInfo = {
 }
 
 export function isGreaterItemSequenceInfo(a: ItemSequenceInfo, b: ItemSequenceInfo): boolean {
-	if (a.timestamp>b.timestamp) return true
-	// if (a.rank>b.rank) return true
-	if (getItemTypeRank(a.type)>getItemTypeRank(b.type)) return true
-	if (a.id>b.id) return true
+	if (a.timestamp!=b.timestamp) return a.timestamp>b.timestamp
+	const aRank=getItemTypeRank(a.type)
+	const bRank=getItemTypeRank(b.type)
+	if (aRank!=bRank) return aRank>bRank
+	if (a.id!=b.id) return a.id>b.id
 	return a.order>b.order
 }
 
