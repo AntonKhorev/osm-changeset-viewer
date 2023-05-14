@@ -38,7 +38,8 @@ export default class GridBody {
 	private $timelineCutoffRows: (HTMLTableRowElement|null)[] = []
 	constructor(
 		private readonly server: Server,
-		private readonly itemReader: SingleItemDBReader
+		private readonly itemReader: SingleItemDBReader,
+		private readonly getColumnHues: ()=>(number|null)[]
 	) {
 		this.wrappedItemSelectListener=()=>this.onItemSelect()
 		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosure(ev.currentTarget)
@@ -51,7 +52,6 @@ export default class GridBody {
 		this.$gridBody.replaceChildren()
 	}
 	addItem(
-		columnHues: (number|null)[],
 		batchItem: GridBatchItem,
 		usernames: Map<number, string>,
 		isCollapsed: boolean
@@ -61,7 +61,7 @@ export default class GridBody {
 		const sequenceInfo=getItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
 		return this.insertItem(
-			columnHues,batchItem.iColumns,sequenceInfo,
+			batchItem.iColumns,sequenceInfo,
 			isCollapsed?{isCollapsed}:{isCollapsed,batchItem,usernames},
 			$placeholders,classNames
 		)
@@ -168,7 +168,6 @@ export default class GridBody {
 		this.onItemSelect()
 	}
 	private insertItem(
-		columnHues: (number|null)[],
 		iColumns: number[],
 		sequenceInfo: ItemSequenceInfo,
 		insertItemInfo: {
@@ -182,7 +181,7 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
-		const $placeholders=this.insertItemPlaceholders(columnHues,iColumns,sequenceInfo,insertItemInfo.isCollapsed,$previousPlaceholders,classNames)
+		const $placeholders=this.insertItemPlaceholders(iColumns,sequenceInfo,insertItemInfo.isCollapsed,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
 			const $flow=$placeholder.querySelector('.flow')
@@ -206,7 +205,6 @@ export default class GridBody {
 		return true
 	}
 	private insertItemPlaceholders(
-		columnHues: (number|null)[],
 		iColumns: number[],
 		sequenceInfo: ItemSequenceInfo,
 		isCollapsed: boolean,
@@ -243,6 +241,7 @@ export default class GridBody {
 			}
 		}
 		if (isNewRow) {
+			const columnHues=this.getColumnHues()
 			for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
 				const $cell=$row.insertCell()
 				$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
@@ -415,19 +414,27 @@ export default class GridBody {
 		const sequenceInfo=readItemSequenceInfo($item)
 		const $itemRow=$item.closest('tr')
 		if (!$itemRow) return
-		const $itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
-		if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
-			const changeset=await this.itemReader.getChangeset(sequenceInfo.id)
-			console.log('TODO disclose changeset',changeset,'for items',$itemCopies)
-		} else if (sequenceInfo.type=='note') {
-			const note=await this.itemReader.getNote(sequenceInfo.id)
-			console.log('TODO disclose note',note,'for items',$itemCopies)
-		} else if (sequenceInfo.type=='changesetComment') {
-			const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
-			console.log('TODO disclose changeset comment',comment,'by',username,'for items',$itemCopies)
-		} else if (sequenceInfo.type=='noteComment') {
-			const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
-			console.log('TODO disclose note comment',comment,'by',username,'for items',$itemCopies)
+		const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
+		if ($itemRow.classList.contains('item')) {
+			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
+			const $placeholders=itemCopies.map(([$item])=>$item)
+			const classNames=[...$itemRow.classList]
+			$itemRow.remove()
+			this.insertItem(iColumns,sequenceInfo,{isCollapsed:true},$placeholders,classNames)
+		} else {
+			if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
+				const changeset=await this.itemReader.getChangeset(sequenceInfo.id)
+				console.log('TODO disclose changeset',changeset,'for items',itemCopies)
+			} else if (sequenceInfo.type=='note') {
+				const note=await this.itemReader.getNote(sequenceInfo.id)
+				console.log('TODO disclose note',note,'for items',itemCopies)
+			} else if (sequenceInfo.type=='changesetComment') {
+				const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
+				console.log('TODO disclose changeset comment',comment,'by',username,'for items',itemCopies)
+			} else if (sequenceInfo.type=='noteComment') {
+				const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
+				console.log('TODO disclose note comment',comment,'by',username,'for items',itemCopies)
+			}
 		}
 	}
 }

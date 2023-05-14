@@ -25,7 +25,8 @@ export default class Grid {
 	) {
 		this.body=new GridBody(
 			cx.server,
-			db.getSingleItemReader()
+			db.getSingleItemReader(),
+			()=>this.columnHues
 		)
 		this.head=new GridHead(
 			cx,db,worker,this.body,
@@ -45,7 +46,7 @@ export default class Grid {
 			},(batch,usernames)=>{
 				let wroteAnyItem=false
 				for (const batchItem of batch) {
-					const wroteItem=this.body.addItem(this.columnHues,batchItem,usernames,this.addCollapsedItems)
+					const wroteItem=this.body.addItem(batchItem,usernames,this.addCollapsedItems)
 					wroteAnyItem||=wroteItem
 				}
 				if (wroteAnyItem) {
