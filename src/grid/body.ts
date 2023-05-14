@@ -408,6 +408,7 @@ export default class GridBody {
 		return $row
 	}
 	private async toggleItemDisclosure($disclosureButton: EventTarget|null): Promise<void> {
+		if (!($disclosureButton instanceof HTMLButtonElement)) return
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
 			const sequenceInfo=readItemSequenceInfo($row)
 			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
@@ -417,7 +418,25 @@ export default class GridBody {
 			$row.remove()
 			this.insertItem(iColumns,sequenceInfo,{isCollapsed:true},$placeholders,classNames)
 		}
-		if (!($disclosureButton instanceof HTMLButtonElement)) return
+		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo)=>{
+			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
+			if (!$itemRow) return
+			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
+			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
+			const $placeholders=itemCopies.map(([$item])=>$item)
+			let classNames:string[]=[]
+			for (const $placeholder of $placeholders) {
+				classNames=[...$placeholder.classList]
+				// $placeholder.removeAttribute('class')
+				$placeholder.remove()
+			}
+			const usernames=new Map<number,string>()
+			this.insertItem(iColumns,sequenceInfo,{isCollapsed:false,batchItem,usernames},$placeholders,classNames)
+			// TODO expand combined
+			// TODO remove empty collection row
+			$disclosureButton.disabled=false
+			setItemDisclosureButtonState($disclosureButton,true)
+		}
 		const $item=$disclosureButton.closest('.item')
 		if (!($item instanceof HTMLElement)) return
 		const $itemRow=$item.closest('tr')
@@ -436,19 +455,21 @@ export default class GridBody {
 			setItemDisclosureButtonState($disclosureButton,false)
 		} else {
 			const sequenceInfo=readItemSequenceInfo($item)
-			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
 			if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
-				const changeset=await this.itemReader.getChangeset(sequenceInfo.id)
-				console.log('TODO disclose changeset',changeset,'for items',itemCopies)
+				$disclosureButton.disabled=true
+				const item=await this.itemReader.getChangeset(sequenceInfo.id)
+				if (!item) return
+				expandItems({type:sequenceInfo.type,item},sequenceInfo)
+				// console.log('TODO disclose changeset',changeset,'for items',itemCopies)
 			} else if (sequenceInfo.type=='note') {
 				const note=await this.itemReader.getNote(sequenceInfo.id)
-				console.log('TODO disclose note',note,'for items',itemCopies)
+				// console.log('TODO disclose note',note,'for items',itemCopies)
 			} else if (sequenceInfo.type=='changesetComment') {
 				const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
-				console.log('TODO disclose changeset comment',comment,'by',username,'for items',itemCopies)
+				// console.log('TODO disclose changeset comment',comment,'by',username,'for items',itemCopies)
 			} else if (sequenceInfo.type=='noteComment') {
 				const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
-				console.log('TODO disclose note comment',comment,'by',username,'for items',itemCopies)
+				// console.log('TODO disclose note comment',comment,'by',username,'for items',itemCopies)
 			}
 		}
 	}
