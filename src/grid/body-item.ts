@@ -67,7 +67,7 @@ export function makeItemShell(
 	}
 	return [makeElement('span')()(
 		$icon,` `,makeElement('span')('ballon')(
-			makeDisclosureButton(isExpanded),` `,makeElement('span')('flow')()
+			makeItemDisclosureButton(isExpanded),` `,makeElement('span')('flow')()
 		)
 	),classNames]
 }
@@ -257,10 +257,9 @@ function writeCommentIcon($icon: HTMLElement, id: number, itemType: 'note'|'chan
 	}
 }
 
-function makeDisclosureButton(isExpanded: boolean): HTMLButtonElement {
+function makeItemDisclosureButton(isExpanded: boolean): HTMLButtonElement {
 	const $disclosure=makeElement('button')('disclosure')()
-	$disclosure.setAttribute('aria-expanded',String(isExpanded))
-	$disclosure.title=`Expand item info`
+	setItemDisclosureButtonState($disclosure,isExpanded)
 	const r=5.5
 	const s=3.5
 	$disclosure.innerHTML=makeCenteredSvg(r,
@@ -268,6 +267,11 @@ function makeDisclosureButton(isExpanded: boolean): HTMLButtonElement {
 		`<line y1="${-s}" y2="${s}" stroke="currentColor" class='vertical-stroke' />`
 	)
 	return $disclosure
+}
+
+export function setItemDisclosureButtonState($disclosure: HTMLButtonElement, isExpanded: boolean): void {
+	$disclosure.setAttribute('aria-expanded',String(isExpanded))
+	$disclosure.title=(isExpanded?`Collapse`:`Expand`)+` item info`
 }
 
 export function makeCenteredSvg(r: number, content: string): string {

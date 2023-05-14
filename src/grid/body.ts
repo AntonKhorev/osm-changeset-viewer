@@ -7,7 +7,7 @@ import {
 } from './sequence'
 import {
 	getItemCheckbox, getItemDisclosureButton,
-	markChangesetItemAsCombined, markChangesetItemAsUncombined,
+	markChangesetItemAsCombined, markChangesetItemAsUncombined, setItemDisclosureButtonState,
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
@@ -433,7 +433,7 @@ export default class GridBody {
 				}
 			}
 			collapseRowItems($itemRow)
-			$disclosureButton.setAttribute('aria-expanded','false')
+			setItemDisclosureButtonState($disclosureButton,false)
 		} else {
 			const sequenceInfo=readItemSequenceInfo($item)
 			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
