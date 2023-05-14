@@ -65,6 +65,11 @@ export type UserItemCommentDbRecordMap = {
 	notes: NoteCommentDbRecord
 }
 
+export const UserItemCommentStoreMap = {
+	changesets: 'changesetComments',
+	notes: 'noteComments'
+}
+
 type UserItemDbRecord = {
 	id: number
 	uid: number // we get only notes of known users for now
@@ -260,7 +265,7 @@ export class ChangesetViewerDBReader {
 	): Promise<[UserItemDbRecordMap[T],UserItemCommentDbRecordMap[T][]][]> {
 		if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 		return new Promise((resolve,reject)=>{
-			const commentsType=`${type.slice(0,-1)}Comments`
+			const commentsType=UserItemCommentStoreMap[type]
 			const returnItems=(itemsWithComments:[UserItemDbRecordMap[T],UserItemCommentDbRecordMap[T][]][])=>{
 				if (itemsWithComments.length==0) { // can also check if items.length<limit
 					if (scan.endDate) {
@@ -322,7 +327,7 @@ export class ChangesetViewerDBReader {
 		}>=>{
 			if (this.closed) throw new Error(`Database is outdated, please reload the page.`)
 			return new Promise((resolve,reject)=>{
-				const commentsType=`${type.slice(0,-1)}Comments`
+				const commentsType=UserItemCommentStoreMap[type]
 				const tx=this.idb.transaction([commentsType,'users'],'readonly')
 				tx.onerror=()=>reject(new Error(`Database error in SingleItemDBReader.${fnName}(): ${tx.error}`))
 				const commentRequest=tx.objectStore(commentsType).get([itemId,order])

@@ -1,5 +1,5 @@
 import type {UserDbRecord, UserScanDbRecord, UserItemDbRecordMap, UserItemDbInfo} from '../db'
-import {ChangesetViewerDBReader} from '../db'
+import {ChangesetViewerDBReader, UserItemCommentStoreMap} from '../db'
 import StreamBoundary from '../stream-boundary'
 
 export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
@@ -115,7 +115,7 @@ export class ChangesetViewerDBWriter extends ChangesetViewerDBReader {
 	private openUserItemsTransaction(type: keyof UserItemDbRecordMap, callerName: string, reject: (reason:any)=>void): [
 		tx: IDBTransaction, userStore: IDBObjectStore, scanStore: IDBObjectStore, itemStore: IDBObjectStore, itemCommentStore: IDBObjectStore
 	] {
-		const commentsType=`${type.slice(0,-1)}Comments`
+		const commentsType=UserItemCommentStoreMap[type]
 		const tx=this.idb.transaction(['users','userScans',type,commentsType],'readwrite')
 		tx.onerror=()=>reject(new Error(`Database error in ${callerName}(): ${tx.error}`))
 		return [
