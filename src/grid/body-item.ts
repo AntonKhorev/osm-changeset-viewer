@@ -1,6 +1,6 @@
 import type {Server} from '../net'
 import {makeDateOutput} from '../date'
-import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
+import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {makeElement, makeLink} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
 
@@ -10,6 +10,13 @@ export function getItemCheckbox($item: HTMLElement): HTMLInputElement|undefined 
 	const $checkbox=$item.querySelector('.icon input')
 	if ($checkbox instanceof HTMLInputElement) {
 		return $checkbox
+	}
+}
+
+export function getItemDisclosureButton($item: HTMLElement): HTMLButtonElement|undefined {
+	const $button=$item.querySelector('button.disclosure')
+	if ($button instanceof HTMLButtonElement) {
+		return $button
 	}
 }
 
@@ -26,7 +33,7 @@ export function markChangesetItemAsUncombined($item: HTMLElement, id: number|str
 }
 
 export function makeItemShell(
-	{type,item}: GridBatchItem
+	{type,item}: MuxBatchItem
 ): [$item: HTMLElement, $flow: HTMLElement] | null {
 	let id: number
 	let typeClasses: string[] = []
@@ -70,7 +77,7 @@ export function makeItemShell(
 export function writeCollapsedItemFlow(
 	$flow: HTMLElement,
 	server: Server,
-	{type,item}: GridBatchItem,
+	{type,item}: MuxBatchItem,
 	usernames: Map<number, string>
 ): void {
 	if (type=='user') {
@@ -95,7 +102,7 @@ export function writeCollapsedItemFlow(
 export function writeExpandedItemFlow(
 	$flow: HTMLElement,
 	server: Server,
-	{type,item}: GridBatchItem,
+	{type,item}: MuxBatchItem,
 	usernames: Map<number, string>
 ): void {
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{

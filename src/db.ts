@@ -325,7 +325,7 @@ export class ChangesetViewerDBReader {
 				const commentsType=`${type.slice(0,-1)}Comments`
 				const tx=this.idb.transaction([commentsType,'users'],'readonly')
 				tx.onerror=()=>reject(new Error(`Database error in SingleItemDBReader.${fnName}(): ${tx.error}`))
-				const commentRequest=tx.objectStore(type).get([itemId,order])
+				const commentRequest=tx.objectStore(commentsType).get([itemId,order])
 				commentRequest.onsuccess=()=>{
 					const comment=commentRequest.result as NoteCommentDbRecord
 					if (!comment) return resolve({})

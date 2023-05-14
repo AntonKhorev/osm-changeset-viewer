@@ -6,7 +6,8 @@ import {
 	readItemSequenceInfo, writeItemSequenceInfo, writeSeparatorSequenceInfo
 } from './sequence'
 import {
-	getItemCheckbox, markChangesetItemAsCombined, markChangesetItemAsUncombined,
+	getItemCheckbox, getItemDisclosureButton,
+	markChangesetItemAsCombined, markChangesetItemAsUncombined,
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
@@ -29,14 +30,17 @@ type GridPosition = {
 }
 
 export default class GridBody {
-	$gridBody=makeElement('tbody')()()
+	readonly $gridBody=makeElement('tbody')()()
 	onItemSelect: ()=>void = ()=>{}
-	private wrappedItemSelectListener: ()=>void
+	private readonly wrappedItemSelectListener: ()=>void
+	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
 	private $timelineCutoffRows: (HTMLTableRowElement|null)[] = []
 	constructor(
-		private itemReader: SingleItemDBReader
+		private readonly server: Server,
+		private readonly itemReader: SingleItemDBReader
 	) {
 		this.wrappedItemSelectListener=()=>this.onItemSelect()
+		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosure(ev.currentTarget)
 	}
 	get nColumns(): number {
 		return this.$timelineCutoffRows.length
@@ -46,7 +50,7 @@ export default class GridBody {
 		this.$gridBody.replaceChildren()
 	}
 	addItem(
-		server: Server, columnHues: (number|null)[],
+		columnHues: (number|null)[],
 		batchItem: GridBatchItem,
 		usernames: Map<number, string>,
 		isCollapsed: boolean
@@ -57,9 +61,9 @@ export default class GridBody {
 		if (!$itemAndFlow) return false
 		const [$item,$flow]=$itemAndFlow
 		if (isCollapsed) {
-			writeCollapsedItemFlow($flow,server,batchItem,usernames)
+			writeCollapsedItemFlow($flow,this.server,batchItem,usernames)
 		} else {
-			writeExpandedItemFlow($flow,server,batchItem,usernames)
+			writeExpandedItemFlow($flow,this.server,batchItem,usernames)
 		}
 		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,isCollapsed)
 		return true
@@ -178,6 +182,8 @@ export default class GridBody {
 			$placeholder.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
 			const $checkbox=getItemCheckbox($placeholder)
 			if ($checkbox) $checkboxes.push($checkbox)
+			const $disclosureButton=getItemDisclosureButton($placeholder)
+			$disclosureButton?.addEventListener('click',this.wrappedItemDisclosureButtonListener)
 		}
 		for (const $checkbox of $checkboxes) {
 			if ($checkboxes.length>1) {
@@ -377,6 +383,25 @@ export default class GridBody {
 			}
 		}
 		return $row
+	}
+	private async toggleItemDisclosure($disclosureButton: EventTarget|null): Promise<void> {
+		if (!($disclosureButton instanceof HTMLButtonElement)) return
+		const $item=$disclosureButton.closest('.item')
+		if (!($item instanceof HTMLElement)) return
+		const sequenceInfo=readItemSequenceInfo($item)
+		if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
+			const changeset=await this.itemReader.getChangeset(sequenceInfo.id)
+			console.log('TODO disclose changeset',changeset)
+		} else if (sequenceInfo.type=='note') {
+			const note=await this.itemReader.getNote(sequenceInfo.id)
+			console.log('TODO disclose note',note)
+		} else if (sequenceInfo.type=='changesetComment') {
+			const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
+			console.log('TODO disclose changeset comment',comment,'by',username)
+		} else if (sequenceInfo.type=='noteComment') {
+			const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
+			console.log('TODO disclose note comment',comment,'by',username)
+		}
 	}
 }
 
