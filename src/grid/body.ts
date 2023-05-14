@@ -408,20 +408,34 @@ export default class GridBody {
 		return $row
 	}
 	private async toggleItemDisclosure($disclosureButton: EventTarget|null): Promise<void> {
+		const collapseRowItems=($row:HTMLTableRowElement)=>{
+			const sequenceInfo=readItemSequenceInfo($row)
+			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
+			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
+			const $placeholders=itemCopies.map(([$item])=>$item)
+			const classNames=[...$row.classList]
+			$row.remove()
+			this.insertItem(iColumns,sequenceInfo,{isCollapsed:true},$placeholders,classNames)
+		}
 		if (!($disclosureButton instanceof HTMLButtonElement)) return
 		const $item=$disclosureButton.closest('.item')
 		if (!($item instanceof HTMLElement)) return
-		const sequenceInfo=readItemSequenceInfo($item)
 		const $itemRow=$item.closest('tr')
 		if (!$itemRow) return
-		const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
 		if ($itemRow.classList.contains('item')) {
-			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
-			const $placeholders=itemCopies.map(([$item])=>$item)
-			const classNames=[...$itemRow.classList]
-			$itemRow.remove()
-			this.insertItem(iColumns,sequenceInfo,{isCollapsed:true},$placeholders,classNames)
+			if ($itemRow.classList.contains('combined')) {
+				const $previousItemRow=$itemRow.previousElementSibling
+				if (
+					$previousItemRow instanceof HTMLTableRowElement &&
+					$previousItemRow.classList.contains('item')
+				) {
+					collapseRowItems($previousItemRow)
+				}
+			}
+			collapseRowItems($itemRow)
 		} else {
+			const sequenceInfo=readItemSequenceInfo($item)
+			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
 			if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
 				const changeset=await this.itemReader.getChangeset(sequenceInfo.id)
 				console.log('TODO disclose changeset',changeset,'for items',itemCopies)
