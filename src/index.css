@@ -469,6 +469,9 @@ body > .symbols {
 	position: absolute;
 	inset: 0;
 }
+.ui .grid tbody .item .ballon button.disclosure[aria-expanded="true"] .vertical-stroke {
+	visibility: hidden;
+}
 
 .ui .grid tbody tr.item td .ballon .flow {
 	text-overflow: ellipsis;

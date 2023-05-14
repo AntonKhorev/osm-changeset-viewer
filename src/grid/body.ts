@@ -56,7 +56,7 @@ export default class GridBody {
 		usernames: Map<number, string>,
 		isCollapsed: boolean
 	): boolean {
-		const [$masterPlaceholder,classNames]=makeItemShell(batchItem)
+		const [$masterPlaceholder,classNames]=makeItemShell(batchItem,!isCollapsed)
 		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
 		const sequenceInfo=getItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
@@ -433,6 +433,7 @@ export default class GridBody {
 				}
 			}
 			collapseRowItems($itemRow)
+			$disclosureButton.setAttribute('aria-expanded','false')
 		} else {
 			const sequenceInfo=readItemSequenceInfo($item)
 			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)

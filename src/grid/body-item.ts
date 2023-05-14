@@ -33,7 +33,8 @@ export function markChangesetItemAsUncombined($item: HTMLElement, id: number|str
 }
 
 export function makeItemShell(
-	{type,item}: MuxBatchItem
+	{type,item}: MuxBatchItem,
+	isExpanded: boolean
 ): [$item: HTMLElement, classNames: string[]] {
 	let id: number
 	const classNames: string[] = ['item']
@@ -66,7 +67,7 @@ export function makeItemShell(
 	}
 	return [makeElement('span')()(
 		$icon,` `,makeElement('span')('ballon')(
-			makeDisclosureButton(),` `,makeElement('span')('flow')()
+			makeDisclosureButton(isExpanded),` `,makeElement('span')('flow')()
 		)
 	),classNames]
 }
@@ -256,14 +257,15 @@ function writeCommentIcon($icon: HTMLElement, id: number, itemType: 'note'|'chan
 	}
 }
 
-function makeDisclosureButton(): HTMLButtonElement {
+function makeDisclosureButton(isExpanded: boolean): HTMLButtonElement {
 	const $disclosure=makeElement('button')('disclosure')()
+	$disclosure.setAttribute('aria-expanded',String(isExpanded))
 	$disclosure.title=`Expand item info`
 	const r=5.5
 	const s=3.5
 	$disclosure.innerHTML=makeCenteredSvg(r,
 		`<line x1="${-s}" x2="${s}" stroke="currentColor" />`+
-		`<line y1="${-s}" y2="${s}" stroke="currentColor" />`
+		`<line y1="${-s}" y2="${s}" stroke="currentColor" class='vertical-stroke' />`
 	)
 	return $disclosure
 }
