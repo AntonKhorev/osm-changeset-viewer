@@ -177,7 +177,11 @@ export default class GridBody {
 			const $flow=$placeholder.querySelector('.flow')
 			if (!($flow instanceof HTMLElement)) continue
 			if (isCollapsed) {
-				writeCollapsedItemFlow($flow,this.server,batchItem,usernames)
+				const id=(batchItem.type=='changesetComment' || batchItem.type=='noteComment'
+					? batchItem.item.itemId
+					: batchItem.item.id
+				)
+				writeCollapsedItemFlow($flow,this.server,batchItem.type,id)
 			} else {
 				writeExpandedItemFlow($flow,this.server,batchItem,usernames)
 			}
@@ -402,18 +406,21 @@ export default class GridBody {
 		const $item=$disclosureButton.closest('.item')
 		if (!($item instanceof HTMLElement)) return
 		const sequenceInfo=readItemSequenceInfo($item)
+		const $itemRow=$item.closest('tr')
+		if (!$itemRow) return
+		const $itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
 		if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
 			const changeset=await this.itemReader.getChangeset(sequenceInfo.id)
-			console.log('TODO disclose changeset',changeset)
+			console.log('TODO disclose changeset',changeset,'for items',$itemCopies)
 		} else if (sequenceInfo.type=='note') {
 			const note=await this.itemReader.getNote(sequenceInfo.id)
-			console.log('TODO disclose note',note)
+			console.log('TODO disclose note',note,'for items',$itemCopies)
 		} else if (sequenceInfo.type=='changesetComment') {
 			const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
-			console.log('TODO disclose changeset comment',comment,'by',username)
+			console.log('TODO disclose changeset comment',comment,'by',username,'for items',$itemCopies)
 		} else if (sequenceInfo.type=='noteComment') {
 			const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
-			console.log('TODO disclose note comment',comment,'by',username)
+			console.log('TODO disclose note comment',comment,'by',username,'for items',$itemCopies)
 		}
 	}
 }

@@ -74,21 +74,19 @@ export function makeItemShell(
 export function writeCollapsedItemFlow(
 	$flow: HTMLElement,
 	server: Server,
-	{type,item}: MuxBatchItem,
-	usernames: Map<number, string>
+	type: string,
+	id: number
 ): void {
 	if (type=='user') {
 		$flow.replaceChildren(
 			`account created`
 		)
 	} else if (type=='changeset' || type=='changesetClose' || type=='changesetComment') {
-		const id = type=='changesetComment' ? item.itemId : item.id
 		const href=server.web.getUrl(e`changeset/${id}`)
 		$flow.replaceChildren(
 			makeLink(String(id),href)
 		)
 	} else if (type=='note' || type=='noteComment') {
-		const id = type=='noteComment' ? item.itemId : item.id
 		const href=server.web.getUrl(e`note/${id}`)
 		$flow.replaceChildren(
 			makeLink(String(id),href)

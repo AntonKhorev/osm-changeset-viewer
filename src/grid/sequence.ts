@@ -1,4 +1,4 @@
-import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
+import type {MuxBatchItem} from '../mux-user-item-db-stream'
 
 export type ItemSequenceInfo = {
 	timestamp: number
@@ -36,7 +36,7 @@ function getItemTypeRank(type: ItemSequenceInfo['type']): number {
 	return +Infinity
 }
 
-export function getItemSequenceInfo({type,item}: GridBatchItem): ItemSequenceInfo|null {
+export function getItemSequenceInfo({type,item}: MuxBatchItem): ItemSequenceInfo|null {
 	let date: Date
 	let id: number
 	let order=0
