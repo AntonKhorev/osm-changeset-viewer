@@ -438,21 +438,31 @@ function *listCellCheckboxes($cell: HTMLTableCellElement, isCollection: boolean)
 function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
 	const $itemRow=$checkbox.closest('tr')
 	if (!$itemRow) return
-	let checkboxSelector: string
-	if ($itemRow.classList.contains('item')) {
-		checkboxSelector=`input[type=checkbox]`
-	} else if ($itemRow.classList.contains('collection')) {
-		const $item=$checkbox.closest('.item')
-		if (!($item instanceof HTMLElement)) return
-		const id=$item.dataset.id
-		if (!id) return
-		checkboxSelector=`.item[data-id="${id}"] input[type=checkbox]`
-	} else {
-		return
+	const $item=$checkbox.closest('.item')
+	if (!($item instanceof HTMLElement)) return
+	const sequenceInfo=readItemSequenceInfo($item)
+	for (const [$itemCopy] of listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)) {
+		const $checkboxCopy=getItemCheckbox($itemCopy)
+		if (!$checkboxCopy) continue
+		$checkboxCopy.checked=$checkbox.checked
 	}
-	for (const $sameItemCheckbox of $itemRow.querySelectorAll(checkboxSelector)) {
-		if (!($sameItemCheckbox instanceof HTMLInputElement)) continue
-		$sameItemCheckbox.checked=$checkbox.checked
+}
+
+function listItemCopies($itemRow: HTMLTableRowElement, type: string, id: number): [$item:HTMLElement, iColumn:number][] {
+	if ($itemRow.classList.contains('item')) {
+		return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
+			if ($cell.hasChildNodes()) {
+				return [[$cell,iColumn]]
+			} else {
+				return []
+			}
+		})
+	} else if ($itemRow.classList.contains('collection')) {
+		return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
+			return [...$cell.querySelectorAll(`.item[data-type="${type}"][data-id="${id}"]`)].map($item=>[$item as HTMLElement,iColumn])
+		})
+	} else {
+		return []
 	}
 }
 
