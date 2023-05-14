@@ -55,12 +55,9 @@ export default class GridBody {
 		usernames: Map<number, string>,
 		isCollapsed: boolean
 	): boolean {
-		const sequenceInfo=getItemSequenceInfo(batchItem)
-		if (!sequenceInfo) return false
 		const [$masterPlaceholder,classNames]=makeItemShell(batchItem)
 		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
-		this.insertItem(columnHues,batchItem,usernames,isCollapsed,$placeholders,classNames,sequenceInfo)
-		return true
+		return this.insertItem(columnHues,batchItem,usernames,isCollapsed,$placeholders,classNames)
 	}
 	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
 		const combineChangesets=($item: HTMLElement, $laterItem: HTMLElement|undefined)=>{
@@ -169,10 +166,11 @@ export default class GridBody {
 		usernames: Map<number, string>,
 		isCollapsed: boolean,
 		$previousPlaceholders: HTMLElement[],
-		classNames: string[],
-		sequenceInfo: ItemSequenceInfo
-	): void {
-		if (batchItem.iColumns.length==0) return
+		classNames: string[]
+	): boolean {
+		if (batchItem.iColumns.length==0) return false
+		const sequenceInfo=getItemSequenceInfo(batchItem)
+		if (!sequenceInfo) return false
 		const $placeholders=this.insertItemPlaceholders(columnHues,batchItem.iColumns,sequenceInfo,isCollapsed,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
@@ -194,6 +192,7 @@ export default class GridBody {
 			}
 			$checkbox.addEventListener('input',this.wrappedItemSelectListener)
 		}
+		return true
 	}
 	private insertItemPlaceholders(
 		columnHues: (number|null)[],
