@@ -57,15 +57,9 @@ export default class GridBody {
 	): boolean {
 		const sequenceInfo=getItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
-		const $itemAndFlow=makeItemShell(batchItem)
-		if (!$itemAndFlow) return false
-		const [$item,$flow]=$itemAndFlow
-		if (isCollapsed) {
-			writeCollapsedItemFlow($flow,this.server,batchItem,usernames)
-		} else {
-			writeExpandedItemFlow($flow,this.server,batchItem,usernames)
-		}
-		this.insertItem(columnHues,$item,batchItem.iColumns,sequenceInfo,isCollapsed)
+		const [$masterPlaceholder,classNames]=makeItemShell(batchItem)
+		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
+		this.insertItem(columnHues,batchItem,usernames,isCollapsed,$placeholders,classNames,sequenceInfo)
 		return true
 	}
 	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
@@ -171,15 +165,24 @@ export default class GridBody {
 	}
 	private insertItem(
 		columnHues: (number|null)[],
-		$masterItem: HTMLElement, iColumns: number[],
-		sequenceInfo: ItemSequenceInfo,
-		isCollapsed: boolean
+		batchItem: GridBatchItem,
+		usernames: Map<number, string>,
+		isCollapsed: boolean,
+		$previousPlaceholders: HTMLElement[],
+		classNames: string[],
+		sequenceInfo: ItemSequenceInfo
 	): void {
-		if (iColumns.length==0) return
-		const $placeholders=this.insertItemPlaceholders(columnHues,iColumns,sequenceInfo,isCollapsed,[...$masterItem.classList])
+		if (batchItem.iColumns.length==0) return
+		const $placeholders=this.insertItemPlaceholders(columnHues,batchItem.iColumns,sequenceInfo,isCollapsed,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
-			$placeholder.append(...[...$masterItem.childNodes].map(child=>child.cloneNode(true)))
+			const $flow=$placeholder.querySelector('.flow')
+			if (!($flow instanceof HTMLElement)) continue
+			if (isCollapsed) {
+				writeCollapsedItemFlow($flow,this.server,batchItem,usernames)
+			} else {
+				writeExpandedItemFlow($flow,this.server,batchItem,usernames)
+			}
 			const $checkbox=getItemCheckbox($placeholder)
 			if ($checkbox) $checkboxes.push($checkbox)
 			const $disclosureButton=getItemDisclosureButton($placeholder)
@@ -197,10 +200,10 @@ export default class GridBody {
 		iColumns: number[],
 		sequenceInfo: ItemSequenceInfo,
 		isCollapsed: boolean,
+		$previousPlaceholders: HTMLElement[],
 		classNames: string[]
 	): HTMLElement[] {
-		const iColumnSet=new Set(iColumns)
-		const cellTimelineRelations:CellTimelineRelation[]=this.$timelineCutoffRows.map(($timelineCutoffRow,iColumn)=>({
+		const cellTimelineRelations:CellTimelineRelation[]=this.$timelineCutoffRows.map($timelineCutoffRow=>({
 			withTimelineAbove: $timelineCutoffRow==null,
 			withTimelineBelow: $timelineCutoffRow==null,
 		}))
@@ -215,6 +218,7 @@ export default class GridBody {
 			isNewRow=true
 		}
 		if (sequenceInfo.type=='user') {
+			const iColumnSet=new Set(iColumns)
 			for (const iColumn of iColumns) {
 				this.$timelineCutoffRows[iColumn]=$row
 				cellTimelineRelations[iColumn].withTimelineBelow=false
@@ -239,15 +243,21 @@ export default class GridBody {
 				}
 			}
 		}
+		const copyPlaceholderChildren=($placeholder:HTMLElement,iPlaceholder:number)=>{
+			$placeholder.replaceChildren(
+				...$previousPlaceholders[iPlaceholder].childNodes
+			)
+		}
 		if (isCollapsed) {
 			$row.classList.add('collection')
 			const $placeholders:HTMLElement[]=[]
-			for (const i of iColumnSet) {
+			for (const [iPlaceholder,iColumn] of iColumns.entries()) {
 				const $placeholder=makeElement('span')(...classNames)()
 				writeItemSequenceInfo($placeholder,sequenceInfo)
-				const $cell=$row.cells[i]
+				copyPlaceholderChildren($placeholder,iPlaceholder)
+				const $cell=$row.cells[iColumn]
 				if (position.type=='insideRow') {
-					const $precedingItem=position.$items[i]
+					const $precedingItem=position.$items[iColumn]
 					if ($precedingItem==null) {
 						$cell.prepend($placeholder)
 					} else {
@@ -262,7 +272,11 @@ export default class GridBody {
 		} else {
 			$row.classList.add(...classNames)
 			writeItemSequenceInfo($row,sequenceInfo)
-			return [...iColumnSet].map(i=>$row.cells[i])
+			return iColumns.map((iColumn,iPlaceholder)=>{
+				const $placeholder=$row.cells[iColumn]
+				copyPlaceholderChildren($placeholder,iPlaceholder)
+				return $placeholder
+			})
 		}
 	}
 	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ItemSequenceInfo): GridPosition {

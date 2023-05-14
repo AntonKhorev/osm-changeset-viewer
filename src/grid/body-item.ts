@@ -34,44 +34,41 @@ export function markChangesetItemAsUncombined($item: HTMLElement, id: number|str
 
 export function makeItemShell(
 	{type,item}: MuxBatchItem
-): [$item: HTMLElement, $flow: HTMLElement] | null {
+): [$item: HTMLElement, classNames: string[]] {
 	let id: number
-	let typeClasses: string[] = []
+	const classNames: string[] = ['item']
 	const $icon=makeElement('span')('icon')()
 	if (type=='user') {
-		typeClasses=['user']
+		classNames.push('user')
 		id=item.id
 		writeUserIcon($icon,id)
 	} else if (type=='changeset' || type=='changesetClose') {
-		typeClasses=['changeset']
+		classNames.push('changeset')
 		id=item.id
 		writeChangesetIcon($icon,id,type=='changesetClose')
-		if (type=='changesetClose') typeClasses.push('closed')
+		if (type=='changesetClose') classNames.push('closed')
 	} else if (type=='note') {
-		typeClasses=['note']
+		classNames.push('note')
 		id=item.id
 		writeNoteIcon($icon,id)
 	} else if (type=='changesetComment' || type=='noteComment') {
-		typeClasses=['comment']
+		classNames.push('comment')
 		id=item.itemId
 		if (type=='noteComment') {
-			typeClasses.push(item.action)
+			classNames.push(item.action)
 			writeCommentIcon($icon,id,'note',item.action)
 		} else {
 			writeCommentIcon($icon,id,'changeset')
 		}
 		if (item.uid!=item.itemUid) {
-			typeClasses.push('incoming')
+			classNames.push('incoming')
 		}
-	} else {
-		return null
 	}
-	const $flow=makeElement('span')('flow')()
-	return [makeElement('span')('item',...typeClasses)(
+	return [makeElement('span')()(
 		$icon,` `,makeElement('span')('ballon')(
-			makeDisclosureButton(),` `,$flow
+			makeDisclosureButton(),` `,makeElement('span')('flow')()
 		)
-	),$flow]
+	),classNames]
 }
 
 export function writeCollapsedItemFlow(
