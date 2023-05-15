@@ -395,6 +395,7 @@ body > .symbols {
 	--ballon-tip-height: calc(1.5 * var(--spacer));
 	--ballon-min-height: calc(2 * var(--spacer) + var(--ballon-tip-height));
 	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * var(--icon-size));
+	--ballon-spacer: 4px;
 	--disclosure-size: 13px;
 	position: relative;
 	display: block;
@@ -436,7 +437,7 @@ body > .symbols {
 	height: var(--disclosure-size);
 	position: absolute;
 	top: calc(.5 * var(--ballon-min-height) - .5 * var(--disclosure-size));
-	left: var(--spacer);
+	left: var(--ballon-spacer);
 	padding: 0;
 	border: var(--frame-line);
 	background: canvas;
@@ -454,8 +455,8 @@ body > .symbols {
 
 .ui .grid tbody .item .ballon .flow {
 	margin: 0 -1px;
-	padding: 0 calc(var(--spacer) + 1px);
-	text-indent: calc(var(--disclosure-size) + var(--spacer));
+	padding: 0 calc(var(--ballon-spacer) + 1px);
+	text-indent: calc(var(--disclosure-size) + var(--ballon-spacer));
 	display: inline-block;
 }
 .ui .grid tbody .item .ballon .flow > * {
@@ -478,7 +479,7 @@ body > .symbols {
 	margin-left: 1ch;
 	padding-left: calc(var(--from-tip-width) + var(--from-border-radius));
 	padding-right: var(--from-border-radius);
-	margin-right: calc(0px - var(--spacer) - 1px);
+	margin-right: calc(0px - var(--ballon-spacer) - 1px);
 	border: var(--frame-line);
 	border-right: solid 1px canvas;
 	border-bottom-left-radius: var(--from-border-radius);
