@@ -246,10 +246,7 @@ export default class GridBody {
 				const $cell=$row.insertCell()
 				$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
 				$cell.classList.toggle('with-timeline-below',cellTimelineRelation.withTimelineBelow)
-				const hue=columnHues[iColumn]
-				if (hue!=null) {
-					$cell.style.setProperty('--hue',String(hue))
-				}
+				setCellHue($cell,columnHues[iColumn])
 			}
 		}
 		const copyPlaceholderChildren=($placeholder:HTMLElement,iPlaceholder:number)=>{
@@ -397,9 +394,19 @@ export default class GridBody {
 					return $cellChildrenAfter
 				})
 				if ($cellChildrenAfterInColumns.some($cellChildrenAfter=>$cellChildrenAfter.length>0)) {
+					const columnHues=this.getColumnHues()
 					const $rowAfter=makeElement('tr')('collection')()
-					for (const $cellChildrenAfter of $cellChildrenAfterInColumns) {
-						$rowAfter.insertCell().append(...$cellChildrenAfter)
+					for (const [iColumn,$cellChildrenAfter] of $cellChildrenAfterInColumns.entries()) {
+						const $cellBefore=position.$row.cells[iColumn]
+						const $cellAfter=$rowAfter.insertCell()
+						$cellAfter.classList.add('with-timeline-above')
+						if ($cellBefore.classList.contains('with-timeline-below')) {
+							$cellAfter.classList.add('with-timeline-below')
+						} else {
+							$cellBefore.classList.add('with-timeline-below')
+						}
+						$cellAfter.append(...$cellChildrenAfter)
+						setCellHue($cellAfter,columnHues[iColumn])
 					}
 					$row.after($rowAfter)
 				}
@@ -527,4 +534,9 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	const d1=new Date(t1)
 	const d2=new Date(t2)
 	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
+}
+
+function setCellHue($cell: HTMLTableCellElement, hue: number|null): void {
+	if (hue==null) return
+	$cell.style.setProperty('--hue',String(hue))
 }
