@@ -467,10 +467,10 @@ export default class GridBody {
 				const item=await this.itemReader.getChangeset(sequenceInfo.id)
 				if (!item) return
 				expandItems({type:sequenceInfo.type,item},sequenceInfo)
-				// console.log('TODO disclose changeset',changeset,'for items',itemCopies)
 			} else if (sequenceInfo.type=='note') {
-				const note=await this.itemReader.getNote(sequenceInfo.id)
-				// console.log('TODO disclose note',note,'for items',itemCopies)
+				const item=await this.itemReader.getNote(sequenceInfo.id)
+				if (!item) return
+				expandItems({type:sequenceInfo.type,item},sequenceInfo)
 			} else if (sequenceInfo.type=='changesetComment') {
 				const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
 				// console.log('TODO disclose changeset comment',comment,'by',username,'for items',itemCopies)
