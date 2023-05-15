@@ -425,7 +425,7 @@ export default class GridBody {
 			$row.remove()
 			this.insertItem(iColumns,sequenceInfo,{isCollapsed:true},$placeholders,classNames)
 		}
-		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo)=>{
+		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>)=>{
 			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
 			if (!$itemRow) return
 			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
@@ -437,12 +437,18 @@ export default class GridBody {
 				// $placeholder.removeAttribute('class')
 				$placeholder.remove()
 			}
-			const usernames=new Map<number,string>()
 			this.insertItem(iColumns,sequenceInfo,{isCollapsed:false,batchItem,usernames},$placeholders,classNames)
 			// TODO expand combined
 			// TODO remove empty collection row
 			$disclosureButton.disabled=false
 			setItemDisclosureButtonState($disclosureButton,true)
+		}
+		const makeUsernames=(uid?:number,username?:string)=>{
+			if (uid==null || username==null) {
+				return new Map<number,string>()
+			} else {
+				return new Map<number,string>([[uid,username]])
+			}
 		}
 		const $item=$disclosureButton.closest('.item')
 		if (!($item instanceof HTMLElement)) return
@@ -466,17 +472,19 @@ export default class GridBody {
 				$disclosureButton.disabled=true
 				const item=await this.itemReader.getChangeset(sequenceInfo.id)
 				if (!item) return
-				expandItems({type:sequenceInfo.type,item},sequenceInfo)
+				expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
 			} else if (sequenceInfo.type=='note') {
 				const item=await this.itemReader.getNote(sequenceInfo.id)
 				if (!item) return
-				expandItems({type:sequenceInfo.type,item},sequenceInfo)
+				expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
 			} else if (sequenceInfo.type=='changesetComment') {
 				const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
-				// console.log('TODO disclose changeset comment',comment,'by',username,'for items',itemCopies)
+				if (!comment) return
+				expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
 			} else if (sequenceInfo.type=='noteComment') {
 				const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
-				// console.log('TODO disclose note comment',comment,'by',username,'for items',itemCopies)
+				if (!comment) return
+				expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
 			}
 		}
 	}
