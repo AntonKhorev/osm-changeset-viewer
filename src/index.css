@@ -66,13 +66,13 @@ body > .symbols {
 	padding: var(--major-button-padding);
 }
 
-.ui time[title] {
+.ui.with-time time[title] {
 	text-decoration: underline dotted 1px;
 }
-.ui:not(.with-time) time[title] {
-	display: inline-block;
+.ui:not(.with-time) time[title] .date {
+	text-decoration: underline dotted 1px;
 }
-.ui:not(.with-time) time[title] .time {
+.ui:not(.with-time) time[title] :is(.gap,.time) {
 	display: none;
 }
 
@@ -454,7 +454,12 @@ body > .symbols {
 
 .ui .grid tbody .item .ballon .flow {
 	margin: 0 -1px;
-	padding: 0 calc(var(--spacer) + 1px) 0 calc(var(--spacer) + var(--disclosure-size) + var(--spacer) + 1px);
+	padding: 0 calc(var(--spacer) + 1px);
+	text-indent: calc(var(--disclosure-size) + var(--spacer));
+	display: inline-block;
+}
+.ui .grid tbody .item .ballon .flow > * {
+	text-indent: initial;
 }
 .ui .grid tbody tr.item td .ballon .flow {
 	text-overflow: ellipsis;

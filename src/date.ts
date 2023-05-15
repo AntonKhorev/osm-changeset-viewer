@@ -46,7 +46,8 @@ export function makeDateOutput(date: Date): HTMLTimeElement {
 	const isoDateString=toIsoDateString(date)
 	const isoTimeString=toIsoTimeString(date)
 	const $time=makeElement('time')()(
-		makeElement('span')('date')(isoDateString),' ',
+		makeElement('span')('date')(isoDateString),
+		makeElement('span')('gap')(' '),
 		makeElement('span')('time')(isoTimeString)
 	)
 	$time.dateTime=toIsoString(date)
