@@ -464,12 +464,21 @@ body > .symbols {
 	-webkit-box-orient: vertical;
 }
 .ui .grid tbody tr.item td .ballon .flow .from {
+	--from-padding: .25rem;
 	float: right;
 	margin-left: 1ch;
 	font-size: .9em;
+	line-height: 1rem;
+	white-space: nowrap;
 	text-overflow: ellipsis;
 	overflow: hidden;
 	max-width: 100%;
+	padding-left: var(--from-padding);
+	margin-right: calc(0px - var(--spacer) - 1px);
+	border: var(--frame-line);
+	border-right: solid 1px canvas;
+	border-bottom-left-radius: var(--from-padding);
+	border-top-left-radius: var(--from-padding);
 }
 .ui .grid tbody tr.item td .ballon .flow .changes {
 	border-radius: 4px;
