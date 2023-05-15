@@ -8,7 +8,7 @@ import {
 import {
 	getItemCheckbox, getItemDisclosureButton,
 	markChangesetItemAsCombined, markChangesetItemAsUncombined, setItemDisclosureButtonState,
-	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
+	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow, makeCollectionIcon
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
@@ -270,6 +270,7 @@ export default class GridBody {
 				writeItemSequenceInfo($placeholder,sequenceInfo)
 				copyPlaceholderChildren($placeholder,iPlaceholder)
 				const $cell=$row.cells[iColumn]
+				const cellWasEmpty=$cell.childElementCount==0
 				if (position.type=='insideRow') {
 					const $precedingItem=position.$items[iColumn]
 					if ($precedingItem==null) {
@@ -279,6 +280,9 @@ export default class GridBody {
 					}
 				} else {
 					$cell.append($placeholder)
+				}
+				if (cellWasEmpty && $cell.childElementCount>0) {
+					$cell.prepend(makeCollectionIcon())
 				}
 				$placeholders.push($placeholder)
 			}

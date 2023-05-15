@@ -360,8 +360,9 @@ body > .symbols {
 	display: none;
 }
 
-.ui .grid tbody .item .icon {
+.ui .grid tbody :is(.item,tr.collection) .icon {
 	top: var(--icon-vertical-margin);
+	color: var(--accent-color);
 }
 .ui .grid tbody .item.changeset .icon::before {
 	content: '';
@@ -381,9 +382,6 @@ body > .symbols {
 }
 .ui .grid tbody tr.collection .item.changeset.closed .icon::before {
 	right: 50%;
-}
-.ui .grid tbody .item:is(.note,.user,.comment) .icon {
-	color: var(--accent-color);
 }
 .ui .grid tbody .item .icon > .no-checkbox {
 	width: .75rem;
