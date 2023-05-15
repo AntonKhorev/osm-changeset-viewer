@@ -464,21 +464,49 @@ body > .symbols {
 	-webkit-box-orient: vertical;
 }
 .ui .grid tbody tr.item td .ballon .flow .from {
-	--from-padding: .25rem;
+	--from-border-radius: .25rem;
+	--from-tip-height: calc(1rem - 2 * var(--from-border-radius));
+	--from-tip-width: .5rem;
+	position: relative;
 	float: right;
+	max-width: calc(100% - var(--from-tip-width));
 	margin-left: 1ch;
+	padding-left: calc(var(--from-tip-width) + var(--from-border-radius));
+	padding-right: var(--from-border-radius);
+	margin-right: calc(0px - var(--spacer) - 1px);
+	border: var(--frame-line);
+	border-right: solid 1px canvas;
+	border-bottom-left-radius: var(--from-border-radius);
+	border-top-left-radius: var(--from-border-radius);
+}
+.ui .grid tbody tr.item td .ballon .flow .from::before,
+.ui .grid tbody tr.item td .ballon .flow .from::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	height: 0;
+	margin: auto;
+	border-style: solid;
+	border-width: calc(.5 * var(--from-tip-height)) 0 calc(.5 * var(--from-tip-height)) var(--from-tip-width);
+	border-color: transparent;
+}
+.ui .grid tbody tr.item td .ballon .flow .from::before {
+	left: 0;
+	border-left-color: var(--frame-color);
+}
+.ui .grid tbody tr.item td .ballon .flow .from::after {
+	left: -1px;
+	border-left-color: canvas;
+}
+.ui .grid tbody tr.item td .ballon .flow .from a {
+	display: block;
+	max-width: 100%;
 	font-size: .9em;
 	line-height: 1rem;
 	white-space: nowrap;
 	text-overflow: ellipsis;
 	overflow: hidden;
-	max-width: 100%;
-	padding-left: var(--from-padding);
-	margin-right: calc(0px - var(--spacer) - 1px);
-	border: var(--frame-line);
-	border-right: solid 1px canvas;
-	border-bottom-left-radius: var(--from-padding);
-	border-top-left-radius: var(--from-padding);
 }
 .ui .grid tbody tr.item td .ballon .flow .changes {
 	border-radius: 4px;
