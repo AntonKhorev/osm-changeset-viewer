@@ -54,15 +54,15 @@ export default class GridBody {
 	addItem(
 		batchItem: GridBatchItem,
 		usernames: Map<number, string>,
-		isCollapsed: boolean
+		isExpanded: boolean
 	): boolean {
-		const [$masterPlaceholder,classNames]=makeItemShell(batchItem,!isCollapsed)
+		const [$masterPlaceholder,classNames]=makeItemShell(batchItem,isExpanded)
 		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
 		const sequenceInfo=getItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
 		return this.insertItem(
 			batchItem.iColumns,sequenceInfo,
-			isCollapsed?{isCollapsed}:{isCollapsed,batchItem,usernames},
+			!isExpanded?{isExpanded}:{isExpanded,batchItem,usernames},
 			$placeholders,classNames
 		)
 	}
@@ -171,9 +171,9 @@ export default class GridBody {
 		iColumns: number[],
 		sequenceInfo: ItemSequenceInfo,
 		insertItemInfo: {
-			isCollapsed: true
+			isExpanded: false
 		} | {
-			isCollapsed: false
+			isExpanded: true
 			batchItem: MuxBatchItem
 			usernames: Map<number, string>
 		},
@@ -181,15 +181,15 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
-		const $placeholders=this.insertItemPlaceholders(iColumns,sequenceInfo,insertItemInfo.isCollapsed,$previousPlaceholders,classNames)
+		const $placeholders=this.insertItemPlaceholders(iColumns,sequenceInfo,insertItemInfo.isExpanded,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
 			const $flow=$placeholder.querySelector('.flow')
 			if (!($flow instanceof HTMLElement)) continue
-			if (insertItemInfo.isCollapsed) {
-				writeCollapsedItemFlow($flow,this.server,sequenceInfo.type,sequenceInfo.id)
-			} else {
+			if (insertItemInfo.isExpanded) {
 				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
+			} else {
+				writeCollapsedItemFlow($flow,this.server,sequenceInfo.type,sequenceInfo.id)
 			}
 			const $checkbox=getItemCheckbox($placeholder)
 			if ($checkbox) $checkboxes.push($checkbox)
@@ -207,7 +207,7 @@ export default class GridBody {
 	private insertItemPlaceholders(
 		iColumns: number[],
 		sequenceInfo: ItemSequenceInfo,
-		isCollapsed: boolean,
+		isExpanded: boolean,
 		$previousPlaceholders: HTMLElement[],
 		classNames: string[]
 	): HTMLElement[] {
@@ -218,7 +218,7 @@ export default class GridBody {
 		let position=this.getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo)
 		let $row:HTMLTableRowElement
 		let isNewRow:boolean
-		if (isCollapsed && position.type=='insideRow') {
+		if (!isExpanded && position.type=='insideRow') {
 			$row=position.$row
 			isNewRow=false
 		} else {
@@ -254,7 +254,15 @@ export default class GridBody {
 				...$previousPlaceholders[iPlaceholder].childNodes
 			)
 		}
-		if (isCollapsed) {
+		if (isExpanded) {
+			$row.classList.add(...classNames)
+			writeItemSequenceInfo($row,sequenceInfo)
+			return iColumns.map((iColumn,iPlaceholder)=>{
+				const $placeholder=$row.cells[iColumn]
+				copyPlaceholderChildren($placeholder,iPlaceholder)
+				return $placeholder
+			})
+		} else {
 			$row.classList.add('collection')
 			const $placeholders:HTMLElement[]=[]
 			for (const [iPlaceholder,iColumn] of iColumns.entries()) {
@@ -275,14 +283,6 @@ export default class GridBody {
 				$placeholders.push($placeholder)
 			}
 			return $placeholders
-		} else {
-			$row.classList.add(...classNames)
-			writeItemSequenceInfo($row,sequenceInfo)
-			return iColumns.map((iColumn,iPlaceholder)=>{
-				const $placeholder=$row.cells[iColumn]
-				copyPlaceholderChildren($placeholder,iPlaceholder)
-				return $placeholder
-			})
 		}
 	}
 	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ItemSequenceInfo): GridPosition {
@@ -423,7 +423,7 @@ export default class GridBody {
 			const $placeholders=itemCopies.map(([$item])=>$item)
 			const classNames=[...$row.classList]
 			$row.remove()
-			this.insertItem(iColumns,sequenceInfo,{isCollapsed:true},$placeholders,classNames)
+			this.insertItem(iColumns,sequenceInfo,{isExpanded:false},$placeholders,classNames)
 		}
 		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>)=>{
 			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
@@ -437,7 +437,7 @@ export default class GridBody {
 				// $placeholder.removeAttribute('class')
 				$placeholder.remove()
 			}
-			this.insertItem(iColumns,sequenceInfo,{isCollapsed:false,batchItem,usernames},$placeholders,classNames)
+			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
 			// TODO expand combined
 			// TODO remove empty collection row
 			$disclosureButton.disabled=false
