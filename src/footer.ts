@@ -129,11 +129,11 @@ export default function writeFooter(
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.oninput=()=>{
-			grid.addCollapsedItems=$checkbox.checked
+			grid.addExpandedItems=$checkbox.checked
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(
-				$checkbox,` add collapsed items`
+				$checkbox,` add expanded items`
 			))
 		)
 	}

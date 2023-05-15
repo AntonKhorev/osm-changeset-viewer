@@ -9,7 +9,7 @@ import {moveInArray} from '../util/types'
 
 export default class Grid {
 	$grid=makeElement('table')('grid')()
-	addCollapsedItems=false
+	addExpandedItems=false
 	private $colgroup=makeElement('colgroup')()()
 	private head: GridHead
 	private body: GridBody
@@ -46,7 +46,7 @@ export default class Grid {
 			},(batch,usernames)=>{
 				let wroteAnyItem=false
 				for (const batchItem of batch) {
-					const wroteItem=this.body.addItem(batchItem,usernames,this.addCollapsedItems)
+					const wroteItem=this.body.addItem(batchItem,usernames,!this.addExpandedItems)
 					wroteAnyItem||=wroteItem
 				}
 				if (wroteAnyItem) {
