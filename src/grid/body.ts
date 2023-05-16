@@ -6,8 +6,8 @@ import {
 	readItemSequenceInfo, writeItemSequenceInfo, writeSeparatorSequenceInfo
 } from './sequence'
 import {
-	getItemCheckbox, getItemDisclosureButton,
-	markChangesetItemAsCombined, markChangesetItemAsUncombined, setItemDisclosureButtonState,
+	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
+	markChangesetItemAsCombined, markChangesetItemAsUncombined,
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow, makeCollectionIcon
 } from './body-item'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
@@ -169,13 +169,99 @@ export default class GridBody {
 		}
 		this.onItemSelect()
 	}
-	*listSelectedItemIds(): Iterable<ItemDescriptor> {
+	*listSelectedItemDescriptors(): Iterable<ItemDescriptor> {
 		for (const $item of this.$gridBody.querySelectorAll(`.item`)) {
 			if (!($item instanceof HTMLElement)) continue
 			if (!$item.querySelector(`input[type=checkbox]:checked`)) continue
 			const itemDescriptor=getItemDescriptor($item)
 			if (!itemDescriptor) continue
 			yield itemDescriptor
+		}
+	}
+	collapseItem([type,id,order]: ItemDescriptor): void {
+		const itemSelector=`tr.item[data-type="${type}"][data-id="${id}"]`+(order
+			? `[data-order="${order}"]`
+			: `:not([data-order])`
+		)
+		const $itemRow=this.$gridBody.querySelector(itemSelector) // TODO select all
+		if (!($itemRow instanceof HTMLTableRowElement)) return
+		const $disclosureButton=getItemDisclosureButton($itemRow) // TODO get all copies of item buttons
+		if (!$disclosureButton) return
+		const collapseRowItems=($row:HTMLTableRowElement)=>{
+			const sequenceInfo=readItemSequenceInfo($row)
+			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
+			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
+			const $placeholders=itemCopies.map(([$item])=>$item)
+			const classNames=[...$row.classList]
+			$row.remove()
+			this.insertItem(iColumns,sequenceInfo,{isExpanded:false},$placeholders,classNames)
+		}
+		if ($itemRow.classList.contains('combined')) {
+			const $previousItemRow=$itemRow.previousElementSibling
+			if (
+				$previousItemRow instanceof HTMLTableRowElement &&
+				$previousItemRow.classList.contains('item')
+			) {
+				collapseRowItems($previousItemRow)
+			}
+		}
+		collapseRowItems($itemRow)
+		setItemDisclosureButtonState($disclosureButton,false)
+	}
+	async expandItem([type,id,order]: ItemDescriptor): Promise<void> {
+		const itemSelector=`tr.collection .item[data-type="${type}"][data-id="${id}"]`+(order
+			? `[data-order="${order}"]`
+			: `:not([data-order])`
+		)
+		const $item=this.$gridBody.querySelector(itemSelector) // TODO select all
+		if (!($item instanceof HTMLElement)) return
+		const $itemRow=$item.closest('tr')
+		if (!$itemRow) return
+		const $disclosureButton=getItemDisclosureButton($item) // TODO get all copies of item buttons
+		if (!$disclosureButton) return
+		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>)=>{
+			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
+			if (!$itemRow) return
+			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
+			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
+			const $placeholders=itemCopies.map(([$item])=>$item)
+			let classNames:string[]=[]
+			for (const $placeholder of $placeholders) {
+				classNames=[...$placeholder.classList]
+				// $placeholder.removeAttribute('class')
+				$placeholder.remove()
+			}
+			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
+			// TODO expand combined
+			// TODO remove empty collection row
+			$disclosureButton.disabled=false
+			setItemDisclosureButtonState($disclosureButton,true)
+		}
+		const makeUsernames=(uid?:number,username?:string)=>{
+			if (uid==null || username==null) {
+				return new Map<number,string>()
+			} else {
+				return new Map<number,string>([[uid,username]])
+			}
+		}
+		const sequenceInfo=readItemSequenceInfo($item)
+		if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
+			$disclosureButton.disabled=true
+			const item=await this.itemReader.getChangeset(sequenceInfo.id)
+			if (!item) return
+			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
+		} else if (sequenceInfo.type=='note') {
+			const item=await this.itemReader.getNote(sequenceInfo.id)
+			if (!item) return
+			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
+		} else if (sequenceInfo.type=='changesetComment') {
+			const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
+			if (!comment) return
+			expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
+		} else if (sequenceInfo.type=='noteComment') {
+			const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
+			if (!comment) return
+			expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
 		}
 	}
 	private insertItem(
@@ -435,85 +521,10 @@ export default class GridBody {
 		if (!($item instanceof HTMLElement)) return
 		const itemDescriptor=getItemDescriptor($item)
 		if (!itemDescriptor) return
-		await this.toggleItemDisclosure(itemDescriptor)
-	}
-	async toggleItemDisclosure([type,id,order]: ItemDescriptor): Promise<void> {
-		const itemSelector=`.item[data-type="${type}"][data-id="${id}"]`+(order
-			? `[data-order="${order}"]`
-			: `:not([data-order])`
-		)
-		const $item=this.$gridBody.querySelector(itemSelector) // TODO select all
-		if (!($item instanceof HTMLElement)) return
-		const $itemRow=$item.closest('tr')
-		if (!$itemRow) return
-		const $disclosureButton=getItemDisclosureButton($item) // TODO get all copies of item buttons
-		if (!$disclosureButton) return
-		const collapseRowItems=($row:HTMLTableRowElement)=>{
-			const sequenceInfo=readItemSequenceInfo($row)
-			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
-			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
-			const $placeholders=itemCopies.map(([$item])=>$item)
-			const classNames=[...$row.classList]
-			$row.remove()
-			this.insertItem(iColumns,sequenceInfo,{isExpanded:false},$placeholders,classNames)
-		}
-		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>)=>{
-			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
-			if (!$itemRow) return
-			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
-			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
-			const $placeholders=itemCopies.map(([$item])=>$item)
-			let classNames:string[]=[]
-			for (const $placeholder of $placeholders) {
-				classNames=[...$placeholder.classList]
-				// $placeholder.removeAttribute('class')
-				$placeholder.remove()
-			}
-			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
-			// TODO expand combined
-			// TODO remove empty collection row
-			$disclosureButton.disabled=false
-			setItemDisclosureButtonState($disclosureButton,true)
-		}
-		const makeUsernames=(uid?:number,username?:string)=>{
-			if (uid==null || username==null) {
-				return new Map<number,string>()
-			} else {
-				return new Map<number,string>([[uid,username]])
-			}
-		}
-		if ($itemRow.classList.contains('item')) {
-			if ($itemRow.classList.contains('combined')) {
-				const $previousItemRow=$itemRow.previousElementSibling
-				if (
-					$previousItemRow instanceof HTMLTableRowElement &&
-					$previousItemRow.classList.contains('item')
-				) {
-					collapseRowItems($previousItemRow)
-				}
-			}
-			collapseRowItems($itemRow)
-			setItemDisclosureButtonState($disclosureButton,false)
+		if (getItemDisclosureButtonState($disclosureButton)) {
+			this.collapseItem(itemDescriptor)
 		} else {
-			const sequenceInfo=readItemSequenceInfo($item)
-			if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
-				$disclosureButton.disabled=true
-				const item=await this.itemReader.getChangeset(sequenceInfo.id)
-				if (!item) return
-				expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
-			} else if (sequenceInfo.type=='note') {
-				const item=await this.itemReader.getNote(sequenceInfo.id)
-				if (!item) return
-				expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
-			} else if (sequenceInfo.type=='changesetComment') {
-				const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
-				if (!comment) return
-				expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
-			} else if (sequenceInfo.type=='noteComment') {
-				const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
-				if (!comment) return
-				expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
-			}
+			await this.expandItem(itemDescriptor)
 		}
 	}
 }

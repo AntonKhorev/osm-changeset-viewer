@@ -92,9 +92,15 @@ export default class Grid {
 		)
 	}
 	async expandSelectedItems(): Promise<void> {
-		console.log(`TODO expand stuff`,[...this.body.listSelectedItemIds()])
+		const itemDescriptors=[...this.body.listSelectedItemDescriptors()]
+		for (const itemDescriptor of itemDescriptors) {
+			await this.body.expandItem(itemDescriptor)
+		}
 	}
-	async collapseSelectedItems(): Promise<void> {
-		console.log(`TODO collapse stuff`,[...this.body.listSelectedItemIds()])
+	collapseSelectedItems(): void {
+		const itemDescriptors=[...this.body.listSelectedItemDescriptors()]
+		for (const itemDescriptor of itemDescriptors) {
+			this.body.collapseItem(itemDescriptor)
+		}
 	}
 }

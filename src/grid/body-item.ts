@@ -284,6 +284,9 @@ function makeItemDisclosureButton(isExpanded: boolean): HTMLButtonElement {
 	return $disclosure
 }
 
+export function getItemDisclosureButtonState($disclosure: HTMLButtonElement): boolean {
+	return $disclosure.getAttribute('aria-expanded')=='true'
+}
 export function setItemDisclosureButtonState($disclosure: HTMLButtonElement, isExpanded: boolean): void {
 	$disclosure.setAttribute('aria-expanded',String(isExpanded))
 	$disclosure.title=(isExpanded?`Collapse`:`Expand`)+` item info`
