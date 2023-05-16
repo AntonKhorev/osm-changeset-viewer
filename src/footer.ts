@@ -137,6 +137,22 @@ export default function writeFooter(
 			))
 		)
 	}
+	if (grid) {
+		const $button=makeElement('button')()(`+`)
+		$button.title=`Expand selected items`
+		$button.onclick=()=>{
+			grid.expandSelectedItems()
+		}
+		$toolbar.append($button)
+	}
+	if (grid) {
+		const $button=makeElement('button')()(`−`)
+		$button.title=`Collapse selected items`
+		$button.onclick=()=>{
+			grid.collapseSelectedItems()
+		}
+		$toolbar.append($button)
+	}
 	if (server) {
 		const $button=makeElement('button')()(`Fetch log`)
 		$button.onclick=()=>{

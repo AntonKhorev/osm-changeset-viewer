@@ -91,4 +91,10 @@ export default class Grid {
 			this.$grid.classList.contains('with-closed-changesets')
 		)
 	}
+	async expandSelectedItems(): Promise<void> {
+		console.log(`TODO expand stuff`,[...this.body.listSelectedItemIds()])
+	}
+	async collapseSelectedItems(): Promise<void> {
+		console.log(`TODO collapse stuff`,[...this.body.listSelectedItemIds()])
+	}
 }

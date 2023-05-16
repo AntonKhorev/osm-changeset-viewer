@@ -16,6 +16,8 @@ import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
 import {moveInArray} from '../util/types'
 
+export type ItemDescriptor = [type: string, id: number, order?: number]
+
 type CellTimelineRelation = {
 	withTimelineAbove: boolean
 	withTimelineBelow: boolean
@@ -166,6 +168,15 @@ export default class GridBody {
 			}
 		}
 		this.onItemSelect()
+	}
+	*listSelectedItemIds(): Iterable<ItemDescriptor> {
+		for (const $item of this.$gridBody.querySelectorAll(`.item`)) {
+			if (!($item instanceof HTMLElement)) continue
+			if (!$item.querySelector(`input[type=checkbox]:checked`)) continue
+			const itemDescriptor=getItemDescriptor($item)
+			if (!itemDescriptor) continue
+			yield itemDescriptor
+		}
 	}
 	private insertItem(
 		iColumns: number[],
@@ -422,19 +433,11 @@ export default class GridBody {
 		if (!($disclosureButton instanceof HTMLButtonElement)) return
 		const $item=$disclosureButton.closest('.item')
 		if (!($item instanceof HTMLElement)) return
-		const type=$item.dataset.type
-		if (!type) return
-		const id=Number($item.dataset.id)
-		if (!Number.isInteger(id)) return
-		const orderString=$item.dataset.order
-		let order: number|undefined
-		if (orderString!=null) {
-			order=Number(orderString)
-			if (!Number.isInteger(order)) return
-		}
-		await this.toggleItemDisclosure(type,id,order)
+		const itemDescriptor=getItemDescriptor($item)
+		if (!itemDescriptor) return
+		await this.toggleItemDisclosure(itemDescriptor)
 	}
-	async toggleItemDisclosure(type: string, id: number, order?: number): Promise<void> {
+	async toggleItemDisclosure([type,id,order]: ItemDescriptor): Promise<void> {
 		const itemSelector=`.item[data-type="${type}"][data-id="${id}"]`+(order
 			? `[data-order="${order}"]`
 			: `:not([data-order])`
@@ -560,6 +563,21 @@ function listItemCopies($itemRow: HTMLTableRowElement, type: string, id: number)
 		})
 	} else {
 		return []
+	}
+}
+
+function getItemDescriptor($item: HTMLElement): ItemDescriptor|undefined {
+	const type=$item.dataset.type
+	if (!type) return
+	const id=Number($item.dataset.id)
+	if (!Number.isInteger(id)) return
+	const orderString=$item.dataset.order
+	if (orderString!=null) {
+		const order=Number(orderString)
+		if (!Number.isInteger(order)) return
+		return [type,id,order]
+	} else {
+		return [type,id]
 	}
 }
 
