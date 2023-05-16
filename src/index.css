@@ -506,9 +506,9 @@ body > .symbols {
 	bottom: 0;
 	height: 0;
 	margin: auto;
-	border-style: solid;
-	border-width: calc(.5 * var(--from-tip-height)) 0 calc(.5 * var(--from-tip-height)) var(--from-tip-width);
-	border-color: transparent;
+	border: solid transparent;
+	border-width: calc(.5 * var(--from-tip-height)) 0;
+	border-left-width: var(--from-tip-width);
 }
 .ui .grid tbody tr.item td .ballon .flow .from::before {
 	left: 0;
