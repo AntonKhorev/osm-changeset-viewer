@@ -323,7 +323,7 @@ body > .symbols {
 	position: relative;
 	padding-left: calc(var(--spacer) + var(--icon-size));
 }
-.ui .grid tbody tr:is(.item,.collection):not(.hidden-as-closed) td {
+.ui .grid tbody tr:is(.item,.collection):not(.hidden) td {
 	height: calc(var(--icon-vertical-margin) + var(--icon-size) + var(--icon-vertical-margin));
 }
 .ui .grid tbody tr:is(.item,.collection) td.with-timeline-above::before,
@@ -347,7 +347,7 @@ body > .symbols {
 .ui .grid tbody tr.separator + tr:is(.item,.collection) td.with-timeline-above::before {
 	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
 }
-.ui .grid tbody tr.item.hidden-as-closed td :is(.icon,.ballon) {
+.ui .grid tbody tr.item.hidden td :is(.icon,.ballon) {
 	display: none;
 }
 
@@ -359,7 +359,7 @@ body > .symbols {
 	position: relative;
 	padding-left: calc(var(--item-spacer) + var(--icon-size));
 }
-.ui .grid tbody tr.collection td .item.hidden-as-closed {
+.ui .grid tbody tr.collection td .item.hidden {
 	display: none;
 }
 .ui .grid tbody tr.collection .item .icon {

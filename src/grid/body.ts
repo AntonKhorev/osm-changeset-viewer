@@ -78,11 +78,11 @@ export default class GridBody {
 			)
 			if ($item.classList.contains('changeset')) {
 				if ($item.classList.contains('closed')) {
-					$item.classList.toggle('hidden-as-closed',!withClosedChangesets)
+					$item.classList.toggle('hidden',!withClosedChangesets)
 				} else {
 					if (isConnectedWithLaterItem || !withClosedChangesets) {
 						if ($laterItem && isConnectedWithLaterItem) {
-							$laterItem.classList.add('hidden-as-closed')
+							$laterItem.classList.add('hidden')
 						}
 						markChangesetItemAsCombined($item,$item.dataset.id??'???')
 					} else {
