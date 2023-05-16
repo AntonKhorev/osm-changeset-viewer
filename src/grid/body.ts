@@ -1,4 +1,4 @@
-import type {Server} from '../net'
+import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
 import type {ItemSequenceInfo} from './sequence'
 import {
@@ -39,7 +39,7 @@ export default class GridBody {
 	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
 	private $timelineCutoffRows: (HTMLTableRowElement|null)[] = []
 	constructor(
-		private readonly server: Server,
+		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader,
 		private readonly getColumnHues: ()=>(number|null)[]
 	) {

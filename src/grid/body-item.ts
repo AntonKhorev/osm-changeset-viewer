@@ -1,8 +1,16 @@
-import type {Server} from '../net'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {makeElement, makeLink} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
+
+export interface ServerUrlGetter {
+	web: {
+		getUrl(path:string): string
+	},
+	api: {
+		getUrl(path:string): string
+	}
+}
 
 const e=makeEscapeTag(encodeURIComponent)
 
@@ -74,7 +82,7 @@ export function makeItemShell(
 
 export function writeCollapsedItemFlow(
 	$flow: HTMLElement,
-	server: Server,
+	server: ServerUrlGetter,
 	type: string,
 	id: number
 ): void {
@@ -97,7 +105,7 @@ export function writeCollapsedItemFlow(
 
 export function writeExpandedItemFlow(
 	$flow: HTMLElement,
-	server: Server,
+	server: ServerUrlGetter,
 	{type,item}: MuxBatchItem,
 	usernames: Map<number, string>
 ): void {
