@@ -42,7 +42,7 @@ export default class GridBody {
 		private readonly getColumnHues: ()=>(number|null)[]
 	) {
 		this.wrappedItemSelectListener=()=>this.onItemSelect()
-		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosure(ev.currentTarget)
+		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosureWithButton(ev.currentTarget)
 	}
 	get nColumns(): number {
 		return this.$timelineCutoffRows.length
@@ -418,8 +418,33 @@ export default class GridBody {
 		}
 		return $row
 	}
-	private async toggleItemDisclosure($disclosureButton: EventTarget|null): Promise<void> {
+	private async toggleItemDisclosureWithButton($disclosureButton: EventTarget|null): Promise<void> {
 		if (!($disclosureButton instanceof HTMLButtonElement)) return
+		const $item=$disclosureButton.closest('.item')
+		if (!($item instanceof HTMLElement)) return
+		const type=$item.dataset.type
+		if (!type) return
+		const id=Number($item.dataset.id)
+		if (!Number.isInteger(id)) return
+		const orderString=$item.dataset.order
+		let order: number|undefined
+		if (orderString!=null) {
+			order=Number(orderString)
+			if (!Number.isInteger(order)) return
+		}
+		await this.toggleItemDisclosure(type,id,order)
+	}
+	async toggleItemDisclosure(type: string, id: number, order?: number): Promise<void> {
+		const itemSelector=`.item[data-type="${type}"][data-id="${id}"]`+(order
+			? `[data-order="${order}"]`
+			: `:not([data-order])`
+		)
+		const $item=this.$gridBody.querySelector(itemSelector) // TODO select all
+		if (!($item instanceof HTMLElement)) return
+		const $itemRow=$item.closest('tr')
+		if (!$itemRow) return
+		const $disclosureButton=getItemDisclosureButton($item) // TODO get all copies of item buttons
+		if (!$disclosureButton) return
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
 			const sequenceInfo=readItemSequenceInfo($row)
 			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
@@ -454,10 +479,6 @@ export default class GridBody {
 				return new Map<number,string>([[uid,username]])
 			}
 		}
-		const $item=$disclosureButton.closest('.item')
-		if (!($item instanceof HTMLElement)) return
-		const $itemRow=$item.closest('tr')
-		if (!$itemRow) return
 		if ($itemRow.classList.contains('item')) {
 			if ($itemRow.classList.contains('combined')) {
 				const $previousItemRow=$itemRow.previousElementSibling
