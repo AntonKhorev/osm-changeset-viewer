@@ -419,39 +419,29 @@ body > .symbols {
 	border-radius: var(--spacer);
 	background: canvas;
 }
-.ui .grid tbody .item.comment:not(.incoming) .ballon::before,
-.ui .grid tbody .item.comment:not(.incoming) .ballon::after {
+.ui .grid tbody :where(.item.comment:not(.incoming), tr.collection .item.comment.incoming) .ballon::before,
+.ui .grid tbody :where(.item.comment:not(.incoming), tr.collection .item.comment.incoming) .ballon::after {
 	content: '';
 	position: absolute;
 	top: var(--spacer);
-	border-style: solid;
-	border-width: calc(.5 * var(--ballon-tip-height)) var(--spacer) calc(.5 * var(--ballon-tip-height)) 0;
-	border-color: transparent;
+	border: solid transparent;
+	border-width: calc(.5 * var(--ballon-tip-height)) 0;
 }
 .ui .grid tbody .item.comment:not(.incoming) .ballon::before {
 	left: calc(-1 * var(--spacer));
-	border-right-color: var(--frame-color);
+	border-right: solid var(--spacer) var(--frame-color);
 }
 .ui .grid tbody .item.comment:not(.incoming) .ballon::after {
 	left: calc(-1 * var(--spacer) + 1px);
-	border-right-color: canvas;
-}
-.ui .grid tbody tr.collection .item.comment.incoming .ballon::before,
-.ui .grid tbody tr.collection .item.comment.incoming .ballon::after {
-	content: '';
-	position: absolute;
-	top: var(--spacer);
-	border-style: solid;
-	border-width: calc(.5 * var(--ballon-tip-height)) 0 calc(.5 * var(--ballon-tip-height)) var(--spacer);
-	border-color: transparent;
+	border-right: solid var(--spacer) canvas;
 }
 .ui .grid tbody tr.collection .item.comment.incoming .ballon::before {
 	right: calc(-1 * var(--spacer));
-	border-left-color: var(--frame-color);
+	border-left: solid var(--spacer) var(--frame-color);
 }
 .ui .grid tbody tr.collection .item.comment.incoming .ballon::after {
 	right: calc(-1 * var(--spacer) + 1px);
-	border-left-color: canvas;
+	border-left: solid var(--spacer) canvas;
 }
 
 .ui .grid tbody .item .ballon button.disclosure {
