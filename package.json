@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --recursive"
   },
   "keywords": [
     "osm"
@@ -16,6 +16,8 @@
     "@rollup/plugin-typescript": "^11.0.0",
     "@rollup/plugin-virtual": "^3.0.1",
     "@types/sharedworker": "0.0.96",
+    "jsdom": "^22.0.0",
+    "mocha": "^10.2.0",
     "rollup": "^3.20.2",
     "tslib": "^2.5.0",
     "typescript": "^5.0.2"

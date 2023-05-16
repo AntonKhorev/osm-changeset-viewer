@@ -1,4 +1,5 @@
 .vscode
 node_modules
 dist
+test-build
 osm-changeset-viewer.code-workspace
