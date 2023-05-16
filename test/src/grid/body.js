@@ -69,6 +69,13 @@ function assertItemData($item,timestamp,type,id,order) {
 	}
 }
 
+function assertEach(xs,...fns) {
+	assert.equal(xs.length,fns.length)
+	for (const [i,fn] of fns.entries()) {
+		fn(xs[i])
+	}
+}
+
 describe("GridBody",()=>{
 	const globalProperties=[
 		'document',
@@ -123,12 +130,14 @@ describe("GridBody",()=>{
 				},
 			},
 		},usernames,true)
-		assert.equal(gridBody.$gridBody.rows.length,2)
-		assertRowIsSeparator(gridBody.$gridBody.rows[0])
-		assertSeparatorData(gridBody.$gridBody.rows[0],2023,3)
-		assertRowIsItem(gridBody.$gridBody.rows[1])
-		assertElementClassType(gridBody.$gridBody.rows[1],'changeset')
-		assertItemData(gridBody.$gridBody.rows[1],Date.parse('2023-03'),'changeset',10001)
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertItemData($row,Date.parse('2023-03'),'changeset',10001)
+		})
 	})
 	it("adds one collapsed item",()=>{
 		const nColumns=1
@@ -156,15 +165,20 @@ describe("GridBody",()=>{
 				},
 			},
 		},usernames,false)
-		assert.equal(gridBody.$gridBody.rows.length,2)
-		assertRowIsSeparator(gridBody.$gridBody.rows[0])
-		assertSeparatorData(gridBody.$gridBody.rows[0],2023,3)
-		assertRowIsCollection(gridBody.$gridBody.rows[1])
-		assert.equal(gridBody.$gridBody.rows[1].cells.length,1)
-		assert.equal(gridBody.$gridBody.rows[1].cells[0].children.length,2)
-		assertCellChildIsIcon(gridBody.$gridBody.rows[1].cells[0].children[0])
-		assertCellChildIsItem(gridBody.$gridBody.rows[1].cells[0].children[1])
-		assertElementClassType(gridBody.$gridBody.rows[1].cells[0].children[1],'changeset')
-		assertItemData(gridBody.$gridBody.rows[1].cells[0].children[1],Date.parse('2023-03'),'changeset',10001)
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03'),'changeset',10001)
+				})
+			})
+		})
 	})
 })
