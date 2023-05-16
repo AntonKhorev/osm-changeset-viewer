@@ -28,13 +28,24 @@ function assertRowIsItem($row) {
 	assert($row.classList.contains('item'))
 }
 
-function assertSeparatorData($row,year,month) {
-	assert.equal($row.dataset.type,'separator')
-	const timestamp=Number($row.dataset.timestamp)
+function assertSeparatorData($separator,year,month) {
+	assert.equal($separator.dataset.type,'separator')
+	const timestamp=Number($separator.dataset.timestamp)
 	assert(Number.isInteger(timestamp))
 	const date=new Date(timestamp)
 	assert.equal(date.getUTCFullYear(),year)
 	assert.equal(date.getUTCMonth()+1,month)
+}
+
+function assertItemData($item,timestamp,type,id,order) {
+	assert.equal($item.dataset.timestamp,String(timestamp))
+	assert.equal($item.dataset.type,type)
+	assert.equal($item.dataset.id,String(id))
+	if (order!=null) {
+		assert.equal($item.dataset.order,String(order))
+	} else {
+		assert.equal($item.dataset.order,undefined)
+	}
 }
 
 describe("GridBody",()=>{
@@ -95,5 +106,6 @@ describe("GridBody",()=>{
 		assertRowIsSeparator(gridBody.$gridBody.rows[0])
 		assertSeparatorData(gridBody.$gridBody.rows[0],2023,3)
 		assertRowIsItem(gridBody.$gridBody.rows[1])
+		assertItemData(gridBody.$gridBody.rows[1],Date.parse('2023-03'),'changeset',10001)
 	})
 })
