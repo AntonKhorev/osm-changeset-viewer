@@ -231,9 +231,11 @@ export default class GridBody {
 				// $placeholder.removeAttribute('class')
 				$placeholder.remove()
 			}
+			if (!doesCollectionRowHaveItems($itemRow)) {
+				$itemRow.remove()
+			}
 			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
 			// TODO expand combined
-			// TODO remove empty collection row
 			$disclosureButton.disabled=false
 			setItemDisclosureButtonState($disclosureButton,true)
 		}
@@ -613,4 +615,8 @@ function insertPlaceholderBeforeFirstCellItem($placeholder: HTMLElement, $cell: 
 		$child=$child.nextElementSibling
 	}
 	$cell.append($placeholder)
+}
+
+function doesCollectionRowHaveItems($row: HTMLTableRowElement): boolean {
+	return [...$row.cells].some($cell=>$cell.querySelector(':scope > .item'))
 }
