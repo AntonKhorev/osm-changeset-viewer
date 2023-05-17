@@ -298,15 +298,54 @@ describe("GridBody",()=>{
 			})
 		})
 	}
+	it(`combines interleaving opened+closed changesets when asked to hide closed`,()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-04'),usernames,true)
+		gridBody.addItem(makeChangesetCloseBatchItem(1,'2023-03-01','2023-03-03'),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(2,'2023-03-02','2023-03-04'),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-03'),usernames,true)
+		gridBody.updateTableAccordingToSettings(false,false)
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['closed','hidden'])
+			assertItemData($row,Date.parse('2023-03-04'),'changesetClose',10002)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['closed','hidden'])
+			assertItemData($row,Date.parse('2023-03-03'),'changesetClose',10001)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-02'),'changeset',10002)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+		})
+	})
 })
 
+function assertElementClass($e,t,isExpectedClass,name) {
+	if (isExpectedClass) {
+		assert($e.classList.contains(t),`${name} doesn't contain expected class ${t}`)
+	} else {
+		assert(!$e.classList.contains(t),`${name} contains unexpected class ${t}`)
+	}
+}
 function assertElementClassType($e,classType) {
 	const allClassTypes=[
 		'changeset','note','comment'
 	]
 	for (const t of allClassTypes) {
-		const shouldntHaveClassType=t!=classType
-		assert(shouldntHaveClassType^($e.classList.contains(t)))
+		const isExpectedClass=t==classType
+		assertElementClass($e,t,isExpectedClass,`Element`)
 	}
 }
 function assertChangesetClassTypes($e,classTypes) {
@@ -314,8 +353,8 @@ function assertChangesetClassTypes($e,classTypes) {
 		'combined','closed','hidden'
 	]
 	for (const t of allClassTypes) {
-		const shouldntHaveClassType=!classTypes.includes(t)
-		assert(shouldntHaveClassType^($e.classList.contains(t)))
+		const isExpectedClass=classTypes.includes(t)
+		assertElementClass($e,t,isExpectedClass,`Changeset`)
 	}
 }
 
