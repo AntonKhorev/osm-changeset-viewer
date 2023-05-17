@@ -379,6 +379,36 @@ describe("GridBody",()=>{
 			})
 		)
 	})
+	for (const [positionName,id1,id2] of [
+		['top',10003,10001],
+		['bottom',10001,10003],
+	]) it(`collapses hidden closed changesets between collections when collapsing ${positionName} item first`,()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetBatchItem(3),usernames,true)
+		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
+		gridBody.updateTableAccordingToSettings(false,false)
+		gridBody.collapseItem(['changeset',id1])
+		gridBody.collapseItem(['changeset',id2])
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-03'),'changeset',10003)
+			},$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-02'),'changesetClose',10002)
+			},$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+			})
+		)
+	})
 })
 
 function assertElementClass($e,t,isExpectedClass,name) {
