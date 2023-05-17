@@ -445,6 +445,10 @@ function assertRowIsItem($row) {
 	assert(!$row.classList.contains('separator'))
 	assert(!$row.classList.contains('collection'))
 	assert($row.classList.contains('item'))
+	const $button=$row.querySelector('button.disclosure')
+	assert($button,`No expected disclosure button`)
+	const expandedState=$button.getAttribute('aria-expanded')
+	assert.equal(expandedState,'true',`Expected 'true' as disclosure button expanded state, got '${expandedState}'`)
 }
 
 function assertCellChildIsIcon($e) {
@@ -454,6 +458,10 @@ function assertCellChildIsIcon($e) {
 function assertCellChildIsItem($e) {
 	assert(!$e.classList.contains('icon'))
 	assert($e.classList.contains('item'))
+	const $button=$e.querySelector('button.disclosure')
+	assert($button,`No expected disclosure button`)
+	const expandedState=$button.getAttribute('aria-expanded')
+	assert.equal(expandedState,'false',`Expected 'false' as disclosure button expanded state, got '${expandedState}'`)
 }
 
 function assertSeparatorData($separator,year,month) {

@@ -185,8 +185,6 @@ export default class GridBody {
 		)
 		const $row=this.$gridBody.querySelector(itemSelector) // TODO select all
 		if (!($row instanceof HTMLTableRowElement)) return
-		const $disclosureButton=getItemDisclosureButton($row) // TODO get all copies of item buttons
-		if (!$disclosureButton) return
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
 			const sequenceInfo=readItemSequenceInfo($row)
 			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
@@ -196,6 +194,12 @@ export default class GridBody {
 			const $prevRow=$row.previousElementSibling
 			const $nextRow=$row.nextElementSibling
 			$row.remove()
+			for (const $placeholder of $placeholders) {
+				const $disclosureButton=getItemDisclosureButton($placeholder)
+				if ($disclosureButton) {
+					setItemDisclosureButtonState($disclosureButton,false)
+				}
+			}
 			if (
 				$prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
 				$nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')
@@ -238,7 +242,6 @@ export default class GridBody {
 			}
 		}
 		collapseRowItems($row)
-		setItemDisclosureButtonState($disclosureButton,false)
 	}
 	async expandItem([type,id,order]: ItemDescriptor): Promise<void> {
 		const itemSelector=`tr.collection .item[data-type="${type}"][data-id="${id}"]`+(order
