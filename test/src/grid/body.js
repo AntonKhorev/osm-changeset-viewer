@@ -362,6 +362,34 @@ describe("GridBody",()=>{
 			})
 		})
 	})
+	it(`doesn't collapse directly preceding other's closed changeset along with combined open changeset`,()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
+		gridBody.updateTableAccordingToSettings(false,false)
+		gridBody.collapseItem(['changeset',10001])
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['closed','hidden'])
+			assertItemData($row,Date.parse('2023-03-02'),'changesetClose',10002)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertChangesetClassTypes($child,['combined'])
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+				})
+			})
+		})
+	})
 })
 
 function assertElementClass($e,t,isExpectedClass,name) {

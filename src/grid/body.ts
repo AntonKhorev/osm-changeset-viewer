@@ -208,7 +208,9 @@ export default class GridBody {
 			const $previousItemRow=$itemRow.previousElementSibling
 			if (
 				$previousItemRow instanceof HTMLTableRowElement &&
-				$previousItemRow.classList.contains('item')
+				$previousItemRow.classList.contains('item') &&
+				$previousItemRow.classList.contains('hidden') &&
+				isChangesetOpenedClosedPair($itemRow,$previousItemRow)
 			) {
 				collapseRowItems($previousItemRow)
 			}
@@ -600,6 +602,11 @@ function getItemDescriptor($item: HTMLElement): ItemDescriptor|undefined {
 	} else {
 		return [type,id]
 	}
+}
+
+function isChangesetOpenedClosedPair($openedItem: HTMLElement, $closedItem: HTMLElement): boolean {
+	if ($openedItem.dataset.type!='changeset' || $closedItem.dataset.type!='changesetClose') return false
+	return $openedItem.dataset.id==$closedItem.dataset.id
 }
 
 function isSameMonthTimestamps(t1: number, t2: number): boolean {
