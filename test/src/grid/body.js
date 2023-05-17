@@ -110,18 +110,13 @@ describe("GridBody",()=>{
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
-				})
-			})
-		})
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+			}
+		))
 	})
 	it("adds 2 collapsed items",()=>{
 		const gridBody=makeSingleColumnGrid()
@@ -131,22 +126,17 @@ describe("GridBody",()=>{
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
-				})
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+			},$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
 			})
-		})
+		)
 	})
 	it("adds 2 collapsed items in reverse order",()=>{
 		const gridBody=makeSingleColumnGrid()
@@ -156,22 +146,17 @@ describe("GridBody",()=>{
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
-				})
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+			},$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
 			})
-		})
+		)
 	})
 	it("expands 1 item from collection of 1 item",async()=>{
 		const gridBody=makeSingleColumnGrid({
@@ -204,18 +189,13 @@ describe("GridBody",()=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
 			assertItemData($row,Date.parse('2023-03-02'),'changeset',10002)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
-				})
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
 			})
-		})
+		)
 	})
 	it("expands 2nd item from collection of 2 items",async()=>{
 		const gridBody=makeSingleColumnGrid({
@@ -228,18 +208,13 @@ describe("GridBody",()=>{
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
-				})
-			})
-		},$row=>{
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+			}
+		),$row=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
 			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
@@ -255,26 +230,21 @@ describe("GridBody",()=>{
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-03'),'changeset',10003)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
-				})
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-03'),'changeset',10003)
+			},$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+			},$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
 			})
-		})
+		)
 	})
 	for (const [withClosedChangesetsName,withClosedChangesetsValue] of [
 		[`hide`,false],
@@ -343,24 +313,19 @@ describe("GridBody",()=>{
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertChangesetClassTypes($child,['closed','hidden'])
-					assertItemData($child,Date.parse('2023-03-01'),'changesetClose',10001)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertChangesetClassTypes($child,['combined'])
-					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
-				})
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertChangesetClassTypes($child,['closed','hidden'])
+				assertItemData($child,Date.parse('2023-03-01'),'changesetClose',10001)
+			},$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertChangesetClassTypes($child,['combined'])
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
 			})
-		})
+		)
 	})
 	it(`doesn't collapse directly preceding other's closed changeset along with combined open changeset`,()=>{
 		const gridBody=makeSingleColumnGrid()
@@ -376,19 +341,14 @@ describe("GridBody",()=>{
 			assertElementClassType($row,'changeset')
 			assertChangesetClassTypes($row,['closed','hidden'])
 			assertItemData($row,Date.parse('2023-03-02'),'changesetClose',10002)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertChangesetClassTypes($child,['combined'])
-					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
-				})
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertChangesetClassTypes($child,['combined'])
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
 			})
-		})
+		)
 	})
 	it("doesn't collapse visible closed changesets between collections",()=>{
 		const gridBody=makeSingleColumnGrid()
@@ -401,33 +361,23 @@ describe("GridBody",()=>{
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-03'),'changeset',10003)
-				})
-			})
-		},$row=>{
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-03'),'changeset',10003)
+			}
+		),$row=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
 			assertItemData($row,Date.parse('2023-03-02'),'changesetClose',10002)
-		},$row=>{
-			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
-				assertEach($cell.children,$child=>{
-					assertCellChildIsIcon($child)
-				},$child=>{
-					assertCellChildIsItem($child)
-					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
-				})
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertCellChildIsItem($child)
+				assertElementClassType($child,'changeset')
+				assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
 			})
-		})
+		)
 	})
 })
 
@@ -455,6 +405,15 @@ function assertChangesetClassTypes($e,classTypes) {
 		const isExpectedClass=classTypes.includes(t)
 		assertElementClass($e,t,isExpectedClass,`Changeset`)
 	}
+}
+
+function assertRowIsCollectionWithEach($row,...fns) {
+	assertRowIsCollection($row)
+	assertEach($row.cells,$cell=>{
+		assertEach($cell.children,$child=>{
+			assertCellChildIsIcon($child)
+		},...fns)
+	})
 }
 
 function assertRowIsSeparator($row) {
