@@ -371,7 +371,7 @@ export default class GridBody {
 				if (position.type=='insideRow') {
 					const $precedingItem=position.$items[iColumn]
 					if ($precedingItem==null) {
-						$cell.prepend($placeholder)
+						insertPlaceholderBeforeFirstCellItem($placeholder,$cell)
 					} else {
 						$precedingItem.after($placeholder)
 					}
@@ -601,4 +601,16 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 function setCellHue($cell: HTMLTableCellElement, hue: number|null): void {
 	if (hue==null) return
 	$cell.style.setProperty('--hue',String(hue))
+}
+
+function insertPlaceholderBeforeFirstCellItem($placeholder: HTMLElement, $cell: HTMLTableCellElement): void {
+	let $child=$cell.firstElementChild
+	while ($child) {
+		if ($child.classList.contains('item')) {
+			$child.before($placeholder)
+			return
+		}
+		$child=$child.nextElementSibling
+	}
+	$cell.append($placeholder)
 }
