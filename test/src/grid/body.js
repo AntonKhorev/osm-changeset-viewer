@@ -393,30 +393,28 @@ describe("GridBody",()=>{
 	})
 })
 
-function assertElementClass($e,t,isExpectedClass,name) {
+function assertElementClass($e,cls,isExpectedClass,name) {
 	if (isExpectedClass) {
-		assert($e.classList.contains(t),`${name} doesn't contain expected class ${t}`)
+		assert($e.classList.contains(cls),`${name} doesn't contain expected class ${cls}`)
 	} else {
-		assert(!$e.classList.contains(t),`${name} contains unexpected class ${t}`)
+		assert(!$e.classList.contains(cls),`${name} contains unexpected class ${cls}`)
+	}
+}
+function assertElementClasses($e,allClasses,expectedClasses,name) {
+	for (const cls of allClasses) {
+		const isExpectedClass=expectedClasses.includes(cls)
+		assertElementClass($e,cls,isExpectedClass,name)
 	}
 }
 function assertElementClassType($e,classType) {
-	const allClassTypes=[
-		'changeset','note','comment'
-	]
-	for (const t of allClassTypes) {
-		const isExpectedClass=t==classType
-		assertElementClass($e,t,isExpectedClass,`Element`)
-	}
+	assertElementClasses($e,[
+		'changeset','note','comment','user'
+	],[classType],`Element`)
 }
 function assertChangesetClassTypes($e,classTypes) {
-	const allClassTypes=[
+	assertElementClasses($e,[
 		'combined','closed','hidden'
-	]
-	for (const t of allClassTypes) {
-		const isExpectedClass=classTypes.includes(t)
-		assertElementClass($e,t,isExpectedClass,`Changeset`)
-	}
+	],classTypes,`Changeset`)
 }
 
 function assertRowIsCollectionWithEach($row,...fns) {
