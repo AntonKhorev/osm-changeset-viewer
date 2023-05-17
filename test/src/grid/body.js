@@ -16,15 +16,13 @@ const usernames=new Map([
 	[102, `User Two`],
 ])
 
-const changesetBatchItem={
-	iColumns: [0],
-	type: 'changeset',
-	item: {
-		id: 10001,
+function makeChangesetItem(i) {
+	return {
+		id: 10000+i,
 		uid: 101,
-		createdAt: new Date('2023-03'),
+		createdAt: new Date(`2023-03-0${i}`),
 		tags: {},
-		closedAt: new Date('2023-03'),
+		closedAt: new Date(`2023-03-0${i}`),
 		comments: {count:0},
 		changes: {count:1},
 		bbox: {
@@ -33,7 +31,24 @@ const changesetBatchItem={
 			maxLat: 60.1,
 			maxLon: 30.1,
 		},
-	},
+	}
+}
+function makeChangesetBatchItem(i) {
+	return {
+		iColumns: [0],
+		type: 'changeset',
+		item: makeChangesetItem(i),
+	}
+}
+
+function makeSingleColumnGrid(itemReader) {
+	const nColumns=1
+	const getColumnHues=()=>new Array(nColumns).fill(0)
+	const gridBody=new GridBody(
+		server,itemReader,getColumnHues
+	)
+	gridBody.setColumns(nColumns)
+	return gridBody
 }
 
 describe("GridBody",()=>{
@@ -56,22 +71,12 @@ describe("GridBody",()=>{
 		}
 	})
 	it("creates empty table body",()=>{
-		const nColumns=1
-		const getColumnHues=()=>new Array(nColumns).fill(0)
-		const gridBody=new GridBody(
-			server,null,getColumnHues
-		)
-		gridBody.setColumns(nColumns)
+		const gridBody=makeSingleColumnGrid()
 		assert.equal(gridBody.$gridBody.rows.length,0)
 	})
-	it("adds one expanded item",()=>{
-		const nColumns=1
-		const getColumnHues=()=>new Array(nColumns).fill(0)
-		const gridBody=new GridBody(
-			server,null,getColumnHues
-		)
-		gridBody.setColumns(nColumns)
-		gridBody.addItem(changesetBatchItem,usernames,true)
+	it("adds 1 expanded item",()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
 		gridBody.updateTableAccordingToSettings(false,false)
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -79,17 +84,12 @@ describe("GridBody",()=>{
 		},$row=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
-			assertItemData($row,Date.parse('2023-03'),'changeset',10001)
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
 		})
 	})
-	it("adds one collapsed item",()=>{
-		const nColumns=1
-		const getColumnHues=()=>new Array(nColumns).fill(0)
-		const gridBody=new GridBody(
-			server,null,getColumnHues
-		)
-		gridBody.setColumns(nColumns)
-		gridBody.addItem(changesetBatchItem,usernames,false)
+	it("adds 1 collapsed item",()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
 		gridBody.updateTableAccordingToSettings(false,false)
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -102,9 +102,131 @@ describe("GridBody",()=>{
 				},$child=>{
 					assertCellChildIsItem($child)
 					assertElementClassType($child,'changeset')
-					assertItemData($child,Date.parse('2023-03'),'changeset',10001)
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
 				})
 			})
+		})
+	})
+	it("adds 2 collapsed items",()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+				})
+			})
+		})
+	})
+	it("adds 2 collapsed items in reverse order",()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+				})
+			})
+		})
+	})
+	it("expands 1 item from collection of 1 item",async()=>{
+		const gridBody=makeSingleColumnGrid({
+			getChangeset: async()=>makeChangesetItem(1)
+		})
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem(['changeset',10001])
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+		})
+	})
+	it("expands 1st item from collection of 2 items",async()=>{
+		const gridBody=makeSingleColumnGrid({
+			getChangeset: async()=>makeChangesetItem(2)
+		})
+		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem(['changeset',10002])
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertItemData($row,Date.parse('2023-03-02'),'changeset',10002)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+				})
+			})
+		})
+	})
+	it("expands 2nd item from collection of 2 items",async()=>{
+		const gridBody=makeSingleColumnGrid({
+			getChangeset: async()=>makeChangesetItem(1)
+		})
+		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem(['changeset',10001])
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+				})
+			})
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
 		})
 	})
 })
@@ -163,7 +285,7 @@ function assertItemData($item,timestamp,type,id,order) {
 }
 
 function assertEach(xs,...fns) {
-	assert.equal(xs.length,fns.length)
+	assert.equal(xs.length,fns.length,`Expected sequence to have ${fns.length} element(s), got ${xs.length} instead`)
 	for (const [i,fn] of fns.entries()) {
 		fn(xs[i])
 	}
