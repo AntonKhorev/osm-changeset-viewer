@@ -193,7 +193,15 @@ export default class GridBody {
 			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
 			const $placeholders=itemCopies.map(([$item])=>$item)
 			const classNames=[...$row.classList]
+			const $prevRow=$row.previousElementSibling
+			const $nextRow=$row.nextElementSibling
 			$row.remove()
+			if (
+				$prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
+				$nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')
+			) {
+				mergeCollectionRows($prevRow,$nextRow)
+			}
 			this.insertItem(iColumns,sequenceInfo,{isExpanded:false},$placeholders,classNames)
 		}
 		if ($itemRow.classList.contains('combined')) {
@@ -619,4 +627,28 @@ function insertPlaceholderBeforeFirstCellItem($placeholder: HTMLElement, $cell: 
 
 function doesCollectionRowHaveItems($row: HTMLTableRowElement): boolean {
 	return [...$row.cells].some($cell=>$cell.querySelector(':scope > .item'))
+}
+
+function mergeCollectionRows($row1: HTMLTableRowElement, $row2: HTMLTableRowElement): void {
+	const $cells1=[...$row1.cells]
+	const $cells2=[...$row2.cells]
+	for (let i=0;i<$cells1.length&&i<$cells2.length;i++) {
+		const $cell1=$cells1[i]
+		const $cell2=$cells2[i]
+		if (!$cell2) continue
+		if (!$cell1) {
+			$row1.append($cell2)
+			continue
+		}
+		let copying=false
+		for (const $child of [...$cell2.children]) {
+			if ($child.classList.contains('item')) {
+				copying=true
+			}
+			if (copying) {
+				$cell1.append($child)
+			}
+		}
+	}
+	$row2.remove()
 }

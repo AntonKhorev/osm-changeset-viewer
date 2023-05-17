@@ -57,6 +57,7 @@ describe("GridBody",()=>{
 		'HTMLElement',
 		'HTMLButtonElement',
 		'HTMLInputElement',
+		'HTMLTableRowElement',
 	]
 	beforeEach(function(){
 		const jsdom=new JSDOM()
@@ -227,6 +228,37 @@ describe("GridBody",()=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
 			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+		})
+	})
+	it("merges two collections when collapsing item between them",()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetBatchItem(3),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(2),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		gridBody.collapseItem(['changeset',10002])
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-03'),'changeset',10003)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+				})
+			})
 		})
 	})
 })
