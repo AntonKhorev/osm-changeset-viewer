@@ -40,6 +40,13 @@ function makeChangesetBatchItem(i) {
 		item: makeChangesetItem(i),
 	}
 }
+function makeChangesetCloseBatchItem(i) {
+	return {
+		iColumns: [0],
+		type: 'changesetClose',
+		item: makeChangesetItem(i),
+	}
+}
 
 function makeSingleColumnGrid(itemReader) {
 	const nColumns=1
@@ -261,14 +268,44 @@ describe("GridBody",()=>{
 			})
 		})
 	})
+	it("combines opened+closed changesets",()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
+		gridBody.updateTableAccordingToSettings(false,false)
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['closed','hidden'])
+			assertItemData($row,Date.parse('2023-03-01'),'changesetClose',10001)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+		})
+	})
 })
 
 function assertElementClassType($e,classType) {
-	const classTypes=[
+	const allClassTypes=[
 		'changeset','note','comment'
 	]
-	for (const t of classTypes) {
-		assert((t!=classType)^($e.classList.contains(t)))
+	for (const t of allClassTypes) {
+		const shouldntHaveClassType=t!=classType
+		assert(shouldntHaveClassType^($e.classList.contains(t)))
+	}
+}
+function assertChangesetClassTypes($e,classTypes) {
+	const allClassTypes=[
+		'combined','closed','hidden'
+	]
+	for (const t of allClassTypes) {
+		const shouldntHaveClassType=!classTypes.includes(t)
+		assert(shouldntHaveClassType^($e.classList.contains(t)))
 	}
 }
 
