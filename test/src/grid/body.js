@@ -391,6 +391,41 @@ describe("GridBody",()=>{
 			})
 		)
 	})
+	it("expands user creation item",async()=>{
+		const user={
+			id: 101,
+			nameUpdatedAt: new Date('2023-05-01'),
+			name: `User One`,
+			withDetails: true,
+			detailsUpdatedAt: new Date('2023-05-01'),
+			visible: true,
+			createdAt: new Date('2023-01-01'),
+			roles: [],
+			changesets: {count:12},
+			traces: {count:0},
+			blocks: {
+				received: {count:0,active:0},
+			},
+		}
+		const gridBody=makeSingleColumnGrid({
+			getUser: async()=>user
+		})
+		gridBody.addItem({
+			iColumns: [0],
+			type: 'user',
+			item: user,
+		},usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem(['user',101])
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,1)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'user')
+			assertItemData($row,Date.parse('2023-01-01'),'user',101)
+		})
+	})
 })
 
 function assertElementClass($e,cls,isExpectedClass,name) {

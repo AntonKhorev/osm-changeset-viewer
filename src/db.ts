@@ -176,6 +176,7 @@ class ScanBoundary {
 }
 
 export interface SingleItemDBReader {
+	getUser(id: number): Promise<UserDbRecord|undefined>
 	getChangeset(id: number): Promise<ChangesetDbRecord|undefined>
 	getNote(id: number): Promise<NoteDbRecord|undefined>
 	getChangesetComment(changesetId: number, order: number): Promise<{
@@ -345,6 +346,11 @@ export class ChangesetViewerDBReader {
 			})
 		}
 		return {
+			getUser: async(id:number)=>{
+				const info=await this.getUserInfoById(id)
+				if (!info) return
+				return info.user
+			},
 			getChangeset: makeItemReader('changesets','getChangeset'),
 			getNote: makeItemReader('notes','getNote'),
 			getChangesetComment: makeItemCommentReader('changesets','getChangesetComment'),
