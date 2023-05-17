@@ -183,7 +183,7 @@ export default class GridBody {
 			? `[data-order="${order}"]`
 			: `:not([data-order])`
 		)
-		const $row=this.$gridBody.querySelector(itemSelector) // TODO select all
+		const $row=this.$gridBody.querySelector(itemSelector) // TODO select all matching rows? but there can't be more than one
 		if (!($row instanceof HTMLTableRowElement)) return
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
 			const sequenceInfo=readItemSequenceInfo($row)
