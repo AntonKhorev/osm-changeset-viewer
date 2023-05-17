@@ -276,35 +276,14 @@ describe("GridBody",()=>{
 			})
 		})
 	})
-	for (const [actionName,withClosedChangesetsValue] of [[`hide`,false],[`show`,true]]) {
-		it(`combines consecutive opened+closed changesets when asked to ${actionName} closed`,()=>{
-			const gridBody=makeSingleColumnGrid()
-			gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
-			gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
-			gridBody.updateTableAccordingToSettings(false,withClosedChangesetsValue)
-			assertEach(gridBody.$gridBody.rows,$row=>{
-				assertRowIsSeparator($row)
-				assertSeparatorData($row,2023,3)
-			},$row=>{
-				assertRowIsItem($row)
-				assertElementClassType($row,'changeset')
-				assertChangesetClassTypes($row,['closed','hidden'])
-				assertItemData($row,Date.parse('2023-03-01'),'changesetClose',10001)
-			},$row=>{
-				assertRowIsItem($row)
-				assertElementClassType($row,'changeset')
-				assertChangesetClassTypes($row,['combined'])
-				assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
-			})
-		})
-	}
-	it(`combines interleaving opened+closed changesets when asked to hide closed`,()=>{
+	for (const [withClosedChangesetsName,withClosedChangesetsValue] of [
+		[`hide`,false],
+		[`show`,true]
+	]) it(`combines consecutive opened+closed changesets when asked to ${withClosedChangesetsName} closed`,()=>{
 		const gridBody=makeSingleColumnGrid()
-		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-04'),usernames,true)
-		gridBody.addItem(makeChangesetCloseBatchItem(1,'2023-03-01','2023-03-03'),usernames,true)
-		gridBody.addItem(makeChangesetBatchItem(2,'2023-03-02','2023-03-04'),usernames,true)
-		gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-03'),usernames,true)
-		gridBody.updateTableAccordingToSettings(false,false)
+		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
+		gridBody.updateTableAccordingToSettings(false,withClosedChangesetsValue)
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -312,21 +291,46 @@ describe("GridBody",()=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
 			assertChangesetClassTypes($row,['closed','hidden'])
+			assertItemData($row,Date.parse('2023-03-01'),'changesetClose',10001)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+		})
+	})
+	for (const [withClosedChangesetsName,withClosedChangesetsValue,combineName,openClasses,closedClasses] of [
+		[`hide`,false,`combines`,['combined'],['closed','hidden']],
+		[`show`,true,`doesn't combine`,[],['closed']]
+	]) it(`${combineName} interleaving opened+closed changesets when asked to ${withClosedChangesetsName} closed`,()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-04'),usernames,true)
+		gridBody.addItem(makeChangesetCloseBatchItem(1,'2023-03-01','2023-03-03'),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(2,'2023-03-02','2023-03-04'),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-03'),usernames,true)
+		gridBody.updateTableAccordingToSettings(false,withClosedChangesetsValue)
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,closedClasses)
 			assertItemData($row,Date.parse('2023-03-04'),'changesetClose',10002)
 		},$row=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
-			assertChangesetClassTypes($row,['closed','hidden'])
+			assertChangesetClassTypes($row,closedClasses)
 			assertItemData($row,Date.parse('2023-03-03'),'changesetClose',10001)
 		},$row=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
-			assertChangesetClassTypes($row,['combined'])
+			assertChangesetClassTypes($row,openClasses)
 			assertItemData($row,Date.parse('2023-03-02'),'changeset',10002)
 		},$row=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
-			assertChangesetClassTypes($row,['combined'])
+			assertChangesetClassTypes($row,openClasses)
 			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
 		})
 	})
