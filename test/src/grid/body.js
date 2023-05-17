@@ -268,26 +268,28 @@ describe("GridBody",()=>{
 			})
 		})
 	})
-	it("combines opened+closed changesets",()=>{
-		const gridBody=makeSingleColumnGrid()
-		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
-		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
-		gridBody.updateTableAccordingToSettings(false,false)
-		assertEach(gridBody.$gridBody.rows,$row=>{
-			assertRowIsSeparator($row)
-			assertSeparatorData($row,2023,3)
-		},$row=>{
-			assertRowIsItem($row)
-			assertElementClassType($row,'changeset')
-			assertChangesetClassTypes($row,['closed','hidden'])
-			assertItemData($row,Date.parse('2023-03-01'),'changesetClose',10001)
-		},$row=>{
-			assertRowIsItem($row)
-			assertElementClassType($row,'changeset')
-			assertChangesetClassTypes($row,['combined'])
-			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+	for (const [actionName,withClosedChangesetsValue] of [[`hide`,false],[`show`,true]]) {
+		it(`combines consecutive opened+closed changesets when asked to ${actionName} closed`,()=>{
+			const gridBody=makeSingleColumnGrid()
+			gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
+			gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
+			gridBody.updateTableAccordingToSettings(false,withClosedChangesetsValue)
+			assertEach(gridBody.$gridBody.rows,$row=>{
+				assertRowIsSeparator($row)
+				assertSeparatorData($row,2023,3)
+			},$row=>{
+				assertRowIsItem($row)
+				assertElementClassType($row,'changeset')
+				assertChangesetClassTypes($row,['closed','hidden'])
+				assertItemData($row,Date.parse('2023-03-01'),'changesetClose',10001)
+			},$row=>{
+				assertRowIsItem($row)
+				assertElementClassType($row,'changeset')
+				assertChangesetClassTypes($row,['combined'])
+				assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+			})
 		})
-	})
+	}
 })
 
 function assertElementClassType($e,classType) {
