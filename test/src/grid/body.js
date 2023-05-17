@@ -395,9 +395,9 @@ describe("GridBody",()=>{
 
 function assertElementClass($e,cls,isExpectedClass,name) {
 	if (isExpectedClass) {
-		assert($e.classList.contains(cls),`${name} doesn't contain expected class ${cls}`)
+		assert($e.classList.contains(cls),`${name} doesn't contain expected class '${cls}'`)
 	} else {
-		assert(!$e.classList.contains(cls),`${name} contains unexpected class ${cls}`)
+		assert(!$e.classList.contains(cls),`${name} contains unexpected class '${cls}'`)
 	}
 }
 function assertElementClasses($e,allClasses,expectedClasses,name) {
@@ -430,19 +430,19 @@ function assertRowIsCollectionWithEach($row,...fns) {
 }
 
 function assertRowIsSeparator($row) {
-	assert($row.classList.contains('separator'))
-	assert(!$row.classList.contains('collection'))
-	assert(!$row.classList.contains('item'))
+	assertElementClasses($row,[
+		'separator','collection','item'
+	],['separator'],`Row`)
 }
 function assertRowIsCollection($row) {
-	assert(!$row.classList.contains('separator'))
-	assert($row.classList.contains('collection'))
-	assert(!$row.classList.contains('item'))
+	assertElementClasses($row,[
+		'separator','collection','item'
+	],['collection'],`Row`)
 }
 function assertRowIsItem($row) {
-	assert(!$row.classList.contains('separator'))
-	assert(!$row.classList.contains('collection'))
-	assert($row.classList.contains('item'))
+	assertElementClasses($row,[
+		'separator','collection','item'
+	],['item'],`Row`)
 	const $button=$row.querySelector('button.disclosure')
 	assert($button,`No expected disclosure button`)
 	const expandedState=$button.getAttribute('aria-expanded')
