@@ -334,6 +334,34 @@ describe("GridBody",()=>{
 			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
 		})
 	})
+	it(`collapses directly preceding own hidden closed changeset along with combined open changeset`,()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
+		gridBody.updateTableAccordingToSettings(false,false)
+		gridBody.collapseItem(['changeset',10001])
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertChangesetClassTypes($child,['closed','hidden'])
+					assertItemData($child,Date.parse('2023-03-01'),'changesetClose',10001)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertElementClassType($child,'changeset')
+					assertChangesetClassTypes($child,['combined'])
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+				})
+			})
+		})
+	})
 })
 
 function assertElementClass($e,t,isExpectedClass,name) {
