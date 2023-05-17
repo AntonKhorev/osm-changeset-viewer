@@ -16,13 +16,21 @@ const usernames=new Map([
 	[102, `User Two`],
 ])
 
-function makeChangesetItem(i) {
+function makeChangesetItem(i,createdAtString,closedAtString) {
+	const createdAt=new Date(createdAtString
+		? new Date(createdAtString)
+		: `2023-03-0${i}`
+	)
+	const closedAt=new Date(closedAtString
+		? new Date(closedAtString)
+		: `2023-03-0${i}`
+	)
 	return {
 		id: 10000+i,
 		uid: 101,
-		createdAt: new Date(`2023-03-0${i}`),
+		createdAt,
 		tags: {},
-		closedAt: new Date(`2023-03-0${i}`),
+		closedAt,
 		comments: {count:0},
 		changes: {count:1},
 		bbox: {
@@ -33,18 +41,18 @@ function makeChangesetItem(i) {
 		},
 	}
 }
-function makeChangesetBatchItem(i) {
+function makeChangesetBatchItem(i,createdAtString,closedAtString) {
 	return {
 		iColumns: [0],
 		type: 'changeset',
-		item: makeChangesetItem(i),
+		item: makeChangesetItem(i,createdAtString,closedAtString),
 	}
 }
-function makeChangesetCloseBatchItem(i) {
+function makeChangesetCloseBatchItem(i,createdAtString,closedAtString) {
 	return {
 		iColumns: [0],
 		type: 'changesetClose',
-		item: makeChangesetItem(i),
+		item: makeChangesetItem(i,createdAtString,closedAtString),
 	}
 }
 
