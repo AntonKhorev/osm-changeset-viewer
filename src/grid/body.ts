@@ -37,7 +37,7 @@ export default class GridBody {
 	onItemSelect: ()=>void = ()=>{}
 	private readonly wrappedItemSelectListener: ()=>void
 	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
-	private $timelineCutoffRows: (HTMLTableRowElement|null)[] = []
+	private hasColumnReachedTimelineEnd: boolean[] = []
 	constructor(
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader,
@@ -47,10 +47,10 @@ export default class GridBody {
 		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosureWithButton(ev.currentTarget)
 	}
 	get nColumns(): number {
-		return this.$timelineCutoffRows.length
+		return this.hasColumnReachedTimelineEnd.length
 	}
 	setColumns(nColumns: number): void {
-		this.$timelineCutoffRows=new Array(nColumns).fill(null)
+		this.hasColumnReachedTimelineEnd=new Array<boolean>(nColumns).fill(false)
 		this.$gridBody.replaceChildren()
 	}
 	addItem(
@@ -132,7 +132,7 @@ export default class GridBody {
 		}
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
-		moveInArray(this.$timelineCutoffRows,iShiftFrom,iShiftTo)
+		moveInArray(this.hasColumnReachedTimelineEnd,iShiftFrom,iShiftTo)
 		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('item')) continue
 			const $cells=[...$row.cells]
@@ -144,8 +144,8 @@ export default class GridBody {
 		hasChecked: boolean[],
 		hasUnchecked: boolean[]
 	] {
-		const hasChecked=this.$timelineCutoffRows.map(()=>false)
-		const hasUnchecked=this.$timelineCutoffRows.map(()=>false)
+		const hasChecked=this.hasColumnReachedTimelineEnd.map(()=>false)
+		const hasUnchecked=this.hasColumnReachedTimelineEnd.map(()=>false)
 		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('collection') && !$row.classList.contains('changeset')) continue
 			for (const [iColumn,$cell] of [...$row.cells].entries()) {
@@ -353,9 +353,9 @@ export default class GridBody {
 		$previousPlaceholders: HTMLElement[],
 		classNames: string[]
 	): HTMLElement[] {
-		const cellTimelineRelations:CellTimelineRelation[]=this.$timelineCutoffRows.map($timelineCutoffRow=>({
-			withTimelineAbove: $timelineCutoffRow==null,
-			withTimelineBelow: $timelineCutoffRow==null,
+		const cellTimelineRelations:CellTimelineRelation[]=this.hasColumnReachedTimelineEnd.map(reached=>({
+			withTimelineAbove: !reached,
+			withTimelineBelow: !reached,
 		}))
 		let position=this.getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo)
 		let $row:HTMLTableRowElement
@@ -370,7 +370,7 @@ export default class GridBody {
 		if (sequenceInfo.type=='user') {
 			const iColumnSet=new Set(iColumns)
 			for (const iColumn of iColumns) {
-				this.$timelineCutoffRows[iColumn]=$row
+				this.hasColumnReachedTimelineEnd[iColumn]=true
 				cellTimelineRelations[iColumn].withTimelineBelow=false
 			}
 			for (let $followingRow=$row.nextElementSibling;$followingRow;$followingRow=$followingRow.nextElementSibling) {
