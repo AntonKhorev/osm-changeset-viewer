@@ -11,6 +11,23 @@ const server={
 	}
 }
 
+const comment0={
+	itemId: 10001,
+	order: 0,
+	itemUid: 101,
+	uid: 102,
+	createdAt: new Date('2023-05-10'),
+	text: `is it right?`
+}
+const comment1={
+	itemId: 10001,
+	order: 1,
+	itemUid: 101,
+	uid: 101,
+	createdAt: new Date('2023-05-11'),
+	text: `yse it is`
+}
+
 const user1={
 	id: 101,
 	nameUpdatedAt: new Date('2023-05-01'),
@@ -26,10 +43,16 @@ const user1={
 		received: {count:0,active:0},
 	},
 }
+const user2={
+	id: 102,
+	nameUpdatedAt: new Date('2023-05-01'),
+	name: `User Two`,
+	withDetails: false
+}
 
 const usernames=new Map([
 	[101, user1.name],
-	[102, `User Two`],
+	[102, user2.name],
 ])
 
 function makeChangesetItem(i,createdAtString,closedAtString) {
@@ -443,6 +466,39 @@ describe("GridBody",()=>{
 		await gridBody[actionMethod]({type:'user',id:101})
 		const $cell=gridBody.$gridBody.rows[1].cells[0]
 		assertElementClasses($cell,['with-timeline-above','with-timeline-below'],['with-timeline-above'],`Cell`)
+	})
+	it("expands second comment",async()=>{
+		const gridBody=makeSingleColumnGrid({
+			getChangesetComment: async(_,order)=>{
+				if (order==0) return {comment:comment0,username:user2.name}
+				if (order==1) return {comment:comment1,username:user1.name}
+			}
+		})
+		gridBody.addItem({
+			iColumns: [0],
+			type: 'changesetComment',
+			item: comment1,
+		},usernames,false)
+		gridBody.addItem({
+			iColumns: [0],
+			type: 'changesetComment',
+			item: comment0,
+		},usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem({type:'changesetComment',id:10001,order:1})
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,5)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'comment')
+			assertItemData($row,Date.parse('2023-05-11'),'changesetComment',10001,1)
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertElementClassType($child,'comment')
+				assertItemData($child,Date.parse('2023-05-10'),'changesetComment',10001)
+			}
+		))
 	})
 })
 

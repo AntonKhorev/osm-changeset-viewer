@@ -1,11 +1,12 @@
 import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
-import type {ItemDescriptor, ItemSequenceInfo} from './item-info'
+import type {ItemDescriptor, ItemSequenceInfo, ElementSequenceInfo} from './info'
 import {
-	isGreaterItemSequenceInfo, getItemSequenceInfo,
-	readItemSequenceInfo, writeItemSequenceInfo, writeSeparatorSequenceInfo,
+	isGreaterElementSequenceInfo, getBatchItemSequenceInfo,
+	readElementSequenceInfo, writeElementSequenceInfo, writeSeparatorSequenceInfo,
+	readItemSequenceInfo,
 	readItemDescriptor, getItemDescriptorSelector
-} from './item-info'
+} from './info'
 import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
 	markChangesetItemAsCombined, markChangesetItemAsUncombined,
@@ -54,7 +55,7 @@ export default class GridBody {
 	): boolean {
 		const [$masterPlaceholder,classNames]=makeItemShell(batchItem,isExpanded)
 		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
-		const sequenceInfo=getItemSequenceInfo(batchItem)
+		const sequenceInfo=getBatchItemSequenceInfo(batchItem)
 		if (!sequenceInfo) return false
 		return this.insertItem(
 			batchItem.iColumns,sequenceInfo,
@@ -178,8 +179,8 @@ export default class GridBody {
 		if (!($row instanceof HTMLTableRowElement)) return
 		const collapseRowItems=($row:HTMLTableRowElement,continueTimeline=false)=>{
 			const sequenceInfo=readItemSequenceInfo($row)
-			if (!sequenceInfo || sequenceInfo.id==null) return
-			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
+			if (!sequenceInfo) return
+			const itemCopies=listItemCopies($row,sequenceInfo)
 			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
 			const $placeholders=itemCopies.map(([$item])=>$item)
 			const classNames=[...$row.classList]
@@ -249,10 +250,9 @@ export default class GridBody {
 		const $disclosureButton=getItemDisclosureButton($item) // TODO get all copies of item buttons
 		if (!$disclosureButton) return
 		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>,continueTimeline=false)=>{
-			if (sequenceInfo.id==null) return
 			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
 			if (!$itemRow) return
-			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
+			const itemCopies=listItemCopies($itemRow,sequenceInfo)
 			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
 			const $placeholders=itemCopies.map(([$item])=>$item)
 			let classNames:string[]=[]
@@ -306,7 +306,7 @@ export default class GridBody {
 	}
 	private insertItem(
 		iColumns: number[],
-		sequenceInfo: ItemSequenceInfo,
+		sequenceInfo: ElementSequenceInfo,
 		insertItemInfo: {
 			isExpanded: false
 		} | {
@@ -344,7 +344,7 @@ export default class GridBody {
 	}
 	private insertItemPlaceholders(
 		iColumns: number[],
-		sequenceInfo: ItemSequenceInfo,
+		sequenceInfo: ElementSequenceInfo,
 		isExpanded: boolean,
 		$previousPlaceholders: HTMLElement[],
 		classNames: string[]
@@ -388,7 +388,7 @@ export default class GridBody {
 		}
 		if (isExpanded) {
 			$row.classList.add(...classNames)
-			writeItemSequenceInfo($row,sequenceInfo)
+			writeElementSequenceInfo($row,sequenceInfo)
 			return iColumns.map((iColumn,iPlaceholder)=>{
 				const $placeholder=$row.cells[iColumn]
 				copyPlaceholderChildren($placeholder,iPlaceholder)
@@ -399,7 +399,7 @@ export default class GridBody {
 			const $placeholders:HTMLElement[]=[]
 			for (const [iPlaceholder,iColumn] of iColumns.entries()) {
 				const $placeholder=makeElement('span')(...classNames)()
-				writeItemSequenceInfo($placeholder,sequenceInfo)
+				writeElementSequenceInfo($placeholder,sequenceInfo)
 				copyPlaceholderChildren($placeholder,iPlaceholder)
 				const $cell=$row.cells[iColumn]
 				const cellWasEmpty=$cell.childElementCount==0
@@ -421,7 +421,7 @@ export default class GridBody {
 			return $placeholders
 		}
 	}
-	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ItemSequenceInfo): GridPosition {
+	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ElementSequenceInfo): GridPosition {
 		const insertSeparatorRow=($precedingRow?:HTMLTableRowElement)=>{
 			const date=new Date(sequenceInfo.timestamp)
 			const yearMonthString=toIsoYearMonthString(date)
@@ -451,12 +451,12 @@ export default class GridBody {
 					for (let i=$items.length-1;i>=0;i--) {
 						const $item=$items[i]
 						if (!($item instanceof HTMLElement)) continue
-						const precedingSequenceInfo=readItemSequenceInfo($item)
+						const precedingSequenceInfo=readElementSequenceInfo($item)
 						if (!precedingSequenceInfo) continue
 						if (!isSameMonthTimestamps(precedingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
 							isSameMonthRow=false
 						}
-						if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
+						if (isGreaterElementSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
 							return $item
 						}
 					}
@@ -483,9 +483,9 @@ export default class GridBody {
 					}
 				}
 			} else {
-				const precedingSequenceInfo=readItemSequenceInfo($row)
+				const precedingSequenceInfo=readElementSequenceInfo($row)
 				if (!precedingSequenceInfo) continue
-				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
+				if (isGreaterElementSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
 					if (!isSameMonthTimestamps(precedingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
 						return {
 							type: 'afterRow',
@@ -592,14 +592,14 @@ function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
 	if (!($item instanceof HTMLElement)) return
 	const descriptor=readItemDescriptor($item)
 	if (!descriptor) return
-	for (const [$itemCopy] of listItemCopies($itemRow,descriptor.type,descriptor.id)) {
+	for (const [$itemCopy] of listItemCopies($itemRow,descriptor)) {
 		const $checkboxCopy=getItemCheckbox($itemCopy)
 		if (!$checkboxCopy) continue
 		$checkboxCopy.checked=$checkbox.checked
 	}
 }
 
-function listItemCopies($itemRow: HTMLTableRowElement, type: string, id: number): [$item:HTMLElement, iColumn:number][] {
+function listItemCopies($itemRow: HTMLTableRowElement, descriptor: ItemDescriptor): [$item:HTMLElement, iColumn:number][] {
 	if ($itemRow.classList.contains('item')) {
 		return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
 			if ($cell.hasChildNodes()) {
@@ -609,8 +609,9 @@ function listItemCopies($itemRow: HTMLTableRowElement, type: string, id: number)
 			}
 		})
 	} else if ($itemRow.classList.contains('collection')) {
+		const selector=getItemDescriptorSelector(descriptor)
 		return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
-			return [...$cell.querySelectorAll(`.item[data-type="${type}"][data-id="${id}"]`)].map($item=>[$item as HTMLElement,iColumn])
+			return [...$cell.querySelectorAll(selector)].map($item=>[$item as HTMLElement,iColumn])
 		})
 	} else {
 		return []
