@@ -1,12 +1,37 @@
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 
-export type ItemSequenceInfo = {
-	timestamp: number
-	// rank: number
-	// type: MuxBatchItem['type'] | 'separator'
-	type: string,
+export type ItemDescriptor = {
+	type: string
 	id: number
-	order: number
+	order?: number
+}
+
+export function readItemDescriptor($item: HTMLElement): ItemDescriptor|null {
+	const type=$item.dataset.type
+	if (!type) return null
+	const id=Number($item.dataset.id)
+	if (!Number.isInteger(id)) return null
+	const orderString=$item.dataset.order
+	if (orderString!=null) {
+		const order=Number(orderString)
+		if (!Number.isInteger(order)) return null
+		if (order!=0) return {type,id,order}
+	}
+	return {type,id}
+}
+
+export function getItemDescriptorSelector({type,id,order}: ItemDescriptor): string {
+	return `.item[data-type="${type}"][data-id="${id}"]`+(order
+		? `[data-order="${order}"]`
+		: `:not([data-order])`
+	)
+}
+
+export type ItemSequenceInfo = { // TODO this is RowSequenceInfo, which includes separators, they don't have ids
+	timestamp: number
+	type: string
+	id?: number
+	order?: number
 }
 
 export function isGreaterItemSequenceInfo(a: ItemSequenceInfo, b: ItemSequenceInfo): boolean {
@@ -14,12 +39,12 @@ export function isGreaterItemSequenceInfo(a: ItemSequenceInfo, b: ItemSequenceIn
 	const aRank=getItemTypeRank(a.type)
 	const bRank=getItemTypeRank(b.type)
 	if (aRank!=bRank) return aRank>bRank
-	if (a.id!=b.id) return a.id>b.id
-	return a.order>b.order
+	if (a.id!=b.id) return (a.id??0)>(b.id??0)
+	return (a.order??0)>(b.order??0)
 }
 
 function getItemTypeRank(type: ItemSequenceInfo['type']): number {
-	// 0 = rank of separators
+	// 0 = rank of separators // TODO why is it not returned?
 	switch (type) {
 	case 'user':
 		return 1
@@ -69,14 +94,21 @@ export function getItemSequenceInfo({type,item}: MuxBatchItem): ItemSequenceInfo
 	}
 }
 
-export function readItemSequenceInfo($e: HTMLElement): ItemSequenceInfo {
-	return {
-		timestamp: Number($e.dataset.timestamp),
-		// rank: Number($e.dataset.rank),
-		type: $e.dataset.type??'',
-		id: Number($e.dataset.id??'0'),
-		order: Number($e.dataset.order??'0')
-	}
+export function readItemSequenceInfo($item: HTMLElement): ItemSequenceInfo|null {
+	const timestamp=Number($item.dataset.timestamp)
+	if (timestamp==null) return null
+	const type=$item.dataset.type
+	if (!type) return null
+	const idString=$item.dataset.id
+	if (idString==null) return {timestamp,type}
+	const id=Number(idString)
+	if (!Number.isInteger(id)) return null
+	const orderString=$item.dataset.order
+	if (orderString==null) return {timestamp,type,id}
+	const order=Number(orderString)
+	if (!Number.isInteger(order)) return null
+	if (order==0) return {timestamp,type,id}
+	return {timestamp,type,id,order}
 }
 
 export function writeItemSequenceInfo($e: HTMLElement, info: ItemSequenceInfo): void {

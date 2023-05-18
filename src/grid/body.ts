@@ -1,10 +1,11 @@
 import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
-import type {ItemSequenceInfo} from './sequence'
+import type {ItemDescriptor, ItemSequenceInfo} from './item-info'
 import {
 	isGreaterItemSequenceInfo, getItemSequenceInfo,
-	readItemSequenceInfo, writeItemSequenceInfo, writeSeparatorSequenceInfo
-} from './sequence'
+	readItemSequenceInfo, writeItemSequenceInfo, writeSeparatorSequenceInfo,
+	readItemDescriptor, getItemDescriptorSelector
+} from './item-info'
 import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
 	markChangesetItemAsCombined, markChangesetItemAsUncombined,
@@ -15,8 +16,6 @@ import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
 import {moveInArray} from '../util/types'
-
-export type ItemDescriptor = [type: string, id: number, order?: number]
 
 type GridPosition = {
 	type: 'afterRow'
@@ -168,20 +167,18 @@ export default class GridBody {
 		for (const $item of this.$gridBody.querySelectorAll(`.item`)) {
 			if (!($item instanceof HTMLElement)) continue
 			if (!$item.querySelector(`input[type=checkbox]:checked`)) continue
-			const itemDescriptor=getItemDescriptor($item)
+			const itemDescriptor=readItemDescriptor($item)
 			if (!itemDescriptor) continue
 			yield itemDescriptor
 		}
 	}
-	collapseItem([type,id,order]: ItemDescriptor): void {
-		const itemSelector=`tr.item[data-type="${type}"][data-id="${id}"]`+(order
-			? `[data-order="${order}"]`
-			: `:not([data-order])`
-		)
+	collapseItem(descriptor: ItemDescriptor): void {
+		const itemSelector='tr'+getItemDescriptorSelector(descriptor)
 		const $row=this.$gridBody.querySelector(itemSelector) // TODO select all matching rows? but there can't be more than one
 		if (!($row instanceof HTMLTableRowElement)) return
 		const collapseRowItems=($row:HTMLTableRowElement,continueTimeline=false)=>{
 			const sequenceInfo=readItemSequenceInfo($row)
+			if (!sequenceInfo || sequenceInfo.id==null) return
 			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
 			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
 			const $placeholders=itemCopies.map(([$item])=>$item)
@@ -241,13 +238,10 @@ export default class GridBody {
 				collapseRowItems($row)
 			}
 		}
-		collapseRowItems($row,type=='user')
+		collapseRowItems($row,descriptor.type=='user')
 	}
-	async expandItem([type,id,order]: ItemDescriptor): Promise<void> {
-		const itemSelector=`tr.collection .item[data-type="${type}"][data-id="${id}"]`+(order
-			? `[data-order="${order}"]`
-			: `:not([data-order])`
-		)
+	async expandItem(descriptor: ItemDescriptor): Promise<void> {
+		const itemSelector='tr.collection '+getItemDescriptorSelector(descriptor)
 		const $item=this.$gridBody.querySelector(itemSelector) // TODO select all
 		if (!($item instanceof HTMLElement)) return
 		const $itemRow=$item.closest('tr')
@@ -255,6 +249,7 @@ export default class GridBody {
 		const $disclosureButton=getItemDisclosureButton($item) // TODO get all copies of item buttons
 		if (!$disclosureButton) return
 		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>,continueTimeline=false)=>{
+			if (sequenceInfo.id==null) return
 			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
 			if (!$itemRow) return
 			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
@@ -286,6 +281,7 @@ export default class GridBody {
 			}
 		}
 		const sequenceInfo=readItemSequenceInfo($item)
+		if (!sequenceInfo || sequenceInfo.id==null) return
 		if (sequenceInfo.type=='user') {
 			const item=await this.itemReader.getUser(sequenceInfo.id)
 			if (!item || !item.withDetails || !item.visible) return
@@ -299,11 +295,11 @@ export default class GridBody {
 			if (!item) return
 			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
 		} else if (sequenceInfo.type=='changesetComment') {
-			const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
+			const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order??0)
 			if (!comment) return
 			expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
 		} else if (sequenceInfo.type=='noteComment') {
-			const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
+			const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order??0)
 			if (!comment) return
 			expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
 		}
@@ -322,6 +318,7 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
+		if (sequenceInfo.id==null) return false
 		const $placeholders=this.insertItemPlaceholders(iColumns,sequenceInfo,insertItemInfo.isExpanded,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
@@ -455,6 +452,7 @@ export default class GridBody {
 						const $item=$items[i]
 						if (!($item instanceof HTMLElement)) continue
 						const precedingSequenceInfo=readItemSequenceInfo($item)
+						if (!precedingSequenceInfo) continue
 						if (!isSameMonthTimestamps(precedingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
 							isSameMonthRow=false
 						}
@@ -486,6 +484,7 @@ export default class GridBody {
 				}
 			} else {
 				const precedingSequenceInfo=readItemSequenceInfo($row)
+				if (!precedingSequenceInfo) continue
 				if (isGreaterItemSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
 					if (!isSameMonthTimestamps(precedingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
 						return {
@@ -557,7 +556,7 @@ export default class GridBody {
 		if (!($disclosureButton instanceof HTMLButtonElement)) return
 		const $item=$disclosureButton.closest('.item')
 		if (!($item instanceof HTMLElement)) return
-		const itemDescriptor=getItemDescriptor($item)
+		const itemDescriptor=readItemDescriptor($item)
 		if (!itemDescriptor) return
 		if (getItemDisclosureButtonState($disclosureButton)) {
 			this.collapseItem(itemDescriptor)
@@ -591,8 +590,9 @@ function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
 	if (!$itemRow) return
 	const $item=$checkbox.closest('.item')
 	if (!($item instanceof HTMLElement)) return
-	const sequenceInfo=readItemSequenceInfo($item)
-	for (const [$itemCopy] of listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)) {
+	const descriptor=readItemDescriptor($item)
+	if (!descriptor) return
+	for (const [$itemCopy] of listItemCopies($itemRow,descriptor.type,descriptor.id)) {
 		const $checkboxCopy=getItemCheckbox($itemCopy)
 		if (!$checkboxCopy) continue
 		$checkboxCopy.checked=$checkbox.checked
@@ -614,21 +614,6 @@ function listItemCopies($itemRow: HTMLTableRowElement, type: string, id: number)
 		})
 	} else {
 		return []
-	}
-}
-
-function getItemDescriptor($item: HTMLElement): ItemDescriptor|undefined {
-	const type=$item.dataset.type
-	if (!type) return
-	const id=Number($item.dataset.id)
-	if (!Number.isInteger(id)) return
-	const orderString=$item.dataset.order
-	if (orderString!=null) {
-		const order=Number(orderString)
-		if (!Number.isInteger(order)) return
-		return [type,id,order]
-	} else {
-		return [type,id]
 	}
 }
 

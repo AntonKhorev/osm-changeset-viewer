@@ -175,7 +175,7 @@ describe("GridBody",()=>{
 		})
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
 		gridBody.updateTableAccordingToSettings(false,false)
-		await gridBody.expandItem(['changeset',10001])
+		await gridBody.expandItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -192,7 +192,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
 		gridBody.updateTableAccordingToSettings(false,false)
-		await gridBody.expandItem(['changeset',10002])
+		await gridBody.expandItem({type:'changeset',id:10002})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -214,7 +214,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
 		gridBody.updateTableAccordingToSettings(false,false)
-		await gridBody.expandItem(['changeset',10001])
+		await gridBody.expandItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -235,7 +235,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetBatchItem(2),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
 		gridBody.updateTableAccordingToSettings(false,false)
-		gridBody.collapseItem(['changeset',10002])
+		gridBody.collapseItem({type:'changeset',id:10002})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -315,7 +315,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
 		gridBody.updateTableAccordingToSettings(false,false)
-		gridBody.collapseItem(['changeset',10001])
+		gridBody.collapseItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -336,7 +336,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
 		gridBody.updateTableAccordingToSettings(false,false)
-		gridBody.collapseItem(['changeset',10001])
+		gridBody.collapseItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -359,8 +359,8 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
 		gridBody.updateTableAccordingToSettings(false,true)
-		gridBody.collapseItem(['changeset',10003])
-		gridBody.collapseItem(['changeset',10001])
+		gridBody.collapseItem({type:'changeset',id:10003})
+		gridBody.collapseItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -389,8 +389,8 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
 		gridBody.updateTableAccordingToSettings(false,false)
-		gridBody.collapseItem(['changeset',id1])
-		gridBody.collapseItem(['changeset',id2])
+		gridBody.collapseItem({type:'changeset',id:id1})
+		gridBody.collapseItem({type:'changeset',id:id2})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -417,7 +417,7 @@ describe("GridBody",()=>{
 			item: user1,
 		},usernames,false)
 		gridBody.updateTableAccordingToSettings(false,false)
-		await gridBody.expandItem(['user',101])
+		await gridBody.expandItem({type:'user',id:101})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,1)
@@ -440,7 +440,7 @@ describe("GridBody",()=>{
 			item: user1,
 		},usernames,isExpanded)
 		gridBody.updateTableAccordingToSettings(false,false)
-		await gridBody[actionMethod](['user',101])
+		await gridBody[actionMethod]({type:'user',id:101})
 		const $cell=gridBody.$gridBody.rows[1].cells[0]
 		assertElementClasses($cell,['with-timeline-above','with-timeline-below'],['with-timeline-above'],`Cell`)
 	})
