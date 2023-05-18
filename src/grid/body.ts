@@ -180,7 +180,7 @@ export default class GridBody {
 		)
 		const $row=this.$gridBody.querySelector(itemSelector) // TODO select all matching rows? but there can't be more than one
 		if (!($row instanceof HTMLTableRowElement)) return
-		const collapseRowItems=($row:HTMLTableRowElement)=>{
+		const collapseRowItems=($row:HTMLTableRowElement,continueTimeline=false)=>{
 			const sequenceInfo=readItemSequenceInfo($row)
 			const itemCopies=listItemCopies($row,sequenceInfo.type,sequenceInfo.id)
 			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
@@ -188,7 +188,7 @@ export default class GridBody {
 			const classNames=[...$row.classList]
 			const $prevRow=$row.previousElementSibling
 			const $nextRow=$row.nextElementSibling
-			if (type=='user') {
+			if (continueTimeline) {
 				for (const iColumn of iColumns) {
 					this.hasColumnReachedTimelineEnd[iColumn]=false
 				}
@@ -241,7 +241,7 @@ export default class GridBody {
 				collapseRowItems($row)
 			}
 		}
-		collapseRowItems($row)
+		collapseRowItems($row,type=='user')
 	}
 	async expandItem([type,id,order]: ItemDescriptor): Promise<void> {
 		const itemSelector=`tr.collection .item[data-type="${type}"][data-id="${id}"]`+(order
@@ -254,7 +254,7 @@ export default class GridBody {
 		if (!$itemRow) return
 		const $disclosureButton=getItemDisclosureButton($item) // TODO get all copies of item buttons
 		if (!$disclosureButton) return
-		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>)=>{
+		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>,continueTimeline=false)=>{
 			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
 			if (!$itemRow) return
 			const itemCopies=listItemCopies($itemRow,sequenceInfo.type,sequenceInfo.id)
@@ -266,12 +266,17 @@ export default class GridBody {
 				// $placeholder.removeAttribute('class')
 				$placeholder.remove()
 			}
+			if (continueTimeline) {
+				for (const iColumn of iColumns) {
+					this.hasColumnReachedTimelineEnd[iColumn]=false
+				}
+			}
 			if (!doesCollectionRowHaveItems($itemRow)) {
 				$itemRow.remove()
 			}
 			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
 			// TODO expand combined
-			$disclosureButton.disabled=false
+			$disclosureButton.disabled=false // TODO move this to button listener
 			setItemDisclosureButtonState($disclosureButton,true)
 		}
 		const makeUsernames=(uid?:number,username?:string)=>{
@@ -286,7 +291,7 @@ export default class GridBody {
 			$disclosureButton.disabled=true
 			const item=await this.itemReader.getUser(sequenceInfo.id)
 			if (!item || !item.withDetails || !item.visible) return
-			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
+			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames(),true)
 		} else if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
 			$disclosureButton.disabled=true
 			const item=await this.itemReader.getChangeset(sequenceInfo.id)
