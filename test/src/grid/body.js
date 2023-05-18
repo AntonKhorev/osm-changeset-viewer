@@ -11,8 +11,24 @@ const server={
 	}
 }
 
+const user1={
+	id: 101,
+	nameUpdatedAt: new Date('2023-05-01'),
+	name: `User One`,
+	withDetails: true,
+	detailsUpdatedAt: new Date('2023-05-01'),
+	visible: true,
+	createdAt: new Date('2023-01-01'),
+	roles: [],
+	changesets: {count:12},
+	traces: {count:0},
+	blocks: {
+		received: {count:0,active:0},
+	},
+}
+
 const usernames=new Map([
-	[101, `User One`],
+	[101, user1.name],
 	[102, `User Two`],
 ])
 
@@ -391,29 +407,14 @@ describe("GridBody",()=>{
 			})
 		)
 	})
-	it("expands user creation item",async()=>{
-		const user={
-			id: 101,
-			nameUpdatedAt: new Date('2023-05-01'),
-			name: `User One`,
-			withDetails: true,
-			detailsUpdatedAt: new Date('2023-05-01'),
-			visible: true,
-			createdAt: new Date('2023-01-01'),
-			roles: [],
-			changesets: {count:12},
-			traces: {count:0},
-			blocks: {
-				received: {count:0,active:0},
-			},
-		}
+	it("expands user item",async()=>{
 		const gridBody=makeSingleColumnGrid({
-			getUser: async()=>user
+			getUser: async()=>user1
 		})
 		gridBody.addItem({
 			iColumns: [0],
 			type: 'user',
-			item: user,
+			item: user1,
 		},usernames,false)
 		gridBody.updateTableAccordingToSettings(false,false)
 		await gridBody.expandItem(['user',101])
@@ -425,6 +426,23 @@ describe("GridBody",()=>{
 			assertElementClassType($row,'user')
 			assertItemData($row,Date.parse('2023-01-01'),'user',101)
 		})
+	})
+	for (const [actionName,isExpanded,actionMethod] of [
+		[`expanding`,false,'expandItem'],
+		[`collapsing`,true,'collapseItem'],
+	]) it(`retains timeline when ${actionName} user item`,async()=>{
+		const gridBody=makeSingleColumnGrid({
+			getUser: async()=>user1
+		})
+		gridBody.addItem({
+			iColumns: [0],
+			type: 'user',
+			item: user1,
+		},usernames,isExpanded)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody[actionMethod](['user',101])
+		const $cell=gridBody.$gridBody.rows[1].cells[0]
+		assertElementClasses($cell,['with-timeline-above','with-timeline-below'],['with-timeline-above'],`Cell`)
 	})
 })
 

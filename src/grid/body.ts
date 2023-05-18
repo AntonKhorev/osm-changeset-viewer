@@ -18,11 +18,6 @@ import {moveInArray} from '../util/types'
 
 export type ItemDescriptor = [type: string, id: number, order?: number]
 
-type CellTimelineRelation = {
-	withTimelineAbove: boolean
-	withTimelineBelow: boolean
-}
-
 type GridPosition = {
 	type: 'afterRow'
 	$row: HTMLTableRowElement
@@ -193,6 +188,11 @@ export default class GridBody {
 			const classNames=[...$row.classList]
 			const $prevRow=$row.previousElementSibling
 			const $nextRow=$row.nextElementSibling
+			if (type=='user') {
+				for (const iColumn of iColumns) {
+					this.hasColumnReachedTimelineEnd[iColumn]=false
+				}
+			}
 			$row.remove()
 			for (const $placeholder of $placeholders) {
 				const $disclosureButton=getItemDisclosureButton($placeholder)
@@ -353,42 +353,36 @@ export default class GridBody {
 		$previousPlaceholders: HTMLElement[],
 		classNames: string[]
 	): HTMLElement[] {
-		const cellTimelineRelations:CellTimelineRelation[]=this.hasColumnReachedTimelineEnd.map(reached=>({
-			withTimelineAbove: !reached,
-			withTimelineBelow: !reached,
-		}))
 		let position=this.getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo)
 		let $row:HTMLTableRowElement
-		let isNewRow:boolean
 		if (!isExpanded && position.type=='insideRow') {
 			$row=position.$row
-			isNewRow=false
 		} else {
 			$row=this.insertRow(position)
-			isNewRow=true
+			const columnHues=this.getColumnHues()
+			for (const [iColumn,reached] of this.hasColumnReachedTimelineEnd.entries()) {
+				const $cell=$row.insertCell()
+				$cell.classList.toggle('with-timeline-above',!reached)
+				$cell.classList.toggle('with-timeline-below',!reached)
+				setCellHue($cell,columnHues[iColumn])
+			}
 		}
 		if (sequenceInfo.type=='user') {
 			const iColumnSet=new Set(iColumns)
 			for (const iColumn of iColumns) {
 				this.hasColumnReachedTimelineEnd[iColumn]=true
-				cellTimelineRelations[iColumn].withTimelineBelow=false
+				$row.cells[iColumn].classList.toggle('with-timeline-below',false)
 			}
 			for (let $followingRow=$row.nextElementSibling;$followingRow;$followingRow=$followingRow.nextElementSibling) {
 				if (!($followingRow instanceof HTMLTableRowElement)) continue
-				if (!$followingRow.classList.contains('item')) continue
+				if (!(
+					$followingRow.classList.contains('item') ||
+					$followingRow.classList.contains('collection')
+				)) continue
 				for (const [iColumn,$cell] of [...$followingRow.cells].entries()) {
 					if (!iColumnSet.has(iColumn)) continue
 					$cell.classList.remove('with-timeline-above','with-timeline-below')
 				}
-			}
-		}
-		if (isNewRow) {
-			const columnHues=this.getColumnHues()
-			for (const [iColumn,cellTimelineRelation] of cellTimelineRelations.entries()) {
-				const $cell=$row.insertCell()
-				$cell.classList.toggle('with-timeline-above',cellTimelineRelation.withTimelineAbove)
-				$cell.classList.toggle('with-timeline-below',cellTimelineRelation.withTimelineBelow)
-				setCellHue($cell,columnHues[iColumn])
 			}
 		}
 		const copyPlaceholderChildren=($placeholder:HTMLElement,iPlaceholder:number)=>{
