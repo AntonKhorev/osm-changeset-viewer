@@ -276,7 +276,6 @@ export default class GridBody {
 			}
 			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
 			// TODO expand combined
-			$disclosureButton.disabled=false // TODO move this to button listener
 			setItemDisclosureButtonState($disclosureButton,true)
 		}
 		const makeUsernames=(uid?:number,username?:string)=>{
@@ -288,27 +287,22 @@ export default class GridBody {
 		}
 		const sequenceInfo=readItemSequenceInfo($item)
 		if (sequenceInfo.type=='user') {
-			$disclosureButton.disabled=true
 			const item=await this.itemReader.getUser(sequenceInfo.id)
 			if (!item || !item.withDetails || !item.visible) return
 			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames(),true)
 		} else if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
-			$disclosureButton.disabled=true
 			const item=await this.itemReader.getChangeset(sequenceInfo.id)
 			if (!item) return
 			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
 		} else if (sequenceInfo.type=='note') {
-			$disclosureButton.disabled=true
 			const item=await this.itemReader.getNote(sequenceInfo.id)
 			if (!item) return
 			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
 		} else if (sequenceInfo.type=='changesetComment') {
-			$disclosureButton.disabled=true
 			const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order)
 			if (!comment) return
 			expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
 		} else if (sequenceInfo.type=='noteComment') {
-			$disclosureButton.disabled=true
 			const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order)
 			if (!comment) return
 			expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
@@ -568,7 +562,9 @@ export default class GridBody {
 		if (getItemDisclosureButtonState($disclosureButton)) {
 			this.collapseItem(itemDescriptor)
 		} else {
+			$disclosureButton.disabled=true
 			await this.expandItem(itemDescriptor)
+			$disclosureButton.disabled=false
 		}
 	}
 }
