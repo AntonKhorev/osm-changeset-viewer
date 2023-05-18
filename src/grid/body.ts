@@ -1,6 +1,6 @@
 import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
-import type {ItemDescriptor, ItemSequenceInfo, ElementSequenceInfo} from './info'
+import type {ItemDescriptor, ItemSequenceInfo} from './info'
 import {
 	isGreaterElementSequenceInfo, getBatchItemSequenceInfo,
 	readElementSequenceInfo, writeElementSequenceInfo, writeSeparatorSequenceInfo,
@@ -306,7 +306,7 @@ export default class GridBody {
 	}
 	private insertItem(
 		iColumns: number[],
-		sequenceInfo: ElementSequenceInfo,
+		sequenceInfo: ItemSequenceInfo,
 		insertItemInfo: {
 			isExpanded: false
 		} | {
@@ -318,7 +318,6 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
-		if (sequenceInfo.id==null) return false
 		const $placeholders=this.insertItemPlaceholders(iColumns,sequenceInfo,insertItemInfo.isExpanded,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
@@ -344,7 +343,7 @@ export default class GridBody {
 	}
 	private insertItemPlaceholders(
 		iColumns: number[],
-		sequenceInfo: ElementSequenceInfo,
+		sequenceInfo: ItemSequenceInfo,
 		isExpanded: boolean,
 		$previousPlaceholders: HTMLElement[],
 		classNames: string[]
@@ -421,7 +420,7 @@ export default class GridBody {
 			return $placeholders
 		}
 	}
-	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ElementSequenceInfo): GridPosition {
+	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ItemSequenceInfo): GridPosition {
 		const insertSeparatorRow=($precedingRow?:HTMLTableRowElement)=>{
 			const date=new Date(sequenceInfo.timestamp)
 			const yearMonthString=toIsoYearMonthString(date)
