@@ -486,6 +486,52 @@ describe("GridBody",()=>{
 			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
 		})
 	})
+	it("doesn't expand any preceding hidden items when there's a visible item before",async()=>{
+		const gridBody=makeSingleColumnGrid({
+			getChangeset: async(id)=>{
+				if (id==10001) return makeChangesetItem(1,'2023-03-01','2023-03-11')
+				if (id==10002) return makeChangesetItem(2,'2023-03-02','2023-03-03')
+				if (id==10003) return makeChangesetItem(3,'2023-03-04','2023-03-05')
+			}
+		})
+		gridBody.addItem({
+			iColumns: [0],
+			type: 'note',
+			item: {
+				id: 1001,
+				uid: 102,
+				createdAt: new Date('2023-03-15'),
+				openingComment: `meh`,
+			},
+		},usernames,false)
+		gridBody.addItem(makeChangesetCloseBatchItem(3,'2023-03-04','2023-03-05'),usernames,false)
+		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-03'),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-11'),usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem({type:'changeset',id:10001})
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertElementClassType($child,'note')
+				assertItemData($child,Date.parse('2023-03-15'),'note',1001)
+			},$child=>{
+				assertElementClassType($child,'changeset')
+				assertChangesetClassTypes($child,['closed','hidden'])
+				assertItemData($child,Date.parse('2023-03-05'),'changesetClose',10003)
+			},$child=>{
+				assertElementClassType($child,'changeset')
+				assertChangesetClassTypes($child,['closed','hidden'])
+				assertItemData($child,Date.parse('2023-03-03'),'changesetClose',10002)
+			}
+		),$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+		})
+	})
 	it("expands user item",async()=>{
 		const gridBody=makeSingleColumnGrid({
 			getUser: async()=>user1

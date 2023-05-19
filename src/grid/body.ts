@@ -330,7 +330,13 @@ export default class GridBody {
 				$precedingHiddenItemSets.unshift($precedingItemSet) // top-to-bottom order of expandItemSet() calls
 				$precedingItemSet=getPreviousSiblingItemSet($precedingItemSet)
 			}
-			if ($precedingHiddenItemSets.length>0) {
+			if (
+				$precedingHiddenItemSets.length>0 &&
+				areSameItemSets(
+					$precedingHiddenItemSets[0],
+					getFirstSiblingItemSet($startingItemSet)??[]
+				)
+			) {
 				for (const $itemSet of $precedingHiddenItemSets) {
 					await expandItemSet($row,iColumns,$itemSet)
 				}
@@ -724,6 +730,19 @@ function mergeCollectionRows($row1: HTMLTableRowElement, $row2: HTMLTableRowElem
 	$row2.remove()
 }
 
+function getFirstSiblingItemSet($itemSet: HTMLElement[]): HTMLElement[]|null {
+	if ($itemSet.length==0) return null
+	const $firstItemSet:HTMLElement[]=[]
+	for (const $item of $itemSet) {
+		const $parent=$item.parentElement
+		if (!$parent) return null
+		const $firstItem=$parent.querySelector('.item')
+		if (!($firstItem instanceof HTMLElement)) return null
+		$firstItemSet.push($firstItem)
+	}
+	return $firstItemSet
+}
+
 function getPreviousSiblingItemSet($itemSet: HTMLElement[]): HTMLElement[]|null {
 	const isItem=($e:Element)=>$e.classList.contains('item')
 	if ($itemSet.length==0) return null
@@ -744,4 +763,11 @@ function getPreviousSiblingItemSet($itemSet: HTMLElement[]): HTMLElement[]|null 
 		if (!isEqualItemDescriptor(leadDescriptor,descriptor)) return null
 	}
 	return $previousItemSet
+}
+
+function areSameItemSets($itemSet1: HTMLElement[], $itemSet2: HTMLElement[]): boolean {
+	for (let i=0;i<$itemSet1.length&&i<$itemSet2.length;i++) {
+		if ($itemSet1[i]!=$itemSet2[i]) return false
+	}
+	return true
 }
