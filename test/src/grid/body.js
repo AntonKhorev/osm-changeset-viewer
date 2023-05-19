@@ -456,14 +456,14 @@ describe("GridBody",()=>{
 	it("expands all preceding hidden items when there are no visible items before",async()=>{
 		const gridBody=makeSingleColumnGrid({
 			getChangeset: async(id)=>{
-				if (id==10001) return makeChangesetItem(1,Date.parse('2023-03-01'),Date.parse('2023-03-11'))
-				if (id==10002) return makeChangesetItem(2,Date.parse('2023-03-02'),Date.parse('2023-03-03'))
-				if (id==10003) return makeChangesetItem(3,Date.parse('2023-03-04'),Date.parse('2023-03-05'))
+				if (id==10001) return makeChangesetItem(1,'2023-03-01','2023-03-11')
+				if (id==10002) return makeChangesetItem(2,'2023-03-02','2023-03-03')
+				if (id==10003) return makeChangesetItem(3,'2023-03-04','2023-03-05')
 			}
 		})
-		gridBody.addItem(makeChangesetCloseBatchItem(3,Date.parse('2023-03-04'),Date.parse('2023-03-05')),usernames,false)
-		gridBody.addItem(makeChangesetCloseBatchItem(2,Date.parse('2023-03-02'),Date.parse('2023-03-03')),usernames,false)
-		gridBody.addItem(makeChangesetBatchItem(1,Date.parse('2023-03-01'),Date.parse('2023-03-11')),usernames,false)
+		gridBody.addItem(makeChangesetCloseBatchItem(3,'2023-03-04','2023-03-05'),usernames,false)
+		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-03'),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-11'),usernames,false)
 		gridBody.updateTableAccordingToSettings(false,false)
 		await gridBody.expandItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
