@@ -354,6 +354,29 @@ describe("GridBody",()=>{
 			})
 		)
 	})
+	it(`expands directly preceding own hidden closed changeset along with combined open changeset`,async()=>{
+		const gridBody=makeSingleColumnGrid({
+			getChangeset: async()=>makeChangesetItem(1)
+		})
+		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem({type:'changeset',id:10001})
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['closed','hidden'])
+			assertItemData($row,Date.parse('2023-03-01'),'changesetClose',10001)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+		})
+	})
 	it(`doesn't collapse directly preceding other's closed changeset along with combined open changeset`,()=>{
 		const gridBody=makeSingleColumnGrid()
 		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)

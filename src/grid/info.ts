@@ -36,6 +36,10 @@ export function isGreaterElementSequenceInfo(a: ElementSequenceInfo, b: ElementS
 	return (a.order??0)>(b.order??0)
 }
 
+export function isEqualItemDescriptor(a: ItemDescriptor, b: ItemDescriptor): boolean {
+	return a.type==b.type && a.id==b.id && a.order==b.order
+}
+
 function getElementTypeRank(type: ElementSequenceInfo['type']): number {
 	// 0 = rank of separators // TODO why is it not returned?
 	switch (type) {

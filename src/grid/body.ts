@@ -2,10 +2,9 @@ import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
 import type {ItemDescriptor, ItemSequenceInfo} from './info'
 import {
-	isGreaterElementSequenceInfo, getBatchItemSequenceInfo,
-	readElementSequenceInfo, writeElementSequenceInfo, writeSeparatorSequenceInfo,
-	readItemSequenceInfo,
-	readItemDescriptor, getItemDescriptorSelector
+	isEqualItemDescriptor, readItemDescriptor, getItemDescriptorSelector,
+	isGreaterElementSequenceInfo, writeSeparatorSequenceInfo, readElementSequenceInfo, writeElementSequenceInfo,
+	getBatchItemSequenceInfo, readItemSequenceInfo
 } from './info'
 import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
@@ -174,8 +173,8 @@ export default class GridBody {
 		}
 	}
 	collapseItem(descriptor: ItemDescriptor): void {
-		const itemSelector='tr'+getItemDescriptorSelector(descriptor)
-		const $row=this.$gridBody.querySelector(itemSelector) // TODO select all matching rows? but there can't be more than one
+		const itemSelectorWithRow='tr'+getItemDescriptorSelector(descriptor)
+		const $row=this.$gridBody.querySelector(itemSelectorWithRow) // TODO select all matching rows? but there can't be more than one
 		if (!($row instanceof HTMLTableRowElement)) return
 		const collapseRowItems=($row:HTMLTableRowElement,continueTimeline=false)=>{
 			const sequenceInfo=readItemSequenceInfo($row)
@@ -242,37 +241,6 @@ export default class GridBody {
 		collapseRowItems($row,descriptor.type=='user')
 	}
 	async expandItem(descriptor: ItemDescriptor): Promise<void> {
-		const itemSelector='tr.collection '+getItemDescriptorSelector(descriptor)
-		const $item=this.$gridBody.querySelector(itemSelector) // TODO select all
-		if (!($item instanceof HTMLElement)) return
-		const $itemRow=$item.closest('tr')
-		if (!$itemRow) return
-		const $disclosureButton=getItemDisclosureButton($item) // TODO get all copies of item buttons
-		if (!$disclosureButton) return
-		const expandItems=(batchItem:MuxBatchItem,sequenceInfo:ItemSequenceInfo,usernames:Map<number,string>,continueTimeline=false)=>{
-			const $itemRow=$disclosureButton.closest('tr') // re-read containing elements in case they moved while await
-			if (!$itemRow) return
-			const itemCopies=listItemCopies($itemRow,sequenceInfo)
-			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
-			const $placeholders=itemCopies.map(([$item])=>$item)
-			let classNames:string[]=[]
-			for (const $placeholder of $placeholders) {
-				classNames=[...$placeholder.classList]
-				// $placeholder.removeAttribute('class')
-				$placeholder.remove()
-			}
-			if (continueTimeline) {
-				for (const iColumn of iColumns) {
-					this.hasColumnReachedTimelineEnd[iColumn]=false
-				}
-			}
-			if (!doesCollectionRowHaveItems($itemRow)) {
-				$itemRow.remove()
-			}
-			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
-			// TODO expand combined
-			setItemDisclosureButtonState($disclosureButton,true)
-		}
 		const makeUsernames=(uid?:number,username?:string)=>{
 			if (uid==null || username==null) {
 				return new Map<number,string>()
@@ -280,28 +248,103 @@ export default class GridBody {
 				return new Map<number,string>([[uid,username]])
 			}
 		}
-		const sequenceInfo=readItemSequenceInfo($item)
-		if (!sequenceInfo || sequenceInfo.id==null) return
-		if (sequenceInfo.type=='user') {
-			const item=await this.itemReader.getUser(sequenceInfo.id)
-			if (!item || !item.withDetails || !item.visible) return
-			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames(),true)
-		} else if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
-			const item=await this.itemReader.getChangeset(sequenceInfo.id)
-			if (!item) return
-			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
-		} else if (sequenceInfo.type=='note') {
-			const item=await this.itemReader.getNote(sequenceInfo.id)
-			if (!item) return
-			expandItems({type:sequenceInfo.type,item},sequenceInfo,makeUsernames())
-		} else if (sequenceInfo.type=='changesetComment') {
-			const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order??0)
-			if (!comment) return
-			expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
-		} else if (sequenceInfo.type=='noteComment') {
-			const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order??0)
-			if (!comment) return
-			expandItems({type:sequenceInfo.type,item:comment},sequenceInfo,makeUsernames(comment.uid,username))
+		const expandItemSet=async($row:HTMLTableRowElement,iColumns:number[],$placeholders:HTMLElement[],continueTimeline=false)=>{
+			const [$item]=$placeholders
+			const sequenceInfo=readItemSequenceInfo($item)
+			if (!sequenceInfo) return
+			let batchItem:MuxBatchItem
+			let usernames:Map<number,string>
+			if (sequenceInfo.type=='user') {
+				const item=await this.itemReader.getUser(sequenceInfo.id)
+				if (!item || !item.withDetails || !item.visible) return
+				batchItem={type:sequenceInfo.type,item}
+				usernames=makeUsernames()
+			} else if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
+				const item=await this.itemReader.getChangeset(sequenceInfo.id)
+				if (!item) return
+				batchItem={type:sequenceInfo.type,item}
+				usernames=makeUsernames()
+			} else if (sequenceInfo.type=='note') {
+				const item=await this.itemReader.getNote(sequenceInfo.id)
+				if (!item) return
+				batchItem={type:sequenceInfo.type,item}
+				usernames=makeUsernames()
+			} else if (sequenceInfo.type=='changesetComment') {
+				const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order??0)
+				if (!comment) return
+				batchItem={type:sequenceInfo.type,item:comment}
+				usernames=makeUsernames(comment.uid,username)
+			} else if (sequenceInfo.type=='noteComment') {
+				const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order??0)
+				if (!comment) return
+				batchItem={type:sequenceInfo.type,item:comment}
+				usernames=makeUsernames(comment.uid,username)
+			} else {
+				return
+			}
+			const classNames=[...$item.classList]
+			for (const $placeholder of $placeholders) {
+				const $disclosureButton=getItemDisclosureButton($placeholder)
+				if ($disclosureButton) {
+					setItemDisclosureButtonState($disclosureButton,true)
+				}
+				$placeholder.remove()
+			}
+			if (continueTimeline) {
+				for (const iColumn of iColumns) {
+					this.hasColumnReachedTimelineEnd[iColumn]=false
+				}
+			}
+			if (!doesCollectionRowHaveItems($row)) {
+				$row.remove()
+			}
+			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
+		}
+		const itemSelector=getItemDescriptorSelector(descriptor)
+		const itemSelectorWithRow='tr.collection '+itemSelector
+		const $items=this.$gridBody.querySelectorAll(itemSelectorWithRow)
+		const $rows=new Set<HTMLTableRowElement>()
+		for (const $item of $items) {
+			const $row=$item.closest('tr')
+			if (!$row) continue
+			if (!$row.classList.contains('collection')) continue
+			$rows.add($row)
+		}
+		for (const $row of $rows) {
+			const uniqueItemCopies=new Map<number,HTMLElement>()
+			for (const [$item,iColumn] of listItemCopies($row,descriptor)) {
+				if (uniqueItemCopies.has(iColumn)) {
+					$item.remove()
+				} else {
+					uniqueItemCopies.set(iColumn,$item)
+				}
+			}
+			if (uniqueItemCopies.size==0) continue
+			const iColumns=[...uniqueItemCopies.keys()]
+			const $startingItemSet=[...uniqueItemCopies.values()]
+			const [$startingItem]=$startingItemSet
+			let $precedingItemSet=getPreviousSiblingItemSet($startingItemSet)
+			const $precedingHiddenItemSets:HTMLElement[][]=[]
+			while ($precedingItemSet) { // TODO actually collect up to beginning of collection - or cancel if it can't be reached
+				if (!isHiddenItemSet($precedingItemSet)) break
+				$precedingHiddenItemSets.push($precedingItemSet)
+				$precedingItemSet=getPreviousSiblingItemSet($precedingItemSet)
+			}
+			if ($precedingHiddenItemSets.length>0) {
+				for (const $itemSet of $precedingHiddenItemSets) {
+					await expandItemSet($row,iColumns,$itemSet)
+				}
+			} else if ($startingItem.classList.contains('combined')) {
+				const $previousItemSet=getPreviousSiblingItemSet($startingItemSet)
+				if ($previousItemSet) {
+					const [$previousItem]=$previousItemSet
+					if (isHiddenItem($previousItem) && isChangesetOpenedClosedPair($startingItem,$previousItem)) {
+						await expandItemSet($row,iColumns,$previousItemSet)
+					}
+				}
+			}
+			// let $followingItemSet=getNextSiblingItemSet($startingItemSet) // TODO
+			await expandItemSet($row,iColumns,$startingItemSet,descriptor.type=='user')
 		}
 	}
 	private insertItem(
@@ -626,6 +669,10 @@ function isHiddenItem($item: HTMLElement): boolean {
 	return $item.classList.contains('item') && $item.classList.contains('hidden')
 }
 
+function isHiddenItemSet($items: HTMLElement[]): boolean {
+	return $items.every(isHiddenItem)
+}
+
 function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	const d1=new Date(t1)
 	const d2=new Date(t2)
@@ -675,4 +722,26 @@ function mergeCollectionRows($row1: HTMLTableRowElement, $row2: HTMLTableRowElem
 		}
 	}
 	$row2.remove()
+}
+
+function getPreviousSiblingItemSet($itemSet: HTMLElement[]): HTMLElement[]|null {
+	const isItem=($e:Element)=>$e.classList.contains('item')
+	if ($itemSet.length==0) return null
+	const $previousItemSet:HTMLElement[]=[]
+	for (const $item of $itemSet) {
+		const $previousItem=$item.previousElementSibling
+		if (!($previousItem instanceof HTMLElement)) return null
+		$previousItemSet.push($previousItem)
+	}
+	const [$leadPreviousItem]=$previousItemSet
+	if (!isItem($leadPreviousItem)) return null
+	const leadDescriptor=readItemDescriptor($leadPreviousItem)
+	if (!leadDescriptor) return null
+	for (const $previousItem of $previousItemSet) {
+		if (!isItem($previousItem)) return null
+		const descriptor=readItemDescriptor($previousItem)
+		if (!descriptor) return null
+		if (!isEqualItemDescriptor(leadDescriptor,descriptor)) return null
+	}
+	return $previousItemSet
 }
