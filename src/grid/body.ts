@@ -327,7 +327,7 @@ export default class GridBody {
 			const $precedingHiddenItemSets:HTMLElement[][]=[]
 			while ($precedingItemSet) { // TODO actually collect up to beginning of collection - or cancel if it can't be reached
 				if (!isHiddenItemSet($precedingItemSet)) break
-				$precedingHiddenItemSets.push($precedingItemSet)
+				$precedingHiddenItemSets.unshift($precedingItemSet) // top-to-bottom order of expandItemSet() calls
 				$precedingItemSet=getPreviousSiblingItemSet($precedingItemSet)
 			}
 			if ($precedingHiddenItemSets.length>0) {
@@ -343,8 +343,8 @@ export default class GridBody {
 					}
 				}
 			}
-			// let $followingItemSet=getNextSiblingItemSet($startingItemSet) // TODO
 			await expandItemSet($row,iColumns,$startingItemSet,descriptor.type=='user')
+			// let $followingItemSet=getNextSiblingItemSet($startingItemSet) // TODO
 		}
 	}
 	private insertItem(
