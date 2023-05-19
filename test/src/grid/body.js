@@ -453,23 +453,42 @@ describe("GridBody",()=>{
 			})
 		)
 	})
-	it("expands all preceding hidden items when there are no visible items before",async()=>{
+	for (const [locationName,frontAction,backAction,frontRowAsserts,backRowAsserts,expandId] of [
+		[`before`,()=>{},gridBody=>{
+			gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-11'),usernames,false)
+		},[],[$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
+		}],10001],
+		[`after`,gridBody=>{
+			gridBody.addItem(makeChangesetBatchItem(4,'2023-03-07','2023-03-08'),usernames,false)
+		},()=>{},[$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-07'),'changeset',10004)
+		}],[],10004],
+	]) it(`expands all hidden items ${locationName} requested one when there are no visible items ${locationName} all of them`,async()=>{
 		const gridBody=makeSingleColumnGrid({
 			getChangeset: async(id)=>{
 				if (id==10001) return makeChangesetItem(1,'2023-03-01','2023-03-11')
 				if (id==10002) return makeChangesetItem(2,'2023-03-02','2023-03-03')
 				if (id==10003) return makeChangesetItem(3,'2023-03-04','2023-03-05')
+				if (id==10004) return makeChangesetItem(4,'2023-03-07','2023-03-08')
 			}
 		})
+		frontAction(gridBody)
 		gridBody.addItem(makeChangesetCloseBatchItem(3,'2023-03-04','2023-03-05'),usernames,false)
 		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-03'),usernames,false)
-		gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-11'),usernames,false)
+		backAction(gridBody)
 		gridBody.updateTableAccordingToSettings(false,false)
-		await gridBody.expandItem({type:'changeset',id:10001})
+		await gridBody.expandItem({type:'changeset',id:expandId})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
-		},$row=>{
+		},...frontRowAsserts,$row=>{
 			assertRowIsItem($row)
 			assertElementClassType($row,'changeset')
 			assertChangesetClassTypes($row,['closed','hidden'])
@@ -479,12 +498,7 @@ describe("GridBody",()=>{
 			assertElementClassType($row,'changeset')
 			assertChangesetClassTypes($row,['closed','hidden'])
 			assertItemData($row,Date.parse('2023-03-03'),'changesetClose',10002)
-		},$row=>{
-			assertRowIsItem($row)
-			assertElementClassType($row,'changeset')
-			assertChangesetClassTypes($row,['combined'])
-			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
-		})
+		},...backRowAsserts)
 	})
 	it("doesn't expand any preceding hidden items when there's a visible item before",async()=>{
 		const gridBody=makeSingleColumnGrid({
@@ -531,6 +545,52 @@ describe("GridBody",()=>{
 			assertChangesetClassTypes($row,['combined'])
 			assertItemData($row,Date.parse('2023-03-01'),'changeset',10001)
 		})
+	})
+	it("doesn't expand any following hidden items when there's a visible item after",async()=>{
+		const gridBody=makeSingleColumnGrid({
+			getChangeset: async(id)=>{
+				if (id==10002) return makeChangesetItem(2,'2023-03-02','2023-03-03')
+				if (id==10003) return makeChangesetItem(3,'2023-03-04','2023-03-05')
+				if (id==10004) return makeChangesetItem(4,'2023-03-07','2023-03-08')
+			}
+		})
+		gridBody.addItem(makeChangesetBatchItem(4,'2023-03-07','2023-03-08'),usernames,false)
+		gridBody.addItem(makeChangesetCloseBatchItem(3,'2023-03-04','2023-03-05'),usernames,false)
+		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-03'),usernames,false)
+		gridBody.addItem({
+			iColumns: [0],
+			type: 'note',
+			item: {
+				id: 1001,
+				uid: 102,
+				createdAt: new Date('2023-03-01'),
+				openingComment: `meh`,
+			},
+		},usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem({type:'changeset',id:10004})
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsItem($row)
+			assertElementClassType($row,'changeset')
+			assertChangesetClassTypes($row,['combined'])
+			assertItemData($row,Date.parse('2023-03-07'),'changeset',10004)
+		},$row=>assertRowIsCollectionWithEach($row,
+			$child=>{
+				assertElementClassType($child,'changeset')
+				assertChangesetClassTypes($child,['closed','hidden'])
+				assertItemData($child,Date.parse('2023-03-05'),'changesetClose',10003)
+			},$child=>{
+				assertElementClassType($child,'changeset')
+				assertChangesetClassTypes($child,['closed','hidden'])
+				assertItemData($child,Date.parse('2023-03-03'),'changesetClose',10002)
+			},$child=>{
+				assertElementClassType($child,'note')
+				assertItemData($child,Date.parse('2023-03-01'),'note',1001)
+			}
+		))
 	})
 	it("expands user item",async()=>{
 		const gridBody=makeSingleColumnGrid({

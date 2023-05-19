@@ -300,6 +300,53 @@ export default class GridBody {
 			}
 			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
 		}
+		const findPrecedingItemSetsToExpand=($startingItemSet:HTMLElement[])=>{
+			const [$startingItem]=$startingItemSet
+			let $precedingItemSet=getPreviousSiblingItemSet($startingItemSet)
+			const $precedingHiddenItemSets:HTMLElement[][]=[]
+			while ($precedingItemSet) {
+				if (!isHiddenItemSet($precedingItemSet)) break
+				$precedingHiddenItemSets.unshift($precedingItemSet) // top-to-bottom order of expandItemSet() calls
+				$precedingItemSet=getPreviousSiblingItemSet($precedingItemSet)
+			}
+			if (
+				$precedingHiddenItemSets.length>0 &&
+				areSameItemSets(
+					$precedingHiddenItemSets[0],
+					getFirstSiblingItemSet($startingItemSet)??[]
+				)
+			) {
+				return $precedingHiddenItemSets
+			} else if ($startingItem.classList.contains('combined')) {
+				const $previousItemSet=getPreviousSiblingItemSet($startingItemSet)
+				if ($previousItemSet) {
+					const [$previousItem]=$previousItemSet
+					if (isHiddenItem($previousItem) && isChangesetOpenedClosedPair($startingItem,$previousItem)) {
+						return [$previousItemSet]
+					}
+				}
+			}
+			return []
+		}
+		const findFollowingItemsToExpand=($startingItemSet:HTMLElement[])=>{
+			let $followingItemSet=getNextSiblingItemSet($startingItemSet)
+			const $followingHiddenItemSets:HTMLElement[][]=[]
+			while ($followingItemSet) {
+				if (!isHiddenItemSet($followingItemSet)) break
+				$followingHiddenItemSets.push($followingItemSet)
+				$followingItemSet=getNextSiblingItemSet($followingItemSet)
+			}
+			if (
+				$followingHiddenItemSets.length>0 &&
+				areSameItemSets(
+					$followingHiddenItemSets[$followingHiddenItemSets.length-1],
+					getLastSiblingItemSet($startingItemSet)??[]
+				)
+			) {
+				return $followingHiddenItemSets
+			}
+			return []
+		}
 		const itemSelector=getItemDescriptorSelector(descriptor)
 		const itemSelectorWithRow='tr.collection '+itemSelector
 		const $items=this.$gridBody.querySelectorAll(itemSelectorWithRow)
@@ -322,35 +369,15 @@ export default class GridBody {
 			if (uniqueItemCopies.size==0) continue
 			const iColumns=[...uniqueItemCopies.keys()]
 			const $startingItemSet=[...uniqueItemCopies.values()]
-			const [$startingItem]=$startingItemSet
-			let $precedingItemSet=getPreviousSiblingItemSet($startingItemSet)
-			const $precedingHiddenItemSets:HTMLElement[][]=[]
-			while ($precedingItemSet) { // TODO actually collect up to beginning of collection - or cancel if it can't be reached
-				if (!isHiddenItemSet($precedingItemSet)) break
-				$precedingHiddenItemSets.unshift($precedingItemSet) // top-to-bottom order of expandItemSet() calls
-				$precedingItemSet=getPreviousSiblingItemSet($precedingItemSet)
-			}
-			if (
-				$precedingHiddenItemSets.length>0 &&
-				areSameItemSets(
-					$precedingHiddenItemSets[0],
-					getFirstSiblingItemSet($startingItemSet)??[]
-				)
-			) {
-				for (const $itemSet of $precedingHiddenItemSets) {
-					await expandItemSet($row,iColumns,$itemSet)
-				}
-			} else if ($startingItem.classList.contains('combined')) {
-				const $previousItemSet=getPreviousSiblingItemSet($startingItemSet)
-				if ($previousItemSet) {
-					const [$previousItem]=$previousItemSet
-					if (isHiddenItem($previousItem) && isChangesetOpenedClosedPair($startingItem,$previousItem)) {
-						await expandItemSet($row,iColumns,$previousItemSet)
-					}
-				}
+			const $precedingItemSetsToExpand=findPrecedingItemSetsToExpand($startingItemSet)
+			const $followingItemSetsToExpand=findFollowingItemsToExpand($startingItemSet)
+			for (const $itemSet of $precedingItemSetsToExpand) {
+				await expandItemSet($row,iColumns,$itemSet)
 			}
 			await expandItemSet($row,iColumns,$startingItemSet,descriptor.type=='user')
-			// let $followingItemSet=getNextSiblingItemSet($startingItemSet) // TODO
+			for (const $itemSet of $followingItemSetsToExpand) {
+				await expandItemSet($row,iColumns,$itemSet)
+			}
 		}
 	}
 	private insertItem(
@@ -742,27 +769,46 @@ function getFirstSiblingItemSet($itemSet: HTMLElement[]): HTMLElement[]|null {
 	}
 	return $firstItemSet
 }
+function getLastSiblingItemSet($itemSet: HTMLElement[]): HTMLElement[]|null {
+	if ($itemSet.length==0) return null
+	const $lastItemSet:HTMLElement[]=[]
+	for (const $item of $itemSet) {
+		const $parent=$item.parentElement
+		if (!$parent) return null
+		const $items=$parent.querySelectorAll('.item')
+		const $lastItem=$items[$items.length-1]
+		if (!($lastItem instanceof HTMLElement)) return null
+		$lastItemSet.push($lastItem)
+	}
+	return $lastItemSet
+}
 
 function getPreviousSiblingItemSet($itemSet: HTMLElement[]): HTMLElement[]|null {
+	return getIteratedSiblingItemSet($itemSet,$item=>$item.previousElementSibling)
+}
+function getNextSiblingItemSet($itemSet: HTMLElement[]): HTMLElement[]|null {
+	return getIteratedSiblingItemSet($itemSet,$item=>$item.nextElementSibling)
+}
+function getIteratedSiblingItemSet($itemSet: HTMLElement[],stepElement:($item:Element)=>Element|null): HTMLElement[]|null {
 	const isItem=($e:Element)=>$e.classList.contains('item')
 	if ($itemSet.length==0) return null
-	const $previousItemSet:HTMLElement[]=[]
+	const $itemSet2:HTMLElement[]=[]
 	for (const $item of $itemSet) {
-		const $previousItem=$item.previousElementSibling
-		if (!($previousItem instanceof HTMLElement)) return null
-		$previousItemSet.push($previousItem)
+		const $item2=stepElement($item)
+		if (!($item2 instanceof HTMLElement)) return null
+		$itemSet2.push($item2)
 	}
-	const [$leadPreviousItem]=$previousItemSet
-	if (!isItem($leadPreviousItem)) return null
-	const leadDescriptor=readItemDescriptor($leadPreviousItem)
-	if (!leadDescriptor) return null
-	for (const $previousItem of $previousItemSet) {
-		if (!isItem($previousItem)) return null
-		const descriptor=readItemDescriptor($previousItem)
-		if (!descriptor) return null
-		if (!isEqualItemDescriptor(leadDescriptor,descriptor)) return null
+	const [$leadItem2]=$itemSet2
+	if (!isItem($leadItem2)) return null
+	const leadDescriptor2=readItemDescriptor($leadItem2)
+	if (!leadDescriptor2) return null
+	for (const $item2 of $itemSet2) {
+		if (!isItem($item2)) return null
+		const descriptor2=readItemDescriptor($item2)
+		if (!descriptor2) return null
+		if (!isEqualItemDescriptor(leadDescriptor2,descriptor2)) return null
 	}
-	return $previousItemSet
+	return $itemSet2
 }
 
 function areSameItemSets($itemSet1: HTMLElement[], $itemSet2: HTMLElement[]): boolean {
