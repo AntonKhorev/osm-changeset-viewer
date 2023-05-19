@@ -696,6 +696,102 @@ describe("GridBody",()=>{
 			}
 		))
 	})
+	it("makes adds items to two-column collection",()=>{
+		const nColumns=2
+		const gridBody=new GridBody(server,null,()=>new Array(nColumns).fill(0))
+		gridBody.setColumns(nColumns)
+		gridBody.addItem({
+			iColumns: [0],
+			type: 'changeset',
+			item: makeChangesetItem(2),
+		},usernames,false)
+		gridBody.addItem({
+			iColumns: [1],
+			type: 'changeset',
+			item: makeChangesetItem(1),
+		},usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertItemData($child,Date.parse('2023-03-02'),'changeset',10002)
+				})
+			},$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+				})
+			})
+		})
+	})
+	it("splits collection when items are in different columns",async()=>{
+		const nColumns=2
+		const gridBody=new GridBody(server,{
+			getChangeset: async(id)=>{
+				if (id==10001) return makeChangesetItem(1)
+				if (id==10002) return makeChangesetItem(2)
+				if (id==10003) return makeChangesetItem(3)
+			}
+		},()=>new Array(nColumns).fill(0))
+		gridBody.setColumns(nColumns)
+		gridBody.addItem({
+			iColumns: [0],
+			type: 'changeset',
+			item: makeChangesetItem(3),
+		},usernames,false)
+		gridBody.addItem({
+			iColumns: [1],
+			type: 'changeset',
+			item: makeChangesetItem(2),
+		},usernames,false)
+		gridBody.addItem({
+			iColumns: [1],
+			type: 'changeset',
+			item: makeChangesetItem(1),
+		},usernames,false)
+		gridBody.updateTableAccordingToSettings(false,false)
+		await gridBody.expandItem({type:'changeset',id:10002})
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2023,3)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertItemData($child,Date.parse('2023-03-03'),'changeset',10003)
+				})
+			},$cell=>{
+				assertEach($cell.children)
+			})
+		},$row=>{
+			assertRowIsItem($row)
+			assertItemData($row,Date.parse('2023-03-02'),'changeset',10002)
+		},$row=>{
+			assertRowIsCollection($row)
+			assertEach($row.cells,$cell=>{
+				assertEach($cell.children)
+			},$cell=>{
+				assertEach($cell.children,$child=>{
+					assertCellChildIsIcon($child)
+				},$child=>{
+					assertCellChildIsItem($child)
+					assertItemData($child,Date.parse('2023-03-01'),'changeset',10001)
+				})
+			})
+		})
+	})
 })
 
 function assertElementClass($e,cls,isExpectedClass,name) {
@@ -772,8 +868,10 @@ function assertSeparatorData($separator,year,month) {
 	const timestamp=Number($separator.dataset.timestamp)
 	assert(Number.isInteger(timestamp))
 	const date=new Date(timestamp)
-	assert.equal(date.getUTCFullYear(),year)
-	assert.equal(date.getUTCMonth()+1,month)
+	const actualYear=date.getUTCFullYear()
+	assert.equal(actualYear,year,`Expected separator year ${year}, got ${actualYear}`)
+	const actualMonth=date.getUTCMonth()+1
+	assert.equal(actualMonth,month,`Expected separator month ${month}, got ${actualMonth}`)
 }
 function assertItemData($item,timestamp,type,id,order) {
 	assert.equal($item.dataset.timestamp,String(timestamp))
