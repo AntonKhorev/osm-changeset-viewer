@@ -249,8 +249,10 @@ export default class GridBody {
 				return new Map<number,string>([[uid,username]])
 			}
 		}
-		const expandItemSet=async($row:HTMLTableRowElement,iColumns:number[],$placeholders:HTMLElement[],continueTimeline=false)=>{
+		const expandItemSet=async(iColumns:number[],$placeholders:HTMLElement[],continueTimeline=false)=>{
 			const [$item]=$placeholders
+			const $row=$item.closest('tr')
+			if (!$row) return
 			const sequenceInfo=readItemSequenceInfo($item)
 			if (!sequenceInfo) return
 			let batchItem:MuxBatchItem
@@ -373,11 +375,11 @@ export default class GridBody {
 			const $precedingItemSetsToExpand=findPrecedingItemSetsToExpand($startingItemSet)
 			const $followingItemSetsToExpand=findFollowingItemsToExpand($startingItemSet)
 			for (const $itemSet of $precedingItemSetsToExpand) {
-				await expandItemSet($row,iColumns,$itemSet)
+				await expandItemSet(iColumns,$itemSet)
 			}
-			await expandItemSet($row,iColumns,$startingItemSet,descriptor.type=='user')
+			await expandItemSet(iColumns,$startingItemSet,descriptor.type=='user')
 			for (const $itemSet of $followingItemSetsToExpand) {
-				await expandItemSet($row,iColumns,$itemSet)
+				await expandItemSet(iColumns,$itemSet)
 			}
 		}
 	}
