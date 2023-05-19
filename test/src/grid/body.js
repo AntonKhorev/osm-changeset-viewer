@@ -57,11 +57,11 @@ const usernames=new Map([
 
 function makeChangesetItem(i,createdAtString,closedAtString) {
 	const createdAt=new Date(createdAtString
-		? new Date(createdAtString)
+		? createdAtString
 		: `2023-03-0${i}`
 	)
 	const closedAt=new Date(closedAtString
-		? new Date(closedAtString)
+		? closedAtString
 		: `2023-03-0${i}`
 	)
 	return {
