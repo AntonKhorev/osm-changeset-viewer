@@ -2,6 +2,16 @@ import {strict as assert} from 'assert'
 import {JSDOM} from 'jsdom'
 import {setInsertedRowCellsAndTimeline} from '../../../test-build/grid/timeline.js'
 
+function insertRow($tbody,className,cells) {
+	const $row=$tbody.insertRow()
+	$row.classList.add(className)
+	for (const cell of cells) {
+		const $cell=$row.insertCell()
+		if (cell.includes('a')) $cell.classList.add('with-timeline-above')
+		if (cell.includes('b')) $cell.classList.add('with-timeline-below')
+	}
+}
+
 describe("timeline module",()=>{
 	const globalProperties=[
 		'document',
@@ -29,9 +39,7 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to row without timeline",()=>{
 		const $tbody=document.createElement('tbody')
-		const $r1=$tbody.insertRow()
-		$r1.classList.add('item')
-		$r1.innerHTML=`<td></td>`
+		insertRow($tbody,'item',[''])
 		const $row=$tbody.insertRow()
 		setInsertedRowCellsAndTimeline($row,[0],[null])
 		assertRows($tbody,[
@@ -41,9 +49,7 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to row with terminating timeline",()=>{
 		const $tbody=document.createElement('tbody')
-		const $r1=$tbody.insertRow()
-		$r1.classList.add('item')
-		$r1.innerHTML=`<td class='with-timeline-above'></td>`
+		insertRow($tbody,'item',['a'])
 		const $row=$tbody.insertRow()
 		setInsertedRowCellsAndTimeline($row,[0],[null])
 		assertRows($tbody,[
@@ -53,9 +59,7 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to separator",()=>{
 		const $tbody=document.createElement('tbody')
-		const $r1=$tbody.insertRow()
-		$r1.classList.add('separator')
-		$r1.innerHTML=`<td></td>`
+		insertRow($tbody,'separator',[''])
 		const $row=$tbody.insertRow()
 		setInsertedRowCellsAndTimeline($row,[0],[null])
 		assertRows($tbody,[
@@ -65,12 +69,8 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to row with terminating timeline above separator",()=>{
 		const $tbody=document.createElement('tbody')
-		const $r1=$tbody.insertRow()
-		$r1.classList.add('item')
-		$r1.innerHTML=`<td class='with-timeline-above'></td>`
-		const $r2=$tbody.insertRow()
-		$r2.classList.add('separator')
-		$r2.innerHTML=`<td></td>`
+		insertRow($tbody,'item',['a'])
+		insertRow($tbody,'separator',[''])
 		const $row=$tbody.insertRow()
 		setInsertedRowCellsAndTimeline($row,[0],[null])
 		assertRows($tbody,[
@@ -81,12 +81,8 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to row with terminating timeline above empty row",()=>{
 		const $tbody=document.createElement('tbody')
-		const $r1=$tbody.insertRow()
-		$r1.classList.add('item')
-		$r1.innerHTML=`<td class='with-timeline-above'></td>`
-		const $r2=$tbody.insertRow()
-		$r2.classList.add('item')
-		$r2.innerHTML=`<td></td>`
+		insertRow($tbody,'item',['a'])
+		insertRow($tbody,'item',[''])
 		const $row=$tbody.insertRow()
 		setInsertedRowCellsAndTimeline($row,[0],[null])
 		assertRows($tbody,[
@@ -98,9 +94,7 @@ describe("timeline module",()=>{
 	it("sets row inserted before row with terminating timeline",()=>{
 		const $tbody=document.createElement('tbody')
 		const $row=$tbody.insertRow()
-		const $r1=$tbody.insertRow()
-		$r1.classList.add('item')
-		$r1.innerHTML=`<td class='with-timeline-above'></td>`
+		insertRow($tbody,'item',['a'])
 		setInsertedRowCellsAndTimeline($row,[0],[null])
 		assertRows($tbody,[
 			['ab'],
