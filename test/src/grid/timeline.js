@@ -118,12 +118,13 @@ function assertRows($tbody,rows) {
 		for (let j=0;j<cells.length;j++) {
 			const $cell=$row.cells[j]
 			const cell=cells[j]
+			const cellName=`cell[${i},${j}]`
 			for (const [key,word] of [['a','above'],['b','below']]) {
 				const className=`with-timeline-${word}`
 				if (cell.includes(key)) {
-					assert($cell.classList.contains(className),`Expected cell class '${className}' missing`)
+					assert($cell.classList.contains(className),`Expected ${cellName} class '${className}' missing`)
 				} else {
-					assert(!$cell.classList.contains(className),`Unexpected cell class '${className}' present`)
+					assert(!$cell.classList.contains(className),`Unexpected ${cellName} class '${className}' present`)
 				}
 			}
 		}
