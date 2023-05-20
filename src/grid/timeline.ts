@@ -14,21 +14,29 @@ export function setInsertedRowCellsAndTimeline($row: HTMLTableRowElement, iColum
 	}
 	const reachedTimelineAbove=iColumns.map(_=>false)
 	for (
-		let $rowAbove=$row.previousElementSibling;
-		$rowAbove && reachedTimelineAbove.some(reached=>!reached);
-		$rowAbove=$rowAbove.previousElementSibling
+		let $previousRowAbove:Element|null=null, $rowAbove=$row.previousElementSibling;
+		reachedTimelineAbove.some(reached=>!reached);
+		$previousRowAbove=$rowAbove, $rowAbove=$rowAbove.previousElementSibling
 	) {
-		if (!isContentRow($rowAbove)) continue
+		if ($rowAbove) {
+			if (!isContentRow($rowAbove)) continue
+		}
 		for (const [i,reached] of reachedTimelineAbove.entries()) {
 			if (reached) continue
 			const iColumn=iColumns[i]
-			const $cellAbove=$rowAbove.cells[iColumn]
-			if (!$cellAbove) continue
-			if (!$cellAbove.classList.contains('with-timeline-above')) continue
+			let $rowBetween: Element|null
+			if ($rowAbove) {
+				const $cellAbove=$rowAbove.cells[iColumn]
+				if (!$cellAbove) continue
+				if (!$cellAbove.classList.contains('with-timeline-above')) continue
+				$cellAbove.classList.add('with-timeline-below')
+				$rowBetween=$rowAbove.nextElementSibling
+			} else {
+				$rowBetween=$previousRowAbove
+			}
 			reachedTimelineAbove[i]=true
-			$cellAbove.classList.add('with-timeline-below')
 			for (
-				let $rowBetween=$rowAbove.nextElementSibling;
+				;
 				$rowBetween && $rowBetween!=$row;
 				$rowBetween=$rowBetween.nextElementSibling
 			) {
@@ -37,6 +45,7 @@ export function setInsertedRowCellsAndTimeline($row: HTMLTableRowElement, iColum
 				$cellBetween.classList.add('with-timeline-above','with-timeline-below')
 			}
 		}
+		if (!$rowAbove) break
 	}
 }
 
