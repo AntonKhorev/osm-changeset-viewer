@@ -1,3 +1,8 @@
+/**
+ * Creates row cells and sets with-timeline-* cell classes on a given and preceding rows
+ *
+ * Looks at row and cell classes
+ */
 export function setInsertedRowCellsAndTimeline($row: HTMLTableRowElement, iColumns: number[], columnHues: (number|null)[]): void {
 	/*
 	let $previousContentRow=$row.previousElementSibling
@@ -16,18 +21,23 @@ export function setInsertedRowCellsAndTimeline($row: HTMLTableRowElement, iColum
 		) break
 		$nextContentRow=$nextContentRow.nextElementSibling
 	}
-	for (let i=0;i<this.nColumns;i++) { // TODO iterate over columnHues
+	*/
+	for (const [iColumn,hue] of columnHues.entries()) { // TODO iterate over columnHues
 		const $cell=$row.insertCell()
+		setCellHue($cell,hue)
+		/*
 		if ($previousContentRow) {
 			const $previousContentCell=$previousContentRow.cells[i]
 			if ($previousContentCell) {
 				$previousContentCell.classList.add('with-timeline-below')
 			}
 		}
+		*/
 		$cell.classList.add('with-timeline-above')
+		/*
 		if ($nextContentRow
+		*/
 	}
-	*/
 	/*
 	for (const [iColumn,cutoffSequenceInfo] of this.columnTimelineCutoffSequenceInfo.entries()) {
 		const $cell=$row.insertCell()
@@ -37,7 +47,11 @@ export function setInsertedRowCellsAndTimeline($row: HTMLTableRowElement, iColum
 		if (!cutoffSequenceInfo || isGreaterElementSequenceInfo(sequenceInfo,cutoffSequenceInfo)) {
 			$cell.classList.add('with-timeline-below')
 		}
-		setCellHue($cell,columnHues[iColumn])
 	}
 	*/
+}
+
+function setCellHue($cell: HTMLTableCellElement, hue: number|null): void {
+	if (hue==null) return
+	$cell.style.setProperty('--hue',String(hue))
 }

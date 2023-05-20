@@ -841,11 +841,6 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
 }
 
-function setCellHue($cell: HTMLTableCellElement, hue: number|null): void {
-	if (hue==null) return
-	$cell.style.setProperty('--hue',String(hue))
-}
-
 function insertPlaceholderBeforeFirstCellItem($placeholder: HTMLElement, $cell: HTMLTableCellElement): void {
 	let $child=$cell.firstElementChild
 	while ($child) {
