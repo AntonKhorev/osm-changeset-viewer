@@ -91,6 +91,30 @@ describe("timeline module",()=>{
 			['a'],
 		])
 	})
+	it("sets row appended to 2-column row with different timeline heights",()=>{
+		const $tbody=document.createElement('tbody')
+		insertRow($tbody,'item',['a ','ab'])
+		insertRow($tbody,'item',['  ','a '])
+		const $row=$tbody.insertRow()
+		setInsertedRowCellsAndTimeline($row,[0,1],[null,null])
+		assertRows($tbody,[
+			['ab','ab'],
+			['ab','ab'],
+			['a ','a '],
+		])
+	})
+	it("sets row with one filled column appended to 2-column row with different timeline heights",()=>{
+		const $tbody=document.createElement('tbody')
+		insertRow($tbody,'item',['a ','ab'])
+		insertRow($tbody,'item',['  ','a '])
+		const $row=$tbody.insertRow()
+		setInsertedRowCellsAndTimeline($row,[0],[null,null])
+		assertRows($tbody,[
+			['ab','ab'],
+			['ab','a '],
+			['a ','  '],
+		])
+	})
 	it("sets row inserted before row with terminating timeline",()=>{
 		const $tbody=document.createElement('tbody')
 		const $row=$tbody.insertRow()

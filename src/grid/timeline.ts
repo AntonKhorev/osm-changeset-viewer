@@ -4,41 +4,40 @@
  * Looks at row and cell classes
  */
 export function setInsertedRowCellsAndTimeline($row: HTMLTableRowElement, iColumns: number[], columnHues: (number|null)[]): void {
-	let $previousContentRow=$row.previousElementSibling
-	while ($previousContentRow) {
-		if (isContentRow($previousContentRow)) break
-		$previousContentRow=$previousContentRow.previousElementSibling
-	}
-	let $nextContentRow=$row.nextElementSibling
-	while ($nextContentRow) {
-		if (isContentRow($nextContentRow)) break
-		$nextContentRow=$nextContentRow.nextElementSibling
-	}
+	const iColumnSet=new Set(iColumns)
 	for (const [iColumn,hue] of columnHues.entries()) {
 		const $cell=$row.insertCell()
 		setCellHue($cell,hue)
-		if ($previousContentRow) {
-			const $previousContentCell=$previousContentRow.cells[iColumn]
-			if ($previousContentCell) {
-				$previousContentCell.classList.add('with-timeline-below')
-			}
-		}
-		$cell.classList.add('with-timeline-above')
-		/*
-		if ($nextContentRow
-		*/
-	}
-	/*
-	for (const [iColumn,cutoffSequenceInfo] of this.columnTimelineCutoffSequenceInfo.entries()) {
-		const $cell=$row.insertCell()
-		if (!cutoffSequenceInfo || !isGreaterElementSequenceInfo(cutoffSequenceInfo,sequenceInfo)) {
+		if (iColumnSet.has(iColumn)) {
 			$cell.classList.add('with-timeline-above')
 		}
-		if (!cutoffSequenceInfo || isGreaterElementSequenceInfo(sequenceInfo,cutoffSequenceInfo)) {
-			$cell.classList.add('with-timeline-below')
+	}
+	const reachedTimelineAbove=iColumns.map(_=>false)
+	for (
+		let $rowAbove=$row.previousElementSibling;
+		$rowAbove && reachedTimelineAbove.some(reached=>!reached);
+		$rowAbove=$rowAbove.previousElementSibling
+	) {
+		if (!isContentRow($rowAbove)) continue
+		for (const [i,reached] of reachedTimelineAbove.entries()) {
+			if (reached) continue
+			const iColumn=iColumns[i]
+			const $cellAbove=$rowAbove.cells[iColumn]
+			if (!$cellAbove) continue
+			if (!$cellAbove.classList.contains('with-timeline-above')) continue
+			reachedTimelineAbove[i]=true
+			$cellAbove.classList.add('with-timeline-below')
+			for (
+				let $rowBetween=$rowAbove.nextElementSibling;
+				$rowBetween && $rowBetween!=$row;
+				$rowBetween=$rowBetween.nextElementSibling
+			) {
+				if (!isContentRow($rowBetween)) continue
+				const $cellBetween=$rowBetween.cells[iColumn]
+				$cellBetween.classList.add('with-timeline-above','with-timeline-below')
+			}
 		}
 	}
-	*/
 }
 
 function isContentRow($row: Element|null): $row is HTMLTableRowElement {
