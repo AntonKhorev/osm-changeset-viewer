@@ -41,7 +41,6 @@ export function isEqualItemDescriptor(a: ItemDescriptor, b: ItemDescriptor): boo
 }
 
 function getElementTypeRank(type: ElementSequenceInfo['type']): number {
-	// 0 = rank of separators // TODO why is it not returned?
 	switch (type) {
 	case 'user':
 		return 1
@@ -56,7 +55,7 @@ function getElementTypeRank(type: ElementSequenceInfo['type']): number {
 	case 'noteComment':
 		return 6
 	}
-	return +Infinity
+	return +Infinity // rank of separators
 }
 
 export function getBatchItemSequenceInfo({type,item}: MuxBatchItem): ItemSequenceInfo|null {

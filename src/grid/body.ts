@@ -11,6 +11,8 @@ import {
 	markChangesetItemAsCombined, markChangesetItemAsUncombined,
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow, makeCollectionIcon
 } from './body-item'
+import GridBodyCollectionRow from './collection'
+import {setInsertedRowCellsAndTimeline} from './timeline'
 import * as bodyItemSet from './body-item-set'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
@@ -32,7 +34,7 @@ export default class GridBody {
 	onItemSelect: ()=>void = ()=>{}
 	private readonly wrappedItemSelectListener: ()=>void
 	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
-	private hasColumnReachedTimelineEnd: boolean[] = []
+	private columnTimelineCutoffSequenceInfo: (ItemSequenceInfo|null)[] = [] // TODO set cutoff at +infinite time for unsubmitted form columns
 	constructor(
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader,
@@ -42,10 +44,10 @@ export default class GridBody {
 		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosureWithButton(ev.currentTarget)
 	}
 	get nColumns(): number {
-		return this.hasColumnReachedTimelineEnd.length
+		return this.columnTimelineCutoffSequenceInfo.length
 	}
 	setColumns(nColumns: number): void {
-		this.hasColumnReachedTimelineEnd=new Array<boolean>(nColumns).fill(false)
+		this.columnTimelineCutoffSequenceInfo=new Array<ItemSequenceInfo|null>(nColumns).fill(null)
 		this.$gridBody.replaceChildren()
 	}
 	addItem(
@@ -127,7 +129,7 @@ export default class GridBody {
 		}
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
-		moveInArray(this.hasColumnReachedTimelineEnd,iShiftFrom,iShiftTo)
+		moveInArray(this.columnTimelineCutoffSequenceInfo,iShiftFrom,iShiftTo)
 		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('item')) continue
 			const $cells=[...$row.cells]
@@ -139,8 +141,8 @@ export default class GridBody {
 		hasChecked: boolean[],
 		hasUnchecked: boolean[]
 	] {
-		const hasChecked=this.hasColumnReachedTimelineEnd.map(()=>false)
-		const hasUnchecked=this.hasColumnReachedTimelineEnd.map(()=>false)
+		const hasChecked=this.columnTimelineCutoffSequenceInfo.map(()=>false)
+		const hasUnchecked=this.columnTimelineCutoffSequenceInfo.map(()=>false)
 		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('collection') && !$row.classList.contains('changeset')) continue
 			for (const [iColumn,$cell] of [...$row.cells].entries()) {
@@ -188,7 +190,7 @@ export default class GridBody {
 			const $nextRow=$row.nextElementSibling
 			if (continueTimeline) {
 				for (const iColumn of iColumns) {
-					this.hasColumnReachedTimelineEnd[iColumn]=false
+					this.columnTimelineCutoffSequenceInfo[iColumn]=null // TODO shouldn't change?
 				}
 			}
 			$row.remove()
@@ -295,7 +297,7 @@ export default class GridBody {
 			}
 			if (continueTimeline) {
 				for (const iColumn of iColumns) {
-					this.hasColumnReachedTimelineEnd[iColumn]=false
+					this.columnTimelineCutoffSequenceInfo[iColumn]=null // TODO shouldn't change?
 				}
 			}
 			if (!doesCollectionRowHaveItems($row)) {
@@ -397,6 +399,11 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
+		if (sequenceInfo.type=='user') { // TODO remove this
+			for (const iColumn of iColumns) {
+				this.columnTimelineCutoffSequenceInfo[iColumn]=sequenceInfo
+			}
+		}
 		const $placeholders=this.insertItemPlaceholders(iColumns,sequenceInfo,insertItemInfo.isExpanded,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
@@ -420,6 +427,123 @@ export default class GridBody {
 		}
 		return true
 	}
+	// { rewrite
+	private insertItemPlaceholders(
+		iColumns: number[],
+		sequenceInfo: ItemSequenceInfo,
+		isExpanded: boolean,
+		$previousPlaceholders: HTMLElement[],
+		classNames: string[]
+	): HTMLElement[] {
+		const copyPlaceholderChildren=($placeholder:HTMLElement,iPlaceholder:number)=>{
+			$placeholder.replaceChildren(
+				...$previousPlaceholders[iPlaceholder].childNodes
+			)
+		}
+		const insertionRowInfo=this.findInsertionRow(sequenceInfo)
+		if (isExpanded) {
+			const $row=makeElement('tr')()()
+			{
+				let $rowBefore:HTMLTableRowElement
+				if (insertionRowInfo.type=='betweenRows') {
+					$rowBefore=insertionRowInfo.$rowBefore
+				} else {
+					const collection=new GridBodyCollectionRow(insertionRowInfo.$row)
+					collection.split(sequenceInfo)
+					$rowBefore=insertionRowInfo.$row
+				}
+				$rowBefore.after($row)
+			}
+			$row.classList.add(...classNames)
+			writeElementSequenceInfo($row,sequenceInfo)
+			setInsertedRowCellsAndTimeline($row,iColumns,this.getColumnHues())
+			return iColumns.map((iColumn,iPlaceholder)=>{
+				const $placeholder=$row.cells[iColumn]
+				copyPlaceholderChildren($placeholder,iPlaceholder)
+				return $placeholder
+			})
+		} else {
+			let collection: GridBodyCollectionRow
+			if (insertionRowInfo.type=='betweenRows') {
+				if (insertionRowInfo.$rowBefore.classList.contains('collection')) {
+					collection=new GridBodyCollectionRow(insertionRowInfo.$rowBefore)
+					
+				} else if (insertionRowInfo.$rowAfter?.classList.contains('collection')) {
+					collection=new GridBodyCollectionRow(insertionRowInfo.$rowAfter)
+				} else {
+					const $row=makeElement('tr')('collection')()
+					insertionRowInfo.$rowBefore.after($row)
+					setInsertedRowCellsAndTimeline($row,iColumns,this.getColumnHues())
+					collection=new GridBodyCollectionRow($row)
+				}
+			} else {
+				collection=new GridBodyCollectionRow(insertionRowInfo.$row)
+			}
+			const $placeholders=collection.insert(sequenceInfo,iColumns)
+			for (const [iPlaceholder,$placeholder] of $placeholders.entries()) {
+				$placeholder.classList.add(...classNames)
+				copyPlaceholderChildren($placeholder,iPlaceholder)
+			}
+			return $placeholders
+		}
+	}
+	private findInsertionRow(sequenceInfo: ItemSequenceInfo): {
+		type: 'betweenRows'
+		$rowBefore: HTMLTableRowElement
+		$rowAfter: HTMLTableRowElement|undefined
+	} | {
+		type: 'insideRow'
+		$row: HTMLTableRowElement
+	} {
+		for (let i=this.$gridBody.rows.length-1;i>=0;i--) {
+			const $row=this.$gridBody.rows[i]
+			const $rowAfter=this.$gridBody.rows[i+1]
+			if ($row.classList.contains('collection')) {
+				const collection=new GridBodyCollectionRow($row)
+				const cmp=collection.compare(sequenceInfo)
+				if (cmp<0) continue
+				if (cmp==0) {
+					return {type:'insideRow', $row}
+				} else {
+					return {type:'betweenRows', $rowBefore:$row, $rowAfter}
+				}
+			} else {
+				const existingSequenceInfo=readElementSequenceInfo($row)
+				if (!existingSequenceInfo) continue
+				if (!isGreaterElementSequenceInfo(existingSequenceInfo,sequenceInfo)) continue
+				if (isSameMonthTimestamps(existingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
+					return {type:'betweenRows', $rowBefore:$row, $rowAfter}
+				} else {
+					const $separator=this.insertSeparatorRow(sequenceInfo,$row)
+					return {type:'betweenRows', $rowBefore:$separator, $rowAfter}
+				}
+			}
+		}
+		{
+			const $separator=this.insertSeparatorRow(sequenceInfo)
+			return {type:'betweenRows', $rowBefore:$separator, $rowAfter:this.$gridBody.rows[0]}
+		}
+	}
+	private insertSeparatorRow(sequenceInfo: ItemSequenceInfo, $precedingRow?: HTMLTableRowElement): HTMLTableRowElement {
+		const date=new Date(sequenceInfo.timestamp)
+		const yearMonthString=toIsoYearMonthString(date)
+		const $separator=makeElement('tr')('separator')()
+		if ($precedingRow) {
+			$precedingRow.after($separator)
+		} else {
+			this.$gridBody.prepend($separator)
+		}
+		writeSeparatorSequenceInfo($separator,date)
+		const $cell=$separator.insertCell()
+		$cell.append(
+			makeDiv('month')(
+				makeElement('time')()(yearMonthString)
+			)
+		)
+		$cell.colSpan=this.nColumns+1
+		return $separator
+	}
+	/*
 	private insertItemPlaceholders(
 		iColumns: number[],
 		sequenceInfo: ItemSequenceInfo,
@@ -630,6 +754,8 @@ export default class GridBody {
 		}
 		return $row
 	}
+	*/
+	// } rewrite
 	private async toggleItemDisclosureWithButton($disclosureButton: EventTarget|null): Promise<void> {
 		if (!($disclosureButton instanceof HTMLButtonElement)) return
 		const $item=$disclosureButton.closest('.item')
