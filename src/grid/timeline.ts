@@ -5,7 +5,7 @@
  */
 export function updateTimelineOnInsert($row: HTMLTableRowElement, iColumns: number[]): void {
 	const iColumnSet=new Set(iColumns)
-	const inInsertedTimeline=new Array<boolean>($row.cells.length).fill(false)
+	const inInsertedTimeline=Array<boolean>($row.cells.length).fill(false)
 	let $rowBelow:Element|null=$row
 	while ($rowBelow.nextElementSibling) {
 		$rowBelow=$rowBelow.nextElementSibling

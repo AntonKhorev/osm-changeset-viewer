@@ -25,7 +25,7 @@ export default class GridBody {
 	onItemSelect: ()=>void = ()=>{}
 	private readonly wrappedItemSelectListener: ()=>void
 	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
-	private columnTimelineCutoffSequenceInfo: (ItemSequencePoint|null)[] = [] // TODO remove it
+	private nColumns=0
 	constructor(
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader,
@@ -34,11 +34,8 @@ export default class GridBody {
 		this.wrappedItemSelectListener=()=>this.onItemSelect()
 		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosureWithButton(ev.currentTarget)
 	}
-	get nColumns(): number {
-		return this.columnTimelineCutoffSequenceInfo.length
-	}
 	setColumns(nColumns: number): void {
-		this.columnTimelineCutoffSequenceInfo=new Array<ItemSequencePoint|null>(nColumns).fill(null)
+		this.nColumns=nColumns
 		this.$gridBody.replaceChildren()
 	}
 	addItem(
@@ -120,7 +117,6 @@ export default class GridBody {
 		}
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
-		moveInArray(this.columnTimelineCutoffSequenceInfo,iShiftFrom,iShiftTo)
 		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('item')) continue
 			const $cells=[...$row.cells]
@@ -132,8 +128,8 @@ export default class GridBody {
 		hasChecked: boolean[],
 		hasUnchecked: boolean[]
 	] {
-		const hasChecked=this.columnTimelineCutoffSequenceInfo.map(()=>false)
-		const hasUnchecked=this.columnTimelineCutoffSequenceInfo.map(()=>false)
+		const hasChecked=Array<boolean>(this.nColumns).fill(false)
+		const hasUnchecked=Array<boolean>(this.nColumns).fill(false)
 		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('collection') && !$row.classList.contains('changeset')) continue
 			for (const [iColumn,$cell] of [...$row.cells].entries()) {
@@ -170,7 +166,7 @@ export default class GridBody {
 		const itemSelectorWithRow='tr'+getItemDescriptorSelector(descriptor)
 		const $row=this.$gridBody.querySelector(itemSelectorWithRow) // TODO select all matching rows? but there can't be more than one
 		if (!($row instanceof HTMLTableRowElement)) return
-		const collapseRowItems=($row:HTMLTableRowElement,continueTimeline=false)=>{
+		const collapseRowItems=($row:HTMLTableRowElement)=>{
 			const sequencePoint=readItemSequencePoint($row)
 			if (!sequencePoint) return
 			const itemCopies=listItemCopies($row,sequencePoint)
@@ -179,11 +175,6 @@ export default class GridBody {
 			const classNames=[...$row.classList]
 			const $prevRow=$row.previousElementSibling
 			const $nextRow=$row.nextElementSibling
-			if (continueTimeline) {
-				for (const iColumn of iColumns) {
-					this.columnTimelineCutoffSequenceInfo[iColumn]=null // TODO shouldn't change?
-				}
-			}
 			$row.remove()
 			for (const $placeholder of $placeholders) {
 				const $disclosureButton=getItemDisclosureButton($placeholder)
@@ -232,7 +223,7 @@ export default class GridBody {
 				collapseRowItems($row)
 			}
 		}
-		collapseRowItems($row,descriptor.type=='user')
+		collapseRowItems($row)
 	}
 	async expandItem(descriptor: ItemDescriptor): Promise<void> {
 		const makeUsernames=(uid?:number,username?:string)=>{
@@ -242,7 +233,7 @@ export default class GridBody {
 				return new Map<number,string>([[uid,username]])
 			}
 		}
-		const expandItemSet=async(iColumns:number[],$placeholders:HTMLElement[],continueTimeline=false)=>{
+		const expandItemSet=async(iColumns:number[],$placeholders:HTMLElement[])=>{
 			const [$item]=$placeholders
 			const $row=$item.closest('tr')
 			if (!$row) return
@@ -285,11 +276,6 @@ export default class GridBody {
 					setItemDisclosureButtonState($disclosureButton,true)
 				}
 				$placeholder.remove()
-			}
-			if (continueTimeline) {
-				for (const iColumn of iColumns) {
-					this.columnTimelineCutoffSequenceInfo[iColumn]=null // TODO shouldn't change?
-				}
 			}
 			if (!doesCollectionRowHaveItems($row)) {
 				$row.remove()
@@ -370,7 +356,7 @@ export default class GridBody {
 			for (const $itemSet of $precedingItemSetsToExpand) {
 				await expandItemSet(iColumns,$itemSet)
 			}
-			await expandItemSet(iColumns,$startingItemSet,descriptor.type=='user')
+			await expandItemSet(iColumns,$startingItemSet)
 			for (const $itemSet of $followingItemSetsToExpand) {
 				await expandItemSet(iColumns,$itemSet)
 			}
@@ -390,11 +376,6 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
-		if (sequencePoint.type=='user') { // TODO remove this
-			for (const iColumn of iColumns) {
-				this.columnTimelineCutoffSequenceInfo[iColumn]=sequencePoint
-			}
-		}
 		const $placeholders=this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
