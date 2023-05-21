@@ -8,8 +8,7 @@ function row(contents) {
 	$row.innerHTML=contents
 	return $row
 }
-function cell(timeline,style,contents) {
-	if (!contents) return `<td></td>`
+function cell(timeline,style,contents='') {
 	const classList=[]
 	if (timeline.includes('a')) classList.push('with-timeline-above')
 	if (timeline.includes('b')) classList.push('with-timeline-below')
@@ -143,6 +142,24 @@ describe("GridBodyCollectionRow",()=>{
 		assertChangesetCollectionRow($splitRow,[
 			['ab',hue],
 			['ab',hue,['2023-05-07',10101]]
+		])
+	})
+	it("splits collection with one filled and one blank cell without timeline",()=>{
+		const $row=row(
+			cell('ab',hue,
+				changeset('2023-05-09',10103)+
+				changeset('2023-05-07',10101)
+			)+cell('',hue)
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
+		assertChangesetCollectionRow($row,[
+			['ab',hue,['2023-05-09',10103]],
+			['  ',hue]
+		])
+		assertChangesetCollectionRow($splitRow,[
+			['ab',hue,['2023-05-07',10101]],
+			['  ',hue]
 		])
 	})
 	it("inserts placeholder at the beginning of one cell",()=>{

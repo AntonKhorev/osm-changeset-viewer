@@ -35,11 +35,13 @@ export default class GridBodyCollectionRow {
 		const $splitRow=makeElement('tr')('collection')()
 		for (const $cell of this.$row.cells) {
 			const $splitCell=$splitRow.insertCell()
-			$splitCell.classList.add('with-timeline-above')
 			if ($cell.classList.contains('with-timeline-below')) {
 				$splitCell.classList.add('with-timeline-below')
 			}
-			$cell.classList.add('with-timeline-below')
+			if ($cell.classList.contains('with-timeline-above')) {
+				$cell.classList.add('with-timeline-below')
+				$splitCell.classList.add('with-timeline-above')
+			}
 			const style=$cell.getAttribute('style')
 			if (style) {
 				$splitCell.setAttribute('style',style)
