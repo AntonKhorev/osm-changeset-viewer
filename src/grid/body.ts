@@ -1,10 +1,10 @@
 import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
-import type {ItemDescriptor, ItemSequenceInfo} from './info'
+import type {ItemDescriptor, ItemSequencePoint} from './info'
 import {
 	readItemDescriptor, getItemDescriptorSelector,
-	isGreaterElementSequenceInfo, writeSeparatorSequenceInfo, readElementSequenceInfo, writeElementSequenceInfo,
-	getBatchItemSequenceInfo, readItemSequenceInfo
+	isGreaterElementSequencePoint, writeSeparatorSequencePoint, readElementSequencePoint, writeElementSequencePoint,
+	getBatchItemSequencePoint, readItemSequencePoint
 } from './info'
 import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
@@ -34,7 +34,7 @@ export default class GridBody {
 	onItemSelect: ()=>void = ()=>{}
 	private readonly wrappedItemSelectListener: ()=>void
 	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
-	private columnTimelineCutoffSequenceInfo: (ItemSequenceInfo|null)[] = [] // TODO set cutoff at +infinite time for unsubmitted form columns
+	private columnTimelineCutoffSequenceInfo: (ItemSequencePoint|null)[] = [] // TODO remove it
 	constructor(
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader,
@@ -47,7 +47,7 @@ export default class GridBody {
 		return this.columnTimelineCutoffSequenceInfo.length
 	}
 	setColumns(nColumns: number): void {
-		this.columnTimelineCutoffSequenceInfo=new Array<ItemSequenceInfo|null>(nColumns).fill(null)
+		this.columnTimelineCutoffSequenceInfo=new Array<ItemSequencePoint|null>(nColumns).fill(null)
 		this.$gridBody.replaceChildren()
 	}
 	addItem(
@@ -57,10 +57,10 @@ export default class GridBody {
 	): boolean {
 		const [$masterPlaceholder,classNames]=makeItemShell(batchItem,isExpanded)
 		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
-		const sequenceInfo=getBatchItemSequenceInfo(batchItem)
-		if (!sequenceInfo) return false
+		const sequencePoint=getBatchItemSequencePoint(batchItem)
+		if (!sequencePoint) return false
 		return this.insertItem(
-			batchItem.iColumns,sequenceInfo,
+			batchItem.iColumns,sequencePoint,
 			!isExpanded?{isExpanded}:{isExpanded,batchItem,usernames},
 			$placeholders,classNames
 		)
@@ -180,9 +180,9 @@ export default class GridBody {
 		const $row=this.$gridBody.querySelector(itemSelectorWithRow) // TODO select all matching rows? but there can't be more than one
 		if (!($row instanceof HTMLTableRowElement)) return
 		const collapseRowItems=($row:HTMLTableRowElement,continueTimeline=false)=>{
-			const sequenceInfo=readItemSequenceInfo($row)
-			if (!sequenceInfo) return
-			const itemCopies=listItemCopies($row,sequenceInfo)
+			const sequencePoint=readItemSequencePoint($row)
+			if (!sequencePoint) return
+			const itemCopies=listItemCopies($row,sequencePoint)
 			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
 			const $placeholders=itemCopies.map(([$item])=>$item)
 			const classNames=[...$row.classList]
@@ -206,7 +206,7 @@ export default class GridBody {
 			) {
 				mergeCollectionRows($prevRow,$nextRow)
 			}
-			this.insertItem(iColumns,sequenceInfo,{isExpanded:false},$placeholders,classNames)
+			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$placeholders,classNames)
 		}
 		let $precedingRow=$row.previousElementSibling
 		const $precedingHiddenRows:HTMLTableRowElement[]=[]
@@ -255,34 +255,34 @@ export default class GridBody {
 			const [$item]=$placeholders
 			const $row=$item.closest('tr')
 			if (!$row) return
-			const sequenceInfo=readItemSequenceInfo($item)
-			if (!sequenceInfo) return
+			const sequencePoint=readItemSequencePoint($item)
+			if (!sequencePoint) return
 			let batchItem:MuxBatchItem
 			let usernames:Map<number,string>
-			if (sequenceInfo.type=='user') {
-				const item=await this.itemReader.getUser(sequenceInfo.id)
+			if (sequencePoint.type=='user') {
+				const item=await this.itemReader.getUser(sequencePoint.id)
 				if (!item || !item.withDetails || !item.visible) return
-				batchItem={type:sequenceInfo.type,item}
+				batchItem={type:sequencePoint.type,item}
 				usernames=makeUsernames()
-			} else if (sequenceInfo.type=='changeset' || sequenceInfo.type=='changesetClose') {
-				const item=await this.itemReader.getChangeset(sequenceInfo.id)
+			} else if (sequencePoint.type=='changeset' || sequencePoint.type=='changesetClose') {
+				const item=await this.itemReader.getChangeset(sequencePoint.id)
 				if (!item) return
-				batchItem={type:sequenceInfo.type,item}
+				batchItem={type:sequencePoint.type,item}
 				usernames=makeUsernames()
-			} else if (sequenceInfo.type=='note') {
-				const item=await this.itemReader.getNote(sequenceInfo.id)
+			} else if (sequencePoint.type=='note') {
+				const item=await this.itemReader.getNote(sequencePoint.id)
 				if (!item) return
-				batchItem={type:sequenceInfo.type,item}
+				batchItem={type:sequencePoint.type,item}
 				usernames=makeUsernames()
-			} else if (sequenceInfo.type=='changesetComment') {
-				const {comment,username}=await this.itemReader.getChangesetComment(sequenceInfo.id,sequenceInfo.order??0)
+			} else if (sequencePoint.type=='changesetComment') {
+				const {comment,username}=await this.itemReader.getChangesetComment(sequencePoint.id,sequencePoint.order??0)
 				if (!comment) return
-				batchItem={type:sequenceInfo.type,item:comment}
+				batchItem={type:sequencePoint.type,item:comment}
 				usernames=makeUsernames(comment.uid,username)
-			} else if (sequenceInfo.type=='noteComment') {
-				const {comment,username}=await this.itemReader.getNoteComment(sequenceInfo.id,sequenceInfo.order??0)
+			} else if (sequencePoint.type=='noteComment') {
+				const {comment,username}=await this.itemReader.getNoteComment(sequencePoint.id,sequencePoint.order??0)
 				if (!comment) return
-				batchItem={type:sequenceInfo.type,item:comment}
+				batchItem={type:sequencePoint.type,item:comment}
 				usernames=makeUsernames(comment.uid,username)
 			} else {
 				return
@@ -303,7 +303,7 @@ export default class GridBody {
 			if (!doesCollectionRowHaveItems($row)) {
 				$row.remove()
 			}
-			this.insertItem(iColumns,sequenceInfo,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
+			this.insertItem(iColumns,sequencePoint,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
 		}
 		const findPrecedingItemSetsToExpand=($startingItemSet:HTMLElement[])=>{
 			const [$startingItem]=$startingItemSet
@@ -387,7 +387,7 @@ export default class GridBody {
 	}
 	private insertItem(
 		iColumns: number[],
-		sequenceInfo: ItemSequenceInfo,
+		sequencePoint: ItemSequencePoint,
 		insertItemInfo: {
 			isExpanded: false
 		} | {
@@ -399,12 +399,12 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
-		if (sequenceInfo.type=='user') { // TODO remove this
+		if (sequencePoint.type=='user') { // TODO remove this
 			for (const iColumn of iColumns) {
-				this.columnTimelineCutoffSequenceInfo[iColumn]=sequenceInfo
+				this.columnTimelineCutoffSequenceInfo[iColumn]=sequencePoint
 			}
 		}
-		const $placeholders=this.insertItemPlaceholders(iColumns,sequenceInfo,insertItemInfo.isExpanded,$previousPlaceholders,classNames)
+		const $placeholders=this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
 		for (const $placeholder of $placeholders) {
 			const $flow=$placeholder.querySelector('.flow')
@@ -412,7 +412,7 @@ export default class GridBody {
 			if (insertItemInfo.isExpanded) {
 				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
 			} else {
-				writeCollapsedItemFlow($flow,this.server,sequenceInfo.type,sequenceInfo.id)
+				writeCollapsedItemFlow($flow,this.server,sequencePoint.type,sequencePoint.id)
 			}
 			const $checkbox=getItemCheckbox($placeholder)
 			if ($checkbox) $checkboxes.push($checkbox)
@@ -430,7 +430,7 @@ export default class GridBody {
 	// { rewrite
 	private insertItemPlaceholders(
 		iColumns: number[],
-		sequenceInfo: ItemSequenceInfo,
+		sequencePoint: ItemSequencePoint,
 		isExpanded: boolean,
 		$previousPlaceholders: HTMLElement[],
 		classNames: string[]
@@ -440,7 +440,7 @@ export default class GridBody {
 				...$previousPlaceholders[iPlaceholder].childNodes
 			)
 		}
-		const insertionRowInfo=this.findInsertionRow(sequenceInfo)
+		const insertionRowInfo=this.findInsertionRow(sequencePoint)
 		if (isExpanded) {
 			const $row=makeElement('tr')()()
 			{
@@ -449,13 +449,13 @@ export default class GridBody {
 					$rowBefore=insertionRowInfo.$rowBefore
 				} else {
 					const collection=new GridBodyCollectionRow(insertionRowInfo.$row)
-					collection.split(sequenceInfo)
+					collection.split(sequencePoint)
 					$rowBefore=insertionRowInfo.$row
 				}
 				$rowBefore.after($row)
 			}
 			$row.classList.add(...classNames)
-			writeElementSequenceInfo($row,sequenceInfo)
+			writeElementSequencePoint($row,sequencePoint)
 			setInsertedRowCellsAndTimeline($row,iColumns,this.getColumnHues())
 			return iColumns.map((iColumn,iPlaceholder)=>{
 				const $placeholder=$row.cells[iColumn]
@@ -479,7 +479,7 @@ export default class GridBody {
 			} else {
 				collection=new GridBodyCollectionRow(insertionRowInfo.$row)
 			}
-			const $placeholders=collection.insert(sequenceInfo,iColumns)
+			const $placeholders=collection.insert(sequencePoint,iColumns)
 			for (const [iPlaceholder,$placeholder] of $placeholders.entries()) {
 				$placeholder.classList.add(...classNames)
 				copyPlaceholderChildren($placeholder,iPlaceholder)
@@ -487,7 +487,7 @@ export default class GridBody {
 			return $placeholders
 		}
 	}
-	private findInsertionRow(sequenceInfo: ItemSequenceInfo): {
+	private findInsertionRow(sequencePoint: ItemSequencePoint): {
 		type: 'betweenRows'
 		$rowBefore: HTMLTableRowElement
 		$rowAfter: HTMLTableRowElement|undefined
@@ -500,7 +500,7 @@ export default class GridBody {
 			const $rowAfter=this.$gridBody.rows[i+1]
 			if ($row.classList.contains('collection')) {
 				const collection=new GridBodyCollectionRow($row)
-				const cmp=collection.compare(sequenceInfo)
+				const cmp=collection.compare(sequencePoint)
 				if (cmp<0) continue
 				if (cmp==0) {
 					return {type:'insideRow', $row}
@@ -508,24 +508,24 @@ export default class GridBody {
 					return {type:'betweenRows', $rowBefore:$row, $rowAfter}
 				}
 			} else {
-				const existingSequenceInfo=readElementSequenceInfo($row)
-				if (!existingSequenceInfo) continue
-				if (!isGreaterElementSequenceInfo(existingSequenceInfo,sequenceInfo)) continue
-				if (isSameMonthTimestamps(existingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
+				const existingSequencePoint=readElementSequencePoint($row)
+				if (!existingSequencePoint) continue
+				if (!isGreaterElementSequencePoint(existingSequencePoint,sequencePoint)) continue
+				if (isSameMonthTimestamps(existingSequencePoint.timestamp,sequencePoint.timestamp)) {
 					return {type:'betweenRows', $rowBefore:$row, $rowAfter}
 				} else {
-					const $separator=this.insertSeparatorRow(sequenceInfo,$row)
+					const $separator=this.insertSeparatorRow(sequencePoint,$row)
 					return {type:'betweenRows', $rowBefore:$separator, $rowAfter}
 				}
 			}
 		}
 		{
-			const $separator=this.insertSeparatorRow(sequenceInfo)
+			const $separator=this.insertSeparatorRow(sequencePoint)
 			return {type:'betweenRows', $rowBefore:$separator, $rowAfter:this.$gridBody.rows[0]}
 		}
 	}
-	private insertSeparatorRow(sequenceInfo: ItemSequenceInfo, $precedingRow?: HTMLTableRowElement): HTMLTableRowElement {
-		const date=new Date(sequenceInfo.timestamp)
+	private insertSeparatorRow(sequencePoint: ItemSequencePoint, $precedingRow?: HTMLTableRowElement): HTMLTableRowElement {
+		const date=new Date(sequencePoint.timestamp)
 		const yearMonthString=toIsoYearMonthString(date)
 		const $separator=makeElement('tr')('separator')()
 		if ($precedingRow) {
@@ -533,7 +533,7 @@ export default class GridBody {
 		} else {
 			this.$gridBody.prepend($separator)
 		}
-		writeSeparatorSequenceInfo($separator,date)
+		writeSeparatorSequencePoint($separator,date)
 		const $cell=$separator.insertCell()
 		$cell.append(
 			makeDiv('month')(

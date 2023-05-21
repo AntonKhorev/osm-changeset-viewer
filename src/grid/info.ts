@@ -6,14 +6,14 @@ export type ItemDescriptor = {
 	order?: number
 }
 
-export type ElementSequenceInfo = {
+export type ElementSequencePoint = {
 	timestamp: number
 	type: string
 	id?: number
 	order?: number
 }
 
-export type ItemSequenceInfo = {
+export type ItemSequencePoint = {
 	timestamp: number
 	type: string
 	id: number
@@ -27,7 +27,7 @@ export function getItemDescriptorSelector({type,id,order}: ItemDescriptor): stri
 	)
 }
 
-export function isGreaterElementSequenceInfo(a: ElementSequenceInfo, b: ElementSequenceInfo): boolean {
+export function isGreaterElementSequencePoint(a: ElementSequencePoint, b: ElementSequencePoint): boolean {
 	if (a.timestamp!=b.timestamp) return a.timestamp>b.timestamp
 	const aRank=getElementTypeRank(a.type)
 	const bRank=getElementTypeRank(b.type)
@@ -40,7 +40,7 @@ export function isEqualItemDescriptor(a: ItemDescriptor, b: ItemDescriptor): boo
 	return a.type==b.type && a.id==b.id && a.order==b.order
 }
 
-function getElementTypeRank(type: ElementSequenceInfo['type']): number {
+function getElementTypeRank(type: ElementSequencePoint['type']): number {
 	switch (type) {
 	case 'user':
 		return 1
@@ -58,7 +58,7 @@ function getElementTypeRank(type: ElementSequenceInfo['type']): number {
 	return +Infinity // rank of separators
 }
 
-export function getBatchItemSequenceInfo({type,item}: MuxBatchItem): ItemSequenceInfo|null {
+export function getBatchItemSequencePoint({type,item}: MuxBatchItem): ItemSequencePoint|null {
 	let date: Date
 	let id: number
 	let order: number|undefined
@@ -103,7 +103,7 @@ export function readItemDescriptor($item: HTMLElement): ItemDescriptor|null {
 	return {type,id}
 }
 
-export function readElementSequenceInfo($e: HTMLElement): ElementSequenceInfo|null {
+export function readElementSequencePoint($e: HTMLElement): ElementSequencePoint|null {
 	const timestamp=Number($e.dataset.timestamp)
 	if (timestamp==null) return null
 	const type=$e.dataset.type
@@ -120,13 +120,13 @@ export function readElementSequenceInfo($e: HTMLElement): ElementSequenceInfo|nu
 	return {timestamp,type,id,order}
 }
 
-export function readItemSequenceInfo($e: HTMLElement): ItemSequenceInfo|null {
-	const sequenceInfo=readElementSequenceInfo($e)
-	if (!sequenceInfo || sequenceInfo.id==null) return null
-	return sequenceInfo as ItemSequenceInfo
+export function readItemSequencePoint($e: HTMLElement): ItemSequencePoint|null {
+	const sequencePoint=readElementSequencePoint($e)
+	if (!sequencePoint || sequencePoint.id==null) return null
+	return sequencePoint as ItemSequencePoint
 }
 
-export function writeElementSequenceInfo($e: HTMLElement, info: ElementSequenceInfo): void {
+export function writeElementSequencePoint($e: HTMLElement, info: ElementSequencePoint): void {
 	$e.dataset.timestamp=String(info.timestamp)
 	$e.dataset.type=info.type
 	if (info.id) {
@@ -141,8 +141,8 @@ export function writeElementSequenceInfo($e: HTMLElement, info: ElementSequenceI
 	}
 }
 
-export function writeSeparatorSequenceInfo($e: HTMLElement, date: Date): void {
-	writeElementSequenceInfo($e,{
+export function writeSeparatorSequencePoint($e: HTMLElement, date: Date): void {
+	writeElementSequencePoint($e,{
 		timestamp: getLastTimestampOfMonth(date),
 		type: 'separator',
 	})
