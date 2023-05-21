@@ -9,7 +9,7 @@ import {
 import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
 	markChangesetItemAsCombined, markChangesetItemAsUncombined,
-	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow, makeCollectionIcon
+	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
 import GridBodyCollectionRow from './collection'
 import {updateTimelineOnInsert} from './timeline'
@@ -19,15 +19,6 @@ import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
 import {moveInArray} from '../util/types'
-
-type GridPosition = {
-	type: 'afterRow'
-	$row: HTMLTableRowElement
-} | {
-	type: 'insideRow'
-	$row: HTMLTableRowElement
-	$items: (HTMLElement|null)[]
-}
 
 export default class GridBody {
 	readonly $gridBody=makeElement('tbody')()()
@@ -427,7 +418,6 @@ export default class GridBody {
 		}
 		return true
 	}
-	// { rewrite
 	private insertItemPlaceholders(
 		iColumns: number[],
 		sequencePoint: ItemSequencePoint,
@@ -558,219 +548,6 @@ export default class GridBody {
 		$cell.colSpan=this.nColumns+1
 		return $separator
 	}
-	/*
-	private insertItemPlaceholders(
-		iColumns: number[],
-		sequenceInfo: ItemSequenceInfo,
-		isExpanded: boolean,
-		$previousPlaceholders: HTMLElement[],
-		classNames: string[]
-	): HTMLElement[] {
-		let position=this.getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo)
-		let $row:HTMLTableRowElement
-		if (!isExpanded && position.type=='insideRow') {
-			$row=position.$row
-		} else {
-			$row=this.insertRow(position)
-			const columnHues=this.getColumnHues()
-			for (const [iColumn,reached] of this.hasColumnReachedTimelineEnd.entries()) {
-				const $cell=$row.insertCell()
-				$cell.classList.toggle('with-timeline-above',!reached)
-				$cell.classList.toggle('with-timeline-below',!reached)
-				setCellHue($cell,columnHues[iColumn])
-			}
-		}
-		if (sequenceInfo.type=='user') {
-			const iColumnSet=new Set(iColumns)
-			for (const iColumn of iColumns) {
-				this.hasColumnReachedTimelineEnd[iColumn]=true
-				$row.cells[iColumn].classList.toggle('with-timeline-below',false)
-			}
-			for (let $followingRow=$row.nextElementSibling;$followingRow;$followingRow=$followingRow.nextElementSibling) {
-				if (!($followingRow instanceof HTMLTableRowElement)) continue
-				if (!(
-					$followingRow.classList.contains('item') ||
-					$followingRow.classList.contains('collection')
-				)) continue
-				for (const [iColumn,$cell] of [...$followingRow.cells].entries()) {
-					if (!iColumnSet.has(iColumn)) continue
-					$cell.classList.remove('with-timeline-above','with-timeline-below')
-				}
-			}
-		}
-		const copyPlaceholderChildren=($placeholder:HTMLElement,iPlaceholder:number)=>{
-			$placeholder.replaceChildren(
-				...$previousPlaceholders[iPlaceholder].childNodes
-			)
-		}
-		if (isExpanded) {
-			$row.classList.add(...classNames)
-			writeElementSequenceInfo($row,sequenceInfo)
-			return iColumns.map((iColumn,iPlaceholder)=>{
-				const $placeholder=$row.cells[iColumn]
-				copyPlaceholderChildren($placeholder,iPlaceholder)
-				return $placeholder
-			})
-		} else {
-			$row.classList.add('collection')
-			const $placeholders:HTMLElement[]=[]
-			for (const [iPlaceholder,iColumn] of iColumns.entries()) {
-				const $placeholder=makeElement('span')(...classNames)()
-				writeElementSequenceInfo($placeholder,sequenceInfo)
-				copyPlaceholderChildren($placeholder,iPlaceholder)
-				const $cell=$row.cells[iColumn]
-				const cellWasEmpty=$cell.childElementCount==0
-				if (position.type=='insideRow') {
-					const $precedingItem=position.$items[iColumn]
-					if ($precedingItem==null) {
-						insertPlaceholderBeforeFirstCellItem($placeholder,$cell)
-					} else {
-						$precedingItem.after($placeholder)
-					}
-				} else {
-					$cell.append($placeholder)
-				}
-				if (cellWasEmpty && $cell.childElementCount>0) {
-					$cell.prepend(makeCollectionIcon())
-				}
-				$placeholders.push($placeholder)
-			}
-			return $placeholders
-		}
-	}
-	private getGridPositionAndInsertSeparatorIfNeeded(sequenceInfo: ItemSequenceInfo): GridPosition {
-		const insertSeparatorRow=($precedingRow?:HTMLTableRowElement)=>{
-			const date=new Date(sequenceInfo.timestamp)
-			const yearMonthString=toIsoYearMonthString(date)
-			const $separator=makeElement('tr')('separator')()
-			if ($precedingRow) {
-				$precedingRow.after($separator)
-			} else {
-				this.$gridBody.prepend($separator)
-			}
-			writeSeparatorSequenceInfo($separator,date)
-			const $cell=$separator.insertCell()
-			$cell.append(
-				makeDiv('month')(
-					makeElement('time')()(yearMonthString)
-				)
-			)
-			$cell.colSpan=this.nColumns+1
-			return $separator
-		}
-		let $followingSameMonthCollectionRow:HTMLTableRowElement|undefined
-		for (let i=this.$gridBody.rows.length-1;i>=0;i--) {
-			const $row=this.$gridBody.rows[i]
-			if ($row.classList.contains('collection')) {
-				let isSameMonthRow=true
-				const $items=[...$row.cells].map(($cell:HTMLTableCellElement)=>{
-					const $items=$cell.querySelectorAll(':scope > .item')
-					for (let i=$items.length-1;i>=0;i--) {
-						const $item=$items[i]
-						if (!($item instanceof HTMLElement)) continue
-						const precedingSequenceInfo=readElementSequenceInfo($item)
-						if (!precedingSequenceInfo) continue
-						if (!isSameMonthTimestamps(precedingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
-							isSameMonthRow=false
-						}
-						if (isGreaterElementSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
-							return $item
-						}
-					}
-					return null
-				})
-				if ($items.some($item=>$item!=null)) {
-					if (isSameMonthRow) {
-						return {
-							type: 'insideRow',
-							$row,
-							$items
-						}
-					} else {
-						return {
-							type: 'afterRow',
-							$row: insertSeparatorRow($row)
-						}
-					}
-				} else {
-					if (isSameMonthRow) {
-						$followingSameMonthCollectionRow=$row
-					} else {
-						$followingSameMonthCollectionRow=undefined
-					}
-				}
-			} else {
-				const precedingSequenceInfo=readElementSequenceInfo($row)
-				if (!precedingSequenceInfo) continue
-				if (isGreaterElementSequenceInfo(precedingSequenceInfo,sequenceInfo)) {
-					if (!isSameMonthTimestamps(precedingSequenceInfo.timestamp,sequenceInfo.timestamp)) {
-						return {
-							type: 'afterRow',
-							$row: insertSeparatorRow($row)
-						}
-					} else if ($followingSameMonthCollectionRow) {
-						return {
-							type: 'insideRow',
-							$row: $followingSameMonthCollectionRow,
-							$items: [...$followingSameMonthCollectionRow.cells].map(_=>null)
-						}
-					} else {
-						return {
-							type: 'afterRow',
-							$row
-						}
-					}
-				} else {
-					$followingSameMonthCollectionRow=undefined
-				}
-			}
-		}
-		return {
-			type: 'afterRow',
-			$row: insertSeparatorRow()
-		}
-	}
-	private insertRow(position: GridPosition): HTMLTableRowElement {
-		const $row=makeElement('tr')()()
-		if (position.type=='afterRow') {
-			position.$row.after($row)
-		} else if (position.type=='insideRow') {
-			if (position.$items.every($item=>$item==null)) {
-				position.$row.before($row)
-			} else {
-				position.$row.after($row)
-				const $cellChildrenAfterInColumns=position.$items.map($precedingItem=>{
-					if (!$precedingItem) return []
-					const $cellChildrenAfter:Element[]=[]
-					let $child:Element|null=$precedingItem
-					while ($child=$child?.nextElementSibling) {
-						$cellChildrenAfter.push($child)
-					}
-					return $cellChildrenAfter
-				})
-				if ($cellChildrenAfterInColumns.some($cellChildrenAfter=>$cellChildrenAfter.length>0)) {
-					const columnHues=this.getColumnHues()
-					const $rowAfter=makeElement('tr')('collection')()
-					for (const [iColumn,$cellChildrenAfter] of $cellChildrenAfterInColumns.entries()) {
-						const $cellBefore=position.$row.cells[iColumn]
-						const $cellAfter=$rowAfter.insertCell()
-						$cellAfter.classList.add('with-timeline-above')
-						if ($cellBefore.classList.contains('with-timeline-below')) {
-							$cellAfter.classList.add('with-timeline-below')
-						} else {
-							$cellBefore.classList.add('with-timeline-below')
-						}
-						$cellAfter.append(...$cellChildrenAfter)
-						setCellHue($cellAfter,columnHues[iColumn])
-					}
-					$row.after($rowAfter)
-				}
-			}
-		}
-		return $row
-	}
-	*/
-	// } rewrite
 	private async toggleItemDisclosureWithButton($disclosureButton: EventTarget|null): Promise<void> {
 		if (!($disclosureButton instanceof HTMLButtonElement)) return
 		const $item=$disclosureButton.closest('.item')
@@ -854,18 +631,6 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	const d1=new Date(t1)
 	const d2=new Date(t2)
 	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
-}
-
-function insertPlaceholderBeforeFirstCellItem($placeholder: HTMLElement, $cell: HTMLTableCellElement): void {
-	let $child=$cell.firstElementChild
-	while ($child) {
-		if ($child.classList.contains('item')) {
-			$child.before($placeholder)
-			return
-		}
-		$child=$child.nextElementSibling
-	}
-	$cell.append($placeholder)
 }
 
 function doesCollectionRowHaveItems($row: HTMLTableRowElement): boolean {
