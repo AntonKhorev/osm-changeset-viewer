@@ -12,7 +12,7 @@ import {
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow, makeCollectionIcon
 } from './body-item'
 import GridBodyCollectionRow from './collection'
-import {setInsertedRowCellsAndTimeline} from './timeline'
+import {updateTimelineOnInsert} from './timeline'
 import * as bodyItemSet from './body-item-set'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
@@ -442,7 +442,7 @@ export default class GridBody {
 		}
 		const insertionRowInfo=this.findInsertionRow(sequencePoint)
 		if (isExpanded) {
-			const $row=makeElement('tr')()()
+			const $row=this.makeRow()
 			{
 				let $rowBefore:HTMLTableRowElement
 				if (insertionRowInfo.type=='betweenRows') {
@@ -457,29 +457,30 @@ export default class GridBody {
 			}
 			$row.classList.add(...classNames)
 			writeElementSequencePoint($row,sequencePoint)
-			setInsertedRowCellsAndTimeline($row,iColumns,this.getColumnHues())
+			updateTimelineOnInsert($row,iColumns)
 			return iColumns.map((iColumn,iPlaceholder)=>{
 				const $placeholder=$row.cells[iColumn]
 				copyPlaceholderChildren($placeholder,iPlaceholder)
 				return $placeholder
 			})
 		} else {
-			let collection: GridBodyCollectionRow
+			let $row: HTMLTableRowElement
 			if (insertionRowInfo.type=='betweenRows') {
 				if (insertionRowInfo.$rowBefore.classList.contains('collection')) {
-					collection=new GridBodyCollectionRow(insertionRowInfo.$rowBefore)
+					$row=insertionRowInfo.$rowBefore
 					
 				} else if (insertionRowInfo.$rowAfter?.classList.contains('collection')) {
-					collection=new GridBodyCollectionRow(insertionRowInfo.$rowAfter)
+					$row=insertionRowInfo.$rowAfter
 				} else {
-					const $row=makeElement('tr')('collection')()
+					$row=this.makeRow()
+					$row.classList.add('collection')
 					insertionRowInfo.$rowBefore.after($row)
-					setInsertedRowCellsAndTimeline($row,iColumns,this.getColumnHues())
-					collection=new GridBodyCollectionRow($row)
 				}
 			} else {
-				collection=new GridBodyCollectionRow(insertionRowInfo.$row)
+				$row=insertionRowInfo.$row
 			}
+			updateTimelineOnInsert($row,iColumns)
+			const collection=new GridBodyCollectionRow($row)
 			const $placeholders=collection.insert(sequencePoint,iColumns)
 			for (const [iPlaceholder,$placeholder] of $placeholders.entries()) {
 				$placeholder.classList.add(...classNames)
@@ -487,6 +488,14 @@ export default class GridBody {
 			}
 			return $placeholders
 		}
+	}
+	private makeRow(): HTMLTableRowElement {
+		const $row=makeElement('tr')()()
+		for (const hue of this.getColumnHues()) {
+			const $cell=$row.insertCell()
+			setCellHue($cell,hue)
+		}
+		return $row
 	}
 	private findInsertionRow(sequencePoint: ItemSequencePoint): {
 		type: 'betweenRows'
@@ -881,4 +890,9 @@ function mergeCollectionRows($row1: HTMLTableRowElement, $row2: HTMLTableRowElem
 		}
 	}
 	$row2.remove()
+}
+
+function setCellHue($cell: HTMLTableCellElement, hue: number|null): void {
+	if (hue==null) return
+	$cell.style.setProperty('--hue',String(hue))
 }
