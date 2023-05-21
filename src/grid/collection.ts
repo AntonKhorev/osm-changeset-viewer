@@ -1,5 +1,7 @@
 import type {ItemSequencePoint} from './info'
 import {readItemSequencePoint, isGreaterElementSequencePoint} from './info'
+import {makeCollectionIcon} from './body-item'
+import {makeElement} from '../util/html'
 
 export default class GridBodyCollectionRow {
 	constructor(private $row: HTMLTableRowElement) {}
@@ -26,9 +28,49 @@ export default class GridBodyCollectionRow {
 	}
 	/**
 	 * Split collection into two rows at the given sequence point
+	 *
+	 * @returns new row with collection items lesser than the sequence point
 	 */
-	split(sequencePoint: ItemSequencePoint): void {
-		// TODO
+	split(sequencePoint: ItemSequencePoint): HTMLTableRowElement {
+		const $splitRow=makeElement('tr')('collection')()
+		for (const $cell of this.$row.cells) {
+			const $splitCell=$splitRow.insertCell()
+			$splitCell.classList.add('with-timeline-above')
+			if ($cell.classList.contains('with-timeline-below')) {
+				$splitCell.classList.add('with-timeline-below')
+			}
+			$cell.classList.add('with-timeline-below')
+			let startedMoving=false
+			let nItems=0
+			const $itemsToMove:HTMLElement[]=[]
+			for (const $item of $cell.children) {
+				if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) continue
+				nItems++
+				if (!startedMoving) {
+					const collectionItemSequencePoint=readItemSequencePoint($item)
+					if (!collectionItemSequencePoint) continue
+					if (isGreaterElementSequencePoint(sequencePoint,collectionItemSequencePoint)) {
+						startedMoving=true
+					}
+				}
+				if (startedMoving) {
+					$itemsToMove.push($item)
+				}
+			}
+			if ($itemsToMove.length>0) {
+				$splitCell.append(makeCollectionIcon())
+			}
+			for (const $item of $itemsToMove) {
+				$splitCell.append($item)
+			}
+			if (nItems<=$itemsToMove.length) {
+				const $icon=$cell.children[0]
+				if ($icon && $icon.classList.contains('icon')) {
+					$icon.remove()
+				}
+			}
+		}
+		return $splitRow
 	}
 	/**
 	 * Insert item placeholders, adding cell icons if they were missing

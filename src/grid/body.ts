@@ -449,8 +449,9 @@ export default class GridBody {
 					$rowBefore=insertionRowInfo.$rowBefore
 				} else {
 					const collection=new GridBodyCollectionRow(insertionRowInfo.$row)
-					collection.split(sequencePoint)
+					const $rowAfter=collection.split(sequencePoint)
 					$rowBefore=insertionRowInfo.$row
+					$rowBefore.after($rowAfter)
 				}
 				$rowBefore.after($row)
 			}
