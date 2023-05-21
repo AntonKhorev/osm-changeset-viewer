@@ -40,6 +40,10 @@ export default class GridBodyCollectionRow {
 				$splitCell.classList.add('with-timeline-below')
 			}
 			$cell.classList.add('with-timeline-below')
+			const style=$cell.getAttribute('style')
+			if (style) {
+				$splitCell.setAttribute('style',style)
+			}
 			let startedMoving=false
 			let nItems=0
 			const $itemsToMove:HTMLElement[]=[]

@@ -8,12 +8,12 @@ function row(contents) {
 	$row.innerHTML=contents
 	return $row
 }
-function cell(timeline,contents) {
+function cell(timeline,style,contents) {
 	if (!contents) return `<td></td>`
 	const classList=[]
 	if (timeline.includes('a')) classList.push('with-timeline-above')
 	if (timeline.includes('b')) classList.push('with-timeline-below')
-	return `<td class="${classList.join(' ')}"><span class="icon"></span>${contents}</td>`
+	return `<td class="${classList.join(' ')}" style="${style}"><span class="icon"></span>${contents}</td>`
 }
 function changeset(date,id) {
 	return `<span class="item changeset combined" data-timestamp="${Date.parse(date)}" data-type="changeset" data-id="${id}"></span>`
@@ -26,6 +26,8 @@ function changesetPoint(date,id) {
 		id,
 	}
 }
+
+const hue='--hue: 123;'
 
 describe("GridBodyCollectionRow",()=>{
 	const globalProperties=[
@@ -45,25 +47,25 @@ describe("GridBodyCollectionRow",()=>{
 		}
 	})
 	it("compares empty collection as lesser",()=>{
-		const $row=row(cell(''))
+		const $row=row(cell('',hue))
 		const collection=new GridBodyCollectionRow($row)
 		const cmp=collection.compare(changesetPoint('2023-04-06',10001))
 		assert.equal(cmp,-1)
 	})
 	it("compares single-element collection as greater",()=>{
-		const $row=row(cell('ab',changeset('2023-05-07',10101)))
+		const $row=row(cell('ab',hue,changeset('2023-05-07',10101)))
 		const collection=new GridBodyCollectionRow($row)
 		const cmp=collection.compare(changesetPoint('2023-04-06',10001))
 		assert.equal(cmp,1)
 	})
 	it("compares single-element collection as lesser",()=>{
-		const $row=row(cell('ab',changeset('2023-03-05',9901)))
+		const $row=row(cell('ab',hue,changeset('2023-03-05',9901)))
 		const collection=new GridBodyCollectionRow($row)
 		const cmp=collection.compare(changesetPoint('2023-04-06',10001))
 		assert.equal(cmp,-1)
 	})
 	it("compares 2-element collection as greater",()=>{
-		const $row=row(cell('ab',
+		const $row=row(cell('ab',hue,
 			changeset('2023-05-08',10102)+
 			changeset('2023-05-07',10101)
 		))
@@ -72,7 +74,7 @@ describe("GridBodyCollectionRow",()=>{
 		assert.equal(cmp,1)
 	})
 	it("compares 2-element collection as neither",()=>{
-		const $row=row(cell('ab',
+		const $row=row(cell('ab',hue,
 			changeset('2023-05-09',10103)+
 			changeset('2023-05-07',10101)
 		))
@@ -82,8 +84,8 @@ describe("GridBodyCollectionRow",()=>{
 	})
 	it("compares 2-column 2-element collection as neither",()=>{
 		const $row=row(
-			cell('ab',changeset('2023-05-09',10103))+
-			cell('ab',changeset('2023-05-07',10101))
+			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new GridBodyCollectionRow($row)
 		const cmp=collection.compare(changesetPoint('2023-05-08',10102))
@@ -91,80 +93,80 @@ describe("GridBodyCollectionRow",()=>{
 	})
 	it("compares 2-element collection with empty cell as lesser",()=>{
 		const $row=row(
-			cell('ab',changeset('2023-05-09',10103))+
-			cell('ab')+
-			cell('ab',changeset('2023-05-07',10101))
+			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue)+
+			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new GridBodyCollectionRow($row)
 		const cmp=collection.compare(changesetPoint('2023-05-10',10110))
 		assert.equal(cmp,-1)
 	})
 	it("splits single-cell collection",()=>{
-		const $row=row(cell('ab',
+		const $row=row(cell('ab',hue,
 			changeset('2023-05-09',10103)+
 			changeset('2023-05-07',10101)
 		))
 		const collection=new GridBodyCollectionRow($row)
 		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
 		assertChangesetCollectionRow($row,[
-			['ab',['2023-05-09',10103]]
+			['ab',hue,['2023-05-09',10103]]
 		])
 		assertChangesetCollectionRow($splitRow,[
-			['ab',['2023-05-07',10101]]
+			['ab',hue,['2023-05-07',10101]]
 		])
 	})
 	it("splits single-cell collection with terminating timeline",()=>{
-		const $row=row(cell('a',
+		const $row=row(cell('a',hue,
 			changeset('2023-05-09',10103)+
 			changeset('2023-05-07',10101)
 		))
 		const collection=new GridBodyCollectionRow($row)
 		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
 		assertChangesetCollectionRow($row,[
-			['ab',['2023-05-09',10103]]
+			['ab',hue,['2023-05-09',10103]]
 		])
 		assertChangesetCollectionRow($splitRow,[
-			['a',['2023-05-07',10101]]
+			['a',hue,['2023-05-07',10101]]
 		])
 	})
 	it("splits 2-cell collection",()=>{
 		const $row=row(
-			cell('ab',changeset('2023-05-09',10103))+
-			cell('ab',changeset('2023-05-07',10101))
+			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new GridBodyCollectionRow($row)
 		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
 		assertChangesetCollectionRow($row,[
-			['ab',['2023-05-09',10103]],
-			['ab']
+			['ab',hue,['2023-05-09',10103]],
+			['ab',hue]
 		])
 		assertChangesetCollectionRow($splitRow,[
-			['ab'],
-			['ab',['2023-05-07',10101]]
+			['ab',hue],
+			['ab',hue,['2023-05-07',10101]]
 		])
 	})
 	it("inserts placeholder at the beginning of one cell",()=>{
 		const $row=row(
-			cell('a',changeset('2023-03-01',10001))
+			cell('a',hue,changeset('2023-03-01',10001))
 		)
 		const collection=new GridBodyCollectionRow($row)
 		const $placeholders=collection.insert(changesetPoint('2023-03-02',10002),[0])
 		assertChangesetCollectionRow($row,[
-			['a',['2023-03-02',10002],['2023-03-01',10001]]
+			['a',hue,['2023-03-02',10002],['2023-03-01',10001]]
 		])
 		assert.equal($placeholders.length,1)
 		assert.equal($placeholders[0].dataset.id,'10002')
 	})
 	it("inserts placeholder at the end of one cell in 2-cell row",()=>{
 		const $row=row(
-			cell('ab',changeset('2023-05-09',10103))+
-			cell('ab',changeset('2023-05-07',10101))
+			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new GridBodyCollectionRow($row)
 		const $placeholders=collection.insert(changesetPoint('2023-05-08',10102),[0])
 		assertChangesetCollectionRow($row,[
-			['ab',['2023-05-09',10103],['2023-05-08',10102]],
-			['ab',['2023-05-07',10101]]
+			['ab',hue,['2023-05-09',10103],['2023-05-08',10102]],
+			['ab',hue,['2023-05-07',10101]]
 		])
 		assert.equal($placeholders.length,1)
 		assert.equal($placeholders[0].dataset.id,'10102')
@@ -176,8 +178,9 @@ function assertChangesetCollectionRow($row,cells) {
 	assert.equal($row.cells.length,cells.length)
 	for (let i=0;i<cells.length;i++) {
 		const $cell=$row.cells[i]
-		const [timeline,...items]=cells[i]
+		const [timeline,style,...items]=cells[i]
 		assertTimelineClasses($cell,timeline,`cell[${i}]`)
+		assert.equal($cell.getAttribute('style'),style)
 		if (items.length==0) {
 			assert.equal($cell.children.length,0)
 			continue
