@@ -45,60 +45,55 @@ describe("GridBodyCollectionRow",()=>{
 			delete global[property]
 		}
 	})
-	it("compares empty collection as lesser",()=>{
+	it("gets boundary points of empty collection",()=>{
 		const $row=row(cell('',hue))
 		const collection=new GridBodyCollectionRow($row)
-		const cmp=collection.compare(changesetPoint('2023-04-06',10001))
-		assert.equal(cmp,-1)
+		assert.deepEqual(collection.getBoundarySequencePoints(),[
+			null,
+			null
+		])
 	})
-	it("compares single-element collection as greater",()=>{
+	it("gets boundary points of single-element collection",()=>{
 		const $row=row(cell('ab',hue,changeset('2023-05-07',10101)))
 		const collection=new GridBodyCollectionRow($row)
-		const cmp=collection.compare(changesetPoint('2023-04-06',10001))
-		assert.equal(cmp,1)
+		assert.deepEqual(collection.getBoundarySequencePoints(),[
+			changesetPoint('2023-05-07',10101),
+			changesetPoint('2023-05-07',10101)
+		])
 	})
-	it("compares single-element collection as lesser",()=>{
-		const $row=row(cell('ab',hue,changeset('2023-03-05',9901)))
-		const collection=new GridBodyCollectionRow($row)
-		const cmp=collection.compare(changesetPoint('2023-04-06',10001))
-		assert.equal(cmp,-1)
-	})
-	it("compares 2-element collection as greater",()=>{
+	it("gets boundary points of 2-element collection",()=>{
 		const $row=row(cell('ab',hue,
 			changeset('2023-05-08',10102)+
 			changeset('2023-05-07',10101)
 		))
 		const collection=new GridBodyCollectionRow($row)
-		const cmp=collection.compare(changesetPoint('2023-04-06',10001))
-		assert.equal(cmp,1)
+		assert.deepEqual(collection.getBoundarySequencePoints(),[
+			changesetPoint('2023-05-08',10102),
+			changesetPoint('2023-05-07',10101)
+		])
 	})
-	it("compares 2-element collection as neither",()=>{
-		const $row=row(cell('ab',hue,
-			changeset('2023-05-09',10103)+
-			changeset('2023-05-07',10101)
-		))
-		const collection=new GridBodyCollectionRow($row)
-		const cmp=collection.compare(changesetPoint('2023-05-08',10102))
-		assert.equal(cmp,0)
-	})
-	it("compares 2-column 2-element collection as neither",()=>{
+	it("gets boundary points of 2-column 2-element collection",()=>{
 		const $row=row(
 			cell('ab',hue,changeset('2023-05-09',10103))+
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new GridBodyCollectionRow($row)
-		const cmp=collection.compare(changesetPoint('2023-05-08',10102))
-		assert.equal(cmp,0)
+		assert.deepEqual(collection.getBoundarySequencePoints(),[
+			changesetPoint('2023-05-09',10103),
+			changesetPoint('2023-05-07',10101)
+		])
 	})
-	it("compares 2-element collection with empty cell as lesser",()=>{
+	it("gets boundary points of 2-element collection with empty cell",()=>{
 		const $row=row(
 			cell('ab',hue,changeset('2023-05-09',10103))+
 			cell('ab',hue)+
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new GridBodyCollectionRow($row)
-		const cmp=collection.compare(changesetPoint('2023-05-10',10110))
-		assert.equal(cmp,-1)
+		assert.deepEqual(collection.getBoundarySequencePoints(),[
+			changesetPoint('2023-05-09',10103),
+			changesetPoint('2023-05-07',10101)
+		])
 	})
 	it("splits single-cell collection",()=>{
 		const $row=row(cell('ab',hue,

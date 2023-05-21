@@ -5,26 +5,26 @@ import {makeElement} from '../util/html'
 
 export default class GridBodyCollectionRow {
 	constructor(private $row: HTMLTableRowElement) {}
-	/**
-	 * Check if all collection items are greater than the given sequence point (1), all are less than it (-1), some are greater and some are less (0)
-	 */
-	compare(sequencePoint: ItemSequencePoint): -1|0|1 {
-		let hasGreaterItem=false
-		let hasLesserItem=false
+	getBoundarySequencePoints(): [
+		greaterPoint: ItemSequencePoint|null,
+		lesserPoint: ItemSequencePoint|null
+	] {
+		let greaterPoint: ItemSequencePoint|null = null
+		let lesserPoint: ItemSequencePoint|null = null
 		for (const $cell of this.$row.cells) {
 			for (const $item of $cell.children) {
 				if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) continue
-				const collectionItemSequencePoint=readItemSequencePoint($item)
-				if (!collectionItemSequencePoint) continue
-				if (isGreaterElementSequencePoint(collectionItemSequencePoint,sequencePoint)) {
-					hasGreaterItem=true
-				} else {
-					hasLesserItem=true
+				const point=readItemSequencePoint($item)
+				if (!point) continue
+				if (!greaterPoint || isGreaterElementSequencePoint(point,greaterPoint)) {
+					greaterPoint=point
 				}
-				if (hasGreaterItem && hasLesserItem) return 0
+				if (!lesserPoint || isGreaterElementSequencePoint(lesserPoint,point)) {
+					lesserPoint=point
+				}
 			}
 		}
-		return hasGreaterItem?1:-1
+		return [greaterPoint,lesserPoint]
 	}
 	/**
 	 * Split collection into two rows at the given sequence point

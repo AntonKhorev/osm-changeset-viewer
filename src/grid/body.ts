@@ -510,12 +510,16 @@ export default class GridBody {
 			const $rowAfter=this.$gridBody.rows[i+1]
 			if ($row.classList.contains('collection')) {
 				const collection=new GridBodyCollectionRow($row)
-				const cmp=collection.compare(sequencePoint)
-				if (cmp<0) continue
-				if (cmp==0) {
+				const [greaterCollectionPoint,lesserCollectionPoint]=collection.getBoundarySequencePoints()
+				if (!greaterCollectionPoint || !lesserCollectionPoint) continue
+				if (isGreaterElementSequencePoint(sequencePoint,greaterCollectionPoint)) continue
+				if (isGreaterElementSequencePoint(sequencePoint,lesserCollectionPoint)) {
 					return {type:'insideRow', $row}
-				} else {
+				} else if (isSameMonthTimestamps(sequencePoint.timestamp,lesserCollectionPoint.timestamp)) {
 					return {type:'betweenRows', $rowBefore:$row, $rowAfter}
+				} else {
+					const $separator=this.insertSeparatorRow(sequencePoint,$row)
+					return {type:'betweenRows', $rowBefore:$separator, $rowAfter}
 				}
 			} else {
 				const existingSequencePoint=readElementSequencePoint($row)
