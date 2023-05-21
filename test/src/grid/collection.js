@@ -143,7 +143,19 @@ describe("GridBodyCollectionRow",()=>{
 			['ab',['2023-05-07',10101]]
 		])
 	})
-	it("inserts placeholder",()=>{
+	it("inserts placeholder at the beginning of one cell",()=>{
+		const $row=row(
+			cell('a',changeset('2023-03-01',10001))
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const $placeholders=collection.insert(changesetPoint('2023-03-02',10002),[0])
+		assertChangesetCollectionRow($row,[
+			['a',['2023-03-02',10002],['2023-03-01',10001]]
+		])
+		assert.equal($placeholders.length,1)
+		assert.equal($placeholders[0].dataset.id,'10002')
+	})
+	it("inserts placeholder at the end of one cell in 2-cell row",()=>{
 		const $row=row(
 			cell('ab',changeset('2023-05-09',10103))+
 			cell('ab',changeset('2023-05-07',10101))
@@ -176,9 +188,9 @@ function assertChangesetCollectionRow($row,cells) {
 		for (let j=0;j<items.length;j++) {
 			const $item=$cell.children[j+1]
 			const point=changesetPoint(...items[j])
-			assert.equal($item.dataset.timestamp,String(point.timestamp))
 			assert.equal($item.dataset.type,point.type)
-			assert.equal($item.dataset.id,String(point.id))
+			assert.equal($item.dataset.id,String(point.id),`Expected item[${i},${j}] to have id '${point.id}', got '${$item.dataset.id}'`)
+			assert.equal($item.dataset.timestamp,String(point.timestamp))
 		}
 	}
 }

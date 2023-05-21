@@ -521,8 +521,9 @@ export default class GridBody {
 			}
 		}
 		{
+			const $rowAfter=this.$gridBody.rows[0]
 			const $separator=this.insertSeparatorRow(sequencePoint)
-			return {type:'betweenRows', $rowBefore:$separator, $rowAfter:this.$gridBody.rows[0]}
+			return {type:'betweenRows', $rowBefore:$separator, $rowAfter}
 		}
 	}
 	private insertSeparatorRow(sequencePoint: ItemSequencePoint, $precedingRow?: HTMLTableRowElement): HTMLTableRowElement {

@@ -76,13 +76,9 @@ export default class GridBodyCollectionRow {
 	 * Insert item placeholders, adding cell icons if they were missing
 	 */
 	insert(sequencePoint: ItemSequencePoint, iColumns: number[]): HTMLElement[] {
-		const insertAfter=($e:Element)=>{
+		return iColumns.map(iColumn=>{
 			const $placeholder=makeElement('span')('item')()
 			writeElementSequencePoint($placeholder,sequencePoint)
-			$e.after($placeholder)
-			return $placeholder
-		}
-		return iColumns.map(iColumn=>{
 			const $cell=this.$row.cells[iColumn]
 			let nItems=0
 			for (const $item of $cell.children) {
@@ -91,16 +87,19 @@ export default class GridBodyCollectionRow {
 				const collectionItemSequencePoint=readItemSequencePoint($item)
 				if (!collectionItemSequencePoint) continue
 				if (isGreaterElementSequencePoint(sequencePoint,collectionItemSequencePoint)) {
-					return insertAfter($item)
+					$item.before($placeholder)
+					return $placeholder
 				}
 			}
 			if (nItems==0) {
 				const $icon=makeCollectionIcon()
 				$cell.prepend($icon)
-				return insertAfter($icon)
+				$icon.after($placeholder)
 			} else {
-				return insertAfter($cell.lastElementChild as Element)
+				const $lastChild=$cell.lastElementChild as Element
+				$lastChild.after($placeholder)
 			}
+			return $placeholder
 		})
 	}
 }
