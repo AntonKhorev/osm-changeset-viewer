@@ -1,5 +1,5 @@
 import type {ItemSequencePoint} from './info'
-import {readItemSequencePoint, isGreaterElementSequencePoint} from './info'
+import {readItemSequencePoint, writeElementSequencePoint, isGreaterElementSequencePoint} from './info'
 import {makeCollectionIcon} from './body-item'
 import {makeElement} from '../util/html'
 
@@ -76,6 +76,31 @@ export default class GridBodyCollectionRow {
 	 * Insert item placeholders, adding cell icons if they were missing
 	 */
 	insert(sequencePoint: ItemSequencePoint, iColumns: number[]): HTMLElement[] {
-		return [] // TODO
+		const insertAfter=($e:Element)=>{
+			const $placeholder=makeElement('span')('item')()
+			writeElementSequencePoint($placeholder,sequencePoint)
+			$e.after($placeholder)
+			return $placeholder
+		}
+		return iColumns.map(iColumn=>{
+			const $cell=this.$row.cells[iColumn]
+			let nItems=0
+			for (const $item of $cell.children) {
+				if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) continue
+				nItems++
+				const collectionItemSequencePoint=readItemSequencePoint($item)
+				if (!collectionItemSequencePoint) continue
+				if (isGreaterElementSequencePoint(sequencePoint,collectionItemSequencePoint)) {
+					return insertAfter($item)
+				}
+			}
+			if (nItems==0) {
+				const $icon=makeCollectionIcon()
+				$cell.prepend($icon)
+				return insertAfter($icon)
+			} else {
+				return insertAfter($cell.lastElementChild as Element)
+			}
+		})
 	}
 }

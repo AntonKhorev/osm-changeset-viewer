@@ -143,6 +143,20 @@ describe("GridBodyCollectionRow",()=>{
 			['ab',['2023-05-07',10101]]
 		])
 	})
+	it("inserts placeholder",()=>{
+		const $row=row(
+			cell('ab',changeset('2023-05-09',10103))+
+			cell('ab',changeset('2023-05-07',10101))
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const $placeholders=collection.insert(changesetPoint('2023-05-08',10102),[0])
+		assertChangesetCollectionRow($row,[
+			['ab',['2023-05-09',10103],['2023-05-08',10102]],
+			['ab',['2023-05-07',10101]]
+		])
+		assert.equal($placeholders.length,1)
+		assert.equal($placeholders[0].dataset.id,'10102')
+	})
 })
 
 function assertChangesetCollectionRow($row,cells) {
