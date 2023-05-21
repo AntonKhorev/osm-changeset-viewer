@@ -162,6 +162,26 @@ describe("GridBodyCollectionRow",()=>{
 			['  ',hue]
 		])
 	})
+	it("splits 2-cell collection with timeline end and one blank cell after split",()=>{
+		const $row=row(
+			cell('a',hue,
+				changeset('2023-05-09',10103)+
+				changeset('2023-05-07',10101)
+			)+cell('a',hue,
+				changeset('2023-05-10',10104)
+			)
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
+		assertChangesetCollectionRow($row,[
+			['ab',hue,['2023-05-09',10103]],
+			['a ',hue,['2023-05-10',10104]]
+		])
+		assertChangesetCollectionRow($splitRow,[
+			['a ',hue,['2023-05-07',10101]],
+			['  ',hue]
+		])
+	})
 	it("inserts placeholder at the beginning of one cell",()=>{
 		const $row=row(
 			cell('a',hue,changeset('2023-03-01',10001))
