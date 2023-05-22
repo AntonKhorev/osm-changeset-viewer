@@ -72,6 +72,9 @@ export function makeItemShell(
 		if (item.uid!=item.itemUid) {
 			classNames.push('incoming')
 		}
+		if (!item.text) {
+			classNames.push('mute')
+		}
 	}
 	return [makeElement('span')()(
 		$icon,` `,makeElement('span')('ballon')(
