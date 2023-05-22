@@ -13,7 +13,7 @@ export default class GridBodyCollectionRow {
 		let lesserPoint: ItemSequencePoint|null = null
 		for (const $cell of this.$row.cells) {
 			for (const $item of $cell.children) {
-				if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) continue
+				if (!isItem($item)) continue
 				const point=readItemSequencePoint($item)
 				if (!point) continue
 				if (!greaterPoint || isGreaterElementSequencePoint(point,greaterPoint)) {
@@ -43,7 +43,7 @@ export default class GridBodyCollectionRow {
 			let nItems=0
 			const $itemsToMove:HTMLElement[]=[]
 			for (const $item of $cell.children) {
-				if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) continue
+				if (!isItem($item)) continue
 				nItems++
 				if (!startedMoving) {
 					const collectionItemSequencePoint=readItemSequencePoint($item)
@@ -89,7 +89,7 @@ export default class GridBodyCollectionRow {
 			const $cell=this.$row.cells[iColumn]
 			let nItems=0
 			for (const $item of $cell.children) {
-				if (!($item instanceof HTMLElement) || !$item.classList.contains('item')) continue
+				if (!isItem($item)) continue
 				nItems++
 				const collectionItemSequencePoint=readItemSequencePoint($item)
 				if (!collectionItemSequencePoint) continue
@@ -109,4 +109,42 @@ export default class GridBodyCollectionRow {
 			return $placeholder
 		})
 	}
+	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
+		const nColumns=this.$row.cells.length
+		if (nColumns==0) return
+		const iColumnPositions=Array<number>(nColumns).fill(0)
+		while (true) {
+			let point: ItemSequencePoint|undefined
+			let items: [iColumn: number, $item: HTMLElement][] = []
+			for (const [iColumn,$cell] of [...this.$row.cells].entries()) {
+				let $item: Element|undefined
+				let columnPoint: ItemSequencePoint|null = null
+				for (;iColumnPositions[iColumn]<$cell.children.length;iColumnPositions[iColumn]++) {
+					$item=$cell.children[iColumnPositions[iColumn]]
+					if (!isItem($item)) continue
+					columnPoint=readItemSequencePoint($item)
+					if (!columnPoint) continue
+					break
+				}
+				if (iColumnPositions[iColumn]>=$cell.children.length) continue
+				if (!$item || !isItem($item) || !columnPoint) continue
+				if (point && isGreaterElementSequencePoint(point,columnPoint)) continue
+				if (!point || isGreaterElementSequencePoint(columnPoint,point)) {
+					point=columnPoint
+					items=[[iColumn,$item]]
+				} else {
+					items.push([iColumn,$item])
+				}
+			}
+			if (!point) break
+			for (const [iColumn] of items) {
+				iColumnPositions[iColumn]++
+			}
+			yield [point,items]
+		}
+	}
+}
+
+function isItem($item: Element): $item is HTMLElement {
+	return $item instanceof HTMLElement && $item.classList.contains('item')
 }

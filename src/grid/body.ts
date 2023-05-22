@@ -2,7 +2,7 @@ import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
 import type {ItemDescriptor, ItemSequencePoint} from './info'
 import {
-	readItemDescriptor, getItemDescriptorSelector,
+	readItemDescriptor, getItemDescriptorSelector, isEqualItemDescriptor,
 	isGreaterElementSequencePoint, writeSeparatorSequencePoint, readElementSequencePoint, writeElementSequencePoint,
 	getBatchItemSequencePoint, readItemSequencePoint
 } from './info'
@@ -13,7 +13,6 @@ import {
 } from './body-item'
 import GridBodyCollectionRow from './collection'
 import {updateTimelineOnInsert} from './timeline'
-import * as bodyItemSet from './body-item-set'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
@@ -226,109 +225,6 @@ export default class GridBody {
 		collapseRowItems($row)
 	}
 	async expandItem(descriptor: ItemDescriptor): Promise<void> {
-		const makeUsernames=(uid?:number,username?:string)=>{
-			if (uid==null || username==null) {
-				return new Map<number,string>()
-			} else {
-				return new Map<number,string>([[uid,username]])
-			}
-		}
-		const expandItemSet=async(iColumns:number[],$placeholders:HTMLElement[])=>{
-			const [$item]=$placeholders
-			const $row=$item.closest('tr')
-			if (!$row) return
-			const sequencePoint=readItemSequencePoint($item)
-			if (!sequencePoint) return
-			let batchItem:MuxBatchItem
-			let usernames:Map<number,string>
-			if (sequencePoint.type=='user') {
-				const item=await this.itemReader.getUser(sequencePoint.id)
-				if (!item || !item.withDetails || !item.visible) return
-				batchItem={type:sequencePoint.type,item}
-				usernames=makeUsernames()
-			} else if (sequencePoint.type=='changeset' || sequencePoint.type=='changesetClose') {
-				const item=await this.itemReader.getChangeset(sequencePoint.id)
-				if (!item) return
-				batchItem={type:sequencePoint.type,item}
-				usernames=makeUsernames()
-			} else if (sequencePoint.type=='note') {
-				const item=await this.itemReader.getNote(sequencePoint.id)
-				if (!item) return
-				batchItem={type:sequencePoint.type,item}
-				usernames=makeUsernames()
-			} else if (sequencePoint.type=='changesetComment') {
-				const {comment,username}=await this.itemReader.getChangesetComment(sequencePoint.id,sequencePoint.order??0)
-				if (!comment) return
-				batchItem={type:sequencePoint.type,item:comment}
-				usernames=makeUsernames(comment.uid,username)
-			} else if (sequencePoint.type=='noteComment') {
-				const {comment,username}=await this.itemReader.getNoteComment(sequencePoint.id,sequencePoint.order??0)
-				if (!comment) return
-				batchItem={type:sequencePoint.type,item:comment}
-				usernames=makeUsernames(comment.uid,username)
-			} else {
-				return
-			}
-			const classNames=[...$item.classList]
-			for (const $placeholder of $placeholders) {
-				const $disclosureButton=getItemDisclosureButton($placeholder)
-				if ($disclosureButton) {
-					setItemDisclosureButtonState($disclosureButton,true)
-				}
-				$placeholder.remove()
-			}
-			if (!doesCollectionRowHaveItems($row)) {
-				$row.remove()
-			}
-			this.insertItem(iColumns,sequencePoint,{isExpanded:true,batchItem,usernames},$placeholders,classNames)
-		}
-		const findPrecedingItemSetsToExpand=($startingItemSet:HTMLElement[])=>{
-			const [$startingItem]=$startingItemSet
-			let $precedingItemSet=bodyItemSet.getPreviousSibling($startingItemSet)
-			const $precedingHiddenItemSets:HTMLElement[][]=[]
-			while ($precedingItemSet) {
-				if (!isHiddenItemSet($precedingItemSet)) break
-				$precedingHiddenItemSets.unshift($precedingItemSet) // top-to-bottom order of expandItemSet() calls
-				$precedingItemSet=bodyItemSet.getPreviousSibling($precedingItemSet)
-			}
-			if (
-				$precedingHiddenItemSets.length>0 &&
-				bodyItemSet.areSame(
-					$precedingHiddenItemSets[0],
-					bodyItemSet.getFirstSibling($startingItemSet)??[]
-				)
-			) {
-				return $precedingHiddenItemSets
-			} else if ($startingItem.classList.contains('combined')) {
-				const $previousItemSet=bodyItemSet.getPreviousSibling($startingItemSet)
-				if ($previousItemSet) {
-					const [$previousItem]=$previousItemSet
-					if (isHiddenItem($previousItem) && isChangesetOpenedClosedPair($startingItem,$previousItem)) {
-						return [$previousItemSet]
-					}
-				}
-			}
-			return []
-		}
-		const findFollowingItemsToExpand=($startingItemSet:HTMLElement[])=>{
-			let $followingItemSet=bodyItemSet.getNextSibling($startingItemSet)
-			const $followingHiddenItemSets:HTMLElement[][]=[]
-			while ($followingItemSet) {
-				if (!isHiddenItemSet($followingItemSet)) break
-				$followingHiddenItemSets.push($followingItemSet)
-				$followingItemSet=bodyItemSet.getNextSibling($followingItemSet)
-			}
-			if (
-				$followingHiddenItemSets.length>0 &&
-				bodyItemSet.areSame(
-					$followingHiddenItemSets[$followingHiddenItemSets.length-1],
-					bodyItemSet.getLastSibling($startingItemSet)??[]
-				)
-			) {
-				return $followingHiddenItemSets
-			}
-			return []
-		}
 		const itemSelector=getItemDescriptorSelector(descriptor)
 		const itemSelectorWithRow='tr.collection '+itemSelector
 		const $items=this.$gridBody.querySelectorAll(itemSelectorWithRow)
@@ -340,27 +236,93 @@ export default class GridBody {
 			$rows.add($row)
 		}
 		for (const $row of $rows) {
-			const uniqueItemCopies=new Map<number,HTMLElement>()
-			for (const [$item,iColumn] of listItemCopies($row,descriptor)) {
-				if (uniqueItemCopies.has(iColumn)) {
-					$item.remove()
+			const collection=new GridBodyCollectionRow($row)
+			const itemSequence=[...collection.getItemSequence()]
+			const isEverythingBetweenTargetPositionsHidden=[true]
+			for (const [point,columnItems] of itemSequence) {
+				if (isEqualItemDescriptor(descriptor,point)) {
+					isEverythingBetweenTargetPositionsHidden.push(true)
 				} else {
-					uniqueItemCopies.set(iColumn,$item)
+					isEverythingBetweenTargetPositionsHidden[
+						isEverythingBetweenTargetPositionsHidden.length-1
+					]&&=columnItems.every(([,$item])=>isHiddenItem($item))
 				}
 			}
-			if (uniqueItemCopies.size==0) continue
-			const iColumns=[...uniqueItemCopies.keys()]
-			const $startingItemSet=[...uniqueItemCopies.values()]
-			const $precedingItemSetsToExpand=findPrecedingItemSetsToExpand($startingItemSet)
-			const $followingItemSetsToExpand=findFollowingItemsToExpand($startingItemSet)
-			for (const $itemSet of $precedingItemSetsToExpand) {
-				await expandItemSet(iColumns,$itemSet)
-			}
-			await expandItemSet(iColumns,$startingItemSet)
-			for (const $itemSet of $followingItemSetsToExpand) {
-				await expandItemSet(iColumns,$itemSet)
+			if (isEverythingBetweenTargetPositionsHidden.length<=1) continue
+			let iTarget=0
+			for (const [iPosition,[point,columnItems]] of itemSequence.entries()) {
+				if (isEqualItemDescriptor(descriptor,point)) {
+					if (!isEverythingBetweenTargetPositionsHidden[iTarget]) {
+						const [previousPoint,previousColumnItems]=itemSequence[iPosition-1]
+						if (isOpenedClosedPair(point,previousPoint)) {
+							await this.expandItemRow(previousPoint,previousColumnItems)
+						}
+					}
+					await this.expandItemRow(point,columnItems)
+					iTarget++
+				} else {
+					if (isEverythingBetweenTargetPositionsHidden[iTarget]) {
+						await this.expandItemRow(point,columnItems)
+					}
+				}
 			}
 		}
+	}
+	private async expandItemRow(point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]): Promise<void> {
+		const makeUsernames=(uid?:number,username?:string)=>{
+			if (uid==null || username==null) {
+				return new Map<number,string>()
+			} else {
+				return new Map<number,string>([[uid,username]])
+			}
+		}
+		const [[,$item]]=items
+		const $row=$item.closest('tr')
+		if (!$row) return
+		let batchItem:MuxBatchItem
+		let usernames:Map<number,string>
+		if (point.type=='user') {
+			const item=await this.itemReader.getUser(point.id)
+			if (!item || !item.withDetails || !item.visible) return
+			batchItem={type:point.type,item}
+			usernames=makeUsernames()
+		} else if (point.type=='changeset' || point.type=='changesetClose') {
+			const item=await this.itemReader.getChangeset(point.id)
+			if (!item) return
+			batchItem={type:point.type,item}
+			usernames=makeUsernames()
+		} else if (point.type=='note') {
+			const item=await this.itemReader.getNote(point.id)
+			if (!item) return
+			batchItem={type:point.type,item}
+			usernames=makeUsernames()
+		} else if (point.type=='changesetComment') {
+			const {comment,username}=await this.itemReader.getChangesetComment(point.id,point.order??0)
+			if (!comment) return
+			batchItem={type:point.type,item:comment}
+			usernames=makeUsernames(comment.uid,username)
+		} else if (point.type=='noteComment') {
+			const {comment,username}=await this.itemReader.getNoteComment(point.id,point.order??0)
+			if (!comment) return
+			batchItem={type:point.type,item:comment}
+			usernames=makeUsernames(comment.uid,username)
+		} else {
+			return
+		}
+		const classNames=[...$item.classList]
+		for (const [,$item] of items) {
+			const $disclosureButton=getItemDisclosureButton($item)
+			if ($disclosureButton) {
+				setItemDisclosureButtonState($disclosureButton,true)
+			}
+			$item.remove() // TODO do inside collection class
+		}
+		if (!doesCollectionRowHaveItems($row)) {
+			$row.remove() // TODO do inside collection class
+		}
+		const iColumns=items.map(([iColumn])=>iColumn)
+		const $items=items.map(([,$item])=>$item)
+		this.insertItem(iColumns,point,{isExpanded:true,batchItem,usernames},$items,classNames)
 	}
 	private insertItem(
 		iColumns: number[],
@@ -604,13 +566,13 @@ function isChangesetOpenedClosedPair($openedItem: HTMLElement, $closedItem: HTML
 	if ($openedItem.dataset.type!='changeset' || $closedItem.dataset.type!='changesetClose') return false
 	return $openedItem.dataset.id==$closedItem.dataset.id
 }
+function isOpenedClosedPair(a: ItemDescriptor, b: ItemDescriptor): boolean {
+	if (a.type!='changeset' || b.type!='changesetClose') return false
+	return a.id==b.id
+}
 
 function isHiddenItem($item: HTMLElement): boolean {
 	return $item.classList.contains('item') && $item.classList.contains('hidden')
-}
-
-function isHiddenItemSet($items: HTMLElement[]): boolean {
-	return $items.every(isHiddenItem)
 }
 
 function isSameMonthTimestamps(t1: number, t2: number): boolean {

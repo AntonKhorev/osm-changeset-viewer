@@ -203,6 +203,82 @@ describe("GridBodyCollectionRow",()=>{
 		assert.equal($placeholders.length,1)
 		assert.equal($placeholders[0].dataset.id,'10102')
 	})
+	it("gets item sequence of empty collection",()=>{
+		const $row=row(
+			cell('ab',hue)
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const result=[...collection.getItemSequence()]
+		assert.deepEqual(result,[])
+	})
+	it("gets item sequence of 1-item collection",()=>{
+		const $row=row(
+			cell('ab',hue,
+				changeset('2023-04-01',10001)
+			)
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const result=[...collection.getItemSequence()]
+		assert.deepEqual(result,[
+			[changesetPoint('2023-04-01',10001),[
+				[0,$row.cells[0].children[1]],
+			]],
+		])
+	})
+	it("gets item sequence of 2-item collection",()=>{
+		const $row=row(
+			cell('ab',hue,
+				changeset('2023-04-02',10002)+
+				changeset('2023-04-01',10001)
+			)
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const result=[...collection.getItemSequence()]
+		assert.deepEqual(result,[
+			[changesetPoint('2023-04-02',10002),[
+				[0,$row.cells[0].children[1]],
+			]],
+			[changesetPoint('2023-04-01',10001),[
+				[0,$row.cells[0].children[2]],
+			]],
+		])
+	})
+	it("gets item sequence of 2-column same-item collection",()=>{
+		const $row=row(
+			cell('ab',hue,
+				changeset('2023-04-03',10003)
+			)+cell('ab',hue,
+				changeset('2023-04-03',10003)
+			)
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const result=[...collection.getItemSequence()]
+		assert.deepEqual(result,[
+			[changesetPoint('2023-04-03',10003),[
+				[0,$row.cells[0].children[1]],
+				[1,$row.cells[1].children[1]],
+			]],
+		])
+	})
+	it("gets item sequence of 2-column different-item collection",()=>{
+		const $row=row(
+			cell('ab',hue,
+				changeset('2023-04-03',10003)
+			)+cell('ab',hue,
+				changeset('2023-04-04',10004)
+			)
+		)
+		const collection=new GridBodyCollectionRow($row)
+		const result=[...collection.getItemSequence()]
+		assert.deepEqual(result,[
+			[changesetPoint('2023-04-04',10004),[
+				[1,$row.cells[1].children[1]],
+			]],
+			[changesetPoint('2023-04-03',10003),[
+				[0,$row.cells[0].children[1]],
+			]],
+		])
+	})
 })
 
 function assertChangesetCollectionRow($row,cells) {
