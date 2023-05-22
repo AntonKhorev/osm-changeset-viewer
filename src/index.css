@@ -1,9 +1,11 @@
 :root {
 	--light-text-color: #444;
 	--frame-color: #AAA;
+	--light-frame-color: #DDD;
 	--hover-color: #DEF;
 
 	--frame-line: solid 1px var(--frame-color);
+	--light-frame-line: solid 1px var(--light-frame-color);
 	--spacer: .5rem;
 	--major-button-padding: .3rem;
 }
@@ -11,6 +13,7 @@
 	:root {
 		--light-text-color: #CCC;
 		--frame-color: #666;
+		--light-frame-color: #444;
 		--hover-color: #246;
 	}
 }
@@ -416,7 +419,7 @@ body > .symbols {
 }
 .ui .grid tbody .item.comment .ballon {
 	--ballon-border-radius: var(--spacer);
-	border: var(--frame-line);
+	border: var(--light-frame-line);
 	border-radius: var(--ballon-border-radius);
 	background: canvas;
 }
@@ -433,7 +436,7 @@ body > .symbols {
 }
 .ui .grid tbody .item.comment:not(.mute):not(.incoming) .ballon::before {
 	left: calc(-1 * var(--spacer));
-	border-right: solid var(--spacer) var(--frame-color);
+	border-right: solid var(--spacer) var(--light-frame-color);
 }
 .ui .grid tbody .item.comment:not(.mute):not(.incoming) .ballon::after {
 	left: calc(-1 * var(--spacer) + 1px);
@@ -441,7 +444,7 @@ body > .symbols {
 }
 .ui .grid tbody tr.collection .item.comment:not(.mute).incoming .ballon::before {
 	right: calc(-1 * var(--spacer));
-	border-left: solid var(--spacer) var(--frame-color);
+	border-left: solid var(--spacer) var(--light-frame-color);
 }
 .ui .grid tbody tr.collection .item.comment:not(.mute).incoming .ballon::after {
 	right: calc(-1 * var(--spacer) + 1px);
@@ -452,7 +455,7 @@ body > .symbols {
 	content: '';
 	position: absolute;
 	box-sizing: border-box;
-	border: var(--frame-line);
+	border: var(--light-frame-line);
 	border-radius: 50%;
 	background: canvas;
 	aspect-ratio: 1;
@@ -525,7 +528,7 @@ body > .symbols {
 	max-width: calc(100% - var(--from-tip-width));
 	padding-inline: var(--from-border-radius);
 	margin-left: 1ch;
-	border: var(--frame-line);
+	border: var(--light-frame-line);
 	background: canvas;
 }
 .ui .grid tbody tr.item:not(.mute) td .ballon .flow .from {
@@ -552,7 +555,7 @@ body > .symbols {
 }
 .ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::before {
 	left: 0;
-	border-left-color: var(--frame-color);
+	border-left-color: var(--light-frame-color);
 }
 .ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::after {
 	left: -1px;
