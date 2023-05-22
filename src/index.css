@@ -103,6 +103,7 @@ body > .symbols {
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
 	--icon-size: 1.25rem;
+	--tab-height: calc(1rem + 2 * var(--spacer));
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
@@ -163,7 +164,7 @@ body > .symbols {
 }
 .ui .grid thead th .tab {
 	position: relative;
-	height: calc(1rem + 2 * var(--spacer));
+	height: var(--tab-height);
 	border-left: var(--frame-line);
 	border-right: var(--frame-line);
 	border-top: var(--frame-line);
@@ -294,6 +295,9 @@ body > .symbols {
 	user-select: none;
 }
 
+.ui .grid tbody * {
+	scroll-margin-top: var(--tab-height);
+}
 .ui .grid tbody tr.separator td .month {
 	padding: var(--spacer) 0;
 	text-align: center;

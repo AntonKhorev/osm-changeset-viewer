@@ -542,6 +542,11 @@ export default class GridBody {
 			await this.expandItem(itemDescriptor)
 			$disclosureButton.disabled=false
 		}
+		const $newItem=$disclosureButton.closest('.item')
+		if ($newItem instanceof HTMLElement) {
+			$newItem.scrollIntoView({block:'nearest'}) // focusing on button is enough to scroll it in, but it's then too close to the edge
+		}
+		$disclosureButton.focus()
 	}
 }
 
