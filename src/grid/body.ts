@@ -315,10 +315,11 @@ export default class GridBody {
 			if ($disclosureButton) {
 				setItemDisclosureButtonState($disclosureButton,true)
 			}
-			$item.remove() // TODO do inside collection class
+			$item.remove()
 		}
-		if (!doesCollectionRowHaveItems($row)) {
-			$row.remove() // TODO do inside collection class
+		const collection=new GridBodyCollectionRow($row)
+		if (collection.isEmpty()) {
+			$row.remove()
 		}
 		const iColumns=items.map(([iColumn])=>iColumn)
 		const $items=items.map(([,$item])=>$item)
@@ -579,10 +580,6 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	const d1=new Date(t1)
 	const d2=new Date(t2)
 	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
-}
-
-function doesCollectionRowHaveItems($row: HTMLTableRowElement): boolean {
-	return [...$row.cells].some($cell=>$cell.querySelector(':scope > .item'))
 }
 
 function mergeCollectionRows($row1: HTMLTableRowElement, $row2: HTMLTableRowElement): void {

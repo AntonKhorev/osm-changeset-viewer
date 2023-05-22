@@ -5,6 +5,9 @@ import {makeElement} from '../util/html'
 
 export default class GridBodyCollectionRow {
 	constructor(private $row: HTMLTableRowElement) {}
+	isEmpty(): boolean {
+		return !this.$row.querySelector(':scope > td > .item')
+	}
 	getBoundarySequencePoints(): [
 		greaterPoint: ItemSequencePoint|null,
 		lesserPoint: ItemSequencePoint|null

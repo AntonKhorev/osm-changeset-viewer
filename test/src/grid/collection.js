@@ -45,6 +45,16 @@ describe("GridBodyCollectionRow",()=>{
 			delete global[property]
 		}
 	})
+	it("reports empty collection",()=>{
+		const $row=row(cell('',hue))
+		const collection=new GridBodyCollectionRow($row)
+		assert.equal(collection.isEmpty(),true)
+	})
+	it("reports nonempty collection",()=>{
+		const $row=row(cell('ab',hue,changeset('2023-05-07',10101)))
+		const collection=new GridBodyCollectionRow($row)
+		assert.equal(collection.isEmpty(),false)
+	})
 	it("gets boundary points of empty collection",()=>{
 		const $row=row(cell('',hue))
 		const collection=new GridBodyCollectionRow($row)
