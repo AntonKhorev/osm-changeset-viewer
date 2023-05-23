@@ -18,7 +18,7 @@ export default function writeFooter(
 	$logClearButton.onclick=()=>{
 		$logList.replaceChildren()
 	}
-	const [$log,$logSection]=makeSection('log')(
+	const [$log,$logSection,$logButton]=makePanel('log',`Fetch log`)(
 		makeElement('h2')()(`Fetches`),
 		makeDiv('controls')($logClearButton),
 		$logList
@@ -157,11 +157,7 @@ export default function writeFooter(
 		$toolbar.append($button)
 	}
 	if (server) {
-		const $button=makeElement('button')()(`Fetch log`)
-		$button.onclick=()=>{
-			$log.hidden=!$log.hidden
-		}
-		$toolbar.append($button)
+		$toolbar.append($logButton)
 	}
 	{
 		const $button=makeElement('button')()(`Servers and logins`)
@@ -172,7 +168,9 @@ export default function writeFooter(
 	}
 }
 
-function makeSection(className: string): (...items: Array<string|HTMLElement>)=>[$panel: HTMLElement, $section: HTMLElement] {
+function makePanel(className: string, buttonLabel: string): (...items: Array<string|HTMLElement>)=>[
+	$panel: HTMLElement, $section: HTMLElement, $button: HTMLButtonElement
+] {
 	const minHeight=64
 	const $resizer=makeElement('button')('resizer')()
 	const $section=makeElement('section')()()
@@ -203,8 +201,14 @@ function makeSection(className: string): (...items: Array<string|HTMLElement>)=>
 		)
 		$panel.style.height=`${newHeight}px`
 	}
+	const $button=makeElement('button')()(buttonLabel)
+	$button.setAttribute('aria-expanded',String(!$panel.hidden))
+	$button.onclick=()=>{
+		$panel.hidden=!$panel.hidden
+		$button.setAttribute('aria-expanded',String(!$panel.hidden))
+	}
 	return (...items)=>{
 		$section.append(...items)
-		return [$panel,$section]
+		return [$panel,$section,$button]
 	}
 }
