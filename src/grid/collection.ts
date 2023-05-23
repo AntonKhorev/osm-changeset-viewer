@@ -180,6 +180,44 @@ export default class GridBodyCollectionRow {
 			yield [point,items]
 		}
 	}
+	updateIds(isCompact: boolean): void {
+		for (const $cell of this.$row.cells) {
+			let lastId=''
+			for (const $item of $cell.children) {
+				if (!isItem($item)) continue
+				if ($item.classList.contains('hidden')) continue
+				const $a=$item.querySelector(':scope > .ballon > .flow > a')
+				if (!($a instanceof HTMLAnchorElement)) {
+					lastId=''
+					continue
+				}
+				const id=$item.dataset.id
+				if (id==null) {
+					lastId=''
+					continue
+				}
+				let compacted=false
+				if (isCompact && id.length==lastId.length) {
+					let shortId=''
+					for (let i=0;i<id.length;i++) {
+						if (id[i]==lastId[i]) continue
+						shortId=id.substring(i)
+						break
+					}
+					if (id.length-shortId.length>2) {
+						$a.textContent='...'+shortId
+						$a.title=id
+						compacted=true
+					}
+				}
+				if (!compacted) {
+					$a.textContent=id
+					$a.removeAttribute('title')
+				}
+				lastId=id
+			}
+		}
+	}
 }
 
 function isItem($item: Element): $item is HTMLElement {

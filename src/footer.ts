@@ -116,6 +116,10 @@ export default function writeFooter(
 			)
 		}
 		addGridCheckbox(
+			value=>grid.withCompactIds=value,
+			`compact ids in collections`
+		)
+		addGridCheckbox(
 			value=>grid.withClosedChangesets=value,
 			`changeset close events`,`visible only if there's some other event between changeset opening and closing`
 		)

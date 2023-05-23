@@ -21,6 +21,9 @@ import {moveInArray} from '../util/types'
 
 export default class GridBody {
 	readonly $gridBody=makeElement('tbody')()()
+	withCompactIds=false
+	withClosedChangesets=false
+	inOneColumn=false
 	onItemSelect: ()=>void = ()=>{}
 	private readonly wrappedItemSelectListener: ()=>void
 	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
@@ -52,7 +55,7 @@ export default class GridBody {
 			$placeholders,classNames
 		)
 	}
-	updateTableAccordingToSettings(inOneColumn: boolean, withClosedChangesets: boolean): void {
+	updateTableAccordingToSettings(): void {
 		const combineChangesets=($item: HTMLElement, $laterItem: HTMLElement|undefined)=>{
 			const isConnectedWithLaterItem=(
 				$laterItem &&
@@ -62,9 +65,9 @@ export default class GridBody {
 			)
 			if ($item.classList.contains('changeset')) {
 				if ($item.classList.contains('closed')) {
-					$item.classList.toggle('hidden',!withClosedChangesets)
+					$item.classList.toggle('hidden',!this.withClosedChangesets)
 				} else {
-					if (isConnectedWithLaterItem || !withClosedChangesets) {
+					if (isConnectedWithLaterItem || !this.withClosedChangesets) {
 						if ($laterItem && isConnectedWithLaterItem) {
 							$laterItem.classList.add('hidden')
 						}
@@ -78,7 +81,7 @@ export default class GridBody {
 		const spanColumns=($row:HTMLTableRowElement)=>{
 			let spanned=false
 			for (const $cell of $row.cells) {
-				if (inOneColumn) {
+				if (this.inOneColumn) {
 					if (!spanned && $cell.childNodes.length) {
 						$cell.hidden=false
 						$cell.colSpan=this.nColumns+1
@@ -104,6 +107,8 @@ export default class GridBody {
 						$laterItem=$item
 					}
 				}
+				const collection=new GridBodyCollectionRow($row)
+				collection.updateIds(this.withCompactIds)
 				// spanColumns($row) // TODO need to merge/split collected items in cells
 				$itemRowAbove=undefined
 			} else if ($row.classList.contains('item')) {
