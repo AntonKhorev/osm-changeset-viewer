@@ -69,9 +69,7 @@ async function main() {
 				getUserQueriesFromHash(hostlessHash)
 			)
 		},true)
-		writeFooter($root,$footer,$netDialog,net.cx.server,grid,more,()=>{
-			grid.updateTableAccordingToSettings()
-		})
+		writeFooter($root,$footer,$netDialog,net.cx.server,grid,more)
 	} else {
 		$content.append(
 			makeDiv('notice')(`Please select a valid server`)

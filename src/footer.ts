@@ -11,8 +11,7 @@ export default function writeFooter(
 	$netDialog: HTMLDialogElement,
 	server?: Server,
 	grid?: Grid,
-	more?: More,
-	updateTableCallback?: ()=>void
+	more?: More
 ): void {
 	const $logList=ul()
 	const $logClearButton=makeElement('button')()(`clear`)
@@ -102,7 +101,7 @@ export default function writeFooter(
 		$checkbox.type='checkbox'
 		$checkbox.oninput=()=>{
 			grid.$grid.classList.toggle('with-closed-changesets',$checkbox.checked)
-			updateTableCallback?.()
+			grid.updateTableAccordingToSettings()
 		}
 		const $label=makeLabel()(
 			$checkbox,` changeset close events`
@@ -117,7 +116,7 @@ export default function writeFooter(
 		$checkbox.type='checkbox'
 		$checkbox.oninput=()=>{
 			grid.$grid.classList.toggle('in-one-column',$checkbox.checked)
-			updateTableCallback?.()
+			grid.updateTableAccordingToSettings()
 		}
 		$toolbar.append(
 			makeDiv('input-group')(makeLabel()(
