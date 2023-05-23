@@ -1,0 +1,47 @@
+.ui footer {
+	flex-shrink: 0;
+	flex-grow: 1;
+	box-shadow: 0 0px 6px #AAA;
+}
+.ui footer > * {
+	padding: var(--spacer);
+	border-top: var(--frame-line);
+}
+.ui footer:not(.with-log) > .log {
+	display: none;
+}
+.ui footer > .log {
+	height: 6rem;
+	overflow-y: auto;
+}
+.ui footer > .log > :first-child {
+	margin-top: 0;
+}
+.ui footer > .log > :last-child {
+	margin-bottom: 0;
+}
+.ui footer > .log h2 {
+	display: inline-block;
+	margin: 0;
+}
+.ui footer > .log .controls {
+	display: inline-block;
+	margin-left: var(--spacer);
+	vertical-align: text-bottom;
+}
+.ui footer > .log ul {
+	font-family: monospace;
+	padding-left: 1rem;
+}
+.ui footer > .toolbar {
+	height: 3rem;
+	display: flex;
+	gap: var(--spacer);
+	align-items: center;
+}
+.ui footer > .toolbar > .message {
+	flex-grow: 1;
+}
+.ui footer > .toolbar > button {
+	align-self: stretch;
+}

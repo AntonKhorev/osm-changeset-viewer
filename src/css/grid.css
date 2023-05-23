@@ -1,0 +1,484 @@
+.ui .grid {
+	--adder-width: 10ch;
+	--column-min-width: 25ch;
+	--icon-size: 1.25rem;
+	--tab-height: calc(1rem + 2 * var(--spacer));
+	table-layout: fixed;
+	border-collapse: collapse;
+	width: 100%;
+	min-width: calc(var(--column-min-width) * var(--columns) + var(--adder-width));
+}
+.ui .grid :is(td,th) {
+	--temp-accent-color: hsl(var(--hue) 50% 50%);
+	--accent-color: var(--temp-accent-color,var(--light-text-color));
+	padding: 0;
+	vertical-align: top;
+}
+.ui .grid col.adder {
+	width: var(--adder-width);
+}
+.ui .grid .icon {
+	display: block;
+	position: absolute;
+	left: var(--spacer);
+	width: var(--icon-size);
+	height: var(--icon-size);
+}
+.ui .grid .icon > * {
+	position: absolute;
+	inset: 0;
+	margin: auto;
+	max-width: 100%;
+	max-height: 100%;
+}
+.ui .grid .api {
+	color: var(--light-text-color);
+	font-size: .8em;
+}
+.ui .grid tbody {
+	isolation: isolate;
+}
+
+.ui .grid thead {
+	--base-z-index: 0;
+}
+.ui .grid thead th {
+	--base-z-index: 1;
+	position: sticky;
+	top: 0;
+	z-index: var(--base-z-index);
+}
+.ui .grid thead td {
+	position: relative;
+	z-index: var(--base-z-index);
+}
+.ui .grid thead td.adder {
+	position: relative;
+	padding: var(--spacer);
+	text-align: right;
+}
+.ui .grid thead td.adder button {
+	width: calc(var(--adder-width) - var(--spacer));
+	aspect-ratio: 1;
+}
+.ui .grid thead th .tab {
+	position: relative;
+	height: var(--tab-height);
+	border-left: var(--frame-line);
+	border-right: var(--frame-line);
+	border-top: var(--frame-line);
+	border-top-left-radius: var(--spacer);
+	border-top-right-radius: var(--spacer);
+	margin-right: -1px;
+	cursor: grab;
+	touch-action: none;
+	background: canvas;
+	box-shadow: 0 4px 4px -4px #AAA;
+}
+.ui .grid thead th .tab > * {
+	position: absolute;
+}
+.ui .grid thead th .tab .icon {
+	top: calc(var(--spacer) - 1px);
+	left: calc(var(--spacer) - 1px);
+	background: var(--accent-color);
+}
+.ui .grid thead th .tab .icon > * {
+	background: canvas;
+	color: var(--accent-color);
+}
+.ui .grid thead th .tab .label {
+	display: block;
+	overflow: hidden;
+	top: 0;
+	bottom: 0;
+	left: calc(var(--icon-size) + 2 * var(--spacer));
+	right: calc(1rem + 2 * var(--spacer));
+	text-align: left;
+	line-height: 2;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.ui .grid thead th .tab button {
+	top: var(--spacer);
+	right: var(--spacer);
+	width: 1rem;
+	height: 1rem;
+}
+.ui .grid thead td .card {
+	padding: var(--spacer);
+	margin-right: -1px;
+	background: canvas;
+}
+.ui .grid thead td .card .avatar {
+	float: right;
+	width: 20%;
+	min-width: 2rem;
+	max-width: 100px;
+	margin-left: var(--spacer);
+	margin-bottom: var(--spacer);
+	border: var(--frame-line);
+}
+.ui .grid thead td .card .avatar img {
+	display: block;
+	width: 100%;
+	max-height: 100px;
+	max-width: 100px;
+}
+.ui .grid thead td .card .field:nth-last-child(2n) {
+	background: #8881;
+}
+.ui .grid thead td .card .updates ul {
+	margin: 0;
+	padding: 0 0 0 1em;
+}
+.ui .grid thead td .card .updates button {
+	vertical-align: bottom;
+	height: 1rem;
+	width: 1rem;
+}
+.ui .grid thead td .card form > [class$="-input-group"]:first-child {
+	margin-top: 0;
+}
+.ui .grid thead td .card form > [class$="-input-group"]:last-child {
+	margin-bottom: 0;
+}
+.ui .grid thead td .card::before,
+.ui .grid thead td .card::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	height: 100%;
+	width: 1px;
+	background: linear-gradient(var(--frame-color), canvas);
+}
+.ui .grid thead td .card::before {
+	left: 0;
+}
+.ui .grid thead td .card::after {
+	right: -1px;
+}
+.ui .grid thead tr.selectors td {
+	--base-z-index: 2;
+	position: sticky;
+	top: var(--spacer);
+	pointer-events: none;
+}
+.ui .grid thead tr.selectors td .selector {
+	height: var(--icon-size);
+}
+.ui .grid thead tr.selectors td .selector .icon {
+	background: var(--accent-color);
+	pointer-events: all;
+}
+
+.ui .grid thead :is(th,td).settling,
+.ui .grid thead.with-grabbed-tab :is(th,td).grabbed {
+	z-index: calc(var(--base-z-index) + 10);
+}
+.ui .grid thead th.settling.tab, 
+.ui .grid thead td.settling:is(.card,.selector) {
+	transition: translate 50ms;
+}
+.ui .grid thead.with-grabbed-tab th:not(.grabbed).tab,
+.ui .grid thead.with-grabbed-tab td:not(.grabbed):is(.card,.selector) {
+	transition: translate 100ms;
+}
+.ui .grid thead.with-grabbed-tab th:not(.grabbed).tab > *,
+.ui .grid thead.with-grabbed-tab td:not(.grabbed).card > * { /* keep selector opaque */
+	opacity: .5;
+}
+.ui .grid thead.with-grabbed-tab th.grabbed .tab, 
+.ui .grid thead.with-grabbed-tab td.grabbed :is(.card,.selector) {
+	cursor: grabbing;
+	user-select: none;
+}
+
+.ui .grid tbody * {
+	scroll-margin-top: var(--tab-height);
+}
+.ui .grid tbody tr.separator td .month {
+	padding: var(--spacer) 0;
+	text-align: center;
+	position: sticky;
+	left: 0;
+	width: var(--main-width);
+	height: 1rem;
+}
+.ui .grid tbody tr.separator td .month time {
+	background: canvas;
+	padding: 0 .5em;
+	color: var(--light-text-color);
+}
+.ui .grid tbody tr.separator td .month::before {
+	content: '';
+	position: absolute;
+	z-index: -1;
+	left: 0;
+	top: 50%;
+	height: 1px;
+	width: 100%;
+	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
+}
+
+.ui .grid tbody tr:is(.item,.collection) td {
+	--icon-vertical-margin: 3px;
+	--timeline-width: 2px;
+	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
+	--timeline-previous-row-covering-height: 0px;
+	position: relative;
+	padding-left: calc(var(--spacer) + var(--icon-size));
+}
+.ui .grid tbody tr:is(.item,.collection):not(.hidden) td {
+	height: calc(var(--icon-vertical-margin) + var(--icon-size) + var(--icon-vertical-margin));
+}
+.ui .grid tbody tr:is(.item,.collection) td.with-timeline-above::before,
+.ui .grid tbody tr:is(.item,.collection) td.with-timeline-below::after {
+	content: '';
+	display: block;
+	position: absolute;
+	width: var(--timeline-width);
+	left: calc(var(--spacer) + .5 * var(--icon-size) - .5 * var(--timeline-width));
+	background: var(--accent-color);
+	z-index: -1;
+}
+.ui .grid tbody tr:is(.item,.collection) td.with-timeline-above::before {
+	top: calc(0px - var(--timeline-previous-row-covering-height));
+	height: calc(var(--timeline-above-height) + var(--timeline-previous-row-covering-height));
+}
+.ui .grid tbody tr:is(.item,.collection) td.with-timeline-below::after {
+	top: var(--timeline-above-height);
+	height: calc(100% - var(--timeline-above-height));
+}
+.ui .grid tbody tr.separator + tr:is(.item,.collection) td.with-timeline-above::before {
+	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
+}
+.ui .grid tbody tr.item.hidden td :is(.icon,.ballon) {
+	display: none;
+}
+
+.ui .grid tbody .item {
+	--item-spacer: 4px;
+}
+.ui .grid tbody tr.collection td .item {
+	display: inline-block;
+	position: relative;
+	padding-left: calc(var(--item-spacer) + var(--icon-size));
+}
+.ui .grid tbody tr.collection td .item.hidden {
+	display: none;
+}
+.ui .grid tbody tr.collection .item .icon {
+	left: var(--item-spacer);
+}
+.ui .grid tbody :is(.item,tr.collection) .icon {
+	top: var(--icon-vertical-margin);
+	color: var(--accent-color);
+}
+.ui .grid tbody .item.changeset .icon::before {
+	content: '';
+	display: block;
+	position: absolute;
+	inset: 0;
+	background: var(--accent-color);
+}
+.ui .grid tbody tr.item.changeset:not(.closed,.combined) .icon::before {
+	top: 50%;
+}
+.ui .grid tbody tr.item.changeset.closed .icon::before {
+	bottom: 50%;
+}
+.ui .grid tbody tr.collection .item.changeset:not(.closed,.combined) .icon::before {
+	left: 50%;
+}
+.ui .grid tbody tr.collection .item.changeset.closed .icon::before {
+	right: 50%;
+}
+.ui .grid tbody .item .icon > .no-checkbox {
+	width: .75rem;
+	height: .75rem;
+	background: canvas;
+}
+
+.ui .grid tbody .item .ballon {
+	--ballon-tip-height: calc(1.5 * var(--spacer));
+	--ballon-min-height: calc(2 * var(--spacer) + var(--ballon-tip-height));
+	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * var(--icon-size));
+	--disclosure-size: 13px;
+	position: relative;
+	display: block;
+	box-sizing: border-box;
+	margin: calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px) 0px;
+	min-height: var(--ballon-min-height);
+	padding: var(--ballon-vertical-padding) 0;
+	border: solid 1px transparent;
+}
+.ui .grid tbody tr.item td:not([colspan]) .ballon {
+	margin-right: -1px;
+}
+.ui .grid tbody tr.collection .item.comment.incoming .ballon {
+	margin-left: calc(-.75 * var(--spacer));
+	margin-right: calc(.75 * var(--spacer));
+}
+.ui .grid tbody .item.comment .ballon {
+	--ballon-border-radius: var(--spacer);
+	border: var(--light-frame-line);
+	border-radius: var(--ballon-border-radius);
+	background: canvas;
+}
+.ui .grid tbody .item.comment.mute .ballon {
+	--ballon-border-radius: calc(2 * var(--spacer));
+}
+.ui .grid tbody :where(.item.comment:not(.mute):not(.incoming), tr.collection .item.comment:not(.mute).incoming) .ballon::before,
+.ui .grid tbody :where(.item.comment:not(.mute):not(.incoming), tr.collection .item.comment:not(.mute).incoming) .ballon::after {
+	content: '';
+	position: absolute;
+	top: var(--spacer);
+	border: solid transparent;
+	border-width: calc(.5 * var(--ballon-tip-height)) 0;
+}
+.ui .grid tbody .item.comment:not(.mute):not(.incoming) .ballon::before {
+	left: calc(-1 * var(--spacer));
+	border-right: solid var(--spacer) var(--light-frame-color);
+}
+.ui .grid tbody .item.comment:not(.mute):not(.incoming) .ballon::after {
+	left: calc(-1 * var(--spacer) + 1px);
+	border-right: solid var(--spacer) canvas;
+}
+.ui .grid tbody tr.collection .item.comment:not(.mute).incoming .ballon::before {
+	right: calc(-1 * var(--spacer));
+	border-left: solid var(--spacer) var(--light-frame-color);
+}
+.ui .grid tbody tr.collection .item.comment:not(.mute).incoming .ballon::after {
+	right: calc(-1 * var(--spacer) + 1px);
+	border-left: solid var(--spacer) canvas;
+}
+.ui .grid tbody .item.comment.mute .ballon::before,
+.ui .grid tbody .item.comment.mute .ballon::after {
+	content: '';
+	position: absolute;
+	box-sizing: border-box;
+	border: var(--light-frame-line);
+	border-radius: 50%;
+	background: canvas;
+	aspect-ratio: 1;
+}
+.ui .grid tbody .item.comment.mute .ballon::before {
+	width: calc(1.25 * var(--spacer));
+	top: calc(.75 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute:not(.incoming) .ballon::before {
+	left: calc(-.75 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute.incoming .ballon::before {
+	right: calc(-.75 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute .ballon::after {
+	width: calc(.75 * var(--spacer));
+	top: calc(2 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute:not(.incoming) .ballon::after {
+	left: calc(-1 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute.incoming .ballon::after {
+	right: calc(-1 * var(--spacer));
+}
+
+.ui .grid tbody .item .ballon button.disclosure {
+	box-sizing: border-box;
+	width: var(--disclosure-size);
+	height: var(--disclosure-size);
+	position: absolute;
+	top: calc(.5 * var(--ballon-min-height) - .5 * var(--disclosure-size));
+	left: var(--item-spacer);
+	padding: 0;
+	border: var(--frame-line);
+	background: canvas;
+}
+.ui .grid tbody .item .ballon button.disclosure:hover {
+	background: var(--hover-color);
+}
+.ui .grid tbody .item .ballon button.disclosure > * {
+	position: absolute;
+	inset: 0;
+}
+.ui .grid tbody .item .ballon button.disclosure[aria-expanded="true"] .vertical-stroke {
+	visibility: hidden;
+}
+
+.ui .grid tbody .item .ballon .flow {
+	margin: 0 -1px;
+	padding: 0 calc(var(--item-spacer) + 1px);
+	text-indent: calc(var(--disclosure-size) + var(--item-spacer));
+	display: inline-block;
+}
+.ui .grid tbody .item .ballon .flow > * {
+	text-indent: initial;
+}
+.ui .grid tbody tr.item td .ballon .flow {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	-webkit-line-clamp: 5;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+}
+.ui .grid tbody tr.item td .ballon .flow .from {
+	--from-border-radius: .25rem;
+	--from-tip-height: calc(1rem - 2 * var(--from-border-radius));
+	--from-tip-width: .5rem;
+	position: relative;
+	float: right;
+	max-width: calc(100% - var(--from-tip-width));
+	padding-inline: var(--from-border-radius);
+	margin-left: 1ch;
+	border: var(--light-frame-line);
+	background: canvas;
+}
+.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from {
+	padding-left: calc(var(--from-tip-width) + var(--from-border-radius));
+	margin-right: calc(0px - var(--item-spacer) - 1px);
+	border-right: none;
+	border-bottom-left-radius: var(--from-border-radius);
+	border-top-left-radius: var(--from-border-radius);
+}
+.ui .grid tbody tr.item.mute td .ballon .flow .from {
+	border-radius: var(--spacer);
+}
+.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::before,
+.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	height: 0;
+	margin: auto;
+	border: solid transparent;
+	border-width: calc(.5 * var(--from-tip-height)) 0;
+	border-left-width: var(--from-tip-width);
+}
+.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::before {
+	left: 0;
+	border-left-color: var(--light-frame-color);
+}
+.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::after {
+	left: -1px;
+	border-left-color: canvas;
+}
+.ui .grid tbody tr.item td .ballon .flow .from a {
+	display: block;
+	max-width: 100%;
+	font-size: .9em;
+	line-height: 1rem;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+.ui .grid tbody tr.item td .ballon .flow .changes {
+	border-radius: 4px;
+	padding: 2px 4px;
+	font-family: sans-serif;
+	font-size: .8em;
+	background: #8882;
+	color: var(--light-text-color);
+	white-space: nowrap;
+}
