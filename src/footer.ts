@@ -100,7 +100,7 @@ export default function writeFooter(
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.oninput=()=>{
-			grid.$grid.classList.toggle('with-closed-changesets',$checkbox.checked)
+			grid.withClosedChangesets=$checkbox.checked
 			grid.updateTableAccordingToSettings()
 		}
 		const $label=makeLabel()(
@@ -115,7 +115,7 @@ export default function writeFooter(
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.oninput=()=>{
-			grid.$grid.classList.toggle('in-one-column',$checkbox.checked)
+			grid.inOneColumn=$checkbox.checked
 			grid.updateTableAccordingToSettings()
 		}
 		$toolbar.append(

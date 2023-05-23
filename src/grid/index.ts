@@ -9,6 +9,8 @@ import {moveInArray} from '../util/types'
 
 export default class Grid {
 	$grid=makeElement('table')('grid')()
+	withClosedChangesets=false
+	inOneColumn=false
 	addExpandedItems=false
 	private $colgroup=makeElement('colgroup')()()
 	private head: GridHead
@@ -87,8 +89,8 @@ export default class Grid {
 	}
 	updateTableAccordingToSettings(): void {
 		this.body.updateTableAccordingToSettings(
-			this.$grid.classList.contains('in-one-column'),
-			this.$grid.classList.contains('with-closed-changesets')
+			this.inOneColumn,
+			this.withClosedChangesets
 		)
 	}
 	async expandSelectedItems(): Promise<void> {
