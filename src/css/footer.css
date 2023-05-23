@@ -34,9 +34,6 @@
 	overflow-y: auto;
 }
 
-.ui footer:not(.with-log) > .log {
-	display: none;
-}
 .ui footer > .log {
 	height: 6rem;
 }

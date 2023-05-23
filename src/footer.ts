@@ -159,7 +159,7 @@ export default function writeFooter(
 	if (server) {
 		const $button=makeElement('button')()(`Fetch log`)
 		$button.onclick=()=>{
-			$footer.classList.toggle('with-log')
+			$log.hidden=!$log.hidden
 		}
 		$toolbar.append($button)
 	}
@@ -177,6 +177,7 @@ function makeSection(className: string): (...items: Array<string|HTMLElement>)=>
 	const $resizer=makeElement('button')('resizer')()
 	const $section=makeElement('section')()()
 	const $panel=makeDiv('panel',className)($resizer,$section)
+	$panel.hidden=true
 	let grab: {
 		pointerId: number
 		startY: number
