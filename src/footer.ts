@@ -97,31 +97,31 @@ export default function writeFooter(
 		)
 	}
 	if (grid) {
-		const $checkbox=makeElement('input')()()
-		$checkbox.type='checkbox'
-		$checkbox.oninput=()=>{
-			grid.withClosedChangesets=$checkbox.checked
-			grid.updateTableAccordingToSettings()
+		const addGridCheckbox=(
+			setOption: (value:boolean)=>void,
+			label: string, labelTitle?: string
+		)=>{
+			const $checkbox=makeElement('input')()()
+			$checkbox.type='checkbox'
+			$checkbox.oninput=()=>{
+				setOption($checkbox.checked)
+				grid.updateTableAccordingToSettings()
+			}
+			const $label=makeLabel()(
+				$checkbox,` `,label
+			)
+			if (labelTitle) $label.title=labelTitle
+			$toolbar.append(
+				makeDiv('input-group')($label)
+			)
 		}
-		const $label=makeLabel()(
-			$checkbox,` changeset close events`
+		addGridCheckbox(
+			value=>grid.withClosedChangesets=value,
+			`changeset close events`,`visible only if there's some other event between changeset opening and closing`
 		)
-		$label.title=`visible only if there's some other event between changeset opening and closing`
-		$toolbar.append(
-			makeDiv('input-group')($label)
-		)
-	}
-	if (grid) {
-		const $checkbox=makeElement('input')()()
-		$checkbox.type='checkbox'
-		$checkbox.oninput=()=>{
-			grid.inOneColumn=$checkbox.checked
-			grid.updateTableAccordingToSettings()
-		}
-		$toolbar.append(
-			makeDiv('input-group')(makeLabel()(
-				$checkbox,` one column`
-			))
+		addGridCheckbox(
+			value=>grid.inOneColumn=value,
+			`one column`
 		)
 	}
 	if (grid) {
