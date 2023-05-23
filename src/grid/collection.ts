@@ -82,6 +82,29 @@ export default class GridBodyCollectionRow {
 		}
 		return $splitRow
 	}
+	merge($otherRow: HTMLTableRowElement): void {
+		const $cells1=[...this.$row.cells]
+		const $cells2=[...$otherRow.cells]
+		for (let i=0;i<$cells1.length&&i<$cells2.length;i++) {
+			const $cell1=$cells1[i]
+			const $cell2=$cells2[i]
+			if (!$cell2) continue
+			if (!$cell1) {
+				this.$row.append($cell2)
+				continue
+			}
+			let copying=false
+			for (const $child of [...$cell2.children]) {
+				if ($child.classList.contains('item')) {
+					copying=true
+				}
+				if (copying) {
+					$cell1.append($child)
+				}
+			}
+			$cell1.classList.toggle('with-timeline-below',$cell2.classList.contains('with-timeline-below'))
+		}
+	}
 	/**
 	 * Insert item placeholders, adding cell icons if they were missing
 	 */

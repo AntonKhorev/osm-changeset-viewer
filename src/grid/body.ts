@@ -185,7 +185,9 @@ export default class GridBody {
 				$prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
 				$nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')
 			) {
-				mergeCollectionRows($prevRow,$nextRow)
+				const collection=new GridBodyCollectionRow($prevRow)
+				collection.merge($nextRow)
+				$nextRow.remove()
 			}
 			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$placeholders,classNames)
 		}
@@ -580,30 +582,6 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	const d1=new Date(t1)
 	const d2=new Date(t2)
 	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
-}
-
-function mergeCollectionRows($row1: HTMLTableRowElement, $row2: HTMLTableRowElement): void {
-	const $cells1=[...$row1.cells]
-	const $cells2=[...$row2.cells]
-	for (let i=0;i<$cells1.length&&i<$cells2.length;i++) {
-		const $cell1=$cells1[i]
-		const $cell2=$cells2[i]
-		if (!$cell2) continue
-		if (!$cell1) {
-			$row1.append($cell2)
-			continue
-		}
-		let copying=false
-		for (const $child of [...$cell2.children]) {
-			if ($child.classList.contains('item')) {
-				copying=true
-			}
-			if (copying) {
-				$cell1.append($child)
-			}
-		}
-	}
-	$row2.remove()
 }
 
 function setCellHue($cell: HTMLTableCellElement, hue: number|null): void {

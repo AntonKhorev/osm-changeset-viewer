@@ -187,6 +187,15 @@ describe("GridBodyCollectionRow",()=>{
 			['  ',hue]
 		])
 	})
+	it("merges with timeline-terminating row",()=>{
+		const $row1=row(cell('ab',hue,changeset('2023-05-09',10103)))
+		const $row2=row(cell('a ',hue,changeset('2023-05-08',10102)))
+		const collection=new GridBodyCollectionRow($row1)
+		collection.merge($row2)
+		assertChangesetCollectionRow($row1,[
+			['a',hue,['2023-05-09',10103],['2023-05-08',10102]],
+		])
+	})
 	it("inserts placeholder at the beginning of one cell",()=>{
 		const $row=row(
 			cell('a',hue,changeset('2023-03-01',10001))
