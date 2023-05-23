@@ -243,6 +243,25 @@ describe("ItemCollection",()=>{
 		assert.equal($placeholders.length,1)
 		assert.equal($placeholders[0].dataset.id,'10102')
 	})
+	it("removes items from different 1-item cells",()=>{
+		const $row=row(
+			cell('ab',hue,
+				changeset('2023-02-02',10202)+
+				changeset('2023-01-01',10101)
+			)+
+			cell('ab',hue,
+				changeset('2023-02-02',10202)+
+				changeset('2023-01-01',10101)
+			)
+		)
+		const $items=[...$row.querySelectorAll('.item[data-id="10101"]')]
+		const collection=new ItemCollection($row)
+		collection.remove($items)
+		assertChangesetCollectionRow($row,[
+			['ab',hue,['2023-02-02',10202]],
+			['ab',hue,['2023-02-02',10202]],
+		])
+	})
 	it("gets item sequence of empty collection",()=>{
 		const $row=row(
 			cell('ab',hue)
@@ -333,7 +352,7 @@ function assertChangesetCollectionRow($row,cells) {
 			assert.equal($cell.children.length,0)
 			continue
 		}
-		assert.equal($cell.children.length,items.length+1)
+		assert.equal($cell.children.length,items.length+1,`Expected cell[${i}] to have ${items.length+1} children, got ${$cell.children.length}`)
 		const $iconCell=$cell.children[0]
 		assert($iconCell.classList.contains('icon'))
 		for (let j=0;j<items.length;j++) {
