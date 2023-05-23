@@ -11,7 +11,7 @@ import {
 	markChangesetItemAsCombined, markChangesetItemAsUncombined,
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
-import GridBodyCollectionRow from './collection'
+import EmbeddedItemCollection from './embedded-collection'
 import {updateTimelineOnInsert} from './timeline'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
@@ -107,8 +107,8 @@ export default class GridBody {
 						$laterItem=$item
 					}
 				}
-				const collection=new GridBodyCollectionRow($row)
-				collection.updateIds(this.withCompactIds)
+				const collection=new EmbeddedItemCollection($row,this.withCompactIds)
+				collection.updateIds()
 				// spanColumns($row) // TODO need to merge/split collected items in cells
 				$itemRowAbove=undefined
 			} else if ($row.classList.contains('item')) {
@@ -190,9 +190,9 @@ export default class GridBody {
 				$prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
 				$nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')
 			) {
-				const collection=new GridBodyCollectionRow($prevRow)
-				collection.merge($nextRow)
-				$nextRow.remove()
+				const collection=new EmbeddedItemCollection($prevRow,this.withCompactIds)
+				const nextCollection=new EmbeddedItemCollection($nextRow,this.withCompactIds)
+				collection.merge(nextCollection)
 			}
 			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$placeholders,classNames)
 		}
@@ -243,7 +243,7 @@ export default class GridBody {
 			$rows.add($row)
 		}
 		for (const $row of $rows) {
-			const collection=new GridBodyCollectionRow($row)
+			const collection=new EmbeddedItemCollection($row,this.withCompactIds)
 			const itemSequence=[...collection.getItemSequence()]
 			const isEverythingBetweenTargetPositionsHidden=[true]
 			for (const [point,columnItems] of itemSequence) {
@@ -317,19 +317,16 @@ export default class GridBody {
 			return
 		}
 		const classNames=[...$item.classList]
-		const collection=new GridBodyCollectionRow($row)
-		for (const [,$item] of items) {
+		const $items=items.map(([,$item])=>$item)
+		for (const $item of $items) {
 			const $disclosureButton=getItemDisclosureButton($item)
 			if ($disclosureButton) {
 				setItemDisclosureButtonState($disclosureButton,true)
 			}
-			collection.remove($item)
 		}
-		if (collection.isEmpty()) {
-			$row.remove()
-		}
+		const collection=new EmbeddedItemCollection($row,this.withCompactIds)
+		collection.remove($items)
 		const iColumns=items.map(([iColumn])=>iColumn)
-		const $items=items.map(([,$item])=>$item)
 		this.insertItem(iColumns,point,{isExpanded:true,batchItem,usernames},$items,classNames)
 	}
 	private insertItem(
@@ -346,11 +343,10 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
-		const $placeholders=this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$previousPlaceholders,classNames)
 		const $checkboxes:HTMLInputElement[]=[]
-		for (const $placeholder of $placeholders) {
+		this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$previousPlaceholders,classNames,$placeholder=>{
 			const $flow=$placeholder.querySelector('.flow')
-			if (!($flow instanceof HTMLElement)) continue
+			if (!($flow instanceof HTMLElement)) return
 			if (insertItemInfo.isExpanded) {
 				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
 			} else {
@@ -360,7 +356,7 @@ export default class GridBody {
 			if ($checkbox) $checkboxes.push($checkbox)
 			const $disclosureButton=getItemDisclosureButton($placeholder)
 			$disclosureButton?.addEventListener('click',this.wrappedItemDisclosureButtonListener)
-		}
+		})
 		for (const $checkbox of $checkboxes) {
 			if ($checkboxes.length>1) {
 				$checkbox.addEventListener('input',columnCheckboxSyncListener)
@@ -374,8 +370,9 @@ export default class GridBody {
 		sequencePoint: ItemSequencePoint,
 		isExpanded: boolean,
 		$previousPlaceholders: HTMLElement[],
-		classNames: string[]
-	): HTMLElement[] {
+		classNames: string[],
+		writeItem: ($placeholder:HTMLElement)=>void
+	): void {
 		const copyPlaceholderChildren=($placeholder:HTMLElement,iPlaceholder:number)=>{
 			$placeholder.replaceChildren(
 				...$previousPlaceholders[iPlaceholder].childNodes
@@ -389,21 +386,20 @@ export default class GridBody {
 				if (insertionRowInfo.type=='betweenRows') {
 					$rowBefore=insertionRowInfo.$rowBefore
 				} else {
-					const collection=new GridBodyCollectionRow(insertionRowInfo.$row)
-					const $rowAfter=collection.split(sequencePoint)
 					$rowBefore=insertionRowInfo.$row
-					$rowBefore.after($rowAfter)
+					const collection=new EmbeddedItemCollection($rowBefore,this.withCompactIds)
+					collection.split(sequencePoint)
 				}
 				$rowBefore.after($row)
 			}
 			$row.classList.add(...classNames)
 			writeElementSequencePoint($row,sequencePoint)
 			updateTimelineOnInsert($row,iColumns)
-			return iColumns.map((iColumn,iPlaceholder)=>{
+			for (const [iPlaceholder,iColumn] of iColumns.entries()) {
 				const $placeholder=$row.cells[iColumn]
 				copyPlaceholderChildren($placeholder,iPlaceholder)
-				return $placeholder
-			})
+				writeItem($placeholder)
+			}
 		} else {
 			let $row: HTMLTableRowElement
 			if (insertionRowInfo.type=='betweenRows') {
@@ -421,13 +417,12 @@ export default class GridBody {
 				$row=insertionRowInfo.$row
 			}
 			updateTimelineOnInsert($row,iColumns)
-			const collection=new GridBodyCollectionRow($row)
-			const $placeholders=collection.insert(sequencePoint,iColumns)
-			for (const [iPlaceholder,$placeholder] of $placeholders.entries()) {
+			const collection=new EmbeddedItemCollection($row,this.withCompactIds)
+			collection.insert(sequencePoint,iColumns,(iPlaceholder,$placeholder)=>{
 				$placeholder.classList.add(...classNames)
 				copyPlaceholderChildren($placeholder,iPlaceholder)
-			}
-			return $placeholders
+				writeItem($placeholder)
+			})
 		}
 	}
 	private makeRow(): HTMLTableRowElement {
@@ -450,7 +445,7 @@ export default class GridBody {
 			const $row=this.$gridBody.rows[i]
 			const $rowAfter=this.$gridBody.rows[i+1]
 			if ($row.classList.contains('collection')) {
-				const collection=new GridBodyCollectionRow($row)
+				const collection=new EmbeddedItemCollection($row,this.withCompactIds)
 				const [greaterCollectionPoint,lesserCollectionPoint]=collection.getBoundarySequencePoints()
 				if (!greaterCollectionPoint || !lesserCollectionPoint) continue
 				if (isGreaterElementSequencePoint(sequencePoint,greaterCollectionPoint)) continue

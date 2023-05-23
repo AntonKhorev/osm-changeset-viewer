@@ -27,6 +27,10 @@ export function getItemDescriptorSelector({type,id,order}: ItemDescriptor): stri
 	)
 }
 
+export function isItem($item: Element): $item is HTMLElement {
+	return $item instanceof HTMLElement && $item.classList.contains('item')
+}
+
 export function isGreaterElementSequencePoint(a: ElementSequencePoint, b: ElementSequencePoint): boolean {
 	if (a.timestamp!=b.timestamp) return a.timestamp>b.timestamp
 	const aRank=getElementTypeRank(a.type)

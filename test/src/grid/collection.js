@@ -1,6 +1,6 @@
 import {strict as assert} from 'assert'
 import {JSDOM} from 'jsdom'
-import GridBodyCollectionRow from '../../../test-build/grid/collection.js'
+import ItemCollection from '../../../test-build/grid/collection.js'
 
 function row(contents) {
 	const $row=document.createElement('tr')
@@ -30,7 +30,7 @@ function changesetPoint(date,id) {
 
 const hue='--hue: 123;'
 
-describe("GridBodyCollectionRow",()=>{
+describe("ItemCollection",()=>{
 	const globalProperties=[
 		'document',
 		'HTMLElement',
@@ -50,17 +50,17 @@ describe("GridBodyCollectionRow",()=>{
 	})
 	it("reports empty collection",()=>{
 		const $row=row(cell('',hue))
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		assert.equal(collection.isEmpty(),true)
 	})
 	it("reports nonempty collection",()=>{
 		const $row=row(cell('ab',hue,changeset('2023-05-07',10101)))
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		assert.equal(collection.isEmpty(),false)
 	})
 	it("gets boundary points of empty collection",()=>{
 		const $row=row(cell('',hue))
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		assert.deepEqual(collection.getBoundarySequencePoints(),[
 			null,
 			null
@@ -68,7 +68,7 @@ describe("GridBodyCollectionRow",()=>{
 	})
 	it("gets boundary points of single-element collection",()=>{
 		const $row=row(cell('ab',hue,changeset('2023-05-07',10101)))
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		assert.deepEqual(collection.getBoundarySequencePoints(),[
 			changesetPoint('2023-05-07',10101),
 			changesetPoint('2023-05-07',10101)
@@ -79,7 +79,7 @@ describe("GridBodyCollectionRow",()=>{
 			changeset('2023-05-08',10102)+
 			changeset('2023-05-07',10101)
 		))
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		assert.deepEqual(collection.getBoundarySequencePoints(),[
 			changesetPoint('2023-05-08',10102),
 			changesetPoint('2023-05-07',10101)
@@ -90,7 +90,7 @@ describe("GridBodyCollectionRow",()=>{
 			cell('ab',hue,changeset('2023-05-09',10103))+
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		assert.deepEqual(collection.getBoundarySequencePoints(),[
 			changesetPoint('2023-05-09',10103),
 			changesetPoint('2023-05-07',10101)
@@ -102,7 +102,7 @@ describe("GridBodyCollectionRow",()=>{
 			cell('ab',hue)+
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		assert.deepEqual(collection.getBoundarySequencePoints(),[
 			changesetPoint('2023-05-09',10103),
 			changesetPoint('2023-05-07',10101)
@@ -113,8 +113,8 @@ describe("GridBodyCollectionRow",()=>{
 			changeset('2023-05-09',10103)+
 			changeset('2023-05-07',10101)
 		))
-		const collection=new GridBodyCollectionRow($row)
-		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
+		const collection=new ItemCollection($row)
+		const $splitRow=collection.split(changesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]]
 		])
@@ -127,8 +127,8 @@ describe("GridBodyCollectionRow",()=>{
 			changeset('2023-05-09',10103)+
 			changeset('2023-05-07',10101)
 		))
-		const collection=new GridBodyCollectionRow($row)
-		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
+		const collection=new ItemCollection($row)
+		const $splitRow=collection.split(changesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]]
 		])
@@ -141,8 +141,8 @@ describe("GridBodyCollectionRow",()=>{
 			cell('ab',hue,changeset('2023-05-09',10103))+
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
-		const collection=new GridBodyCollectionRow($row)
-		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
+		const collection=new ItemCollection($row)
+		const $splitRow=collection.split(changesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]],
 			['ab',hue]
@@ -159,8 +159,8 @@ describe("GridBodyCollectionRow",()=>{
 				changeset('2023-05-07',10101)
 			)+cell('',hue)
 		)
-		const collection=new GridBodyCollectionRow($row)
-		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
+		const collection=new ItemCollection($row)
+		const $splitRow=collection.split(changesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]],
 			['  ',hue]
@@ -179,8 +179,8 @@ describe("GridBodyCollectionRow",()=>{
 				changeset('2023-05-10',10104)
 			)
 		)
-		const collection=new GridBodyCollectionRow($row)
-		const $splitRow=collection.split(changesetPoint('2023-05-08',10102))
+		const collection=new ItemCollection($row)
+		const $splitRow=collection.split(changesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]],
 			['a ',hue,['2023-05-10',10104]]
@@ -193,8 +193,9 @@ describe("GridBodyCollectionRow",()=>{
 	it("merges with timeline-terminating row",()=>{
 		const $row1=row(cell('ab',hue,changeset('2023-05-09',10103)))
 		const $row2=row(cell('a ',hue,changeset('2023-05-08',10102)))
-		const collection=new GridBodyCollectionRow($row1)
-		collection.merge($row2)
+		const collection1=new ItemCollection($row1)
+		const collection2=new ItemCollection($row2)
+		collection1.merge(collection2)
 		assertChangesetCollectionRow($row1,[
 			['a',hue,['2023-05-09',10103],['2023-05-08',10102]],
 		])
@@ -208,8 +209,9 @@ describe("GridBodyCollectionRow",()=>{
 			cell('ab',hue)+
 			cell('ab',hue,changeset('2023-05-08',10102))
 		)
-		const collection=new GridBodyCollectionRow($row1)
-		collection.merge($row2)
+		const collection1=new ItemCollection($row1)
+		const collection2=new ItemCollection($row2)
+		collection1.merge(collection2)
 		assertChangesetCollectionRow($row1,[
 			['ab',hue,['2023-05-09',10103]],
 			['ab',hue,['2023-05-08',10102]],
@@ -219,7 +221,7 @@ describe("GridBodyCollectionRow",()=>{
 		const $row=row(
 			cell('a',hue,changeset('2023-03-01',10001))
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		const $placeholders=collection.insert(changesetPoint('2023-03-02',10002),[0])
 		assertChangesetCollectionRow($row,[
 			['a',hue,['2023-03-02',10002],['2023-03-01',10001]]
@@ -232,7 +234,7 @@ describe("GridBodyCollectionRow",()=>{
 			cell('ab',hue,changeset('2023-05-09',10103))+
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		const $placeholders=collection.insert(changesetPoint('2023-05-08',10102),[0])
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103],['2023-05-08',10102]],
@@ -245,7 +247,7 @@ describe("GridBodyCollectionRow",()=>{
 		const $row=row(
 			cell('ab',hue)
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[])
 	})
@@ -255,7 +257,7 @@ describe("GridBodyCollectionRow",()=>{
 				changeset('2023-04-01',10001)
 			)
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-01',10001),[
@@ -270,7 +272,7 @@ describe("GridBodyCollectionRow",()=>{
 				changeset('2023-04-01',10001)
 			)
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-02',10002),[
@@ -289,7 +291,7 @@ describe("GridBodyCollectionRow",()=>{
 				changeset('2023-04-03',10003)
 			)
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-03',10003),[
@@ -306,7 +308,7 @@ describe("GridBodyCollectionRow",()=>{
 				changeset('2023-04-04',10004)
 			)
 		)
-		const collection=new GridBodyCollectionRow($row)
+		const collection=new ItemCollection($row)
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-04',10004),[

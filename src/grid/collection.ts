@@ -1,10 +1,12 @@
 import type {ItemSequencePoint} from './info'
-import {readItemSequencePoint, writeElementSequencePoint, isGreaterElementSequencePoint} from './info'
+import {isItem, readItemSequencePoint, writeElementSequencePoint, isGreaterElementSequencePoint} from './info'
 import {makeCollectionIcon} from './body-item'
 import {makeElement} from '../util/html'
 
-export default class GridBodyCollectionRow {
-	constructor(private $row: HTMLTableRowElement) {}
+export default class ItemCollection {
+	constructor(
+		public $row: HTMLTableRowElement
+	) {}
 	isEmpty(): boolean {
 		return !this.$row.querySelector(':scope > td > .item')
 	}
@@ -34,7 +36,7 @@ export default class GridBodyCollectionRow {
 	 *
 	 * @returns new row with collection items lesser than the sequence point
 	 */
-	split(sequencePoint: ItemSequencePoint): HTMLTableRowElement {
+	split(sequencePoint: ItemSequencePoint): ItemCollection {
 		const $splitRow=makeElement('tr')('collection')()
 		for (const $cell of this.$row.cells) {
 			const $splitCell=$splitRow.insertCell()
@@ -80,11 +82,11 @@ export default class GridBodyCollectionRow {
 				$splitCell.classList.add('with-timeline-above')
 			}
 		}
-		return $splitRow
+		return new ItemCollection($splitRow)
 	}
-	merge($otherRow: HTMLTableRowElement): void {
+	merge(that: ItemCollection): void {
 		const $cells1=[...this.$row.cells]
-		const $cells2=[...$otherRow.cells]
+		const $cells2=[...that.$row.cells]
 		for (let i=0;i<$cells1.length&&i<$cells2.length;i++) {
 			const $cell1=$cells1[i]
 			const $cell2=$cells2[i]
@@ -138,13 +140,15 @@ export default class GridBodyCollectionRow {
 			return $placeholder
 		})
 	}
-	remove($placeholder: HTMLElement): void {
-		const $cell=$placeholder.parentElement
-		if (!($cell instanceof HTMLTableCellElement)) return
-		if ($cell.parentElement!=this.$row) return
-		$placeholder.remove()
-		if ($cell.querySelector(':scope > .item')) return
-		$cell.replaceChildren()
+	remove($placeholders: Iterable<HTMLElement>): void {
+		for (const $placeholder of $placeholders) {
+			const $cell=$placeholder.parentElement
+			if (!($cell instanceof HTMLTableCellElement)) return
+			if ($cell.parentElement!=this.$row) return
+			$placeholder.remove()
+			if ($cell.querySelector(':scope > .item')) return
+			$cell.replaceChildren()
+		}
 	}
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
 		const nColumns=this.$row.cells.length
@@ -180,46 +184,4 @@ export default class GridBodyCollectionRow {
 			yield [point,items]
 		}
 	}
-	updateIds(isCompact: boolean): void {
-		for (const $cell of this.$row.cells) {
-			let lastId=''
-			for (const $item of $cell.children) {
-				if (!isItem($item)) continue
-				if ($item.classList.contains('hidden')) continue
-				const $a=$item.querySelector(':scope > .ballon > .flow > a')
-				if (!($a instanceof HTMLAnchorElement)) {
-					lastId=''
-					continue
-				}
-				const id=$item.dataset.id
-				if (id==null) {
-					lastId=''
-					continue
-				}
-				let compacted=false
-				if (isCompact && id.length==lastId.length) {
-					let shortId=''
-					for (let i=0;i<id.length;i++) {
-						if (id[i]==lastId[i]) continue
-						shortId=id.substring(i)
-						break
-					}
-					if (id.length-shortId.length>2) {
-						$a.textContent='...'+shortId
-						$a.title=id
-						compacted=true
-					}
-				}
-				if (!compacted) {
-					$a.textContent=id
-					$a.removeAttribute('title')
-				}
-				lastId=id
-			}
-		}
-	}
-}
-
-function isItem($item: Element): $item is HTMLElement {
-	return $item instanceof HTMLElement && $item.classList.contains('item')
 }
