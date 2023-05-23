@@ -111,6 +111,7 @@ describe("GridBody",()=>{
 		'HTMLElement',
 		'HTMLButtonElement',
 		'HTMLInputElement',
+		'HTMLTableCellElement',
 		'HTMLTableRowElement',
 	]
 	beforeEach(function(){

@@ -312,14 +312,14 @@ export default class GridBody {
 			return
 		}
 		const classNames=[...$item.classList]
+		const collection=new GridBodyCollectionRow($row)
 		for (const [,$item] of items) {
 			const $disclosureButton=getItemDisclosureButton($item)
 			if ($disclosureButton) {
 				setItemDisclosureButtonState($disclosureButton,true)
 			}
-			$item.remove()
+			collection.remove($item)
 		}
-		const collection=new GridBodyCollectionRow($row)
 		if (collection.isEmpty()) {
 			$row.remove()
 		}

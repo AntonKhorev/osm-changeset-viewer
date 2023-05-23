@@ -34,6 +34,7 @@ describe("GridBodyCollectionRow",()=>{
 	const globalProperties=[
 		'document',
 		'HTMLElement',
+		'HTMLTableCellElement',
 	]
 	beforeEach(function(){
 		const jsdom=new JSDOM()

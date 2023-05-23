@@ -138,6 +138,14 @@ export default class GridBodyCollectionRow {
 			return $placeholder
 		})
 	}
+	remove($placeholder: HTMLElement): void {
+		const $cell=$placeholder.parentElement
+		if (!($cell instanceof HTMLTableCellElement)) return
+		if ($cell.parentElement!=this.$row) return
+		$placeholder.remove()
+		if ($cell.querySelector(':scope > .item')) return
+		$cell.replaceChildren()
+	}
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
 		const nColumns=this.$row.cells.length
 		if (nColumns==0) return
