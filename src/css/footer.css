@@ -5,8 +5,31 @@
 }
 .ui footer > * {
 	padding: var(--spacer);
-	border-top: var(--frame-line);
 }
+.ui footer > section {
+	--resizer-thickness: .5rem;
+	position: relative;
+	box-sizing: border-box;
+}
+.ui footer > section button.resizer {
+	position: absolute;
+	box-sizing: border-box;
+	width: 100%;
+	height: var(--resizer-thickness);
+	top: 0;
+	left: 0;
+	border: none;
+	border-top: var(--frame-line);
+	background: canvas;
+	background-image: radial-gradient(var(--frame-color) 25%, #0000 0%);
+	background-size: .5rem .5rem;
+	background-position: center;
+	cursor: row-resize;
+}
+.ui footer > section button.resizer:hover {
+	background-color: var(--hover-color);
+}
+
 .ui footer:not(.with-log) > .log {
 	display: none;
 }
@@ -33,7 +56,9 @@
 	font-family: monospace;
 	padding-left: 1rem;
 }
+
 .ui footer > .toolbar {
+	border-top: var(--frame-line);
 	height: 3rem;
 	display: flex;
 	gap: var(--spacer);

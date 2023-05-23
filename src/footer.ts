@@ -18,7 +18,8 @@ export default function writeFooter(
 	$logClearButton.onclick=()=>{
 		$logList.replaceChildren()
 	}
-	const $log=makeElement('section')('log')(
+	const $log=makeSection('log')
+	$log.append(
 		makeElement('h2')()(`Fetches`),
 		makeDiv('controls')($logClearButton),
 		$logList
@@ -170,4 +171,38 @@ export default function writeFooter(
 		}
 		$toolbar.append($button)
 	}
+}
+
+function makeSection(className: string): HTMLElement {
+	const minHeight=64
+	const $resizer=makeElement('button')('resizer')()
+	const $section=makeElement('section')(className)(
+		$resizer
+	)
+	let grab: {
+		pointerId: number
+		startY: number
+		startHeight: number
+	} | undefined
+	$resizer.onpointerdown=ev=>{
+		if (grab) return
+		grab={
+			pointerId: ev.pointerId,
+			startY: ev.clientY,
+			startHeight: $section.clientHeight
+		}
+		$resizer.setPointerCapture(ev.pointerId)
+	}
+	$resizer.onpointerup=ev=>{
+		grab=undefined
+	}
+	$resizer.onpointermove=ev=>{
+		if (!grab || grab.pointerId!=ev.pointerId) return
+		const newHeight=Math.max(
+			minHeight,
+			grab.startHeight-(ev.clientY-grab.startY)
+		)
+		$section.style.height=`${newHeight}px`
+	}
+	return $section
 }
