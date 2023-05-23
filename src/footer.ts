@@ -18,8 +18,7 @@ export default function writeFooter(
 	$logClearButton.onclick=()=>{
 		$logList.replaceChildren()
 	}
-	const $log=makeSection('log')
-	$log.append(
+	const [$log,$logSection]=makeSection('log')(
 		makeElement('h2')()(`Fetches`),
 		makeDiv('controls')($logClearButton),
 		$logList
@@ -45,7 +44,7 @@ export default function writeFooter(
 					}
 				} else if (message.type=='log') {
 					if (message.part.type=='fetch') {
-						const atBottom=$log.offsetHeight+$log.scrollTop>=$log.scrollHeight-16
+						const atBottom=$logSection.offsetHeight+$logSection.scrollTop>=$logSection.scrollHeight-16
 						const path=message.part.path
 						let docHref: string|undefined
 						if (path.startsWith(`changesets.json`)) {
@@ -173,12 +172,11 @@ export default function writeFooter(
 	}
 }
 
-function makeSection(className: string): HTMLElement {
+function makeSection(className: string): (...items: Array<string|HTMLElement>)=>[$panel: HTMLElement, $section: HTMLElement] {
 	const minHeight=64
 	const $resizer=makeElement('button')('resizer')()
-	const $section=makeElement('section')(className)(
-		$resizer
-	)
+	const $section=makeElement('section')()()
+	const $panel=makeDiv('panel',className)($resizer,$section)
 	let grab: {
 		pointerId: number
 		startY: number
@@ -189,7 +187,7 @@ function makeSection(className: string): HTMLElement {
 		grab={
 			pointerId: ev.pointerId,
 			startY: ev.clientY,
-			startHeight: $section.clientHeight
+			startHeight: $panel.clientHeight
 		}
 		$resizer.setPointerCapture(ev.pointerId)
 	}
@@ -202,7 +200,10 @@ function makeSection(className: string): HTMLElement {
 			minHeight,
 			grab.startHeight-(ev.clientY-grab.startY)
 		)
-		$section.style.height=`${newHeight}px`
+		$panel.style.height=`${newHeight}px`
 	}
-	return $section
+	return (...items)=>{
+		$section.append(...items)
+		return [$panel,$section]
+	}
 }

@@ -3,15 +3,13 @@
 	flex-grow: 1;
 	box-shadow: 0 0px 6px #AAA;
 }
-.ui footer > * {
-	padding: var(--spacer);
-}
-.ui footer > section {
+.ui footer > .panel {
 	--resizer-thickness: .5rem;
 	position: relative;
 	box-sizing: border-box;
+	padding-top: var(--resizer-thickness);
 }
-.ui footer > section button.resizer {
+.ui footer > .panel > button.resizer {
 	position: absolute;
 	box-sizing: border-box;
 	width: 100%;
@@ -26,8 +24,14 @@
 	background-position: center;
 	cursor: row-resize;
 }
-.ui footer > section button.resizer:hover {
+.ui footer > .panel > button.resizer:hover {
 	background-color: var(--hover-color);
+}
+.ui footer > .panel > section {
+	box-sizing: border-box;
+	height: 100%;
+	padding: 0 var(--spacer) var(--spacer);
+	overflow-y: auto;
 }
 
 .ui footer:not(.with-log) > .log {
@@ -35,30 +39,30 @@
 }
 .ui footer > .log {
 	height: 6rem;
-	overflow-y: auto;
 }
-.ui footer > .log > :first-child {
+.ui footer > .log > section > :first-child {
 	margin-top: 0;
 }
-.ui footer > .log > :last-child {
+.ui footer > .log > section > :last-child {
 	margin-bottom: 0;
 }
-.ui footer > .log h2 {
+.ui footer > .log > section h2 {
 	display: inline-block;
 	margin: 0;
 }
-.ui footer > .log .controls {
+.ui footer > .log > section .controls {
 	display: inline-block;
 	margin-left: var(--spacer);
 	vertical-align: text-bottom;
 }
-.ui footer > .log ul {
+.ui footer > .log > section ul {
 	font-family: monospace;
 	padding-left: 1rem;
 }
 
 .ui footer > .toolbar {
 	border-top: var(--frame-line);
+	padding: var(--spacer);
 	height: 3rem;
 	display: flex;
 	gap: var(--spacer);
