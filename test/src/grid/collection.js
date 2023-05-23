@@ -12,7 +12,9 @@ function cell(timeline,style,contents='') {
 	const classList=[]
 	if (timeline.includes('a')) classList.push('with-timeline-above')
 	if (timeline.includes('b')) classList.push('with-timeline-below')
-	return `<td class="${classList.join(' ')}" style="${style}"><span class="icon"></span>${contents}</td>`
+	let icon=''
+	if (contents) icon=`<span class="icon"></span>`
+	return `<td class="${classList.join(' ')}" style="${style}">${icon}${contents}</td>`
 }
 function changeset(date,id) {
 	return `<span class="item changeset combined" data-timestamp="${Date.parse(date)}" data-type="changeset" data-id="${id}"></span>`
@@ -194,6 +196,22 @@ describe("GridBodyCollectionRow",()=>{
 		collection.merge($row2)
 		assertChangesetCollectionRow($row1,[
 			['a',hue,['2023-05-09',10103],['2023-05-08',10102]],
+		])
+	})
+	it("merges with empty cells in different columns",()=>{
+		const $row1=row(
+			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue)
+		)
+		const $row2=row(
+			cell('ab',hue)+
+			cell('ab',hue,changeset('2023-05-08',10102))
+		)
+		const collection=new GridBodyCollectionRow($row1)
+		collection.merge($row2)
+		assertChangesetCollectionRow($row1,[
+			['ab',hue,['2023-05-09',10103]],
+			['ab',hue,['2023-05-08',10102]],
 		])
 	})
 	it("inserts placeholder at the beginning of one cell",()=>{

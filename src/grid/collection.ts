@@ -97,6 +97,9 @@ export default class GridBodyCollectionRow {
 			for (const $child of [...$cell2.children]) {
 				if ($child.classList.contains('item')) {
 					copying=true
+					if ($cell1.children.length==0) {
+						$cell1.append(makeCollectionIcon())
+					}
 				}
 				if (copying) {
 					$cell1.append($child)
