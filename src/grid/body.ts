@@ -12,6 +12,7 @@ import {
 } from './body-item'
 import EmbeddedItemCollection from './embedded-collection'
 import {updateTimelineOnInsert} from './timeline'
+import GridBodyCheckboxHandler from './body-checkbox'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
@@ -23,8 +24,7 @@ export default class GridBody {
 	withCompactIds=false
 	withClosedChangesets=false
 	inOneColumn=false
-	onItemSelect: ()=>void = ()=>{}
-	private readonly wrappedItemSelectListener: ()=>void
+	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
 	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
 	private nColumns=0
 	constructor(
@@ -32,8 +32,10 @@ export default class GridBody {
 		private readonly itemReader: SingleItemDBReader,
 		private readonly getColumnHues: ()=>(number|null)[]
 	) {
-		this.wrappedItemSelectListener=()=>this.onItemSelect()
 		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosureWithButton(ev.currentTarget)
+	}
+	set onItemSelect(callback: ()=>void) {
+		this.checkboxHandler.onItemSelect=callback
 	}
 	setColumns(nColumns: number): void {
 		this.nColumns=nColumns
@@ -146,39 +148,15 @@ export default class GridBody {
 		hasUnchecked: boolean[],
 		selectedChangesetIds: Set<number>[]
 	] {
-		const hasChecked=Array<boolean>(this.nColumns).fill(false)
-		const hasUnchecked=Array<boolean>(this.nColumns).fill(false)
-		const selectedChangesetIds=Array<Set<number>>(this.nColumns).fill(new Set())
-		for (const $row of this.$gridBody.rows) {
-			for (const [iColumn,changesetId,$checkbox] of listRowCheckboxes($row)) {
-				hasChecked[iColumn]||=$checkbox.checked
-				hasUnchecked[iColumn]||=!$checkbox.checked
-				if ($checkbox.checked) {
-					selectedChangesetIds[iColumn].add(changesetId)
-				}
-			}
-		}
-		return [hasChecked,hasUnchecked,selectedChangesetIds]
+		return this.checkboxHandler.getColumnCheckboxStatuses(this.nColumns)
 	}
 	triggerColumnCheckboxes(iColumn: number, isChecked: boolean): void {
-		for (const $row of this.$gridBody.rows) {
-			if (!$row.classList.contains('collection') && !$row.classList.contains('changeset')) continue
-			const $cell=$row.cells[iColumn]
-			if (!$cell) continue
-			for (const $checkbox of listCellCheckboxes($cell,$row.classList.contains('collection'))) {
-				$checkbox.checked=isChecked
-				syncColumnCheckboxes($checkbox)
-			}
-		}
-		this.onItemSelect()
+		this.checkboxHandler.triggerColumnCheckboxes(iColumn,isChecked)
 	}
 	*listSelectedItemDescriptors(): Iterable<ItemDescriptor> {
-		for (const $item of this.$gridBody.querySelectorAll(`.item`)) {
-			if (!($item instanceof HTMLElement)) continue
-			if (!$item.querySelector(`input[type=checkbox]:checked`)) continue
-			const itemDescriptor=readItemDescriptor($item)
-			if (!itemDescriptor) continue
-			yield itemDescriptor
+		const [,,selectedChangesetIds]=this.checkboxHandler.getColumnCheckboxStatuses(this.nColumns)
+		for (const id of union(selectedChangesetIds)) {
+			yield {type:'changeset',id}
 		}
 	}
 	collapseItem(descriptor: ItemDescriptor): void {
@@ -358,7 +336,6 @@ export default class GridBody {
 		classNames: string[]
 	): boolean {
 		if (iColumns.length==0) return false
-		const $checkboxes:HTMLInputElement[]=[]
 		this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$previousPlaceholders,classNames,$placeholder=>{
 			const $flow=$placeholder.querySelector('.flow')
 			if (!($flow instanceof HTMLElement)) return
@@ -368,16 +345,12 @@ export default class GridBody {
 				writeCollapsedItemFlow($flow,this.server,sequencePoint.type,sequencePoint.id)
 			}
 			const $checkbox=getItemCheckbox($placeholder)
-			if ($checkbox) $checkboxes.push($checkbox)
+			if ($checkbox) {
+				this.checkboxHandler.listen($checkbox)
+			}
 			const $disclosureButton=getItemDisclosureButton($placeholder)
 			$disclosureButton?.addEventListener('click',this.wrappedItemDisclosureButtonListener)
 		})
-		for (const $checkbox of $checkboxes) {
-			if ($checkboxes.length>1) {
-				$checkbox.addEventListener('input',columnCheckboxSyncListener)
-			}
-			$checkbox.addEventListener('input',this.wrappedItemSelectListener)
-		}
 		return true
 	}
 	private insertItemPlaceholders(
@@ -530,64 +503,6 @@ export default class GridBody {
 	}
 }
 
-function columnCheckboxSyncListener(this: HTMLInputElement): void {
-	syncColumnCheckboxes(this)
-}
-
-function *listRowCheckboxes($row: HTMLTableRowElement): Iterable<[
-	iColumn: number,
-	changesetId: number,
-	$checkbox: HTMLInputElement
-]> {
-	if ($row.classList.contains('changeset')) {
-		const descriptor=readItemDescriptor($row)
-		if (!descriptor || descriptor.type!='changeset') return
-		for (const [iColumn,$cell] of [...$row.cells].entries()) {
-			const $checkbox=getItemCheckbox($row)
-			if (!$checkbox) continue
-			yield [iColumn,descriptor.id,$checkbox]
-		}
-	} else if ($row.classList.contains('collection')) {
-		for (const [iColumn,$cell] of [...$row.cells].entries()) {
-			for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
-				if (!($changeset instanceof HTMLElement)) continue
-				const descriptor=readItemDescriptor($changeset)
-				if (!descriptor || descriptor.type!='changeset') continue
-				const $checkbox=getItemCheckbox($changeset)
-				if (!$checkbox) continue
-				yield [iColumn,descriptor.id,$checkbox]
-			}
-		}
-	}
-}
-
-function *listCellCheckboxes($cell: HTMLTableCellElement, isCollection: boolean): Iterable<HTMLInputElement> {
-	if (isCollection) {
-		for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
-			if (!($changeset instanceof HTMLElement)) continue
-			const $checkbox=getItemCheckbox($changeset)
-			if ($checkbox) yield $checkbox
-		}
-	} else {
-		const $checkbox=getItemCheckbox($cell)
-		if ($checkbox) yield $checkbox
-	}
-}
-
-function syncColumnCheckboxes($checkbox: HTMLInputElement): void {
-	const $itemRow=$checkbox.closest('tr')
-	if (!$itemRow) return
-	const $item=$checkbox.closest('.item')
-	if (!($item instanceof HTMLElement)) return
-	const descriptor=readItemDescriptor($item)
-	if (!descriptor) return
-	for (const [$itemCopy] of listItemCopies($itemRow,descriptor)) {
-		const $checkboxCopy=getItemCheckbox($itemCopy)
-		if (!$checkboxCopy) continue
-		$checkboxCopy.checked=$checkbox.checked
-	}
-}
-
 function listItemCopies($itemRow: HTMLTableRowElement, descriptor: ItemDescriptor): [$item:HTMLElement, iColumn:number][] {
 	if ($itemRow.classList.contains('item')) {
 		return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
@@ -629,4 +544,12 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 function setCellHue($cell: HTMLTableCellElement, hue: number|null): void {
 	if (hue==null) return
 	$cell.style.setProperty('--hue',String(hue))
+}
+
+function union<T>(sets: Iterable<Set<T>>): Set<T> {
+	return new Set((function*(){
+		for (const set of sets) {
+			yield *set
+		}
+	})())
 }
