@@ -85,14 +85,20 @@
 	align-self: stretch;
 	box-sizing: border-box;
 }
+.ui footer > .toolbar > button[aria-expanded=true]::before,
 .ui footer > .toolbar > button[aria-expanded=true]::after {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: #0002;
-	box-shadow:
-		-1px -1px 1px #0008,
-		1px 1px 1px #FFF8,
-		inset 1px 1px 2px #0008,
-		inset -1px -1px 2px #FFF8;
+}
+.ui footer > .toolbar > button[aria-expanded=true]::before {
+	background: #0001;
+	box-shadow: 0 0 2px 1px #0006;
+	height: unset;
+}
+.ui footer > .toolbar > button[aria-expanded=true]::after {
+	top: unset;
+	height: 1px;
+	background: #FFF8;
+	box-shadow: 0 0 2px 1px #FFF8;
 }
