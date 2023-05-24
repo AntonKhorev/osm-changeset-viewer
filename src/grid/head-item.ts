@@ -19,7 +19,7 @@ export function makeUserTab(
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`user`
 	$icon.innerHTML=makeCenteredSvg(8,makeUserSvgElements())
-	const $label=makeElement('span')('label')()
+	const $label=makeElement('span')('column-label')()
 	if (query.type=='id') {
 		$label.append(`#${query.uid}`)
 	} else {
@@ -33,7 +33,7 @@ export function makeUserTab(
 export function makeFormTab(
 	removeColumnClickListener: (this:HTMLElement)=>void
 ): HTMLElement {
-	const $label=makeElement('span')('label')(`Add user`)
+	const $label=makeElement('span')('column-label')(`Add user`)
 	const $closeButton=makeCloseButton(removeColumnClickListener)
 	$closeButton.title=`Remove form`
 	return makeDiv('tab')($label,` `,$closeButton)
@@ -357,7 +357,9 @@ export function makeUserSelector(
 	$checkbox.type='checkbox'
 	$checkbox.oninput=()=>selectAllItemsListener($checkbox)
 	const $icon=makeElement('span')('icon')($checkbox)
-	return makeDiv('selector')($icon)
+	return makeDiv('selector')(
+		$icon,` `,makeElement('output')('column-label')()
+	)
 }
 
 export function makeFormSelector(): HTMLElement {

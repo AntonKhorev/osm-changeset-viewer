@@ -143,12 +143,23 @@ export default class GridHead {
 			}
 		}
 		this.body.onItemSelect=()=>{
-			const [hasChecked,hasUnchecked]=this.body.getColumnCheckboxStatuses()
+			const [hasChecked,hasUnchecked,selectedChangesetIds]=this.body.getColumnCheckboxStatuses()
 			for (const [iColumn,{$selector}] of this.userEntries.entries()) {
 				const $checkbox=$selector.querySelector('input[type=checkbox]')
-				if (!($checkbox instanceof HTMLInputElement)) continue
-				$checkbox.checked=(hasChecked[iColumn] && !hasUnchecked[iColumn])
-				$checkbox.indeterminate=(hasChecked[iColumn] && hasUnchecked[iColumn])
+				if ($checkbox instanceof HTMLInputElement) {
+					$checkbox.checked=(hasChecked[iColumn] && !hasUnchecked[iColumn])
+					$checkbox.indeterminate=(hasChecked[iColumn] && hasUnchecked[iColumn])
+				}
+				const $count=$selector.querySelector('output')
+				if ($count) {
+					if (selectedChangesetIds[iColumn].size==0) {
+						$count.replaceChildren()
+					} else {
+						$count.replaceChildren(
+							`${selectedChangesetIds[iColumn].size} selected`
+						)
+					}
+				}
 			}
 		}
 	}

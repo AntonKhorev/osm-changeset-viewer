@@ -130,20 +130,22 @@ export default class GridBody {
 	}
 	getColumnCheckboxStatuses(): [
 		hasChecked: boolean[],
-		hasUnchecked: boolean[]
+		hasUnchecked: boolean[],
+		selectedChangesetIds: Set<number>[]
 	] {
 		const hasChecked=Array<boolean>(this.nColumns).fill(false)
 		const hasUnchecked=Array<boolean>(this.nColumns).fill(false)
+		const selectedChangesetIds=Array<Set<number>>(this.nColumns).fill(new Set())
 		for (const $row of this.$gridBody.rows) {
-			if (!$row.classList.contains('collection') && !$row.classList.contains('changeset')) continue
-			for (const [iColumn,$cell] of [...$row.cells].entries()) {
-				for (const $checkbox of listCellCheckboxes($cell,$row.classList.contains('collection'))) {
-					hasChecked[iColumn]||=$checkbox.checked
-					hasUnchecked[iColumn]||=!$checkbox.checked
+			for (const [iColumn,changesetId,$checkbox] of listRowCheckboxes($row)) {
+				hasChecked[iColumn]||=$checkbox.checked
+				hasUnchecked[iColumn]||=!$checkbox.checked
+				if ($checkbox.checked) {
+					selectedChangesetIds[iColumn].add(changesetId)
 				}
 			}
 		}
-		return [hasChecked,hasUnchecked]
+		return [hasChecked,hasUnchecked,selectedChangesetIds]
 	}
 	triggerColumnCheckboxes(iColumn: number, isChecked: boolean): void {
 		for (const $row of this.$gridBody.rows) {
@@ -517,6 +519,33 @@ export default class GridBody {
 
 function columnCheckboxSyncListener(this: HTMLInputElement): void {
 	syncColumnCheckboxes(this)
+}
+
+function *listRowCheckboxes($row: HTMLTableRowElement): Iterable<[
+	iColumn: number,
+	changesetId: number,
+	$checkbox: HTMLInputElement
+]> {
+	if ($row.classList.contains('changeset')) {
+		const descriptor=readItemDescriptor($row)
+		if (!descriptor || descriptor.type!='changeset') return
+		for (const [iColumn,$cell] of [...$row.cells].entries()) {
+			const $checkbox=getItemCheckbox($row)
+			if (!$checkbox) continue
+			yield [iColumn,descriptor.id,$checkbox]
+		}
+	} else if ($row.classList.contains('collection')) {
+		for (const [iColumn,$cell] of [...$row.cells].entries()) {
+			for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
+				if (!($changeset instanceof HTMLElement)) continue
+				const descriptor=readItemDescriptor($changeset)
+				if (!descriptor || descriptor.type!='changeset') continue
+				const $checkbox=getItemCheckbox($changeset)
+				if (!$checkbox) continue
+				yield [iColumn,descriptor.id,$checkbox]
+			}
+		}
+	}
 }
 
 function *listCellCheckboxes($cell: HTMLTableCellElement, isCollection: boolean): Iterable<HTMLInputElement> {

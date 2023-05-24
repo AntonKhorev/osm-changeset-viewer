@@ -31,6 +31,18 @@
 	max-width: 100%;
 	max-height: 100%;
 }
+.ui .grid thead .column-label {
+	display: block;
+	overflow: hidden;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: calc(var(--icon-size) + 2 * var(--spacer));
+	right: calc(1rem + 2 * var(--spacer));
+	text-align: left;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
 .ui .grid .api {
 	color: var(--light-text-color);
 	font-size: .8em;
@@ -87,17 +99,8 @@
 	background: canvas;
 	color: var(--accent-color);
 }
-.ui .grid thead th .tab .label {
-	display: block;
-	overflow: hidden;
-	top: 0;
-	bottom: 0;
-	left: calc(var(--icon-size) + 2 * var(--spacer));
-	right: calc(1rem + 2 * var(--spacer));
-	text-align: left;
+.ui .grid thead th .tab .column-label {
 	line-height: 2;
-	white-space: nowrap;
-	text-overflow: ellipsis;
 }
 .ui .grid thead th .tab button {
 	top: var(--spacer);
@@ -170,6 +173,9 @@
 .ui .grid thead tr.selectors td .selector .icon {
 	background: var(--accent-color);
 	pointer-events: all;
+}
+.ui .grid thead tr.selectors td .selector output:not(:empty) {
+	background: canvas;
 }
 
 .ui .grid thead :is(th,td).settling,
