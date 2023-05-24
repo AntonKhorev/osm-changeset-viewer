@@ -28,18 +28,6 @@ export function getItemDisclosureButton($item: HTMLElement): HTMLButtonElement|u
 	}
 }
 
-export function markChangesetItemAsCombined($item: HTMLElement, id: number|string): void {
-	$item.classList.add('combined')
-	const $checkbox=getItemCheckbox($item)
-	if ($checkbox) $checkbox.title=`changeset ${id}`
-}
-
-export function markChangesetItemAsUncombined($item: HTMLElement, id: number|string): void {
-	$item.classList.remove('combined')
-	const $checkbox=getItemCheckbox($item)
-	if ($checkbox) $checkbox.title=`opened changeset ${id}`
-}
-
 export function makeItemShell(
 	{type,item}: MuxBatchItem,
 	isExpanded: boolean

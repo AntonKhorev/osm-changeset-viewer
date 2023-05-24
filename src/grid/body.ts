@@ -8,7 +8,6 @@ import {
 } from './info'
 import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
-	markChangesetItemAsCombined, markChangesetItemAsUncombined,
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
 import EmbeddedItemCollection from './embedded-collection'
@@ -56,6 +55,17 @@ export default class GridBody {
 		)
 	}
 	updateTableAccordingToSettings(): void {
+		const setCheckboxTitles=($item: HTMLElement, title: string)=>{
+			if ($item instanceof HTMLTableRowElement) {
+				for (const $cell of $item.cells) {
+					const $checkbox=getItemCheckbox($cell)
+					if ($checkbox) $checkbox.title=title
+				}
+			} else {
+				const $checkbox=getItemCheckbox($item)
+				if ($checkbox) $checkbox.title=title
+			}
+		}
 		const combineChangesets=($item: HTMLElement, $laterItem: HTMLElement|undefined)=>{
 			const isConnectedWithLaterItem=(
 				$laterItem &&
@@ -67,13 +77,16 @@ export default class GridBody {
 				if ($item.classList.contains('closed')) {
 					$item.classList.toggle('hidden',!this.withClosedChangesets)
 				} else {
+					const id=$item.dataset.id??'???'
 					if (isConnectedWithLaterItem || !this.withClosedChangesets) {
 						if ($laterItem && isConnectedWithLaterItem) {
 							$laterItem.classList.add('hidden')
 						}
-						markChangesetItemAsCombined($item,$item.dataset.id??'???')
+						$item.classList.add('combined')
+						setCheckboxTitles($item,`changeset ${id}`)
 					} else {
-						markChangesetItemAsUncombined($item,$item.dataset.id??'???')
+						$item.classList.remove('combined')
+						setCheckboxTitles($item,`opened changeset ${id}`)
 					}
 				}
 			}
