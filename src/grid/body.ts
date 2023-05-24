@@ -41,6 +41,7 @@ export default class GridBody {
 		this.nColumns=nColumns
 		this.$gridBody.replaceChildren()
 		this.checkboxHandler.resetLastClickedCheckbox()
+		this.checkboxHandler.onItemSelect()
 	}
 	addItem(
 		batchItem: GridBatchItem,
