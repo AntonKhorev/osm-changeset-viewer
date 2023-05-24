@@ -13,6 +13,15 @@ export default class ActionsPanel extends Panel {
 		super()
 	}
 	writeSection($section: HTMLElement): void {
+		const $copyButton=makeElement('button')()(`Copy URLs to clipboard`)
+		$copyButton.onclick=async()=>{
+			let text=''
+			for (const id of this.grid.listSelectedChangesetIds()) {
+				const changesetUrl=this.server.web.getUrl(e`changeset/${id}`)
+				text+=changesetUrl+'\n'
+			}
+			await navigator.clipboard.writeText(text)
+		}
 		const $rcButton=makeElement('button')()(`Open with RC`)
 		$rcButton.onclick=async()=>{
 			for (const id of this.grid.listSelectedChangesetIds()) {
@@ -23,9 +32,8 @@ export default class ActionsPanel extends Panel {
 		}
 		$section.append(
 			makeElement('h2')()(`Actions`),` `,
-			makeDiv('input-group')(
-				$rcButton
-			)
+			makeDiv('input-group')($copyButton),` `,
+			makeDiv('input-group')($rcButton)
 		)
 	}
 }
