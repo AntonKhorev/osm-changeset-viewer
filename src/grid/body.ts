@@ -40,6 +40,7 @@ export default class GridBody {
 	setColumns(nColumns: number): void {
 		this.nColumns=nColumns
 		this.$gridBody.replaceChildren()
+		this.checkboxHandler.resetLastClickedCheckbox()
 	}
 	addItem(
 		batchItem: GridBatchItem,
