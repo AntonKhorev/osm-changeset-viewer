@@ -38,7 +38,10 @@ export default class GridBodyCheckboxHandler {
 	] {
 		const hasChecked=Array<boolean>(nColumns).fill(false)
 		const hasUnchecked=Array<boolean>(nColumns).fill(false)
-		const selectedChangesetIds=Array<Set<number>>(nColumns).fill(new Set())
+		const selectedChangesetIds:Set<number>[]=[]
+		for (let i=0;i<nColumns;i++) {
+			selectedChangesetIds.push(new Set())
+		}
 		for (const $row of this.$gridBody.rows) {
 			for (const [$checkbox,changesetId,iColumn] of listRowCheckboxes($row)) {
 				hasChecked[iColumn]||=$checkbox.checked
