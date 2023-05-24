@@ -117,7 +117,7 @@ function getElementColumn($e: HTMLElement): number|null {
 	return iColumn
 }
 
-function *listRowCheckboxes($row: HTMLTableRowElement): Iterable<[
+function *listRowCheckboxes($row: HTMLTableRowElement, columnFilter: (iColumn:number)=>boolean = ()=>true): Iterable<[
 	$checkbox: HTMLInputElement,
 	changesetId: number,
 	iColumn: number
@@ -126,12 +126,14 @@ function *listRowCheckboxes($row: HTMLTableRowElement): Iterable<[
 		const descriptor=readItemDescriptor($row)
 		if (!descriptor || descriptor.type!='changeset') return
 		for (const [iColumn,$cell] of [...$row.cells].entries()) {
+			if (!columnFilter(iColumn)) continue
 			const $checkbox=getItemCheckbox($cell)
 			if (!$checkbox) continue
 			yield [$checkbox,descriptor.id,iColumn]
 		}
 	} else if ($row.classList.contains('collection')) {
 		for (const [iColumn,$cell] of [...$row.cells].entries()) {
+			if (!columnFilter(iColumn)) continue
 			for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
 				if (!($changeset instanceof HTMLElement)) continue
 				const descriptor=readItemDescriptor($changeset)
@@ -144,31 +146,10 @@ function *listRowCheckboxes($row: HTMLTableRowElement): Iterable<[
 	}
 }
 
-// TODO just use *listRowCheckboxes with column filter
 function *listRowCellCheckboxes($row: HTMLTableRowElement, iColumn: number): Iterable<[
 	$checkbox: HTMLInputElement,
-	changesetId: number
+	changesetId: number,
+	iColumn: number
 ]> {
-	if ($row.classList.contains('changeset')) {
-		const descriptor=readItemDescriptor($row)
-		if (!descriptor || descriptor.type!='changeset') return
-		const $cell=$row.cells[iColumn]
-		if ($cell) {
-			const $checkbox=getItemCheckbox($cell)
-			if (!$checkbox) return
-			yield [$checkbox,descriptor.id]
-		}
-	} else if ($row.classList.contains('collection')) {
-		const $cell=$row.cells[iColumn]
-		if ($cell) {
-			for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
-				if (!($changeset instanceof HTMLElement)) continue
-				const descriptor=readItemDescriptor($changeset)
-				if (!descriptor || descriptor.type!='changeset') continue
-				const $checkbox=getItemCheckbox($changeset)
-				if (!$checkbox) continue
-				yield [$checkbox,descriptor.id]
-			}
-		}
-	}
+	yield *listRowCheckboxes($row,i=>i==iColumn)
 }
