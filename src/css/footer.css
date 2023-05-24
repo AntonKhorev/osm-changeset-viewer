@@ -58,14 +58,14 @@
 	padding-left: 1rem;
 }
 
-.ui footer > .grid-settings > section > * {
+.ui footer > .tools > section > * {
 	display: inline-block;
 }
-.ui footer > .grid-settings > section h2 {
+.ui footer > .tools > section h2 {
 	margin: 0;
 	padding-right: var(--spacer);
 }
-.ui footer > .grid-settings > section .input-group {
+.ui footer > .tools > section .input-group {
 	padding: 0 var(--spacer);
 }
 

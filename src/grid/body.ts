@@ -152,14 +152,12 @@ export default class GridBody {
 	] {
 		return this.checkboxHandler.getColumnCheckboxStatuses(this.nColumns)
 	}
+	listSelectedChangesetIds(): Iterable<number> {
+		const [,,selectedChangesetIds]=this.checkboxHandler.getColumnCheckboxStatuses(this.nColumns)
+		return union(selectedChangesetIds).values()
+	}
 	triggerColumnCheckboxes(iColumn: number, isChecked: boolean): void {
 		this.checkboxHandler.triggerColumnCheckboxes(iColumn,isChecked)
-	}
-	*listSelectedItemDescriptors(): Iterable<ItemDescriptor> {
-		const [,,selectedChangesetIds]=this.checkboxHandler.getColumnCheckboxStatuses(this.nColumns)
-		for (const id of union(selectedChangesetIds)) {
-			yield {type:'changeset',id}
-		}
 	}
 	collapseItem(descriptor: ItemDescriptor): void {
 		const itemSelectorWithRow='tr'+getItemDescriptorSelector(descriptor)

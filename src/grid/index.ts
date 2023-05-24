@@ -98,15 +98,16 @@ export default class Grid {
 		this.body.updateTableAccordingToSettings()
 	}
 	async expandSelectedItems(): Promise<void> {
-		const itemDescriptors=[...this.body.listSelectedItemDescriptors()]
-		for (const itemDescriptor of itemDescriptors) {
-			await this.body.expandItem(itemDescriptor)
+		for (const id of this.body.listSelectedChangesetIds()) {
+			await this.body.expandItem({type:'changeset',id})
 		}
 	}
 	collapseSelectedItems(): void {
-		const itemDescriptors=[...this.body.listSelectedItemDescriptors()]
-		for (const itemDescriptor of itemDescriptors) {
-			this.body.collapseItem(itemDescriptor)
+		for (const id of this.body.listSelectedChangesetIds()) {
+			this.body.collapseItem({type:'changeset',id})
 		}
+	}
+	listSelectedChangesetIds(): Iterable<number> {
+		return this.body.listSelectedChangesetIds()
 	}
 }

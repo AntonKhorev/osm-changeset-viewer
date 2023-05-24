@@ -3,7 +3,7 @@ import type Grid from '../grid'
 import {makeElement, makeDiv, makeLabel} from '../util/html'
 
 export default class GridSettingsPanel extends Panel {
-	protected className='grid-settings'
+	protected className='tools'
 	protected buttonLabel=`Grid settings`
 	constructor(private grid: Grid) {
 		super()
