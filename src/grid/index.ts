@@ -27,9 +27,11 @@ export default class Grid {
 			db.getSingleItemReader()
 		)
 		this.head=new GridHead(
-			cx,db,worker,this.body,
+			cx,db,worker,
 			columnUids=>this.setColumns(columnUids),
-			(iShiftFrom,iShiftTo)=>this.reorderColumns(iShiftFrom,iShiftTo),
+			(iShiftFrom,iShiftTo)=>this.body.reorderColumns(iShiftFrom,iShiftTo),
+			()=>this.body.getColumnCheckboxStatuses(),
+			(iColumn,isChecked)=>this.body.triggerColumnCheckboxes(iColumn,isChecked),
 			sendUpdatedUserQueriesReceiver,
 			()=>{
 				more.changeToNothingToLoad()
@@ -81,9 +83,6 @@ export default class Grid {
 		this.$colgroup.append(
 			makeElement('col')('adder')()
 		)
-	}
-	private reorderColumns(iShiftFrom: number, iShiftTo: number): void {
-		this.body.reorderColumns(iShiftFrom,iShiftTo)
 	}
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
 		await this.head.receiveUpdatedUserQueries(userQueries)

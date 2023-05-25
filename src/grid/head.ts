@@ -51,10 +51,15 @@ export default class GridHead {
 		private cx: Connection,
 		private db: ChangesetViewerDBReader,
 		private worker: SharedWorker,
-		private body: GridBody,
 		// former direct grid method calls:
 		private setColumns: (columnUids:(number|null)[])=>void,
 		private reorderColumns: (iShiftFrom:number,iShiftTo:number)=>void,
+		private getColumnCheckboxStatuses: ()=>[
+			hasChecked: boolean[],
+			hasUnchecked: boolean[],
+			selectedChangesetIds: Set<number>[]
+		],
+		private triggerColumnCheckboxes: (iColumn: number, isChecked: boolean)=>void,
 		// former main callbacks:
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
 		private restartStreamCallback: ()=>void,
@@ -161,7 +166,7 @@ export default class GridHead {
 		this.restartStream()
 	}
 	updateSelectors(): void {
-		const [hasChecked,hasUnchecked,selectedChangesetIds]=this.body.getColumnCheckboxStatuses()
+		const [hasChecked,hasUnchecked,selectedChangesetIds]=this.getColumnCheckboxStatuses()
 		for (const [iColumn,{$selector}] of this.userEntries.entries()) {
 			const $checkbox=$selector.querySelector('input[type=checkbox]')
 			if ($checkbox instanceof HTMLInputElement) {
@@ -200,7 +205,7 @@ export default class GridHead {
 		const $selector=makeUserSelector($checkbox=>{
 			for (const [iColumn,userEntry] of this.userEntries.entries()) {
 				if ($selector!=userEntry.$selector) continue
-				this.body.triggerColumnCheckboxes(iColumn,$checkbox.checked)
+				this.triggerColumnCheckboxes(iColumn,$checkbox.checked)
 			}
 		})
 		return {
