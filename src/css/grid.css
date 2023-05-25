@@ -9,10 +9,12 @@
 	min-width: calc(var(--column-min-width) * var(--columns) + var(--adder-width));
 }
 .ui .grid :is(td,th) {
-	--temp-accent-color: hsl(var(--hue) 50% 50%);
-	--accent-color: var(--temp-accent-color,var(--light-text-color));
 	padding: 0;
 	vertical-align: top;
+}
+.ui .grid :is(td,th,.icon.sender) {
+	--temp-accent-color: hsl(var(--hue) 50% 50%);
+	--accent-color: var(--temp-accent-color,var(--light-text-color));
 }
 .ui .grid col.adder {
 	width: var(--adder-width);

@@ -1,3 +1,4 @@
+import {getHueFromUid} from './colorizer'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {makeElement, makeLink} from '../util/html'
@@ -228,6 +229,10 @@ function writeSenderUserIcon($icon: HTMLElement, id: number|undefined): void {
 		makeUserSvgElements()
 	)
 	$icon.classList.add('sender')
+	if (id!=null) {
+		const hue=getHueFromUid(id)
+		$icon.style.setProperty('--hue',String(hue))
+	}
 }
 
 function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean): void {

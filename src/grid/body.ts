@@ -422,7 +422,7 @@ export default class GridBody {
 			const $cell=$row.insertCell()
 			if (uid!=null) {
 				const hue=getHueFromUid(uid)
-				setCellHue($cell,hue)
+				$cell.style.setProperty('--hue',String(hue))
 			}
 		}
 		return $row
@@ -545,10 +545,6 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	const d1=new Date(t1)
 	const d2=new Date(t2)
 	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
-}
-
-function setCellHue($cell: HTMLTableCellElement, hue: number): void {
-	$cell.style.setProperty('--hue',String(hue))
 }
 
 function union<T>(sets: Iterable<Set<T>>): Set<T> {
