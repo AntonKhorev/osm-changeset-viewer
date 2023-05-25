@@ -95,7 +95,15 @@ export default class GridHead {
 		broadcastReceiver.onmessage=async({data:message})=>{
 			if (message.type!='operation') return
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
-				this.updateUserCard(userEntry.$card,userEntry.info)
+				const {$tab,$card,$selector}=userEntry
+				const uid=getUserEntryUid(userEntry)
+				if (uid!=null) {
+					const hue=getHueFromUid(uid)
+					$tab.parentElement?.style.setProperty('--hue',String(hue))
+					$card.parentElement?.style.setProperty('--hue',String(hue))
+					$selector.parentElement?.style.setProperty('--hue',String(hue))
+				}
+				this.updateUserCard($card,userEntry.info)
 			}
 			if (message.part.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
