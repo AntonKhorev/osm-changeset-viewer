@@ -139,7 +139,7 @@ export default class GridBody {
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
 		for (const $row of this.$gridBody.rows) {
-			if (!$row.classList.contains('item')) continue
+			if (!$row.classList.contains('item') && !$row.classList.contains('collection')) continue
 			const $cells=[...$row.cells]
 			moveInArray($cells,iShiftFrom,iShiftTo)
 			$row.replaceChildren(...$cells)
