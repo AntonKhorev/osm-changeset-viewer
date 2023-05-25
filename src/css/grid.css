@@ -322,9 +322,16 @@
 .ui .grid tbody tr.item td:not([colspan]) .ballon {
 	margin-right: -1px;
 }
+.ui .grid tbody tr.collection .item.comment.incoming {
+	padding-right: calc(.5 * var(--icon-size));
+}
 .ui .grid tbody tr.collection .item.comment.incoming .ballon {
 	margin-left: calc(-.75 * var(--spacer));
 	margin-right: calc(.75 * var(--spacer));
+}
+.ui .grid tbody tr.collection .item.comment.incoming .icon.sender {
+	left: unset;
+	right: 0;
 }
 .ui .grid tbody .item.comment .ballon {
 	--ballon-border-radius: var(--spacer);

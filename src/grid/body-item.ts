@@ -35,10 +35,11 @@ export function makeItemShell(
 	let id: number
 	const classNames: string[] = ['item']
 	const $icon=makeElement('span')('icon')()
+	let $senderIcon: HTMLElement|undefined
 	if (type=='user') {
 		classNames.push('user')
 		id=item.id
-		writeUserIcon($icon,id)
+		writeNewUserIcon($icon,id)
 	} else if (type=='changeset' || type=='changesetClose') {
 		classNames.push('changeset')
 		id=item.id
@@ -59,16 +60,24 @@ export function makeItemShell(
 		}
 		if (item.uid!=item.itemUid) {
 			classNames.push('incoming')
+			$senderIcon=makeElement('span')('icon')()
+			writeSenderUserIcon($senderIcon,item.uid)
 		}
 		if (!item.text) {
 			classNames.push('mute')
 		}
 	}
-	return [makeElement('span')()(
+	const $item=makeElement('span')()(
 		$icon,` `,makeElement('span')('ballon')(
 			makeItemDisclosureButton(isExpanded),` `,makeElement('span')('flow')()
 		)
-	),classNames]
+	)
+	if ($senderIcon) {
+		$item.append(
+			` `,$senderIcon
+		)
+	}
+	return [$item,classNames]
 }
 
 export function writeCollapsedItemFlow(
@@ -205,12 +214,20 @@ export function makeCollectionIcon(): HTMLElement {
 	return $icon
 }
 
-function writeUserIcon($icon: HTMLElement, id: number): void {
-	$icon.title=`user ${id}`
+function writeNewUserIcon($icon: HTMLElement, id: number|undefined): void {
+	$icon.title=id!=null?`user ${id}`:`anonymous user`
 	$icon.innerHTML=makeCenteredSvg(10,
 		`<path d="${computeNewOutlinePath(9,7,10)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
 		makeUserSvgElements()
 	)
+}
+
+function writeSenderUserIcon($icon: HTMLElement, id: number|undefined): void {
+	$icon.title=id!=null?`user ${id}`:`anonymous user`
+	$icon.innerHTML=makeCenteredSvg(10,
+		makeUserSvgElements()
+	)
+	$icon.classList.add('sender')
 }
 
 function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean): void {
