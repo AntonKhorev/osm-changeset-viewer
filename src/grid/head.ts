@@ -8,6 +8,7 @@ import {
 	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
 	makeFormTab, makeFormCard, makeFormSelector
 } from './head-item'
+import {getHueFromUid} from './colorizer'
 import {ValidUserQuery} from '../osm'
 import {toUserQuery} from '../osm'
 import MuxUserItemDbStream from '../mux-user-item-db-stream'
@@ -52,8 +53,7 @@ export default class GridHead {
 		private worker: SharedWorker,
 		private body: GridBody,
 		// former direct grid method calls:
-		private setColumns: (columnHues:(number|null)[])=>void,
-		setColumnHues: (columnHues:(number|null)[])=>void,
+		private setColumns: (columnUids:(number|null)[])=>void,
 		private reorderColumns: (iShiftFrom:number,iShiftTo:number)=>void,
 		// former main callbacks:
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
@@ -92,8 +92,6 @@ export default class GridHead {
 			if (message.type!='operation') return
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
 				this.updateUserCard(userEntry.$card,userEntry.info)
-				const columnHues=this.userEntries.map(getUserEntryHue)
-				setColumnHues(columnHues)
 			}
 			if (message.part.type=='getUserInfo') {
 				for (const userEntry of this.userEntries) {
@@ -250,8 +248,8 @@ export default class GridHead {
 				entry.displayedNotesCount=0
 			)
 		}
-		const columnHues=this.userEntries.map(getUserEntryHue)
-		this.setColumns(columnHues)
+		const columnUids=this.userEntries.map(getUserEntryUid)
+		this.setColumns(columnUids)
 		this.streamMessenger=undefined
 		this.restartStreamCallback()
 		this.startStreamIfNotStartedAndGotAllUids()
@@ -354,8 +352,9 @@ export default class GridHead {
 			const $tabCell=makeElement('th')()($tab)
 			const $cardCell=makeElement('td')()($card)
 			const $selectorCell=makeElement('td')()($selector)
-			const hue=getUserEntryHue(userEntry)
-			if (hue!=null) {
+			const uid=getUserEntryUid(userEntry)
+			if (uid!=null) {
+				const hue=getHueFromUid(uid)
 				$tabCell.style.setProperty('--hue',String(hue))
 				$cardCell.style.setProperty('--hue',String(hue))
 				$selectorCell.style.setProperty('--hue',String(hue))
@@ -410,9 +409,9 @@ function isSameQuery(query1: ValidUserQuery, query2: ValidUserQuery): boolean {
 	}
 }
 
-function getUserEntryHue(userEntry: GridUserEntry): number|null {
+function getUserEntryUid(userEntry: GridUserEntry): number|null {
 	return (userEntry.type=='query'&&(userEntry.info.status=='ready'||userEntry.info.status=='rerunning')
-		? userEntry.info.user.id % 360
+		? userEntry.info.user.id
 		: null
 	)
 }

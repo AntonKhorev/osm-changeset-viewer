@@ -13,7 +13,6 @@ export default class Grid {
 	private $colgroup=makeElement('colgroup')()()
 	private head: GridHead
 	private body: GridBody
-	private columnHues: (number|null)[] = []
 	constructor(
 		cx: Connection,
 		db: ChangesetViewerDBReader,
@@ -25,13 +24,11 @@ export default class Grid {
 	) {
 		this.body=new GridBody(
 			cx.server,
-			db.getSingleItemReader(),
-			()=>this.columnHues
+			db.getSingleItemReader()
 		)
 		this.head=new GridHead(
 			cx,db,worker,this.body,
-			columnHues=>this.setColumns(columnHues),
-			columnHues=>this.columnHues=columnHues, // TODO update existing table cells - currently not required because table is always cleared
+			columnUids=>this.setColumns(columnUids),
 			(iShiftFrom,iShiftTo)=>this.reorderColumns(iShiftFrom,iShiftTo),
 			sendUpdatedUserQueriesReceiver,
 			()=>{
@@ -70,15 +67,12 @@ export default class Grid {
 	set inOneColumn(value: boolean) {
 		this.body.inOneColumn=value
 	}
-	get nColumns(): number {
-		return this.columnHues.length
-	}
-	private setColumns(columnHues: (number|null)[]) {
-		this.columnHues=columnHues
-		this.body.setColumns(columnHues.length)
-		this.$grid.style.setProperty('--columns',String(this.nColumns))
+	private setColumns(columnUids: (number|null)[]) {
+		const nColumns=columnUids.length
+		this.body.setColumns(columnUids)
+		this.$grid.style.setProperty('--columns',String(nColumns))
 		this.$colgroup.replaceChildren()
-		for (let i=0;i<this.nColumns;i++) {
+		for (let i=0;i<nColumns;i++) {
 			this.$colgroup.append(
 				makeElement('col')()()
 			)
@@ -88,7 +82,6 @@ export default class Grid {
 		)
 	}
 	private reorderColumns(iShiftFrom: number, iShiftTo: number): void {
-		moveInArray(this.columnHues,iShiftFrom,iShiftTo)
 		this.body.reorderColumns(iShiftFrom,iShiftTo)
 	}
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {

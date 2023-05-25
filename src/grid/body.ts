@@ -10,6 +10,7 @@ import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
+import {getHueFromUid} from './colorizer'
 import EmbeddedItemCollection from './embedded-collection'
 import {updateTimelineOnInsert} from './timeline'
 import GridBodyCheckboxHandler from './body-checkbox'
@@ -26,19 +27,21 @@ export default class GridBody {
 	inOneColumn=false
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
 	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
-	private nColumns=0
+	private columnUids: (number|null)[] = []
 	constructor(
 		private readonly server: ServerUrlGetter,
-		private readonly itemReader: SingleItemDBReader,
-		private readonly getColumnHues: ()=>(number|null)[]
+		private readonly itemReader: SingleItemDBReader
 	) {
 		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosureWithButton(ev.currentTarget)
+	}
+	get nColumns() {
+		return this.columnUids.length
 	}
 	set onItemSelect(callback: ()=>void) {
 		this.checkboxHandler.onItemSelect=callback
 	}
-	setColumns(nColumns: number): void {
-		this.nColumns=nColumns
+	setColumns(columnUids: (number|null)[]): void {
+		this.columnUids=columnUids
 		this.$gridBody.replaceChildren()
 		this.checkboxHandler.resetLastClickedCheckbox()
 		this.checkboxHandler.onItemSelect()
@@ -415,9 +418,12 @@ export default class GridBody {
 	}
 	private makeRow(): HTMLTableRowElement {
 		const $row=makeElement('tr')()()
-		for (const hue of this.getColumnHues()) {
+		for (const uid of this.columnUids) {
 			const $cell=$row.insertCell()
-			setCellHue($cell,hue)
+			if (uid!=null) {
+				const hue=getHueFromUid(uid)
+				setCellHue($cell,hue)
+			}
 		}
 		return $row
 	}
@@ -541,8 +547,7 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
 }
 
-function setCellHue($cell: HTMLTableCellElement, hue: number|null): void {
-	if (hue==null) return
+function setCellHue($cell: HTMLTableCellElement, hue: number): void {
 	$cell.style.setProperty('--hue',String(hue))
 }
 
