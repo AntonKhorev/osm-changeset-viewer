@@ -331,6 +331,9 @@
 	margin-left: calc(-.75 * var(--spacer));
 	margin-right: calc(.75 * var(--spacer));
 }
+.ui .grid tbody tr.item.comment.incoming .icon.sender {
+	display: none;
+}
 .ui .grid tbody tr.collection .item.comment.incoming .icon.sender {
 	left: unset;
 	right: 0;
