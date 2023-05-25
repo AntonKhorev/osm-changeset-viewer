@@ -96,12 +96,8 @@ function makeChangesetCloseBatchItem(i,createdAtString,closedAtString) {
 }
 
 function makeSingleColumnGrid(itemReader) {
-	const nColumns=1
-	const getColumnHues=()=>new Array(nColumns).fill(0)
-	const gridBody=new GridBody(
-		server,itemReader,getColumnHues
-	)
-	gridBody.setColumns(nColumns)
+	const gridBody=new GridBody(server,itemReader)
+	gridBody.setColumns([101])
 	return gridBody
 }
 
@@ -702,9 +698,8 @@ describe("GridBody",()=>{
 		))
 	})
 	it("makes adds items to two-column collection",()=>{
-		const nColumns=2
-		const gridBody=new GridBody(server,null,()=>new Array(nColumns).fill(0))
-		gridBody.setColumns(nColumns)
+		const gridBody=new GridBody(server,null)
+		gridBody.setColumns([101,102])
 		gridBody.addItem({
 			iColumns: [0],
 			type: 'changeset',
@@ -739,15 +734,14 @@ describe("GridBody",()=>{
 		})
 	})
 	it("splits collection when items are in different columns",async()=>{
-		const nColumns=2
 		const gridBody=new GridBody(server,{
 			getChangeset: async(id)=>{
 				if (id==10001) return makeChangesetItem(1)
 				if (id==10002) return makeChangesetItem(2)
 				if (id==10003) return makeChangesetItem(3)
 			}
-		},()=>new Array(nColumns).fill(0))
-		gridBody.setColumns(nColumns)
+		})
+		gridBody.setColumns([101,102])
 		gridBody.addItem({
 			iColumns: [0],
 			type: 'changeset',
