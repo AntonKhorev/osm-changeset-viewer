@@ -229,7 +229,7 @@
 	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
 }
 
-.ui .grid tbody tr:is(.item,.collection) td {
+.ui .grid tbody tr:is(.single,.collection) td {
 	--icon-vertical-margin: 3px;
 	--timeline-width: 2px;
 	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
@@ -237,11 +237,8 @@
 	position: relative;
 	padding-left: calc(var(--spacer) + var(--icon-size));
 }
-.ui .grid tbody tr:is(.item,.collection):not(.hidden) td {
-	height: calc(var(--icon-vertical-margin) + var(--icon-size) + var(--icon-vertical-margin));
-}
-.ui .grid tbody tr:is(.item,.collection) td.with-timeline-above::before,
-.ui .grid tbody tr:is(.item,.collection) td.with-timeline-below::after {
+.ui .grid tbody tr:is(.single,.collection) td.with-timeline-above::before,
+.ui .grid tbody tr:is(.single,.collection) td.with-timeline-below::after {
 	content: '';
 	display: block;
 	position: absolute;
@@ -250,31 +247,25 @@
 	background: var(--accent-color);
 	z-index: -1;
 }
-.ui .grid tbody tr:is(.item,.collection) td.with-timeline-above::before {
+.ui .grid tbody tr:is(.single,.collection) td.with-timeline-above::before {
 	top: calc(0px - var(--timeline-previous-row-covering-height));
 	height: calc(var(--timeline-above-height) + var(--timeline-previous-row-covering-height));
 }
-.ui .grid tbody tr:is(.item,.collection) td.with-timeline-below::after {
+.ui .grid tbody tr:is(.single,.collection) td.with-timeline-below::after {
 	top: var(--timeline-above-height);
 	height: calc(100% - var(--timeline-above-height));
 }
-.ui .grid tbody tr.separator + tr:is(.item,.collection) td.with-timeline-above::before {
+.ui .grid tbody tr.separator + tr:is(.single,.collection) td.with-timeline-above::before {
 	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
-}
-.ui .grid tbody tr.item.hidden td :is(.icon,.ballon) {
-	display: none;
 }
 
 .ui .grid tbody .item {
 	--item-spacer: 4px;
 }
-.ui .grid tbody tr.collection td .item {
+.ui .grid tbody tr.collection td .item:not([hidden]) {
 	display: inline-block;
 	position: relative;
 	padding-left: calc(var(--item-spacer) + var(--icon-size));
-}
-.ui .grid tbody tr.collection td .item.hidden {
-	display: none;
 }
 .ui .grid tbody tr.collection .item .icon {
 	left: var(--item-spacer);
@@ -290,10 +281,10 @@
 	inset: 0;
 	background: var(--accent-color);
 }
-.ui .grid tbody tr.item.changeset:not(.closed,.combined) .icon::before {
+.ui .grid tbody tr.single .item.changeset:not(.closed,.combined) .icon::before {
 	top: 50%;
 }
-.ui .grid tbody tr.item.changeset.closed .icon::before {
+.ui .grid tbody tr.single .item.changeset.closed .icon::before {
 	bottom: 50%;
 }
 .ui .grid tbody tr.collection .item.changeset:not(.closed,.combined) .icon::before {
@@ -321,7 +312,7 @@
 	padding: var(--ballon-vertical-padding) 0;
 	border: solid 1px transparent;
 }
-.ui .grid tbody tr.item td:not([colspan]) .ballon {
+.ui .grid tbody tr.single .item td:not([colspan]) .ballon {
 	margin-right: -1px;
 }
 .ui .grid tbody tr.collection .item.comment.incoming {
@@ -331,7 +322,7 @@
 	margin-left: calc(-.75 * var(--spacer));
 	margin-right: calc(.75 * var(--spacer));
 }
-.ui .grid tbody tr.item.comment.incoming .icon.sender {
+.ui .grid tbody tr.single .item.comment.incoming .icon.sender {
 	display: none;
 }
 .ui .grid tbody tr.collection .item.comment.incoming .icon.sender {
@@ -433,14 +424,14 @@
 .ui .grid tbody .item .ballon .flow > * {
 	text-indent: initial;
 }
-.ui .grid tbody tr.item td .ballon .flow {
+.ui .grid tbody tr.single .item .ballon .flow {
 	text-overflow: ellipsis;
 	overflow: hidden;
 	-webkit-line-clamp: 5;
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 }
-.ui .grid tbody tr.item td .ballon .flow .from {
+.ui .grid tbody tr.single .item .ballon .flow .from {
 	--from-border-radius: .25rem;
 	--from-tip-height: calc(1rem - 2 * var(--from-border-radius));
 	--from-tip-width: .5rem;
@@ -452,18 +443,18 @@
 	border: var(--light-frame-line);
 	background: canvas;
 }
-.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from {
+.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from {
 	padding-left: calc(var(--from-tip-width) + var(--from-border-radius));
 	margin-right: calc(0px - var(--item-spacer) - 1px);
 	border-right: none;
 	border-bottom-left-radius: var(--from-border-radius);
 	border-top-left-radius: var(--from-border-radius);
 }
-.ui .grid tbody tr.item.mute td .ballon .flow .from {
+.ui .grid tbody tr.single .item.mute .ballon .flow .from {
 	border-radius: var(--spacer);
 }
-.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::before,
-.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::after {
+.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::before,
+.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::after {
 	content: '';
 	position: absolute;
 	top: 0;
@@ -474,15 +465,15 @@
 	border-width: calc(.5 * var(--from-tip-height)) 0;
 	border-left-width: var(--from-tip-width);
 }
-.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::before {
+.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::before {
 	left: 0;
 	border-left-color: var(--light-frame-color);
 }
-.ui .grid tbody tr.item:not(.mute) td .ballon .flow .from::after {
+.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::after {
 	left: -1px;
 	border-left-color: canvas;
 }
-.ui .grid tbody tr.item td .ballon .flow .from a {
+.ui .grid tbody tr.single .item .ballon .flow .from a {
 	display: block;
 	max-width: 100%;
 	font-size: .9em;
@@ -491,7 +482,8 @@
 	text-overflow: ellipsis;
 	overflow: hidden;
 }
-.ui .grid tbody tr.item td .ballon .flow .changes {
+
+.ui .grid tbody .item .ballon .flow .changes {
 	border-radius: 4px;
 	padding: 2px 4px;
 	font-family: sans-serif;

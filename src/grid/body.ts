@@ -82,12 +82,12 @@ export default class GridBody {
 			)
 			if ($item.classList.contains('changeset')) {
 				if ($item.classList.contains('closed')) {
-					$item.classList.toggle('hidden',!this.withClosedChangesets)
+					$item.hidden=!this.withClosedChangesets
 				} else {
 					const id=$item.dataset.id??'???'
 					if (isConnectedWithLaterItem || !this.withClosedChangesets) {
 						if ($laterItem && isConnectedWithLaterItem) {
-							$laterItem.classList.add('hidden')
+							$laterItem.hidden=true
 						}
 						$item.classList.add('combined')
 						setCheckboxTitles($item,`changeset ${id}`)
@@ -116,7 +116,7 @@ export default class GridBody {
 				}
 			}
 		}
-		let $itemRowAbove: HTMLElement|undefined
+		let $itemRowAbove: HTMLTableRowElement|undefined
 		for (const $row of this.$gridBody.rows) {
 			if ($row.classList.contains('collection')) {
 				for (const $cell of $row.cells) {
@@ -131,8 +131,23 @@ export default class GridBody {
 				collection.updateIds()
 				// spanColumns($row) // TODO need to merge/split collected items in cells
 				$itemRowAbove=undefined
-			} else if ($row.classList.contains('item')) {
-				combineChangesets($row,$itemRowAbove)
+			} else if ($row.classList.contains('single')) {
+				for (let i=0;i<$row.cells.length;i++) {
+					const $cell=$row.cells[i]
+					const $item=$cell.querySelector(':scope > .item')
+					let $cellAbove: HTMLElement|undefined
+					if ($itemRowAbove) {
+						$cellAbove=$itemRowAbove.cells[i]
+					}
+					let $itemAbove: HTMLElement|undefined
+					if ($cellAbove) {
+						const $itemAboveCandidate=$cellAbove.querySelector(':scope > .item')
+						if ($itemAboveCandidate instanceof HTMLElement) {
+							$itemAbove=$itemAboveCandidate
+						}
+					}
+					if ($item instanceof HTMLElement) combineChangesets($item,$itemAbove)
+				}
 				spanColumns($row)
 				$itemRowAbove=$row
 			} else {
@@ -383,11 +398,14 @@ export default class GridBody {
 				}
 				$rowBefore.after($row)
 			}
-			$row.classList.add(...classNames)
-			writeElementSequencePoint($row,sequencePoint)
+			$row.classList.add('single')
 			updateTimelineOnInsert($row,iColumns)
 			for (const [iPlaceholder,iColumn] of iColumns.entries()) {
-				const $placeholder=$row.cells[iColumn]
+				const $cell=$row.cells[iColumn]
+				const $placeholder=makeElement('span')('item')()
+				$placeholder.classList.add(...classNames)
+				writeElementSequencePoint($placeholder,sequencePoint)
+				$cell.append($placeholder)
 				copyPlaceholderChildren($placeholder,iPlaceholder)
 				writeItem($placeholder)
 			}
@@ -438,7 +456,10 @@ export default class GridBody {
 		for (let i=this.$gridBody.rows.length-1;i>=0;i--) {
 			const $row=this.$gridBody.rows[i]
 			const $rowAfter=this.$gridBody.rows[i+1]
-			if ($row.classList.contains('collection')) {
+			if (
+				$row.classList.contains('single') ||
+				$row.classList.contains('collection')
+			) {
 				const collection=new EmbeddedItemCollection($row,this.withCompactIds)
 				const [greaterCollectionPoint,lesserCollectionPoint]=collection.getBoundarySequencePoints()
 				if (!greaterCollectionPoint || !lesserCollectionPoint) continue

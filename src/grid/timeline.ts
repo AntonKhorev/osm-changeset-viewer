@@ -47,6 +47,6 @@ export function updateTimelineOnInsert($row: HTMLTableRowElement, iColumns: numb
 function isContentRow($row: Element|null): $row is HTMLTableRowElement {
 	return (
 		$row instanceof HTMLTableRowElement &&
-		($row.classList.contains('item') || $row.classList.contains('collection'))
+		($row.classList.contains('single') || $row.classList.contains('collection'))
 	)
 }
