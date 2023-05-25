@@ -299,6 +299,7 @@ export default class GridHead {
 				return
 			}
 		}
+		this.setColumns(columnUids)
 		const stream=new MuxUserItemDbStream(this.db,[...users.values()])
 		const streamMessenger=new MuxUserItemDbStreamMessenger(
 			this.cx.server.host,this.worker,stream,columnUids,(batch,usernames)=>{
