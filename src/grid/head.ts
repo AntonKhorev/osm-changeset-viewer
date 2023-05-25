@@ -140,7 +140,6 @@ export default class GridHead {
 				await this.streamMessenger.receiveMessage(message.part)
 			}
 		}
-		this.body.onItemSelect=()=>this.updateSelectors()
 	}
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
 		const newUserEntries=[] as GridUserEntry[]
@@ -160,6 +159,26 @@ export default class GridHead {
 		this.userEntries=newUserEntries
 		this.rewriteUserEntriesInHead()
 		this.restartStream()
+	}
+	updateSelectors(): void {
+		const [hasChecked,hasUnchecked,selectedChangesetIds]=this.body.getColumnCheckboxStatuses()
+		for (const [iColumn,{$selector}] of this.userEntries.entries()) {
+			const $checkbox=$selector.querySelector('input[type=checkbox]')
+			if ($checkbox instanceof HTMLInputElement) {
+				$checkbox.checked=(hasChecked[iColumn] && !hasUnchecked[iColumn])
+				$checkbox.indeterminate=(hasChecked[iColumn] && hasUnchecked[iColumn])
+			}
+			const $count=$selector.querySelector('output')
+			if ($count) {
+				if (selectedChangesetIds[iColumn].size==0) {
+					$count.replaceChildren()
+				} else {
+					$count.replaceChildren(
+						`${selectedChangesetIds[iColumn].size} selected`
+					)
+				}
+			}
+		}
 	}
 	private async makeQueryUserEntry(query: ValidUserQuery): Promise<GridUserEntry> {
 		let info: UserInfo|undefined = await this.askDbForUserInfo(query)
@@ -374,26 +393,6 @@ export default class GridHead {
 			})
 		}
 		this.$cardRow.append(this.$adderCell)
-	}
-	private updateSelectors(): void {
-		const [hasChecked,hasUnchecked,selectedChangesetIds]=this.body.getColumnCheckboxStatuses()
-		for (const [iColumn,{$selector}] of this.userEntries.entries()) {
-			const $checkbox=$selector.querySelector('input[type=checkbox]')
-			if ($checkbox instanceof HTMLInputElement) {
-				$checkbox.checked=(hasChecked[iColumn] && !hasUnchecked[iColumn])
-				$checkbox.indeterminate=(hasChecked[iColumn] && hasUnchecked[iColumn])
-			}
-			const $count=$selector.querySelector('output')
-			if ($count) {
-				if (selectedChangesetIds[iColumn].size==0) {
-					$count.replaceChildren()
-				} else {
-					$count.replaceChildren(
-						`${selectedChangesetIds[iColumn].size} selected`
-					)
-				}
-			}
-		}
 	}
 }
 

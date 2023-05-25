@@ -55,6 +55,7 @@ export default class Grid {
 				}
 			}
 		)
+		this.body.onItemSelect=()=>this.head.updateSelectors()
 		this.$grid.append(this.$colgroup,this.head.$gridHead,this.body.$gridBody)
 		this.setColumns([])
 	}
