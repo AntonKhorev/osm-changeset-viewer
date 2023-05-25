@@ -31,7 +31,8 @@ export function getItemDisclosureButton($item: HTMLElement): HTMLButtonElement|u
 
 export function makeItemShell(
 	{type,item}: MuxBatchItem,
-	isExpanded: boolean
+	isExpanded: boolean,
+	usernames: Map<number, string>
 ): [$item: HTMLElement, classNames: string[]] {
 	let id: number
 	const classNames: string[] = ['item']
@@ -62,7 +63,8 @@ export function makeItemShell(
 		if (item.uid!=item.itemUid) {
 			classNames.push('incoming')
 			$senderIcon=makeElement('span')('icon')()
-			writeSenderUserIcon($senderIcon,item.uid)
+			const username=item.uid?usernames.get(item.uid):undefined
+			writeSenderUserIcon($senderIcon,item.uid,username)
 		}
 		if (!item.text) {
 			classNames.push('mute')
@@ -223,8 +225,14 @@ function writeNewUserIcon($icon: HTMLElement, id: number|undefined): void {
 	)
 }
 
-function writeSenderUserIcon($icon: HTMLElement, id: number|undefined): void {
-	$icon.title=id!=null?`user ${id}`:`anonymous user`
+function writeSenderUserIcon($icon: HTMLElement, id: number|undefined, username: string|undefined): void {
+	if (username!=null) {
+		$icon.title=username
+	} else if (id!=null) {
+		$icon.title=`#`+id
+	} else {
+		$icon.title=`anonymous`
+	}
 	$icon.innerHTML=makeCenteredSvg(10,
 		makeUserSvgElements()
 	)

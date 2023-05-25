@@ -51,7 +51,7 @@ export default class GridBody {
 		usernames: Map<number, string>,
 		isExpanded: boolean
 	): boolean {
-		const [$masterPlaceholder,classNames]=makeItemShell(batchItem,isExpanded)
+		const [$masterPlaceholder,classNames]=makeItemShell(batchItem,isExpanded,usernames)
 		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
 		const sequencePoint=getBatchItemSequencePoint(batchItem)
 		if (!sequencePoint) return false

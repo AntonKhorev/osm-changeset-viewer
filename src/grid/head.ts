@@ -1,4 +1,3 @@
-import type GridBody from './body'
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader, UserDbRecord, UserScanDbRecord} from '../db'
 import {WorkerBroadcastReceiver} from '../broadcast-channel'
