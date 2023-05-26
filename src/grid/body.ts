@@ -209,7 +209,8 @@ export default class GridBody {
 			let $precedingRow=$row.previousElementSibling
 			const $precedingHiddenRows:HTMLTableRowElement[]=[]
 			while ($precedingRow instanceof HTMLTableRowElement) {
-				if (!isHiddenItem($precedingRow)) break
+				const $precedingItem=getSingleRowLeadingItem($precedingRow)
+				if (!$precedingItem || !isHiddenItem($precedingItem)) break
 				$precedingHiddenRows.push($precedingRow)
 				$precedingRow=$precedingRow.previousElementSibling
 			}
@@ -217,20 +218,27 @@ export default class GridBody {
 				for (const $row of $precedingHiddenRows) {
 					collapseRowItems($row)
 				}
-			} else if ($row.classList.contains('combined')) { // TODO check combined state on items
-				const $previousRow=$row.previousElementSibling
-				if (
-					$previousRow instanceof HTMLTableRowElement &&
-					isHiddenItem($previousRow) &&
-					isChangesetOpenedClosedPair($row,$previousRow)
-				) {
-					collapseRowItems($previousRow)
+			} else {
+				const $item=getSingleRowLeadingItem($row)
+				if ($item && $item.classList.contains('combined')) {
+					const $previousRow=$row.previousElementSibling
+					if ($previousRow instanceof HTMLTableRowElement) {
+						const $previousItem=getSingleRowLeadingItem($previousRow)
+						if (
+							$previousItem &&
+							isHiddenItem($previousItem) &&
+							isChangesetOpenedClosedPair($item,$previousItem)
+						) {
+							collapseRowItems($previousRow)
+						}
+					}
 				}
 			}
 			let $followingRow=$row.nextElementSibling
 			const $followingHiddenRows:HTMLTableRowElement[]=[]
 			while ($followingRow instanceof HTMLTableRowElement) {
-				if (!isHiddenItem($followingRow)) break
+				const $followingItem=getSingleRowLeadingItem($followingRow)
+				if (!$followingItem || !isHiddenItem($followingItem)) break
 				$followingHiddenRows.push($followingRow)
 				$followingRow=$followingRow.nextElementSibling
 			}
@@ -522,6 +530,13 @@ export default class GridBody {
 	}
 }
 
+function getSingleRowLeadingItem($row: HTMLTableRowElement): HTMLElement|null {
+	const itemCopies=listSingleRowItemCopies($row)
+	if (!itemCopies) return null
+	const [,$items]=itemCopies
+	if ($items.length==0) return null
+	return $items[0]
+}
 function listSingleRowItemCopies($row: HTMLTableRowElement): [
 	sequencePoint: ItemSequencePoint, $items:HTMLElement[], iColumns:number[]
 ] | null {
@@ -547,19 +562,6 @@ function listSingleRowItemCopies($row: HTMLTableRowElement): [
 	return [sequencePoint,$items,iColumns]
 }
 
-/*
-function listSingleRowItemCopies($itemRow: HTMLTableRowElement): [$item:HTMLElement, iColumn:number][] {
-	return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
-		if ($cell.hasChildNodes()) {
-			
-			return [[$cell,iColumn]]
-		} else {
-			return []
-		}
-	})
-}
-*/
-
 function isChangesetOpenedClosedPair($openedItem: HTMLElement, $closedItem: HTMLElement): boolean {
 	if ($openedItem.dataset.type!='changeset' || $closedItem.dataset.type!='changesetClose') return false
 	return $openedItem.dataset.id==$closedItem.dataset.id
@@ -570,7 +572,7 @@ function isOpenedClosedPair(a: ItemDescriptor, b: ItemDescriptor): boolean {
 }
 
 function isHiddenItem($item: HTMLElement): boolean {
-	return $item.classList.contains('item') && $item.classList.contains('hidden') // TODO check all children for hidden attr
+	return $item.classList.contains('item') && $item.hidden
 }
 
 function isSameMonthTimestamps(t1: number, t2: number): boolean {
