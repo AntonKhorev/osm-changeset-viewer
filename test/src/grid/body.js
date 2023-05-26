@@ -851,10 +851,20 @@ function assertItemClass($e,classType) {
 		'changeset','note','comment','user'
 	],[classType],`Item`)
 }
-function assertChangesetSubclasses($e,classTypes) {
+function assertChangesetSubclasses($e,subclassesWithHidden) {
+	let expectHidden=false
+	const subclasses=subclassesWithHidden.filter(v=>{
+		if (v=='hidden') {
+			expectHidden=true
+			return false
+		} else {
+			return true
+		}
+	})
 	assertElementClasses($e,[
-		'combined','closed','hidden'
-	],classTypes,`Changeset`)
+		'combined','closed'
+	],subclasses,`Changeset`)
+	assert.equal($e.hidden,expectHidden,`Expected changeset to be ${expectHidden?`hidden`:`not hidden`}, but it ${$e.hidden?`was`:`wasn't`}`)
 }
 
 const rowClasses=['separator','collection','single']
