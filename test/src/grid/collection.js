@@ -2,22 +2,32 @@ import {strict as assert} from 'assert'
 import {JSDOM} from 'jsdom'
 import ItemCollection from '../../../test-build/grid/collection.js'
 
-function row(contents) {
+function row(...children) {
 	const $row=document.createElement('tr')
 	$row.classList.add('collection')
-	$row.innerHTML=contents
+	$row.append(...children)
 	return $row
 }
-function cell(timeline,style,contents='') {
-	const classList=[]
-	if (timeline.includes('a')) classList.push('with-timeline-above')
-	if (timeline.includes('b')) classList.push('with-timeline-below')
-	let icon=''
-	if (contents) icon=`<span class="icon"></span>`
-	return `<td class="${classList.join(' ')}" style="${style}">${icon}${contents}</td>`
+function cell(timeline,style,...children) {
+	const $cell=document.createElement('td')
+	if (timeline.includes('a')) $cell.classList.add('with-timeline-above')
+	if (timeline.includes('b')) $cell.classList.add('with-timeline-below')
+	$cell.setAttribute('style',style)
+	if (children.length>0) {
+		const $icon=document.createElement('span')
+		$icon.classList.add('icon')
+		$cell.append($icon)
+	}
+	$cell.append(...children)
+	return $cell
 }
 function changeset(date,id) {
-	return `<span class="item changeset combined" data-timestamp="${Date.parse(date)}" data-type="changeset" data-id="${id}"></span>`
+	const $changeset=document.createElement('span')
+	$changeset.classList.add('item','changeset','combined')
+	$changeset.dataset.timestamp=Date.parse(date)
+	$changeset.dataset.type='changeset'
+	$changeset.dataset.id=id
+	return $changeset
 }
 
 function changesetPoint(date,id) {
@@ -76,7 +86,7 @@ describe("ItemCollection",()=>{
 	})
 	it("gets boundary points of 2-element collection",()=>{
 		const $row=row(cell('ab',hue,
-			changeset('2023-05-08',10102)+
+			changeset('2023-05-08',10102),
 			changeset('2023-05-07',10101)
 		))
 		const collection=new ItemCollection($row)
@@ -87,7 +97,7 @@ describe("ItemCollection",()=>{
 	})
 	it("gets boundary points of 2-column 2-element collection",()=>{
 		const $row=row(
-			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue,changeset('2023-05-09',10103)),
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new ItemCollection($row)
@@ -98,8 +108,8 @@ describe("ItemCollection",()=>{
 	})
 	it("gets boundary points of 2-element collection with empty cell",()=>{
 		const $row=row(
-			cell('ab',hue,changeset('2023-05-09',10103))+
-			cell('ab',hue)+
+			cell('ab',hue,changeset('2023-05-09',10103)),
+			cell('ab',hue),
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new ItemCollection($row)
@@ -110,7 +120,7 @@ describe("ItemCollection",()=>{
 	})
 	it("splits single-cell collection",()=>{
 		const $row=row(cell('ab',hue,
-			changeset('2023-05-09',10103)+
+			changeset('2023-05-09',10103),
 			changeset('2023-05-07',10101)
 		))
 		const collection=new ItemCollection($row)
@@ -124,7 +134,7 @@ describe("ItemCollection",()=>{
 	})
 	it("splits single-cell collection with terminating timeline",()=>{
 		const $row=row(cell('a',hue,
-			changeset('2023-05-09',10103)+
+			changeset('2023-05-09',10103),
 			changeset('2023-05-07',10101)
 		))
 		const collection=new ItemCollection($row)
@@ -138,7 +148,7 @@ describe("ItemCollection",()=>{
 	})
 	it("splits 2-cell collection",()=>{
 		const $row=row(
-			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue,changeset('2023-05-09',10103)),
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new ItemCollection($row)
@@ -155,9 +165,9 @@ describe("ItemCollection",()=>{
 	it("splits collection with one filled and one blank cell without timeline",()=>{
 		const $row=row(
 			cell('ab',hue,
-				changeset('2023-05-09',10103)+
+				changeset('2023-05-09',10103),
 				changeset('2023-05-07',10101)
-			)+cell('',hue)
+			),cell('',hue)
 		)
 		const collection=new ItemCollection($row)
 		const $splitRow=collection.split(changesetPoint('2023-05-08',10102)).$row
@@ -173,9 +183,9 @@ describe("ItemCollection",()=>{
 	it("splits 2-cell collection with timeline end and one blank cell after split",()=>{
 		const $row=row(
 			cell('a',hue,
-				changeset('2023-05-09',10103)+
+				changeset('2023-05-09',10103),
 				changeset('2023-05-07',10101)
-			)+cell('a',hue,
+			),cell('a',hue,
 				changeset('2023-05-10',10104)
 			)
 		)
@@ -202,11 +212,11 @@ describe("ItemCollection",()=>{
 	})
 	it("merges with empty cells in different columns",()=>{
 		const $row1=row(
-			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue,changeset('2023-05-09',10103)),
 			cell('ab',hue)
 		)
 		const $row2=row(
-			cell('ab',hue)+
+			cell('ab',hue),
 			cell('ab',hue,changeset('2023-05-08',10102))
 		)
 		const collection1=new ItemCollection($row1)
@@ -231,7 +241,7 @@ describe("ItemCollection",()=>{
 	})
 	it("inserts placeholder at the end of one cell in 2-cell row",()=>{
 		const $row=row(
-			cell('ab',hue,changeset('2023-05-09',10103))+
+			cell('ab',hue,changeset('2023-05-09',10103)),
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new ItemCollection($row)
@@ -246,11 +256,10 @@ describe("ItemCollection",()=>{
 	it("removes items from different 1-item cells",()=>{
 		const $row=row(
 			cell('ab',hue,
-				changeset('2023-02-02',10202)+
+				changeset('2023-02-02',10202),
 				changeset('2023-01-01',10101)
-			)+
-			cell('ab',hue,
-				changeset('2023-02-02',10202)+
+			),cell('ab',hue,
+				changeset('2023-02-02',10202),
 				changeset('2023-01-01',10101)
 			)
 		)
@@ -287,7 +296,7 @@ describe("ItemCollection",()=>{
 	it("gets item sequence of 2-item collection",()=>{
 		const $row=row(
 			cell('ab',hue,
-				changeset('2023-04-02',10002)+
+				changeset('2023-04-02',10002),
 				changeset('2023-04-01',10001)
 			)
 		)
@@ -306,7 +315,7 @@ describe("ItemCollection",()=>{
 		const $row=row(
 			cell('ab',hue,
 				changeset('2023-04-03',10003)
-			)+cell('ab',hue,
+			),cell('ab',hue,
 				changeset('2023-04-03',10003)
 			)
 		)
@@ -323,7 +332,7 @@ describe("ItemCollection",()=>{
 		const $row=row(
 			cell('ab',hue,
 				changeset('2023-04-03',10003)
-			)+cell('ab',hue,
+			),cell('ab',hue,
 				changeset('2023-04-04',10004)
 			)
 		)
