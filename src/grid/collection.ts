@@ -111,34 +111,33 @@ export default class ItemCollection {
 		}
 	}
 	/**
-	 * Insert item placeholders, adding cell icons if they were missing
+	 * Insert items, adding cell icons if they were missing
 	 */
-	insert(sequencePoint: ItemSequencePoint, iColumns: number[]): HTMLElement[] {
-		return iColumns.map(iColumn=>{
-			const $placeholder=makeElement('span')('item')()
-			writeElementSequencePoint($placeholder,sequencePoint)
+	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[]): void {
+		itemLoop: for (let iItem=0;iItem<iColumns.length;iItem++) {
+			const iColumn=iColumns[iItem]
+			const $item=$items[iItem]
 			const $cell=this.$row.cells[iColumn]
 			let nItems=0
-			for (const $item of $cell.children) {
-				if (!isItem($item)) continue
+			for (const $existingItem of $cell.children) {
+				if (!isItem($existingItem)) continue
 				nItems++
-				const collectionItemSequencePoint=readItemSequencePoint($item)
+				const collectionItemSequencePoint=readItemSequencePoint($existingItem)
 				if (!collectionItemSequencePoint) continue
 				if (isGreaterElementSequencePoint(sequencePoint,collectionItemSequencePoint)) {
-					$item.before($placeholder)
-					return $placeholder
+					$existingItem.before($item)
+					continue itemLoop
 				}
 			}
 			if (nItems==0) {
 				const $icon=makeCollectionIcon()
 				$cell.prepend($icon)
-				$icon.after($placeholder)
+				$icon.after($item)
 			} else {
 				const $lastChild=$cell.lastElementChild as Element
-				$lastChild.after($placeholder)
+				$lastChild.after($item)
 			}
-			return $placeholder
-		})
+		}
 	}
 	remove($placeholders: Iterable<HTMLElement>): void {
 		for (const $placeholder of $placeholders) {

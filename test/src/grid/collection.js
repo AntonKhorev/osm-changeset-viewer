@@ -232,12 +232,10 @@ describe("ItemCollection",()=>{
 			cell('a',hue,changeset('2023-03-01',10001))
 		)
 		const collection=new ItemCollection($row)
-		const $placeholders=collection.insert(changesetPoint('2023-03-02',10002),[0])
+		collection.insert(changesetPoint('2023-03-02',10002),[0],[changeset('2023-03-02',10002)])
 		assertChangesetCollectionRow($row,[
 			['a',hue,['2023-03-02',10002],['2023-03-01',10001]]
 		])
-		assert.equal($placeholders.length,1)
-		assert.equal($placeholders[0].dataset.id,'10002')
 	})
 	it("inserts placeholder at the end of one cell in 2-cell row",()=>{
 		const $row=row(
@@ -245,13 +243,11 @@ describe("ItemCollection",()=>{
 			cell('ab',hue,changeset('2023-05-07',10101))
 		)
 		const collection=new ItemCollection($row)
-		const $placeholders=collection.insert(changesetPoint('2023-05-08',10102),[0])
+		collection.insert(changesetPoint('2023-05-08',10102),[0],[changeset('2023-05-08',10102)])
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103],['2023-05-08',10102]],
 			['ab',hue,['2023-05-07',10101]]
 		])
-		assert.equal($placeholders.length,1)
-		assert.equal($placeholders[0].dataset.id,'10102')
 	})
 	it("removes items from different 1-item cells",()=>{
 		const $row=row(

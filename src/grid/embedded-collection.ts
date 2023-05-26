@@ -32,16 +32,9 @@ export default class EmbeddedItemCollection {
 		that.collection.$row.remove()
 		this.updateIds()
 	}
-	insert(
-		sequencePoint: ItemSequencePoint, iColumns: number[],
-		writeItem: (iPlaceholder: number, $placeholder: HTMLElement)=>void
-	): HTMLElement[] {
-		const $placeholders=this.collection.insert(sequencePoint,iColumns)
-		for (const [iPlaceholder,$placeholder] of $placeholders.entries()) {
-			writeItem(iPlaceholder,$placeholder)
-		}
+	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[]): void {
+		this.collection.insert(sequencePoint,iColumns,$items)
 		this.updateIds()
-		return $placeholders
 	}
 	remove($items: Iterable<HTMLElement>): void {
 		this.collection.remove($items)

@@ -51,14 +51,17 @@ export default class GridBody {
 		usernames: Map<number, string>,
 		isExpanded: boolean
 	): boolean {
-		const [$masterPlaceholder,classNames]=makeItemShell(batchItem,isExpanded,usernames)
-		const $placeholders=batchItem.iColumns.map(()=>$masterPlaceholder.cloneNode(true) as HTMLElement)
 		const sequencePoint=getBatchItemSequencePoint(batchItem)
 		if (!sequencePoint) return false
+		const $items=batchItem.iColumns.map(()=>{
+			const $item=makeItemShell(batchItem,isExpanded,usernames)
+			writeElementSequencePoint($item,sequencePoint)
+			return $item
+		})
 		return this.insertItem(
 			batchItem.iColumns,sequencePoint,
 			!isExpanded?{isExpanded}:{isExpanded,batchItem,usernames},
-			$placeholders,classNames
+			$items
 		)
 	}
 	updateTableAccordingToSettings(): void {
@@ -182,7 +185,6 @@ export default class GridBody {
 			const itemCopies=listSingleRowItemCopies($row)
 			if (!itemCopies) return
 			const [sequencePoint,$placeholders,iColumns]=itemCopies
-			const classNames=[...$placeholders[0].classList]
 			const $prevRow=$row.previousElementSibling
 			const $nextRow=$row.nextElementSibling
 			$row.remove()
@@ -200,7 +202,7 @@ export default class GridBody {
 				const nextCollection=new EmbeddedItemCollection($nextRow,this.withCompactIds)
 				collection.merge(nextCollection)
 			}
-			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$placeholders,classNames)
+			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$placeholders)
 		}
 		const $rows=this.findRowsMatchingClassAndItemDescriptor('single',descriptor)
 		for (const $row of $rows) {
@@ -316,7 +318,6 @@ export default class GridBody {
 		} else {
 			return
 		}
-		const classNames=[...$item.classList]
 		const $items=items.map(([,$item])=>$item)
 		for (const $item of $items) {
 			const $disclosureButton=getItemDisclosureButton($item)
@@ -327,7 +328,7 @@ export default class GridBody {
 		const collection=new EmbeddedItemCollection($row,this.withCompactIds)
 		collection.remove($items)
 		const iColumns=items.map(([iColumn])=>iColumn)
-		this.insertItem(iColumns,point,{isExpanded:true,batchItem,usernames},$items,classNames)
+		this.insertItem(iColumns,point,{isExpanded:true,batchItem,usernames},$items)
 	}
 	private insertItem(
 		iColumns: number[],
@@ -339,13 +340,13 @@ export default class GridBody {
 			batchItem: MuxBatchItem
 			usernames: Map<number, string>
 		},
-		$previousPlaceholders: HTMLElement[],
-		classNames: string[]
+		$previousPlaceholders: HTMLElement[]
 	): boolean {
 		if (iColumns.length==0) return false
-		this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$previousPlaceholders,classNames,$placeholder=>{
+		this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$previousPlaceholders,$placeholder=>{
 			const $flow=$placeholder.querySelector('.flow')
 			if (!($flow instanceof HTMLElement)) return
+			$flow.replaceChildren() // TODO don't replaceChildren() in flow writers
 			if (insertItemInfo.isExpanded) {
 				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
 			} else {
@@ -364,15 +365,9 @@ export default class GridBody {
 		iColumns: number[],
 		sequencePoint: ItemSequencePoint,
 		isExpanded: boolean,
-		$previousPlaceholders: HTMLElement[],
-		classNames: string[],
+		$items: HTMLElement[],
 		writeItem: ($placeholder:HTMLElement)=>void
 	): void {
-		const copyPlaceholderChildren=($placeholder:HTMLElement,iPlaceholder:number)=>{
-			$placeholder.replaceChildren(
-				...$previousPlaceholders[iPlaceholder].childNodes
-			)
-		}
 		const insertionRowInfo=this.findInsertionRow(sequencePoint)
 		if (isExpanded) {
 			const $row=this.makeRow()
@@ -391,12 +386,9 @@ export default class GridBody {
 			updateTimelineOnInsert($row,iColumns)
 			for (const [iPlaceholder,iColumn] of iColumns.entries()) {
 				const $cell=$row.cells[iColumn]
-				const $placeholder=makeElement('span')('item')()
-				$placeholder.classList.add(...classNames)
-				writeElementSequencePoint($placeholder,sequencePoint)
-				$cell.append($placeholder)
-				copyPlaceholderChildren($placeholder,iPlaceholder)
-				writeItem($placeholder)
+				const $item=$items[iPlaceholder]
+				$cell.append($item)
+				writeItem($item)
 			}
 		} else {
 			let $row: HTMLTableRowElement
@@ -416,11 +408,10 @@ export default class GridBody {
 			}
 			updateTimelineOnInsert($row,iColumns)
 			const collection=new EmbeddedItemCollection($row,this.withCompactIds)
-			collection.insert(sequencePoint,iColumns,(iPlaceholder,$placeholder)=>{
-				$placeholder.classList.add(...classNames)
-				copyPlaceholderChildren($placeholder,iPlaceholder)
-				writeItem($placeholder)
-			})
+			collection.insert(sequencePoint,iColumns,$items)
+			for (const $item of $items) {
+				writeItem($item)
+			}
 		}
 	}
 	private makeRow(): HTMLTableRowElement {
