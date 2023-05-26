@@ -39,7 +39,10 @@ export function isGreaterElementSequencePoint(a: ElementSequencePoint, b: Elemen
 	if (a.id!=b.id) return (a.id??0)>(b.id??0)
 	return (a.order??0)>(b.order??0)
 }
-
+export function isEqualItemSequencePoint(a: ItemSequencePoint, b: ItemSequencePoint): boolean {
+	if (a.timestamp!=b.timestamp) return false
+	return isEqualItemDescriptor(a,b)
+}
 export function isEqualItemDescriptor(a: ItemDescriptor, b: ItemDescriptor): boolean {
 	return a.type==b.type && a.id==b.id && a.order==b.order
 }

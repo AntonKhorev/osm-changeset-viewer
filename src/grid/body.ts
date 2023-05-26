@@ -3,7 +3,7 @@ import type {SingleItemDBReader} from '../db'
 import type {ItemDescriptor, ItemSequencePoint} from './info'
 import {
 	readItemDescriptor, getItemDescriptorSelector, isEqualItemDescriptor,
-	isGreaterElementSequencePoint, writeSeparatorSequencePoint, readElementSequencePoint, writeElementSequencePoint,
+	isGreaterElementSequencePoint, isEqualItemSequencePoint, writeSeparatorSequencePoint, readElementSequencePoint, writeElementSequencePoint,
 	getBatchItemSequencePoint, readItemSequencePoint
 } from './info'
 import {
@@ -178,16 +178,11 @@ export default class GridBody {
 		this.checkboxHandler.triggerColumnCheckboxes(iColumn,isChecked)
 	}
 	collapseItem(descriptor: ItemDescriptor): void {
-		const itemSelectorWithRow='tr'+getItemDescriptorSelector(descriptor)
-		const $row=this.$gridBody.querySelector(itemSelectorWithRow) // TODO select all matching rows? but there can't be more than one
-		if (!($row instanceof HTMLTableRowElement)) return
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
-			const sequencePoint=readItemSequencePoint($row)
-			if (!sequencePoint) return
-			const itemCopies=listItemCopies($row,sequencePoint)
-			const iColumns=itemCopies.map(([,iColumn])=>iColumn)
-			const $placeholders=itemCopies.map(([$item])=>$item)
-			const classNames=[...$row.classList]
+			const itemCopies=listSingleRowItemCopies($row)
+			if (!itemCopies) return
+			const [sequencePoint,$placeholders,iColumns]=itemCopies
+			const classNames=[...$placeholders[0].classList]
 			const $prevRow=$row.previousElementSibling
 			const $nextRow=$row.nextElementSibling
 			$row.remove()
@@ -207,52 +202,46 @@ export default class GridBody {
 			}
 			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$placeholders,classNames)
 		}
-		let $precedingRow=$row.previousElementSibling
-		const $precedingHiddenRows:HTMLTableRowElement[]=[]
-		while ($precedingRow instanceof HTMLTableRowElement) {
-			if (!isHiddenItem($precedingRow)) break
-			$precedingHiddenRows.push($precedingRow)
-			$precedingRow=$precedingRow.previousElementSibling
-		}
-		if ($precedingRow?.classList.contains('collection')) {
-			for (const $row of $precedingHiddenRows) {
-				collapseRowItems($row)
+		const $rows=this.findRowsMatchingClassAndItemDescriptor('single',descriptor)
+		for (const $row of $rows) {
+			let $precedingRow=$row.previousElementSibling
+			const $precedingHiddenRows:HTMLTableRowElement[]=[]
+			while ($precedingRow instanceof HTMLTableRowElement) {
+				if (!isHiddenItem($precedingRow)) break
+				$precedingHiddenRows.push($precedingRow)
+				$precedingRow=$precedingRow.previousElementSibling
 			}
-		} else if ($row.classList.contains('combined')) {
-			const $previousRow=$row.previousElementSibling
-			if (
-				$previousRow instanceof HTMLTableRowElement &&
-				isHiddenItem($previousRow) &&
-				isChangesetOpenedClosedPair($row,$previousRow)
-			) {
-				collapseRowItems($previousRow)
+			if ($precedingRow?.classList.contains('collection')) {
+				for (const $row of $precedingHiddenRows) {
+					collapseRowItems($row)
+				}
+			} else if ($row.classList.contains('combined')) { // TODO check combined state on items
+				const $previousRow=$row.previousElementSibling
+				if (
+					$previousRow instanceof HTMLTableRowElement &&
+					isHiddenItem($previousRow) &&
+					isChangesetOpenedClosedPair($row,$previousRow)
+				) {
+					collapseRowItems($previousRow)
+				}
 			}
-		}
-		let $followingRow=$row.nextElementSibling
-		const $followingHiddenRows:HTMLTableRowElement[]=[]
-		while ($followingRow instanceof HTMLTableRowElement) {
-			if (!isHiddenItem($followingRow)) break
-			$followingHiddenRows.push($followingRow)
-			$followingRow=$followingRow.nextElementSibling
-		}
-		if ($followingRow?.classList.contains('collection')) {
-			for (const $row of $followingHiddenRows) {
-				collapseRowItems($row)
+			let $followingRow=$row.nextElementSibling
+			const $followingHiddenRows:HTMLTableRowElement[]=[]
+			while ($followingRow instanceof HTMLTableRowElement) {
+				if (!isHiddenItem($followingRow)) break
+				$followingHiddenRows.push($followingRow)
+				$followingRow=$followingRow.nextElementSibling
 			}
+			if ($followingRow?.classList.contains('collection')) {
+				for (const $row of $followingHiddenRows) {
+					collapseRowItems($row)
+				}
+			}
+			collapseRowItems($row)
 		}
-		collapseRowItems($row)
 	}
 	async expandItem(descriptor: ItemDescriptor): Promise<void> {
-		const itemSelector=getItemDescriptorSelector(descriptor)
-		const itemSelectorWithRow='tr.collection '+itemSelector
-		const $items=this.$gridBody.querySelectorAll(itemSelectorWithRow)
-		const $rows=new Set<HTMLTableRowElement>()
-		for (const $item of $items) {
-			const $row=$item.closest('tr')
-			if (!$row) continue
-			if (!$row.classList.contains('collection')) continue
-			$rows.add($row)
-		}
+		const $rows=this.findRowsMatchingClassAndItemDescriptor('collection',descriptor)
 		for (const $row of $rows) {
 			const collection=new EmbeddedItemCollection($row,this.withCompactIds)
 			const itemSequence=[...collection.getItemSequence()]
@@ -509,6 +498,18 @@ export default class GridBody {
 		$cell.colSpan=this.nColumns+1
 		return $separator
 	}
+	private findRowsMatchingClassAndItemDescriptor(className: string, descriptor: ItemDescriptor): Iterable<HTMLTableRowElement> {
+		const itemSelector=getItemDescriptorSelector(descriptor)
+		const itemSelectorWithRow=`tr.${className} ${itemSelector}`
+		const $items=this.$gridBody.querySelectorAll(itemSelectorWithRow)
+		const $rows=new Set<HTMLTableRowElement>()
+		for (const $item of $items) {
+			const $row=$item.closest('tr')
+			if (!$row) continue
+			$rows.add($row)
+		}
+		return $rows
+	}
 	private async toggleItemDisclosureWithButton($disclosureButton: EventTarget|null): Promise<void> {
 		if (!($disclosureButton instanceof HTMLButtonElement)) return
 		const $item=$disclosureButton.closest('.item')
@@ -530,24 +531,43 @@ export default class GridBody {
 	}
 }
 
-function listItemCopies($itemRow: HTMLTableRowElement, descriptor: ItemDescriptor): [$item:HTMLElement, iColumn:number][] {
-	if ($itemRow.classList.contains('item')) {
-		return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
-			if ($cell.hasChildNodes()) {
-				return [[$cell,iColumn]]
-			} else {
-				return []
-			}
-		})
-	} else if ($itemRow.classList.contains('collection')) {
-		const selector=getItemDescriptorSelector(descriptor)
-		return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
-			return [...$cell.querySelectorAll(selector)].map($item=>[$item as HTMLElement,iColumn])
-		})
-	} else {
-		return []
+function listSingleRowItemCopies($row: HTMLTableRowElement): [
+	sequencePoint: ItemSequencePoint, $items:HTMLElement[], iColumns:number[]
+] | null {
+	let sequencePoint: ItemSequencePoint|null = null
+	const $items: HTMLElement[] = []
+	const iColumns: number[] = []
+	for (let iColumn=0;iColumn<$row.cells.length;iColumn++) {
+		const $cell=$row.cells[iColumn]
+		const $item=$cell.querySelector(':scope > .item')
+		if (!($item instanceof HTMLElement)) continue
+		if (!sequencePoint) {
+			sequencePoint=readItemSequencePoint($item)
+			if (!sequencePoint) return null
+		} else {
+			const comparedSequencePoint=readItemSequencePoint($item)
+			if (!comparedSequencePoint) return null
+			if (!isEqualItemSequencePoint(sequencePoint,comparedSequencePoint)) return null
+		}
+		$items.push($item)
+		iColumns.push(iColumn)
 	}
+	if (!sequencePoint) return null
+	return [sequencePoint,$items,iColumns]
 }
+
+/*
+function listSingleRowItemCopies($itemRow: HTMLTableRowElement): [$item:HTMLElement, iColumn:number][] {
+	return [...$itemRow.cells].flatMap(($cell,iColumn):[$item:HTMLElement,iColumn:number][]=>{
+		if ($cell.hasChildNodes()) {
+			
+			return [[$cell,iColumn]]
+		} else {
+			return []
+		}
+	})
+}
+*/
 
 function isChangesetOpenedClosedPair($openedItem: HTMLElement, $closedItem: HTMLElement): boolean {
 	if ($openedItem.dataset.type!='changeset' || $closedItem.dataset.type!='changesetClose') return false
@@ -559,7 +579,7 @@ function isOpenedClosedPair(a: ItemDescriptor, b: ItemDescriptor): boolean {
 }
 
 function isHiddenItem($item: HTMLElement): boolean {
-	return $item.classList.contains('item') && $item.classList.contains('hidden')
+	return $item.classList.contains('item') && $item.classList.contains('hidden') // TODO check all children for hidden attr
 }
 
 function isSameMonthTimestamps(t1: number, t2: number): boolean {
