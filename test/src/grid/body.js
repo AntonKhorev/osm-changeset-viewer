@@ -744,14 +744,14 @@ describe("GridBody",()=>{
 				assertEach($cell.children,$item=>{
 					assertCellChildIsIcon($item)
 				},$item=>{
-					assertCellChildIsItem($item)
+					assertCellChildIsCollapsedItem($item)
 					assertItemData($item,Date.parse('2023-03-02'),'changeset',10002)
 				})
 			},$cell=>{
 				assertEach($cell.children,$item=>{
 					assertCellChildIsIcon($item)
 				},$item=>{
-					assertCellChildIsItem($item)
+					assertCellChildIsCollapsedItem($item)
 					assertItemData($item,Date.parse('2023-03-01'),'changeset',10001)
 				})
 			})
@@ -792,7 +792,7 @@ describe("GridBody",()=>{
 				assertEach($cell.children,$item=>{
 					assertCellChildIsIcon($item)
 				},$item=>{
-					assertCellChildIsItem($item)
+					assertCellChildIsCollapsedItem($item)
 					assertItemData($item,Date.parse('2023-03-03'),'changeset',10003)
 				})
 			},$cell=>{
@@ -804,7 +804,7 @@ describe("GridBody",()=>{
 				assertEach($cell.children)
 			},$cell=>{
 				assertEach($cell.children,$item=>{
-					assertCellChildIsItem($item)
+					assertCellChildIsExpandedItem($item)
 					assertItemData($row,Date.parse('2023-03-02'),'changeset',10002)
 				})
 			})
@@ -816,7 +816,7 @@ describe("GridBody",()=>{
 				assertEach($cell.children,$item=>{
 					assertCellChildIsIcon($item)
 				},$item=>{
-					assertCellChildIsItem($item)
+					assertCellChildIsCollapsedItem($item)
 					assertItemData($item,Date.parse('2023-03-01'),'changeset',10001)
 				})
 			})
@@ -831,7 +831,7 @@ function assertRowIsCollectionWithItems($row,...fns) {
 		assertEach($cell.children,$item=>{
 			assertCellChildIsIcon($item)
 		},...fns.map(fn=>$item=>{
-			assertCellChildIsItem($item)
+			assertCellChildIsCollapsedItem($item)
 			fn($item)
 		}))
 	})
@@ -840,7 +840,7 @@ function assertRowIsSingleWithItem($row,fn) {
 	assertRowIsSingle($row)
 	assertEach($row.cells,$cell=>{
 		assertEach($cell.children,$item=>{
-			assertCellChildIsItem($item)
+			assertCellChildIsExpandedItem($item)
 			fn($item)
 		})
 	})
@@ -876,13 +876,19 @@ function assertCellChildIsIcon($e) {
 	assert($e.classList.contains('icon'))
 	assert(!$e.classList.contains('item'))
 }
-function assertCellChildIsItem($e) {
+function assertCellChildIsCollapsedItem($e) {
+	assertCellChildIsItem($e,'false')
+}
+function assertCellChildIsExpandedItem($e) {
+	assertCellChildIsItem($e,'true')
+}
+function assertCellChildIsItem($e,expectedExpandedState) {
 	assert(!$e.classList.contains('icon'))
 	assert($e.classList.contains('item'))
 	const $button=$e.querySelector('button.disclosure')
 	assert($button,`No expected disclosure button`)
 	const expandedState=$button.getAttribute('aria-expanded')
-	assert.equal(expandedState,'false',`Expected 'false' as disclosure button expanded state, got '${expandedState}'`)
+	assert.equal(expandedState,expectedExpandedState,`Expected '${expectedExpandedState}' as disclosure button expanded state, got '${expandedState}'`)
 }
 
 function assertSeparatorData($separator,year,month) {
