@@ -348,33 +348,33 @@ export default class GridBody {
 			batchItem: MuxBatchItem
 			usernames: Map<number, string>
 		},
-		$previousPlaceholders: HTMLElement[]
+		$items: HTMLElement[]
 	): boolean {
 		if (iColumns.length==0) return false
-		this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$previousPlaceholders,$placeholder=>{
-			const $flow=$placeholder.querySelector('.flow')
-			if (!($flow instanceof HTMLElement)) return
+		this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$items)
+		for (const $item of $items) {
+			const $flow=$item.querySelector('.flow')
+			if (!($flow instanceof HTMLElement)) continue
 			$flow.replaceChildren() // TODO don't replaceChildren() in flow writers
 			if (insertItemInfo.isExpanded) {
 				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
 			} else {
 				writeCollapsedItemFlow($flow,this.server,sequencePoint.type,sequencePoint.id)
 			}
-			const $checkbox=getItemCheckbox($placeholder)
+			const $checkbox=getItemCheckbox($item)
 			if ($checkbox) {
 				this.checkboxHandler.listen($checkbox)
 			}
-			const $disclosureButton=getItemDisclosureButton($placeholder)
+			const $disclosureButton=getItemDisclosureButton($item)
 			$disclosureButton?.addEventListener('click',this.wrappedItemDisclosureButtonListener)
-		})
+		}
 		return true
 	}
 	private insertItemPlaceholders(
 		iColumns: number[],
 		sequencePoint: ItemSequencePoint,
 		isExpanded: boolean,
-		$items: HTMLElement[],
-		writeItem: ($placeholder:HTMLElement)=>void
+		$items: HTMLElement[]
 	): void {
 		const insertionRowInfo=this.findInsertionRow(sequencePoint)
 		if (isExpanded) {
@@ -396,7 +396,6 @@ export default class GridBody {
 				const $cell=$row.cells[iColumn]
 				const $item=$items[iPlaceholder]
 				$cell.append($item)
-				writeItem($item)
 			}
 		} else {
 			let $row: HTMLTableRowElement
@@ -417,9 +416,6 @@ export default class GridBody {
 			updateTimelineOnInsert($row,iColumns)
 			const collection=new EmbeddedItemCollection($row,this.withCompactIds)
 			collection.insert(sequencePoint,iColumns,$items)
-			for (const $item of $items) {
-				writeItem($item)
-			}
 		}
 	}
 	private makeRow(): HTMLTableRowElement {
