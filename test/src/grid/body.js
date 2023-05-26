@@ -805,7 +805,7 @@ describe("GridBody",()=>{
 			},$cell=>{
 				assertEach($cell.children,$item=>{
 					assertCellChildIsExpandedItem($item)
-					assertItemData($row,Date.parse('2023-03-02'),'changeset',10002)
+					assertItemData($item,Date.parse('2023-03-02'),'changeset',10002)
 				})
 			})
 		},$row=>{
@@ -912,9 +912,9 @@ function assertSeparatorData($separator,year,month) {
 	assert.equal(actualMonth,month,`Expected separator month ${month}, got ${actualMonth}`)
 }
 function assertItemData($item,timestamp,type,id,order) {
-	assert.equal($item.dataset.timestamp,String(timestamp))
-	assert.equal($item.dataset.type,type)
 	assert.equal($item.dataset.id,String(id))
+	assert.equal($item.dataset.type,type)
+	assert.equal($item.dataset.timestamp,String(timestamp))
 	if (order!=null) {
 		assert.equal($item.dataset.order,String(order))
 	} else {
