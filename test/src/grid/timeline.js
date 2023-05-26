@@ -41,7 +41,7 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to empty table",()=>{
 		const $tbody=document.createElement('tbody')
-		const $row=insertBlankRow($tbody,'item',1)
+		const $row=insertBlankRow($tbody,'single',1)
 		updateTimelineOnInsert($row,[0])
 		assertRows($tbody,[
 			['a'],
@@ -49,8 +49,8 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to row without timeline",()=>{
 		const $tbody=document.createElement('tbody')
-		insertRow($tbody,'item',[''])
-		const $row=insertBlankRow($tbody,'item',1)
+		insertRow($tbody,'single',[''])
+		const $row=insertBlankRow($tbody,'single',1)
 		updateTimelineOnInsert($row,[0])
 		assertRows($tbody,[
 			['ab'],
@@ -59,8 +59,8 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to row with terminating timeline",()=>{
 		const $tbody=document.createElement('tbody')
-		insertRow($tbody,'item',['a'])
-		const $row=insertBlankRow($tbody,'item',1)
+		insertRow($tbody,'single',['a'])
+		const $row=insertBlankRow($tbody,'single',1)
 		updateTimelineOnInsert($row,[0])
 		assertRows($tbody,[
 			['ab'],
@@ -70,7 +70,7 @@ describe("timeline module",()=>{
 	it("sets row appended to separator",()=>{
 		const $tbody=document.createElement('tbody')
 		insertRow($tbody,'separator',[''])
-		const $row=insertBlankRow($tbody,'item',1)
+		const $row=insertBlankRow($tbody,'single',1)
 		updateTimelineOnInsert($row,[0])
 		assertRows($tbody,[
 			['-'],
@@ -79,9 +79,9 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to row with terminating timeline above separator",()=>{
 		const $tbody=document.createElement('tbody')
-		insertRow($tbody,'item',['a'])
+		insertRow($tbody,'single',['a'])
 		insertRow($tbody,'separator',[''])
-		const $row=insertBlankRow($tbody,'item',1)
+		const $row=insertBlankRow($tbody,'single',1)
 		updateTimelineOnInsert($row,[0])
 		assertRows($tbody,[
 			['ab'],
@@ -91,9 +91,9 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to row with terminating timeline above empty row",()=>{
 		const $tbody=document.createElement('tbody')
-		insertRow($tbody,'item',['a'])
-		insertRow($tbody,'item',[''])
-		const $row=insertBlankRow($tbody,'item',1)
+		insertRow($tbody,'single',['a'])
+		insertRow($tbody,'single',[''])
+		const $row=insertBlankRow($tbody,'single',1)
 		updateTimelineOnInsert($row,[0])
 		assertRows($tbody,[
 			['ab'],
@@ -103,9 +103,9 @@ describe("timeline module",()=>{
 	})
 	it("sets row appended to 2-column row with different timeline heights",()=>{
 		const $tbody=document.createElement('tbody')
-		insertRow($tbody,'item',['a ','ab'])
-		insertRow($tbody,'item',['  ','a '])
-		const $row=insertBlankRow($tbody,'item',2)
+		insertRow($tbody,'single',['a ','ab'])
+		insertRow($tbody,'single',['  ','a '])
+		const $row=insertBlankRow($tbody,'single',2)
 		updateTimelineOnInsert($row,[0,1])
 		assertRows($tbody,[
 			['ab','ab'],
@@ -115,9 +115,9 @@ describe("timeline module",()=>{
 	})
 	it("sets row with one filled column appended to 2-column row with different timeline heights",()=>{
 		const $tbody=document.createElement('tbody')
-		insertRow($tbody,'item',['a ','ab'])
-		insertRow($tbody,'item',['  ','a '])
-		const $row=insertBlankRow($tbody,'item',2)
+		insertRow($tbody,'single',['a ','ab'])
+		insertRow($tbody,'single',['  ','a '])
+		const $row=insertBlankRow($tbody,'single',2)
 		updateTimelineOnInsert($row,[0])
 		assertRows($tbody,[
 			['ab','ab'],
@@ -127,8 +127,8 @@ describe("timeline module",()=>{
 	})
 	it("sets row inserted before row with terminating timeline",()=>{
 		const $tbody=document.createElement('tbody')
-		const $row=insertBlankRow($tbody,'item',1)
-		insertRow($tbody,'item',['a'])
+		const $row=insertBlankRow($tbody,'single',1)
+		insertRow($tbody,'single',['a'])
 		updateTimelineOnInsert($row,[0])
 		assertRows($tbody,[
 			['ab'],
@@ -137,9 +137,9 @@ describe("timeline module",()=>{
 	})
 	it("inserts blank cell inside timeline",()=>{
 		const $tbody=document.createElement('tbody')
-		insertRow($tbody,'item',['ab'])
-		const $row=insertBlankRow($tbody,'item',1)
-		insertRow($tbody,'item',['a'])
+		insertRow($tbody,'single',['ab'])
+		const $row=insertBlankRow($tbody,'single',1)
+		insertRow($tbody,'single',['a'])
 		updateTimelineOnInsert($row,[])
 		assertRows($tbody,[
 			['ab'],
@@ -149,9 +149,9 @@ describe("timeline module",()=>{
 	})
 	it("inserts blank cell below timeline",()=>{
 		const $tbody=document.createElement('tbody')
-		insertRow($tbody,'item',['a'])
-		const $row=insertBlankRow($tbody,'item',1)
-		insertRow($tbody,'item',[''])
+		insertRow($tbody,'single',['a'])
+		const $row=insertBlankRow($tbody,'single',1)
+		insertRow($tbody,'single',[''])
 		updateTimelineOnInsert($row,[])
 		assertRows($tbody,[
 			['a'],
