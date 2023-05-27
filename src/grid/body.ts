@@ -184,12 +184,12 @@ export default class GridBody {
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
 			const itemCopies=listSingleRowItemCopies($row)
 			if (!itemCopies) return
-			const [sequencePoint,$placeholders,iColumns]=itemCopies
+			const [sequencePoint,$items,iColumns]=itemCopies
 			const $prevRow=$row.previousElementSibling
 			const $nextRow=$row.nextElementSibling
 			$row.remove()
-			for (const $placeholder of $placeholders) {
-				const $disclosureButton=getItemDisclosureButton($placeholder)
+			for (const $item of $items) {
+				const $disclosureButton=getItemDisclosureButton($item)
 				if ($disclosureButton) {
 					setItemDisclosureButtonState($disclosureButton,false)
 				}
@@ -202,7 +202,7 @@ export default class GridBody {
 				const nextCollection=new EmbeddedItemCollection($nextRow,this.withCompactIds)
 				collection.merge(nextCollection)
 			}
-			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$placeholders)
+			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$items)
 		}
 		const $rows=this.findRowsMatchingClassAndItemDescriptor('single',descriptor)
 		for (const $row of $rows) {
@@ -351,7 +351,7 @@ export default class GridBody {
 		$items: HTMLElement[]
 	): boolean {
 		if (iColumns.length==0) return false
-		this.insertItemPlaceholders(iColumns,sequencePoint,insertItemInfo.isExpanded,$items)
+		this.insertItemElements(iColumns,sequencePoint,insertItemInfo.isExpanded,$items)
 		for (const $item of $items) {
 			const $flow=$item.querySelector('.flow')
 			if (!($flow instanceof HTMLElement)) continue
@@ -370,7 +370,7 @@ export default class GridBody {
 		}
 		return true
 	}
-	private insertItemPlaceholders(
+	private insertItemElements(
 		iColumns: number[],
 		sequencePoint: ItemSequencePoint,
 		isExpanded: boolean,
@@ -392,9 +392,9 @@ export default class GridBody {
 			}
 			$row.classList.add('single')
 			updateTimelineOnInsert($row,iColumns)
-			for (const [iPlaceholder,iColumn] of iColumns.entries()) {
+			for (const [iItem,iColumn] of iColumns.entries()) {
 				const $cell=$row.cells[iColumn]
-				const $item=$items[iPlaceholder]
+				const $item=$items[iItem]
 				$cell.append($item)
 			}
 		} else {

@@ -227,7 +227,7 @@ describe("ItemCollection",()=>{
 			['ab',hue,['2023-05-08',10102]],
 		])
 	})
-	it("inserts placeholder at the beginning of one cell",()=>{
+	it("inserts item at the beginning of one cell",()=>{
 		const $row=row(
 			cell('a',hue,changeset('2023-03-01',10001))
 		)
@@ -237,7 +237,7 @@ describe("ItemCollection",()=>{
 			['a',hue,['2023-03-02',10002],['2023-03-01',10001]]
 		])
 	})
-	it("inserts placeholder at the end of one cell in 2-cell row",()=>{
+	it("inserts item at the end of one cell in 2-cell row",()=>{
 		const $row=row(
 			cell('ab',hue,changeset('2023-05-09',10103)),
 			cell('ab',hue,changeset('2023-05-07',10101))

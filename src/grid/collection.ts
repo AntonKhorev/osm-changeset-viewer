@@ -139,12 +139,12 @@ export default class ItemCollection {
 			}
 		}
 	}
-	remove($placeholders: Iterable<HTMLElement>): void {
-		for (const $placeholder of $placeholders) {
-			const $cell=$placeholder.parentElement
+	remove($items: Iterable<HTMLElement>): void {
+		for (const $item of $items) {
+			const $cell=$item.parentElement
 			if (!($cell instanceof HTMLTableCellElement)) continue
 			if ($cell.parentElement!=this.$row) continue
-			$placeholder.remove()
+			$item.remove()
 			if ($cell.querySelector(':scope > .item')) continue
 			$cell.replaceChildren()
 		}
