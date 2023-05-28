@@ -106,6 +106,7 @@ export default class ItemCollection {
 				}
 				if (copying) {
 					$cell1.append($child)
+					$child.before(' ') // TODO remove in remove() method
 				}
 			}
 			$cell1.classList.toggle('with-timeline-below',$cell2.classList.contains('with-timeline-below'))
