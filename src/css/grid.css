@@ -302,6 +302,12 @@
 .ui .grid tbody tr.single .item.changeset.closed .icon::before {
 	bottom: 50%;
 }
+.ui .grid tbody tr.collection .item.changeset:not(.closed,.combined) .icon::before {
+	left: 50%;
+}
+.ui .grid tbody tr.collection .item.changeset.closed .icon::before {
+	right: 50%;
+}
 .ui .grid tbody .item .icon > .no-checkbox {
 	width: .75rem;
 	height: .75rem;
@@ -461,12 +467,6 @@
 .ui .grid tbody tr.collection td .item:not([hidden]) {
 	position: relative;
 	padding-left: calc(var(--item-spacer));
-}
-.ui .grid tbody tr.collection .item.changeset:not(.closed,.combined) .icon::before {
-	left: 50%;
-}
-.ui .grid tbody tr.collection .item.changeset.closed .icon::before {
-	right: 50%;
 }
 .ui .grid tbody tr.collection .item .ballon {
 	vertical-align: 4px;
