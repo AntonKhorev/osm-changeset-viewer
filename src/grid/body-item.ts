@@ -77,9 +77,7 @@ export function makeItemShell(
 		)
 	)
 	if ($senderIcon) {
-		$item.append(
-			` `,$senderIcon
-		)
+		$item.append($senderIcon)
 	}
 	return $item
 }
