@@ -239,8 +239,14 @@
 	--timeline-width: 2px;
 	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
 	--timeline-previous-row-covering-height: 0px;
+	--item-spacer: 4px;
 	position: relative;
+}
+.ui .grid tbody tr.single td {
 	padding-left: calc(var(--spacer) + var(--icon-size));
+}
+.ui .grid tbody tr.collection td {
+	padding-left: calc(var(--spacer) + var(--icon-size) + var(--item-spacer));
 }
 .ui .grid tbody tr:is(.single,.collection) td.with-timeline-above::before,
 .ui .grid tbody tr:is(.single,.collection) td.with-timeline-below::after {
@@ -264,7 +270,10 @@
 	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
 }
 
-/*** lead icon ***/
+/*** item rows ***/
+.ui .grid tbody tr.collection {
+	line-height: 24px;
+}
 .ui .grid tbody tr.single td > .item > .icon:first-child,
 .ui .grid tbody tr.collection td > .icon:first-child {
 	position: absolute;
@@ -274,8 +283,11 @@
 }
 
 /*** item parts outside ballon ***/
-.ui .grid tbody .item {
-	--item-spacer: 4px;
+.ui .grid tbody tr.collection .item {
+	white-space: nowrap;
+}
+.ui .grid tbody tr.collection .item .icon {
+	vertical-align: -4px;
 }
 .ui .grid tbody .item.changeset .icon::before {
 	content: '';
@@ -297,17 +309,22 @@
 }
 
 /*** item ballon ***/
-.ui .grid tbody tr.single .item .ballon {
+.ui .grid tbody .item .ballon {
 	--ballon-tip-height: calc(1.5 * var(--spacer));
 	--ballon-min-height: calc(2 * var(--spacer) + var(--ballon-tip-height));
 	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * var(--icon-size));
 	--disclosure-size: 13px;
 	position: relative;
+	border: solid 1px transparent;
+	padding: var(--ballon-vertical-padding) 0;
+}
+.ui .grid tbody tr.collection .item .ballon {
+	padding-inline: var(--item-spacer);
+}
+.ui .grid tbody tr.single .item .ballon {
 	box-sizing: border-box;
 	margin: calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px) 0px;
 	min-height: var(--ballon-min-height);
-	padding: var(--ballon-vertical-padding) 0;
-	border: solid 1px transparent;
 }
 .ui .grid tbody tr.single .item .ballon {
 	display: block;
@@ -357,13 +374,14 @@
 
 /*** item inner ballon flow with sender cutout ***/
 .ui .grid tbody .item .ballon .flow {
-	margin: 0 -1px;
-	padding: 0 calc(var(--item-spacer) + 1px);
+	white-space: normal;
 }
 .ui .grid tbody .item .ballon .flow > * {
 	text-indent: initial;
 }
 .ui .grid tbody tr.single .item .ballon .flow {
+	margin: 0 -1px;
+	padding-inline: calc(var(--item-spacer) + 1px); /* TODO 1 px is for cutout (?), won't need it after tip rewrite */
 	text-indent: calc(var(--disclosure-size) + var(--item-spacer));
 	display: inline-block;
 	text-overflow: ellipsis;

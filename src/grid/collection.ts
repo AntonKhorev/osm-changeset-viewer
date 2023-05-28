@@ -66,6 +66,7 @@ export default class ItemCollection {
 			}
 			for (const $item of $itemsToMove) {
 				$splitCell.append($item)
+				$item.before(' ') // TODO remove in remove() method
 			}
 			if (nItems<=$itemsToMove.length) {
 				const $icon=$cell.children[0]
@@ -126,6 +127,7 @@ export default class ItemCollection {
 				if (!collectionItemSequencePoint) continue
 				if (isGreaterElementSequencePoint(sequencePoint,collectionItemSequencePoint)) {
 					$existingItem.before($item)
+					$item.before(' ') // TODO remove in remove() method
 					continue itemLoop
 				}
 			}
@@ -137,6 +139,7 @@ export default class ItemCollection {
 				const $lastChild=$cell.lastElementChild as Element
 				$lastChild.after($item)
 			}
+			$item.before(' ') // TODO remove in remove() method
 		}
 	}
 	remove($items: Iterable<HTMLElement>): void {

@@ -71,8 +71,9 @@ export function makeItemShell(
 		}
 	}
 	$item.append(
-		$icon,` `,makeElement('span')('ballon')(
-			makeItemDisclosureButton(isExpanded),` `,makeElement('span')('flow')()
+		$icon,makeElement('span')('ballon')(
+			makeItemDisclosureButton(isExpanded),` `,
+			makeElement('span')('flow')(),
 		)
 	)
 	if ($senderIcon) {
