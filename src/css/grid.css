@@ -20,11 +20,11 @@
 	width: var(--adder-width);
 }
 .ui .grid .icon {
-	display: block;
-	position: absolute;
-	left: var(--spacer);
+	position: relative;
+	display: inline-block;
 	width: var(--icon-size);
 	height: var(--icon-size);
+	color: var(--accent-color);
 }
 .ui .grid .icon > * {
 	position: absolute;
@@ -51,6 +51,9 @@
 }
 .ui .grid tbody {
 	isolation: isolate;
+}
+.ui .grid tbody * {
+	scroll-margin-top: var(--tab-height);
 }
 
 .ui .grid thead {
@@ -93,6 +96,7 @@
 	position: absolute;
 }
 .ui .grid thead th .tab .icon {
+	position: absolute;
 	top: calc(var(--spacer) - 1px);
 	left: calc(var(--spacer) - 1px);
 	background: var(--accent-color);
@@ -173,6 +177,8 @@
 	height: var(--icon-size);
 }
 .ui .grid thead tr.selectors td .selector .icon {
+	position: absolute;
+	left: var(--spacer);
 	background: var(--accent-color);
 	pointer-events: all;
 }
@@ -202,9 +208,7 @@
 	user-select: none;
 }
 
-.ui .grid tbody * {
-	scroll-margin-top: var(--tab-height);
-}
+/*** separator ***/
 .ui .grid tbody tr.separator td .month {
 	padding: var(--spacer) 0;
 	text-align: center;
@@ -229,6 +233,7 @@
 	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
 }
 
+/*** timeline ***/
 .ui .grid tbody tr:is(.single,.collection) td {
 	--icon-vertical-margin: 3px;
 	--timeline-width: 2px;
@@ -259,20 +264,18 @@
 	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
 }
 
-.ui .grid tbody .item {
-	--item-spacer: 4px;
-}
-.ui .grid tbody tr.collection td .item:not([hidden]) {
-	display: inline-block;
-	position: relative;
-	padding-left: calc(var(--item-spacer) + var(--icon-size));
-}
-.ui .grid tbody tr.collection .item .icon {
-	left: var(--item-spacer);
-}
-.ui .grid tbody :is(.item,tr.collection) .icon {
+/*** lead icon ***/
+.ui .grid tbody tr.single td > .item > .icon:first-child,
+.ui .grid tbody tr.collection td > .icon:first-child {
+	position: absolute;
+	left: var(--spacer);
 	top: var(--icon-vertical-margin);
 	color: var(--accent-color);
+}
+
+/*** item parts outside ballon ***/
+.ui .grid tbody .item {
+	--item-spacer: 4px;
 }
 .ui .grid tbody .item.changeset .icon::before {
 	content: '';
@@ -287,47 +290,33 @@
 .ui .grid tbody tr.single .item.changeset.closed .icon::before {
 	bottom: 50%;
 }
-.ui .grid tbody tr.collection .item.changeset:not(.closed,.combined) .icon::before {
-	left: 50%;
-}
-.ui .grid tbody tr.collection .item.changeset.closed .icon::before {
-	right: 50%;
-}
 .ui .grid tbody .item .icon > .no-checkbox {
 	width: .75rem;
 	height: .75rem;
 	background: canvas;
 }
 
-.ui .grid tbody .item .ballon {
+/*** item ballon ***/
+.ui .grid tbody tr.single .item .ballon {
 	--ballon-tip-height: calc(1.5 * var(--spacer));
 	--ballon-min-height: calc(2 * var(--spacer) + var(--ballon-tip-height));
 	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * var(--icon-size));
 	--disclosure-size: 13px;
 	position: relative;
-	display: block;
 	box-sizing: border-box;
 	margin: calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px) 0px;
 	min-height: var(--ballon-min-height);
 	padding: var(--ballon-vertical-padding) 0;
 	border: solid 1px transparent;
 }
+.ui .grid tbody tr.single .item .ballon {
+	display: block;
+}
 .ui .grid tbody tr.single .item td:not([colspan]) .ballon {
 	margin-right: -1px;
 }
-.ui .grid tbody tr.collection .item.comment.incoming {
-	padding-right: calc(.5 * var(--icon-size));
-}
-.ui .grid tbody tr.collection .item.comment.incoming .ballon {
-	margin-left: calc(-.75 * var(--spacer));
-	margin-right: calc(.75 * var(--spacer));
-}
 .ui .grid tbody tr.single .item.comment.incoming .icon.sender {
 	display: none;
-}
-.ui .grid tbody tr.collection .item.comment.incoming .icon.sender {
-	left: unset;
-	right: 0;
 }
 .ui .grid tbody .item.comment .ballon {
 	--ballon-border-radius: var(--spacer);
@@ -338,71 +327,22 @@
 .ui .grid tbody .item.comment.mute .ballon {
 	--ballon-border-radius: calc(2 * var(--spacer));
 }
-.ui .grid tbody :where(.item.comment:not(.mute):not(.incoming), tr.collection .item.comment:not(.mute).incoming) .ballon::before,
-.ui .grid tbody :where(.item.comment:not(.mute):not(.incoming), tr.collection .item.comment:not(.mute).incoming) .ballon::after {
-	content: '';
-	position: absolute;
-	top: var(--spacer);
-	border: solid transparent;
-	border-width: calc(.5 * var(--ballon-tip-height)) 0;
-}
-.ui .grid tbody .item.comment:not(.mute):not(.incoming) .ballon::before {
-	left: calc(-1 * var(--spacer));
-	border-right: solid var(--spacer) var(--light-frame-color);
-}
-.ui .grid tbody .item.comment:not(.mute):not(.incoming) .ballon::after {
-	left: calc(-1 * var(--spacer) + 1px);
-	border-right: solid var(--spacer) canvas;
-}
-.ui .grid tbody tr.collection .item.comment:not(.mute).incoming .ballon::before {
-	right: calc(-1 * var(--spacer));
-	border-left: solid var(--spacer) var(--light-frame-color);
-}
-.ui .grid tbody tr.collection .item.comment:not(.mute).incoming .ballon::after {
-	right: calc(-1 * var(--spacer) + 1px);
-	border-left: solid var(--spacer) canvas;
-}
-.ui .grid tbody .item.comment.mute .ballon::before,
-.ui .grid tbody .item.comment.mute .ballon::after {
-	content: '';
-	position: absolute;
-	box-sizing: border-box;
-	border: var(--light-frame-line);
-	border-radius: 50%;
-	background: canvas;
-	aspect-ratio: 1;
-}
-.ui .grid tbody .item.comment.mute .ballon::before {
-	width: calc(1.25 * var(--spacer));
-	top: calc(.75 * var(--spacer));
-}
-.ui .grid tbody .item.comment.mute:not(.incoming) .ballon::before {
-	left: calc(-.75 * var(--spacer));
-}
-.ui .grid tbody .item.comment.mute.incoming .ballon::before {
-	right: calc(-.75 * var(--spacer));
-}
-.ui .grid tbody .item.comment.mute .ballon::after {
-	width: calc(.75 * var(--spacer));
-	top: calc(2 * var(--spacer));
-}
-.ui .grid tbody .item.comment.mute:not(.incoming) .ballon::after {
-	left: calc(-1 * var(--spacer));
-}
-.ui .grid tbody .item.comment.mute.incoming .ballon::after {
-	right: calc(-1 * var(--spacer));
-}
 
+/*** item disclosure button ***/
 .ui .grid tbody .item .ballon button.disclosure {
+	position: relative;
+	display: inline-block;
 	box-sizing: border-box;
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
-	position: absolute;
-	top: calc(.5 * var(--ballon-min-height) - .5 * var(--disclosure-size));
-	left: var(--item-spacer);
 	padding: 0;
 	border: var(--frame-line);
 	background: canvas;
+}
+.ui .grid tbody tr.single .item .ballon button.disclosure {
+	position: absolute;
+	top: calc(.5 * var(--ballon-min-height) - .5 * var(--disclosure-size));
+	left: var(--item-spacer);
 }
 .ui .grid tbody .item .ballon button.disclosure:hover {
 	background: var(--hover-color);
@@ -415,16 +355,17 @@
 	visibility: hidden;
 }
 
+/*** item inner ballon flow with sender cutout ***/
 .ui .grid tbody .item .ballon .flow {
 	margin: 0 -1px;
 	padding: 0 calc(var(--item-spacer) + 1px);
-	text-indent: calc(var(--disclosure-size) + var(--item-spacer));
-	display: inline-block;
 }
 .ui .grid tbody .item .ballon .flow > * {
 	text-indent: initial;
 }
 .ui .grid tbody tr.single .item .ballon .flow {
+	text-indent: calc(var(--disclosure-size) + var(--item-spacer));
+	display: inline-block;
 	text-overflow: ellipsis;
 	overflow: hidden;
 	-webkit-line-clamp: 5;
@@ -483,6 +424,7 @@
 	overflow: hidden;
 }
 
+/*** item inner ballon flow elements ***/
 .ui .grid tbody .item .ballon .flow .changes {
 	border-radius: 4px;
 	padding: 2px 4px;
@@ -492,3 +434,87 @@
 	color: var(--light-text-color);
 	white-space: nowrap;
 }
+
+/* temp removed collection styles
+
+.ui .grid tbody tr.collection td .item:not([hidden]) {
+	position: relative;
+	padding-left: calc(var(--item-spacer));
+}
+.ui .grid tbody tr.collection .item.changeset:not(.closed,.combined) .icon::before {
+	left: 50%;
+}
+.ui .grid tbody tr.collection .item.changeset.closed .icon::before {
+	right: 50%;
+}
+.ui .grid tbody tr.collection .item .ballon {
+	vertical-align: 4px;
+}
+.ui .grid tbody tr.collection .item.comment.incoming {
+	padding-right: calc(.5 * var(--icon-size));
+}
+.ui .grid tbody tr.collection .item.comment.incoming .ballon {
+	margin-left: calc(-.75 * var(--spacer));
+	margin-right: calc(.75 * var(--spacer));
+}
+
+*/
+
+/* temp removed ballon tips
+
+.ui .grid tbody :where(.item.comment:not(.mute):not(.incoming), tr.collection .item.comment:not(.mute).incoming) .ballon::before,
+.ui .grid tbody :where(.item.comment:not(.mute):not(.incoming), tr.collection .item.comment:not(.mute).incoming) .ballon::after {
+	content: '';
+	position: absolute;
+	top: var(--spacer);
+	border: solid transparent;
+	border-width: calc(.5 * var(--ballon-tip-height)) 0;
+}
+.ui .grid tbody .item.comment:not(.mute):not(.incoming) .ballon::before {
+	left: calc(-1 * var(--spacer));
+	border-right: solid var(--spacer) var(--light-frame-color);
+}
+.ui .grid tbody .item.comment:not(.mute):not(.incoming) .ballon::after {
+	left: calc(-1 * var(--spacer) + 1px);
+	border-right: solid var(--spacer) canvas;
+}
+.ui .grid tbody tr.collection .item.comment:not(.mute).incoming .ballon::before {
+	right: calc(-1 * var(--spacer));
+	border-left: solid var(--spacer) var(--light-frame-color);
+}
+.ui .grid tbody tr.collection .item.comment:not(.mute).incoming .ballon::after {
+	right: calc(-1 * var(--spacer) + 1px);
+	border-left: solid var(--spacer) canvas;
+}
+.ui .grid tbody .item.comment.mute .ballon::before,
+.ui .grid tbody .item.comment.mute .ballon::after {
+	content: '';
+	position: absolute;
+	box-sizing: border-box;
+	border: var(--light-frame-line);
+	border-radius: 50%;
+	background: canvas;
+	aspect-ratio: 1;
+}
+.ui .grid tbody .item.comment.mute .ballon::before {
+	width: calc(1.25 * var(--spacer));
+	top: calc(.75 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute:not(.incoming) .ballon::before {
+	left: calc(-.75 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute.incoming .ballon::before {
+	right: calc(-.75 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute .ballon::after {
+	width: calc(.75 * var(--spacer));
+	top: calc(2 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute:not(.incoming) .ballon::after {
+	left: calc(-1 * var(--spacer));
+}
+.ui .grid tbody .item.comment.mute.incoming .ballon::after {
+	right: calc(-1 * var(--spacer));
+}
+
+*/
