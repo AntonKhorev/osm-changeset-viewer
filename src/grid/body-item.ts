@@ -64,7 +64,10 @@ export function makeItemShell(
 			commentIconSvg=getSvgOfCommentIcon('changeset')
 		}
 		if (item.uid==item.itemUid) {
-			$icon.innerHTML=commentIconSvg+getSvgOfCommentTip(-1)
+			$icon.innerHTML=commentIconSvg+(item.text
+				? getSvgOfCommentTip(-1)
+				: getSvgOfMuteCommentTip(-1)
+			)
 		} else {
 			$icon.innerHTML=commentIconSvg
 			$item.classList.add('incoming')
@@ -82,9 +85,10 @@ export function makeItemShell(
 				const hue=getHueFromUid(item.uid)
 				$senderIcon.style.setProperty('--hue',String(hue))
 			}
-			$senderIcon.innerHTML=
-				getSvgOfSenderUserIcon()+
-				getSvgOfCommentTip(1)
+			$senderIcon.innerHTML=getSvgOfSenderUserIcon()+(item.text
+				? getSvgOfCommentTip(1)
+				: getSvgOfMuteCommentTip(1)
+			)
 		}
 		if (!item.text) {
 			$item.classList.add('mute')
@@ -307,6 +311,12 @@ function getSvgOfCommentTip(side: -1|1): string {
 	return `<svg class="tip" width="7" height="13" viewBox="${side<0?-.5:-5.5} -6.5 7 13">`+
 		`<path d="M0,0L${-7*side},7V-7Z" fill="canvas"></path>`+
 		`<path d="M${-6*side},-6L0,0L${-6*side},6" fill="none" stroke="var(--light-frame-color)"></path>`+
+	`</svg>`
+}
+function getSvgOfMuteCommentTip(side: -1|1): string {
+	return `<svg class="tip" width="15" height="20" viewBox="${side<0?0:-15} -10 15 20">`+
+		`<circle cx="${-10.5*side}" cy="-3.5" r="4" fill="canvas" stroke="var(--light-frame-color)" />`+
+		`<circle cx="${-5.5*side}" cy="1.5" r="2" fill="canvas" stroke="var(--light-frame-color)" />`+
 	`</svg>`
 }
 

@@ -314,17 +314,21 @@
 	background: canvas;
 }
 .ui .grid tbody .item .icon > .tip {
+	--tip-overlap: -1px;
 	margin-inline: unset;
-	left: calc(var(--icon-size) - 6px);
+	left: unset;
+	right: var(--tip-overlap);
 	z-index: 1;
 }
+.ui .grid tbody .item.mute .icon > .tip {
+	--tip-overlap: -4px;
+}
 .ui .grid tbody .item .icon.sender {
-	--sender-icon-width: 16px;
-	width: var(--sender-icon-width);
+	width: 16px;
 }
 .ui .grid tbody .item .icon.sender > .tip {
-	left: unset;
-	right: calc(var(--sender-icon-width) - 6px);
+	right: unset;
+	left: var(--tip-overlap);
 }
 .ui .grid tbody tr.single .item.comment.incoming .icon.sender {
 	display: none;
