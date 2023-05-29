@@ -235,7 +235,7 @@
 
 /*** timeline ***/
 .ui .grid tbody tr:is(.single,.collection) td {
-	--icon-vertical-margin: 3px;
+	--icon-vertical-margin: 2px;
 	--timeline-width: 2px;
 	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
 	--timeline-previous-row-covering-height: 0px;
@@ -287,7 +287,7 @@
 	white-space: nowrap;
 }
 .ui .grid tbody tr.collection .item .icon {
-	vertical-align: -6px;
+	vertical-align: -5px;
 }
 .ui .grid tbody .item.changeset .icon::before {
 	content: '';
@@ -322,20 +322,19 @@
 /*** item ballon ***/
 .ui .grid tbody .item .ballon {
 	--ballon-tip-height: calc(1.5 * var(--spacer));
-	--ballon-min-height: calc(2 * var(--spacer) + var(--ballon-tip-height));
-	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * var(--icon-size));
+	--ballon-min-height: 24px;
+	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * 18px);
 	--disclosure-size: 13px;
 	position: relative;
 	border: solid 1px transparent;
-	padding: var(--ballon-vertical-padding) 0;
+	padding-block: var(--ballon-vertical-padding);
 }
 .ui .grid tbody tr.collection .item .ballon {
 	padding-inline: var(--item-spacer);
 }
 .ui .grid tbody tr.single .item .ballon {
 	box-sizing: border-box;
-	margin: calc(var(--icon-vertical-margin) + .5 * var(--icon-size) - .5 * var(--ballon-min-height) - 1px) 0px;
-	min-height: var(--ballon-min-height);
+	margin-block: -1px;
 }
 .ui .grid tbody tr.single .item .ballon {
 	display: block;
@@ -372,7 +371,7 @@
 	left: var(--item-spacer);
 }
 .ui .grid tbody tr.collection .item .ballon button.disclosure {
-	vertical-align: -1px;
+	vertical-align: -1px; /* has odd height and is right before underlined text, therefore looks better shifted down */
 }
 .ui .grid tbody .item .ballon button.disclosure:hover {
 	background: var(--hover-color);
@@ -389,6 +388,7 @@
 	text-indent: initial;
 }
 .ui .grid tbody tr.single .item .ballon .flow {
+	min-height: 18px;
 	margin: 0 -1px;
 	padding-inline: calc(var(--item-spacer) + 1px); /* TODO 1 px is for cutout (?), won't need it after tip rewrite */
 	text-indent: calc(var(--disclosure-size) + var(--item-spacer));
