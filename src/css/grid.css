@@ -321,16 +321,15 @@
 
 /*** item ballon ***/
 .ui .grid tbody .item .ballon {
-	--ballon-tip-height: calc(1.5 * var(--spacer));
 	--ballon-min-height: 24px;
-	--ballon-vertical-padding: calc(.5 * var(--ballon-min-height) - .5 * 18px);
 	--disclosure-size: 13px;
 	position: relative;
 	border: solid 1px transparent;
-	padding-block: var(--ballon-vertical-padding);
+	padding-block: 3px;
 }
 .ui .grid tbody tr.collection .item .ballon {
 	padding-inline: var(--item-spacer);
+	padding-bottom: 4px;
 }
 .ui .grid tbody tr.single .item .ballon {
 	box-sizing: border-box;
