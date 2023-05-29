@@ -56,9 +56,15 @@ export function makeItemShell(
 		id=item.itemId
 		if (type=='noteComment') {
 			$item.classList.add(item.action)
-			writeCommentIcon($icon,id,'note',item.action)
+			$icon.title=`${item.action} 'note' ${id}`
+			$icon.innerHTML=
+				getSvgOfCommentIcon('note',item.action)+
+				getSvgOfCommentTipFromLeft()
 		} else {
-			writeCommentIcon($icon,id,'changeset')
+			$icon.title=`comment for changeset ${id}`
+			$icon.innerHTML=
+				getSvgOfCommentIcon('changeset')+
+				getSvgOfCommentTipFromLeft()
 		}
 		if (item.uid!=item.itemUid) {
 			$item.classList.add('incoming')
@@ -267,7 +273,7 @@ function writeNoteIcon($icon: HTMLElement, id: number): void {
 	)
 }
 
-function writeCommentIcon($icon: HTMLElement, id: number, itemType: 'note'|'changeset', action?: string): void {
+function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): string {
 	if (itemType=='note') {
 		const s=2.5
 		let actionGlyph: string|undefined
@@ -281,23 +287,25 @@ function writeCommentIcon($icon: HTMLElement, id: number, itemType: 'note'|'chan
 			actionGlyph=``
 		}
 		if (actionGlyph!=null) {
-			$icon.innerHTML=makeCenteredSvg(10,
+			return makeCenteredSvg(10,
 				`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
 				actionGlyph
 			)
 		} else {
 			const r=4
-			$icon.innerHTML=makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
+			return makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
 		}
 	} else {
 		const r=4
-		$icon.innerHTML=makeCenteredSvg(r,`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`)
+		return makeCenteredSvg(r,`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`)
 	}
-	if (action==null) {
-		$icon.title=`comment for ${itemType} ${id}`
-	} else {
-		$icon.title=`${action} ${itemType} ${id}`
-	}
+}
+
+function getSvgOfCommentTipFromLeft(): string {
+	return `<svg class="tip" width="7" height="13" viewBox="-.5 -6.5 7 13">`+
+		`<path d="M0,0L7,7V-7Z" fill="canvas"></path>`+
+		`<path d="M6,-6L0,0L6,6" fill="none" stroke="var(--light-frame-color)"></path>`+
+	`</svg>`
 }
 
 function makeItemDisclosureButton(isExpanded: boolean): HTMLButtonElement {

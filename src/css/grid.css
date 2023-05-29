@@ -313,6 +313,11 @@
 	height: .75rem;
 	background: canvas;
 }
+.ui .grid tbody .item .icon > .tip {
+	margin-inline: unset;
+	left: calc(var(--icon-size) - 6px);
+	z-index: 1;
+}
 
 /*** item ballon ***/
 .ui .grid tbody .item .ballon {
