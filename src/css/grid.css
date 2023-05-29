@@ -421,9 +421,10 @@
 	--from-border-radius: .25rem;
 	--from-tip-height: calc(1rem - 2 * var(--from-border-radius));
 	--from-tip-width: .5rem;
+	display: flex;
 	position: relative;
 	float: right;
-	max-width: calc(100% - var(--from-tip-width));
+	max-width: calc(100% - var(--from-tip-width) - var(--disclosure-size) - 2 * var(--item-spacer));
 	padding-inline: var(--from-border-radius);
 	margin-left: 1ch;
 	border: var(--light-frame-line);
@@ -458,6 +459,11 @@
 .ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::after {
 	left: -1px;
 	border-left-color: canvas;
+}
+.ui .grid tbody tr.single .item .ballon .flow .from .icon.sender {
+	display: inline-block;
+	height: 16px;
+	flex-shrink: 0;
 }
 .ui .grid tbody tr.single .item .ballon .flow .from a {
 	display: block;

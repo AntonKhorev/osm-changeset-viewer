@@ -160,7 +160,7 @@ export function writeExpandedItemFlow(
 			server.api.getUrl(e`notes/${id}.json`)
 		)
 	}
-	let from: string|HTMLElement|undefined
+	let from: (string|HTMLElement)[] = []
 	let date: Date|undefined
 	if (type=='user') {
 		date=item.createdAt
@@ -193,23 +193,35 @@ export function writeExpandedItemFlow(
 		if (item.uid) {
 			username=usernames.get(item.uid)
 		}
-		let action: string|undefined
 		if (type=='changesetComment') {
 			rewriteWithChangesetLinks(item.itemId)
 		} else if (type=='noteComment') {
 			rewriteWithNoteLinks(item.itemId)
-			action=item.action
 		} else {
 			return
 		}
+		const $senderIcon=makeElement('span')('icon')()
+		$senderIcon.classList.add('sender')
+		if (username!=null) {
+			$senderIcon.title=username
+		} else if (item.uid!=null) {
+			$senderIcon.title=`#`+item.uid
+		} else {
+			$senderIcon.title=`anonymous`
+		}
+		if (item.uid!=null) {
+			const hue=getHueFromUid(item.uid)
+			$senderIcon.style.setProperty('--hue',String(hue))
+		}
+		$senderIcon.innerHTML=getSvgOfSenderUserIcon()
+		from.push($senderIcon)
 		if (item.uid!=item.itemUid) {
 			if (username!=null) {
-				from=makeLink(username,server.web.getUrl(e`user/${username}`))
-				
+				from.push(makeLink(username,server.web.getUrl(e`user/${username}`)))
 			} else if (item.uid!=null) {
-				from=`#{comment.uid}`
+				from.push(`#{comment.uid}`)
 			} else {
-				from=`anonymous`
+				from.push(`anonymous`)
 			}
 		}
 		if (item.text) {
@@ -223,9 +235,9 @@ export function writeExpandedItemFlow(
 	$flow.prepend(
 		date?makeDateOutput(date):`???`,` `
 	)
-	if (from!=null) {
+	if (from.length>0) {
 		$flow.prepend(
-			makeElement('span')('from')(from),` `
+			makeElement('span')('from')(...from),` `
 		)
 	}
 }
@@ -254,7 +266,7 @@ function writeNewUserIcon($icon: HTMLElement, id: number|undefined): void {
 }
 
 function getSvgOfSenderUserIcon(): string {
-	return makeCenteredSvg2(8,10,
+	return makeCenteredSvg(8,
 		makeUserSvgElements()
 	)
 }
@@ -347,9 +359,6 @@ export function setItemDisclosureButtonState($disclosure: HTMLButtonElement, isE
 
 export function makeCenteredSvg(r: number, content: string): string {
 	return `<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">${content}</svg>`
-}
-function makeCenteredSvg2(rx: number, ry: number, content: string): string {
-	return `<svg width="${2*rx}" height="${2*ry}" viewBox="${-rx} ${-ry} ${2*rx} ${2*ry}">${content}</svg>`
 }
 
 function computeMarkerOutlinePath(h: number, r: number): string {
