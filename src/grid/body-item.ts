@@ -245,7 +245,7 @@ function writeNewUserIcon($icon: HTMLElement, id: number|undefined): void {
 }
 
 function getSvgOfSenderUserIcon(): string {
-	return makeCenteredSvg(10,
+	return makeCenteredSvg2(8,10,
 		makeUserSvgElements()
 	)
 }
@@ -332,6 +332,9 @@ export function setItemDisclosureButtonState($disclosure: HTMLButtonElement, isE
 
 export function makeCenteredSvg(r: number, content: string): string {
 	return `<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">${content}</svg>`
+}
+function makeCenteredSvg2(rx: number, ry: number, content: string): string {
+	return `<svg width="${2*rx}" height="${2*ry}" viewBox="${-rx} ${-ry} ${2*rx} ${2*ry}">${content}</svg>`
 }
 
 function computeMarkerOutlinePath(h: number, r: number): string {

@@ -318,9 +318,16 @@
 	left: calc(var(--icon-size) - 6px);
 	z-index: 1;
 }
+.ui .grid tbody .item .icon.sender {
+	--sender-icon-width: 16px;
+	width: var(--sender-icon-width);
+}
 .ui .grid tbody .item .icon.sender > .tip {
 	left: unset;
-	right: calc(var(--icon-size) - 6px);
+	right: calc(var(--sender-icon-width) - 6px);
+}
+.ui .grid tbody tr.single .item.comment.incoming .icon.sender {
+	display: none;
 }
 
 /*** item ballon ***/
@@ -347,9 +354,6 @@
 }
 .ui .grid tbody tr.single .item td:not([colspan]) .ballon {
 	margin-right: -1px;
-}
-.ui .grid tbody tr.single .item.comment.incoming .icon.sender {
-	display: none;
 }
 .ui .grid tbody .item.comment .ballon {
 	--ballon-border-radius: var(--spacer);
