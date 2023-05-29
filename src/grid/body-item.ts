@@ -54,23 +54,37 @@ export function makeItemShell(
 	} else if (type=='changesetComment' || type=='noteComment') {
 		$item.classList.add('comment')
 		id=item.itemId
+		let commentIconSvg: string
 		if (type=='noteComment') {
 			$item.classList.add(item.action)
 			$icon.title=`${item.action} 'note' ${id}`
-			$icon.innerHTML=
-				getSvgOfCommentIcon('note',item.action)+
-				getSvgOfCommentTipFromLeft()
+			commentIconSvg=getSvgOfCommentIcon('note',item.action)
 		} else {
 			$icon.title=`comment for changeset ${id}`
-			$icon.innerHTML=
-				getSvgOfCommentIcon('changeset')+
-				getSvgOfCommentTipFromLeft()
+			commentIconSvg=getSvgOfCommentIcon('changeset')
 		}
-		if (item.uid!=item.itemUid) {
+		if (item.uid==item.itemUid) {
+			$icon.innerHTML=commentIconSvg+getSvgOfCommentTip(-1)
+		} else {
+			$icon.innerHTML=commentIconSvg
 			$item.classList.add('incoming')
 			$senderIcon=makeElement('span')('icon')()
+			$senderIcon.classList.add('sender')
 			const username=item.uid?usernames.get(item.uid):undefined
-			writeSenderUserIcon($senderIcon,item.uid,username)
+				if (username!=null) {
+				$senderIcon.title=username
+			} else if (item.uid!=null) {
+				$senderIcon.title=`#`+item.uid
+			} else {
+				$senderIcon.title=`anonymous`
+			}
+			if (item.uid!=null) {
+				const hue=getHueFromUid(item.uid)
+				$senderIcon.style.setProperty('--hue',String(hue))
+			}
+			$senderIcon.innerHTML=
+				getSvgOfSenderUserIcon()+
+				getSvgOfCommentTip(1)
 		}
 		if (!item.text) {
 			$item.classList.add('mute')
@@ -230,22 +244,10 @@ function writeNewUserIcon($icon: HTMLElement, id: number|undefined): void {
 	)
 }
 
-function writeSenderUserIcon($icon: HTMLElement, id: number|undefined, username: string|undefined): void {
-	if (username!=null) {
-		$icon.title=username
-	} else if (id!=null) {
-		$icon.title=`#`+id
-	} else {
-		$icon.title=`anonymous`
-	}
-	$icon.innerHTML=makeCenteredSvg(10,
+function getSvgOfSenderUserIcon(): string {
+	return makeCenteredSvg(10,
 		makeUserSvgElements()
 	)
-	$icon.classList.add('sender')
-	if (id!=null) {
-		const hue=getHueFromUid(id)
-		$icon.style.setProperty('--hue',String(hue))
-	}
 }
 
 function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean): void {
@@ -301,10 +303,10 @@ function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): str
 	}
 }
 
-function getSvgOfCommentTipFromLeft(): string {
-	return `<svg class="tip" width="7" height="13" viewBox="-.5 -6.5 7 13">`+
-		`<path d="M0,0L7,7V-7Z" fill="canvas"></path>`+
-		`<path d="M6,-6L0,0L6,6" fill="none" stroke="var(--light-frame-color)"></path>`+
+function getSvgOfCommentTip(side: -1|1): string {
+	return `<svg class="tip" width="7" height="13" viewBox="${side<0?-.5:-5.5} -6.5 7 13">`+
+		`<path d="M0,0L${-7*side},7V-7Z" fill="canvas"></path>`+
+		`<path d="M${-6*side},-6L0,0L${-6*side},6" fill="none" stroke="var(--light-frame-color)"></path>`+
 	`</svg>`
 }
 

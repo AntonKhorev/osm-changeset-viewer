@@ -318,6 +318,10 @@
 	left: calc(var(--icon-size) - 6px);
 	z-index: 1;
 }
+.ui .grid tbody .item .icon.sender > .tip {
+	left: unset;
+	right: calc(var(--icon-size) - 6px);
+}
 
 /*** item ballon ***/
 .ui .grid tbody .item .ballon {
