@@ -213,7 +213,10 @@ export function writeExpandedItemFlow(
 			const hue=getHueFromUid(item.uid)
 			$senderIcon.style.setProperty('--hue',String(hue))
 		}
-		$senderIcon.innerHTML=getSvgOfSenderUserIcon()
+		$senderIcon.innerHTML=getSvgOfSenderUserIcon()+(item.text
+			? getSvgOfCommentTip(1)
+			: ``
+		)
 		from.push($senderIcon)
 		if (item.uid!=item.itemUid) {
 			if (username!=null) {

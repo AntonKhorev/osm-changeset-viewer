@@ -424,14 +424,13 @@
 	display: flex;
 	position: relative;
 	float: right;
-	max-width: calc(100% - var(--from-tip-width) - var(--disclosure-size) - 2 * var(--item-spacer));
-	padding-inline: var(--from-border-radius);
+	max-width: calc(100% - var(--disclosure-size) - 2 * var(--item-spacer));
+	padding-right: var(--from-border-radius);
 	margin-left: 1ch;
 	border: var(--light-frame-line);
 	background: canvas;
 }
 .ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from {
-	padding-left: calc(var(--from-tip-width) + var(--from-border-radius));
 	margin-right: calc(0px - var(--item-spacer) - 1px);
 	border-right: none;
 	border-bottom-left-radius: var(--from-border-radius);
@@ -439,26 +438,6 @@
 }
 .ui .grid tbody tr.single .item.mute .ballon .flow .from {
 	border-radius: var(--spacer);
-}
-.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::before,
-.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::after {
-	content: '';
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	height: 0;
-	margin: auto;
-	border: solid transparent;
-	border-width: calc(.5 * var(--from-tip-height)) 0;
-	border-left-width: var(--from-tip-width);
-}
-.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::before {
-	left: 0;
-	border-left-color: var(--light-frame-color);
-}
-.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from::after {
-	left: -1px;
-	border-left-color: canvas;
 }
 .ui .grid tbody tr.single .item .ballon .flow .from .icon.sender {
 	display: inline-block;
