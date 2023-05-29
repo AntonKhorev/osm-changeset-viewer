@@ -203,13 +203,6 @@ export function writeExpandedItemFlow(
 		if (item.uid!=item.itemUid) {
 			const $senderIcon=makeElement('span')('icon')()
 			$senderIcon.classList.add('sender')
-			if (username!=null) {
-				$senderIcon.title=username
-			} else if (item.uid!=null) {
-				$senderIcon.title=`#`+item.uid
-			} else {
-				$senderIcon.title=`anonymous`
-			}
 			if (item.uid!=null) {
 				const hue=getHueFromUid(item.uid)
 				$senderIcon.style.setProperty('--hue',String(hue))
@@ -222,7 +215,7 @@ export function writeExpandedItemFlow(
 			if (username!=null) {
 				from.push(makeLink(username,server.web.getUrl(e`user/${username}`)))
 			} else if (item.uid!=null) {
-				from.push(`#{comment.uid}`)
+				from.push(`#${item.uid}`)
 			} else {
 				from.push(`anonymous`)
 			}
