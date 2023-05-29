@@ -200,25 +200,25 @@ export function writeExpandedItemFlow(
 		} else {
 			return
 		}
-		const $senderIcon=makeElement('span')('icon')()
-		$senderIcon.classList.add('sender')
-		if (username!=null) {
-			$senderIcon.title=username
-		} else if (item.uid!=null) {
-			$senderIcon.title=`#`+item.uid
-		} else {
-			$senderIcon.title=`anonymous`
-		}
-		if (item.uid!=null) {
-			const hue=getHueFromUid(item.uid)
-			$senderIcon.style.setProperty('--hue',String(hue))
-		}
-		$senderIcon.innerHTML=getSvgOfSenderUserIcon()+(item.text
-			? getSvgOfCommentTip(1)
-			: ``
-		)
-		from.push($senderIcon)
 		if (item.uid!=item.itemUid) {
+			const $senderIcon=makeElement('span')('icon')()
+			$senderIcon.classList.add('sender')
+			if (username!=null) {
+				$senderIcon.title=username
+			} else if (item.uid!=null) {
+				$senderIcon.title=`#`+item.uid
+			} else {
+				$senderIcon.title=`anonymous`
+			}
+			if (item.uid!=null) {
+				const hue=getHueFromUid(item.uid)
+				$senderIcon.style.setProperty('--hue',String(hue))
+			}
+			$senderIcon.innerHTML=getSvgOfSenderUserIcon()+(item.text
+				? getSvgOfCommentTip(1)
+				: ``
+			)
+			from.push($senderIcon)
 			if (username!=null) {
 				from.push(makeLink(username,server.web.getUrl(e`user/${username}`)))
 			} else if (item.uid!=null) {
