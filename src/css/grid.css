@@ -330,6 +330,12 @@
 	right: unset;
 	left: var(--tip-overlap);
 }
+.ui .grid tbody tr.collection .item.comment.passive .icon:not(.sender) {
+	width: 12px;
+}
+.ui .grid tbody tr.collection .item.comment.passive .icon:not(.sender) > :not(.tip) {
+	margin-left: unset;
+}
 .ui .grid tbody tr.single .item.comment.incoming .icon.sender {
 	display: none;
 }
