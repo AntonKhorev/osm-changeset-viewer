@@ -335,6 +335,9 @@
 	padding-inline: var(--item-spacer);
 	padding-bottom: 4px;
 }
+.ui .grid tbody tr.collection .item.comment.incoming .ballon {
+	margin-left: calc(-.75 * var(--spacer));
+}
 .ui .grid tbody tr.single .item .ballon {
 	box-sizing: border-box;
 	margin-block: -1px;
@@ -464,25 +467,6 @@
 	color: var(--light-text-color);
 	white-space: nowrap;
 }
-
-/* temp removed collection styles
-
-.ui .grid tbody tr.collection td .item:not([hidden]) {
-	position: relative;
-	padding-left: calc(var(--item-spacer));
-}
-.ui .grid tbody tr.collection .item .ballon {
-	vertical-align: 4px;
-}
-.ui .grid tbody tr.collection .item.comment.incoming {
-	padding-right: calc(.5 * var(--icon-size));
-}
-.ui .grid tbody tr.collection .item.comment.incoming .ballon {
-	margin-left: calc(-.75 * var(--spacer));
-	margin-right: calc(.75 * var(--spacer));
-}
-
-*/
 
 /* temp removed ballon tips
 
