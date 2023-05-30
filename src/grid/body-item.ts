@@ -152,12 +152,15 @@ export function writeExpandedItemFlow(
 	{type,item}: MuxBatchItem,
 	usernames: Map<number, string>
 ): void {
+	const makeBadge=(content:string|HTMLElement,title?:string)=>{
+		const $badge=makeElement('span')('badge')(content)
+		if (title) $badge.title=title
+		return $badge
+	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
 			makeLink(String(id),href),` `,
-			makeElement('span')('api')(
-				`(`,makeLink(`api`,apiHref),`)`
-			)
+			makeBadge(makeLink(`api`,apiHref))
 		)
 	}
 	const rewriteWithChangesetLinks=(id: number)=>{
@@ -180,24 +183,11 @@ export function writeExpandedItemFlow(
 			`account created`
 		)
 	} else if (type=='changeset' || type=='changesetClose') {
-		const makeChanges=()=>{
-			const $badge=makeElement('span')('badge')(
-				`Δ ${item.changes.count}`
-			)
-			$badge.title=`number of changes`
-			return $badge
-		}
-		const makeComments=()=>{
-			const $badge=makeElement('span')('badge')(
-				`💬 ${item.comments.count}`
-			)
-			$badge.title=`number of comments`
-			return $badge
-		}
 		date = type=='changesetClose' ? item.closedAt : item.createdAt
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
-			` `,makeChanges(),` `,makeComments(),
+			` `,makeBadge(`Δ ${item.changes.count}`,`number of changes`),
+			` `,makeBadge(`💬 ${item.comments.count}`,`number of comments`),
 			` `,makeElement('span')()(item.tags?.comment ?? '')
 		)
 	} else if (type=='note') {
