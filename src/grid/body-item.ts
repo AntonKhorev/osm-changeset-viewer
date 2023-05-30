@@ -37,22 +37,33 @@ export function makeItemShell(
 	let id: number
 	const $icon=makeElement('span')('icon')()
 	let $senderIcon: HTMLElement|undefined
+	const $ballon=makeElement('span')('ballon')(
+		makeItemDisclosureButton(isExpanded),` `,
+		makeElement('span')('flow')(),
+	)
 	const $item=makeElement('span')('item')()
 	if (type=='user') {
 		$item.classList.add('user')
 		id=item.id
 		writeNewUserIcon($icon,id)
+		setColor($icon,item.id)
+		setColor($ballon,item.id)
 	} else if (type=='changeset' || type=='changesetClose') {
 		$item.classList.add('changeset')
+		if (type=='changesetClose') $item.classList.add('closed')
 		id=item.id
 		writeChangesetIcon($icon,id,type=='changesetClose')
-		if (type=='changesetClose') $item.classList.add('closed')
+		setColor($icon,item.uid)
+		setColor($ballon,item.uid)
 	} else if (type=='note') {
 		$item.classList.add('note')
 		id=item.id
 		writeNoteIcon($icon,id)
+		setColor($icon,item.uid)
+		setColor($ballon,item.uid)
 	} else if (type=='changesetComment' || type=='noteComment') {
 		$item.classList.add('comment')
+		if (!item.text) $item.classList.add('mute')
 		id=item.itemId
 		let commentIconSvg: string
 		if (type=='noteComment') {
@@ -68,6 +79,8 @@ export function makeItemShell(
 			$icon.title=`comment for changeset ${id}`
 			commentIconSvg=getSvgOfCommentIcon('changeset')
 		}
+		setColor($icon,item.itemUid)
+		setColor($ballon,item.uid)
 		if (item.uid==item.itemUid) {
 			$icon.innerHTML=commentIconSvg+(item.text
 				? getSvgOfCommentTip(-1)
@@ -78,6 +91,7 @@ export function makeItemShell(
 			$item.classList.add('incoming')
 			$senderIcon=makeElement('span')('icon')()
 			$senderIcon.classList.add('sender')
+			setColor($senderIcon,item.uid)
 			const username=item.uid?usernames.get(item.uid):undefined
 				if (username!=null) {
 				$senderIcon.title=username
@@ -95,16 +109,8 @@ export function makeItemShell(
 				: getSvgOfMuteCommentTip(1)
 			)
 		}
-		if (!item.text) {
-			$item.classList.add('mute')
-		}
 	}
-	$item.append(
-		$icon,makeElement('span')('ballon')(
-			makeItemDisclosureButton(isExpanded),` `,
-			makeElement('span')('flow')(),
-		)
-	)
+	$item.append($icon,$ballon)
 	if ($senderIcon) {
 		$item.append($senderIcon)
 	}
@@ -203,10 +209,6 @@ export function writeExpandedItemFlow(
 		if (item.uid!=item.itemUid) {
 			const $senderIcon=makeElement('span')('icon')()
 			$senderIcon.classList.add('sender')
-			if (item.uid!=null) {
-				const hue=getHueFromUid(item.uid)
-				$senderIcon.style.setProperty('--hue',String(hue))
-			}
 			$senderIcon.innerHTML=getSvgOfSenderUserIcon()+(item.text
 				? getSvgOfCommentTip(1)
 				: ``
@@ -323,13 +325,13 @@ function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): str
 function getSvgOfCommentTip(side: -1|1): string {
 	return `<svg class="tip" width="7" height="13" viewBox="${side<0?-.5:-5.5} -6.5 7 13">`+
 		`<path d="M0,0L${-7*side},7V-7Z" fill="canvas"></path>`+
-		`<path d="M${-6*side},-6L0,0L${-6*side},6" fill="none" stroke="var(--light-frame-color)"></path>`+
+		`<path d="M${-6*side},-6L0,0L${-6*side},6" fill="none" stroke="var(--ballon-frame-color)"></path>`+
 	`</svg>`
 }
 function getSvgOfMuteCommentTip(side: -1|1): string {
 	return `<svg class="tip" width="15" height="20" viewBox="${side<0?0:-15} -10 15 20">`+
-		`<circle cx="${-10.5*side}" cy="-3.5" r="4" fill="canvas" stroke="var(--light-frame-color)" />`+
-		`<circle cx="${-5.5*side}" cy="1.5" r="2" fill="canvas" stroke="var(--light-frame-color)" />`+
+		`<circle cx="${-10.5*side}" cy="-3.5" r="4" fill="canvas" stroke="var(--ballon-frame-color)" />`+
+		`<circle cx="${-5.5*side}" cy="1.5" r="2" fill="canvas" stroke="var(--ballon-frame-color)" />`+
 	`</svg>`
 }
 
@@ -384,4 +386,14 @@ export function makeUserSvgElements(): string {
 		`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />`+
 		`<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`
 	)
+}
+
+function setColor($e: HTMLElement, uid: number|undefined) {
+	if (uid!=null) {
+		const hue=getHueFromUid(uid)
+		$e.style.setProperty('--hue',String(hue))
+	} else {
+		$e.style.setProperty('--ballon-frame-color','hsl(0 0% var(--light-frame-lightness))')
+		$e.style.setProperty('--accent-color','var(--light-text-color)');
+	}
 }

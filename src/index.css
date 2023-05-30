@@ -1,11 +1,10 @@
 :root {
 	--light-text-color: #444;
 	--frame-color: #AAA;
-	--light-frame-color: #DDD;
+	--light-frame-lightness: 87%;
 	--hover-color: #DEF;
 
 	--frame-line: solid 1px var(--frame-color);
-	--light-frame-line: solid 1px var(--light-frame-color);
 	--spacer: .5rem;
 	--major-button-padding: .3rem;
 }
@@ -13,7 +12,7 @@
 	:root {
 		--light-text-color: #CCC;
 		--frame-color: #666;
-		--light-frame-color: #444;
+		--light-frame-lightness: 27%;
 		--hover-color: #246;
 	}
 }

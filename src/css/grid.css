@@ -12,7 +12,7 @@
 	padding: 0;
 	vertical-align: top;
 }
-.ui .grid :is(td,th,.icon.sender) {
+.ui .grid :is(td,th,.item>.icon,.item>.ballon) {
 	--temp-accent-color: hsl(var(--hue) 50% 50%);
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
 }
@@ -339,6 +339,10 @@
 }
 
 /*** item ballon ***/
+.ui .grid tbody .item > :is(.ballon,.icon) {
+	--ballon-frame-color: hsl(var(--hue) 50% var(--light-frame-lightness));
+	--ballon-frame-line: solid 1px var(--ballon-frame-color);
+}
 .ui .grid tbody .item .ballon {
 	--ballon-min-height: 24px;
 	--disclosure-size: 13px;
@@ -365,7 +369,7 @@
 }
 .ui .grid tbody .item.comment .ballon {
 	--ballon-border-radius: var(--spacer);
-	border: var(--light-frame-line);
+	border: var(--ballon-frame-line);
 	border-radius: var(--ballon-border-radius);
 	background: canvas;
 }
@@ -427,7 +431,7 @@
 	max-width: calc(100% - var(--disclosure-size) - 2 * var(--item-spacer));
 	padding-right: var(--from-border-radius);
 	margin-left: 1ch;
-	border: var(--light-frame-line);
+	border: var(--ballon-frame-line);
 	background: canvas;
 }
 .ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from {
