@@ -181,7 +181,7 @@ export function writeExpandedItemFlow(
 		)
 	} else if (type=='changeset' || type=='changesetClose') {
 		const makeChanges=()=>{
-			const $changes=makeElement('span')('changes')(`Δ ${item.changes.count}`)
+			const $changes=makeElement('span')('badge')(`Δ ${item.changes.count}`)
 			$changes.title=`number of changes`
 			return $changes
 		}

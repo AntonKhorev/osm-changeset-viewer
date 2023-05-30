@@ -473,9 +473,9 @@
 }
 
 /*** item inner ballon flow elements ***/
-.ui .grid tbody .item .ballon .flow .changes {
+.ui .grid tbody .item .ballon .flow .badge {
 	border-radius: 4px;
-	padding: 2px 4px;
+	padding: 1px 4px;
 	font-family: sans-serif;
 	font-size: .8em;
 	background: #8882;
