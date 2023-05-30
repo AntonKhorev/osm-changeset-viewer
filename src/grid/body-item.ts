@@ -160,9 +160,17 @@ export function writeExpandedItemFlow(
 	const makeEditorBadge=(createdBy: string)=>{
 		if (!createdBy) {
 			return makeBadge(`📝 ?`,`unknown editor`)
-		} else {
-			return makeBadge(`📝 ${createdBy[0]}`,createdBy)
 		}
+		for (const [editorId,createdByPrefix,osmWikiName] of [
+			['vespucci','Vespucci','Vespucci'],
+		]) {
+			if (!createdBy.startsWith(createdByPrefix)) continue
+			const $a=makeLink(``,`https://wiki.openstreetmap.org/wiki/${osmWikiName}`,createdBy)
+			$a.innerHTML=`<svg width="16" height="16"><use href="#editor-${editorId}" /></svg>`
+			$a.classList.add('editor')
+			return $a
+		}
+		return makeBadge(`📝 ${createdBy[0]}`,createdBy)
 	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(

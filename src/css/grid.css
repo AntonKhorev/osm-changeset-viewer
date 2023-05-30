@@ -482,3 +482,6 @@
 	color: var(--light-text-color);
 	white-space: nowrap;
 }
+.ui .grid tbody .item .ballon .flow .editor {
+	vertical-align: middle;
+}
