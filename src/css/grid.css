@@ -296,8 +296,11 @@
 	width: var(--checkbox-size);
 	aspect-ratio: 1;
 }
-.ui .grid tbody .item .icon > .no-checkbox {
-	background: var(--frame-color);
+.ui .grid tbody .item.changeset.closed .icon > * {
+	background: canvas;
+}
+.ui .grid tbody tr.collection .item.changeset.closed .icon > * {
+	rotate: -90deg;
 }
 .ui .grid tbody .item.changeset .icon::before {
 	content: '';
@@ -313,13 +316,13 @@
 .ui .grid tbody tr.single .item.changeset:not(.combined) .icon::before {
 	height: calc(.5 * var(--backdrop-size));
 }
-.ui .grid tbody tr.single .item.changeset.closed .icon::before {
+.ui .grid tbody tr.single .item.changeset:not(.closed):not(.combined) .icon::before {
 	top: 50%;
 }
 .ui .grid tbody tr.collection .item.changeset:not(.combined) .icon::before {
 	width: calc(.5 * var(--backdrop-size));
 }
-.ui .grid tbody tr.collection .item.changeset.closed .icon::before {
+.ui .grid tbody tr.collection .item.changeset:not(.closed):not(.combined) .icon::before {
 	left: 50%;
 }
 .ui .grid tbody .item .icon > .tip {

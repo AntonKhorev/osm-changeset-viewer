@@ -52,15 +52,15 @@ export function makeItemShell(
 		$item.classList.add('changeset')
 		if (type=='changesetClose') $item.classList.add('closed')
 		id=item.id
-		writeChangesetIcon($icon,id,type=='changesetClose')
-		setColor($icon,item.uid)
-		setColor($ballon,item.uid)
 		let size=0
 		if (item.changes.count>0) {
 			const cappedChangesCount=Math.min(9999,item.changes.count)
 			size=1+Math.floor(Math.log10(cappedChangesCount))
 		}
 		$icon.dataset.size=String(size)
+		writeChangesetIcon($icon,id,type=='changesetClose',size)
+		setColor($icon,item.uid)
+		setColor($ballon,item.uid)
 	} else if (type=='note') {
 		$item.classList.add('note')
 		id=item.id
@@ -275,12 +275,15 @@ function getSvgOfSenderUserIcon(): string {
 	)
 }
 
-function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean): void {
+function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, size: number): void {
 	if (isClosed) {
-		const $noCheckbox=makeElement('span')('no-checkbox')()
-		$noCheckbox.tabIndex=0
-		$noCheckbox.title=`closed changeset ${id}`
-		$icon.append($noCheckbox)
+		const $noCheckbox=makeCenteredSvg(6+size,
+			`<line y1="-5" y2="5" stroke="currentColor" stroke-width="2" />`+
+			`<path d="M-5,0 L0,5 L5,0" fill="none" stroke="currentColor" stroke-width="2" />`
+		)
+		$icon.tabIndex=0
+		$icon.title=`closed changeset ${id}`
+		$icon.innerHTML=$noCheckbox
 	} else {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
