@@ -287,29 +287,40 @@
 .ui .grid tbody tr.collection .item .icon {
 	vertical-align: -5px;
 }
+.ui .grid tbody .item.changeset .icon[data-size="0"] { --checkbox-size: 12px }
+.ui .grid tbody .item.changeset .icon[data-size="1"] { --checkbox-size: 14px }
+.ui .grid tbody .item.changeset .icon[data-size="2"] { --checkbox-size: 16px }
+.ui .grid tbody .item.changeset .icon[data-size="3"] { --checkbox-size: 18px }
+.ui .grid tbody .item.changeset .icon[data-size="4"] { --checkbox-size: 20px }
+.ui .grid tbody .item.changeset .icon > * {
+	width: var(--checkbox-size);
+	aspect-ratio: 1;
+}
+.ui .grid tbody .item .icon > .no-checkbox {
+	background: var(--frame-color);
+}
 .ui .grid tbody .item.changeset .icon::before {
 	content: '';
 	display: block;
 	position: absolute;
-	inset: 0;
 	background: var(--accent-color);
+	--backdrop-size: calc(var(--checkbox-size) + 4px);
+	height: var(--backdrop-size);
+	width: var(--backdrop-size);
+	top: calc(.5 * var(--icon-size) - .5 * var(--backdrop-size));
+	left: calc(.5 * var(--icon-size) - .5 * var(--backdrop-size));
 }
-.ui .grid tbody tr.single .item.changeset:not(.closed,.combined) .icon::before {
-	top: 50%;
+.ui .grid tbody tr.single .item.changeset:not(.combined) .icon::before {
+	height: calc(.5 * var(--backdrop-size));
 }
 .ui .grid tbody tr.single .item.changeset.closed .icon::before {
-	bottom: 50%;
+	top: 50%;
 }
-.ui .grid tbody tr.collection .item.changeset:not(.closed,.combined) .icon::before {
-	left: 50%;
+.ui .grid tbody tr.collection .item.changeset:not(.combined) .icon::before {
+	width: calc(.5 * var(--backdrop-size));
 }
 .ui .grid tbody tr.collection .item.changeset.closed .icon::before {
-	right: 50%;
-}
-.ui .grid tbody .item .icon > .no-checkbox {
-	width: .75rem;
-	height: .75rem;
-	background: canvas;
+	left: 50%;
 }
 .ui .grid tbody .item .icon > .tip {
 	--tip-overlap: -1px;

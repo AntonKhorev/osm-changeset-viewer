@@ -55,6 +55,12 @@ export function makeItemShell(
 		writeChangesetIcon($icon,id,type=='changesetClose')
 		setColor($icon,item.uid)
 		setColor($ballon,item.uid)
+		let size=0
+		if (item.changes.count>0) {
+			const cappedChangesCount=Math.min(9999,item.changes.count)
+			size=1+Math.floor(Math.log10(cappedChangesCount))
+		}
+		$icon.dataset.size=String(size)
 	} else if (type=='note') {
 		$item.classList.add('note')
 		id=item.id
