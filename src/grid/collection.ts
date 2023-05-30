@@ -1,5 +1,5 @@
 import type {ItemSequencePoint} from './info'
-import {isItem, readItemSequencePoint, writeElementSequencePoint, isGreaterElementSequencePoint} from './info'
+import {isItem, readItemSequencePoint, isGreaterElementSequencePoint} from './info'
 import {makeCollectionIcon} from './body-item'
 import {makeElement} from '../util/html'
 

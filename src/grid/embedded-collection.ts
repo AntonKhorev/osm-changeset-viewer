@@ -49,7 +49,7 @@ export default class EmbeddedItemCollection {
 			let lastId=''
 			for (const $item of $cell.children) {
 				if (!isItem($item)) continue
-				if ($item.classList.contains('hidden')) continue
+				if ($item.hidden) continue
 				const $a=$item.querySelector(':scope > .ballon > .flow > a')
 				if (!($a instanceof HTMLAnchorElement)) {
 					lastId=''
