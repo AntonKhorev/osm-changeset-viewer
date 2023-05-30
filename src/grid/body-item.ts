@@ -157,6 +157,13 @@ export function writeExpandedItemFlow(
 		if (title) $badge.title=title
 		return $badge
 	}
+	const makeEditorBadge=(createdBy: string)=>{
+		if (!createdBy) {
+			return makeBadge(`📝 ?`,`unknown editor`)
+		} else {
+			return makeBadge(`📝 ${createdBy[0]}`,createdBy)
+		}
+	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
 			makeLink(String(id),href),` `,
@@ -186,6 +193,7 @@ export function writeExpandedItemFlow(
 		date = type=='changesetClose' ? item.closedAt : item.createdAt
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
+			` `,makeEditorBadge(item.tags.created_by),
 			` `,makeBadge(`Δ ${item.changes.count}`,`number of changes`),
 			` `,makeBadge(`💬 ${item.comments.count}`,`number of comments`),
 			` `,makeElement('span')()(item.tags?.comment ?? '')
