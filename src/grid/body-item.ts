@@ -181,14 +181,23 @@ export function writeExpandedItemFlow(
 		)
 	} else if (type=='changeset' || type=='changesetClose') {
 		const makeChanges=()=>{
-			const $changes=makeElement('span')('badge')(`Δ ${item.changes.count}`)
-			$changes.title=`number of changes`
-			return $changes
+			const $badge=makeElement('span')('badge')(
+				`Δ ${item.changes.count}`
+			)
+			$badge.title=`number of changes`
+			return $badge
+		}
+		const makeComments=()=>{
+			const $badge=makeElement('span')('badge')(
+				`💬 ${item.comments.count}`
+			)
+			$badge.title=`number of comments`
+			return $badge
 		}
 		date = type=='changesetClose' ? item.closedAt : item.createdAt
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
-			` `,makeChanges(),
+			` `,makeChanges(),` `,makeComments(),
 			` `,makeElement('span')()(item.tags?.comment ?? '')
 		)
 	} else if (type=='note') {
