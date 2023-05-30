@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 16 16">
+<!-- simplified version based on https://wiki.openstreetmap.org/wiki/File:ID.svg -->
+<defs>
+<g id="editor-id-node">
+<circle cy="6" r="1.5" fill="currentColor" />
+</g>
+</defs>
+<use href="#editor-id-node" />
+<g transform="rotate(45)"><use href="#editor-id-node" /></g>
+<g transform="rotate(90)"><use href="#editor-id-node" /></g>
+<g transform="rotate(135)"><use href="#editor-id-node" /></g>
+<g transform="rotate(180)"><use href="#editor-id-node" /></g>
+<g transform="rotate(225)"><use href="#editor-id-node" /></g>
+<g transform="rotate(270)"><use href="#editor-id-node" /></g>
+<path d="M0,6 A6,6 0 1 1 4.24,4.24" fill="none" stroke="currentColor" />
+<line x1="-1.5" y1="-.5" x2="-1.5" y2="2.5" stroke="currentColor" />
+<path d="M.5,2.5 A2.5,2.5 0 0 0 .5,-2.5 Z" fill="none" stroke="currentColor" />
+</svg>

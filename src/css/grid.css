@@ -484,4 +484,5 @@
 }
 .ui .grid tbody .item .ballon .flow .editor {
 	vertical-align: middle;
+	color: unset;
 }

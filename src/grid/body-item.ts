@@ -163,6 +163,7 @@ export function writeExpandedItemFlow(
 		}
 		for (const [editorId,createdByPrefix,osmWikiName] of [
 			['vespucci','Vespucci','Vespucci'],
+			['id','iD','ID'],
 		]) {
 			if (!createdBy.startsWith(createdByPrefix)) continue
 			const $a=makeLink(``,`https://wiki.openstreetmap.org/wiki/${osmWikiName}`,createdBy)
