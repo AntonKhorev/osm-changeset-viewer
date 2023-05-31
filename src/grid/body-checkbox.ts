@@ -125,17 +125,16 @@ function *listRowCheckboxes($row: HTMLTableRowElement, columnFilter: (iColumn:nu
 	changesetId: number,
 	iColumn: number
 ]> {
-	if ($row.classList.contains('single') || $row.classList.contains('collection')) {
-		for (const [iColumn,$cell] of [...$row.cells].entries()) {
-			if (!columnFilter(iColumn)) continue
-			for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
-				if (!($changeset instanceof HTMLElement)) continue
-				const descriptor=readItemDescriptor($changeset)
-				if (!descriptor || descriptor.type!='changeset') continue
-				const $checkbox=getItemCheckbox($changeset)
-				if (!$checkbox) continue
-				yield [$checkbox,descriptor.id,iColumn]
-			}
+	if (!$row.classList.contains('single') && !$row.classList.contains('collection')) return
+	for (const [iColumn,$cell] of [...$row.cells].entries()) {
+		if (!columnFilter(iColumn)) continue
+		for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
+			if (!($changeset instanceof HTMLElement)) continue
+			const descriptor=readItemDescriptor($changeset)
+			if (!descriptor || descriptor.type!='changeset') continue
+			const $checkbox=getItemCheckbox($changeset)
+			if (!$checkbox) continue
+			yield [$checkbox,descriptor.id,iColumn]
 		}
 	}
 }
