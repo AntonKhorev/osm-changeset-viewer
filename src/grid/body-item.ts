@@ -146,6 +146,12 @@ export function writeCollapsedItemFlow(
 	}
 }
 
+const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
+	['vespucci','Vespucci','Vespucci'],
+	['id','iD','ID'],
+	['josm','JOSM','JOSM'], // TODO also match "reverter_plugin/35084;JOSM"
+]
+
 export function writeExpandedItemFlow(
 	$flow: HTMLElement,
 	server: ServerUrlGetter,
@@ -161,10 +167,7 @@ export function writeExpandedItemFlow(
 		if (!createdBy) {
 			return makeBadge(`📝 ?`,`unknown editor`)
 		}
-		for (const [editorId,createdByPrefix,osmWikiName] of [
-			['vespucci','Vespucci','Vespucci'],
-			['id','iD','ID'],
-		]) {
+		for (const [editorId,createdByPrefix,osmWikiName] of editorData) {
 			if (!createdBy.startsWith(createdByPrefix)) continue
 			const $a=makeLink(``,`https://wiki.openstreetmap.org/wiki/${osmWikiName}`,createdBy)
 			$a.innerHTML=`<svg width="16" height="16"><use href="#editor-${editorId}" /></svg>`
