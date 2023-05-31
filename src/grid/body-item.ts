@@ -152,6 +152,7 @@ const editorData:[editorId:string,createdByPrefix:string,url:string][]=[
 	['id','iD','https://wiki.openstreetmap.org/wiki/ID'],
 	['josm','JOSM','https://wiki.openstreetmap.org/wiki/JOSM'],
 	['mapbuilder','Map builder','https://www.bing.com/mapbuilder/'],
+	['mapcomplete','MapComplete','https://wiki.openstreetmap.org/wiki/MapComplete'],
 	['mapsme','MAPS.ME','https://wiki.openstreetmap.org/wiki/MAPS.ME'],
 	['organicmaps','Organic Maps','https://wiki.openstreetmap.org/wiki/Organic_Maps'],
 	['osmand','OsmAnd','https://wiki.openstreetmap.org/wiki/OsmAnd'],
