@@ -185,7 +185,11 @@ export function writeExpandedItemFlow(
 				}
 			}
 		}
-		const [createdByLead]=createdBy.split(/\W/,1)
+		let createdByLead=createdBy
+		const match=createdBy.match(/(.*)(\/|\s)+\d/)
+		if (match && match[1]) {
+			createdByLead=match[1]
+		}
 		return makeBadge(`🛠️ ${createdByLead??'?'}`,createdBy)
 	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
