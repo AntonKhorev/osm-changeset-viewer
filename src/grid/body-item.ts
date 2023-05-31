@@ -152,6 +152,7 @@ const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
 	['josm','JOSM','JOSM'],
 	['everydoor','Every Door','Every_Door'],
 	['osmand','OsmAnd','OsmAnd'],
+	['streetcomplete','StreetComplete','StreetComplete'],
 ]
 
 export function writeExpandedItemFlow(
