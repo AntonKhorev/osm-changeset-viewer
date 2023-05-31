@@ -148,6 +148,7 @@ export function writeCollapsedItemFlow(
 
 const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
 	['everydoor','Every Door','Every_Door'],
+	['gomap','Go Map!!','Go_Map!!'],
 	['id','iD','ID'],
 	['josm','JOSM','JOSM'],
 	['osmand','OsmAnd','OsmAnd'],
