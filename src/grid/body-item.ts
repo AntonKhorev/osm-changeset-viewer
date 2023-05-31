@@ -152,6 +152,7 @@ const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
 	['josm','JOSM','JOSM'],
 	['osmand','OsmAnd','OsmAnd'],
 	['potlatch','Potlatch','Potlatch'],
+	['rapid','RapiD','Rapid'],
 	['streetcomplete','StreetComplete','StreetComplete'],
 	['vespucci','Vespucci','Vespucci'],
 ]
