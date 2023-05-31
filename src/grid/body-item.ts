@@ -150,6 +150,7 @@ const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
 	['vespucci','Vespucci','Vespucci'],
 	['id','iD','ID'],
 	['josm','JOSM','JOSM'], // TODO also match "reverter_plugin/35084;JOSM"
+	['everydoor','Every Door','Every_Door'],
 ]
 
 export function writeExpandedItemFlow(

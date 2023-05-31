@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 16 16">
+<!-- simplified version based on https://github.com/Zverik/every_door/blob/main/icon/app_icon.png -->
+<defs>
+<linearGradient id="editor-everydoor-gradient-door" gradientTransform="rotate(90)">
+<stop offset="0%" stop-color="#bb8342" />
+<stop offset="25%" stop-color="#b88041" />
+<stop offset="100%" stop-color="#794521" />
+</linearGradient>
+<circle id="editor-everydoor-letter" cy="-6" r="1" fill="#fafafa" />
+</defs>
+<rect width="16" height="16" x="-8" y="-8" fill="#00b0f6" />
+<g transform="rotate(-60)"><use href="#editor-everydoor-letter" /></g>
+<g transform="rotate(-30)"><use href="#editor-everydoor-letter" /></g>
+<use href="#editor-everydoor-letter" />
+<g transform="rotate(30)"><use href="#editor-everydoor-letter" /></g>
+<g transform="rotate(60)"><use href="#editor-everydoor-letter" /></g>
+<g transform="rotate(135)"><use href="#editor-everydoor-letter" /></g>
+<g transform="rotate(165)"><use href="#editor-everydoor-letter" /></g>
+<g transform="rotate(195)"><use href="#editor-everydoor-letter" /></g>
+<g transform="rotate(225)"><use href="#editor-everydoor-letter" /></g>
+<rect width="4" height="6" x="-2" y="-3" fill="url(#editor-everydoor-gradient-door)" />
+</svg>
