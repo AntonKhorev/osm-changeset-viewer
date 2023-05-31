@@ -174,7 +174,7 @@ export function writeExpandedItemFlow(
 	}
 	const makeEditorBadge=(createdBy: string)=>{
 		if (!createdBy) {
-			return makeBadge(`📝 ?`,`unknown editor`)
+			return makeBadge(`🛠️ ?`,`unknown editor`)
 		}
 		for (const [editorId,createdByPrefix,osmWikiName] of editorData) {
 			for (const createdByValue of createdBy.split(';')) {
@@ -183,7 +183,7 @@ export function writeExpandedItemFlow(
 				}
 			}
 		}
-		return makeBadge(`📝 ${createdBy[0]}`,createdBy)
+		return makeBadge(`🛠️ ${createdBy[0]}`,createdBy)
 	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
@@ -215,7 +215,7 @@ export function writeExpandedItemFlow(
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
 			` `,makeEditorBadge(item.tags.created_by),
-			` `,makeBadge(`Δ ${item.changes.count}`,`number of changes`),
+			` `,makeBadge(`📝 ${item.changes.count}`,`number of changes`),
 			` `,makeBadge(`💬 ${item.comments.count}`,`number of comments`),
 			` `,makeElement('span')()(item.tags?.comment ?? '')
 		)
