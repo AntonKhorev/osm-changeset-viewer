@@ -149,7 +149,7 @@ export function writeCollapsedItemFlow(
 const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
 	['vespucci','Vespucci','Vespucci'],
 	['id','iD','ID'],
-	['josm','JOSM','JOSM'], // TODO also match "reverter_plugin/35084;JOSM"
+	['josm','JOSM','JOSM'],
 	['everydoor','Every Door','Every_Door'],
 ]
 
@@ -164,16 +164,22 @@ export function writeExpandedItemFlow(
 		if (title) $badge.title=title
 		return $badge
 	}
+	const makeKnownEditorBadge=(createdBy: string, editorId: string, osmWikiName: string)=>{
+		const $a=makeLink(``,`https://wiki.openstreetmap.org/wiki/${osmWikiName}`,createdBy)
+		$a.innerHTML=`<svg width="16" height="16"><use href="#editor-${editorId}" /></svg>`
+		$a.classList.add('editor')
+		return $a
+	}
 	const makeEditorBadge=(createdBy: string)=>{
 		if (!createdBy) {
 			return makeBadge(`📝 ?`,`unknown editor`)
 		}
 		for (const [editorId,createdByPrefix,osmWikiName] of editorData) {
-			if (!createdBy.startsWith(createdByPrefix)) continue
-			const $a=makeLink(``,`https://wiki.openstreetmap.org/wiki/${osmWikiName}`,createdBy)
-			$a.innerHTML=`<svg width="16" height="16"><use href="#editor-${editorId}" /></svg>`
-			$a.classList.add('editor')
-			return $a
+			for (const createdByValue of createdBy.split(';')) {
+				if (createdByValue.startsWith(createdByPrefix)) {
+					return makeKnownEditorBadge(createdBy,editorId,osmWikiName)
+				}
+			}
 		}
 		return makeBadge(`📝 ${createdBy[0]}`,createdBy)
 	}
