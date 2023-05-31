@@ -151,6 +151,7 @@ const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
 	['gomap','Go Map!!','Go_Map!!'],
 	['id','iD','ID'],
 	['josm','JOSM','JOSM'],
+	['organicmaps','Organic Maps','Organic_Maps'],
 	['osmand','OsmAnd','OsmAnd'],
 	['potlatch','Potlatch','Potlatch'],
 	['rapid','RapiD','Rapid'],
