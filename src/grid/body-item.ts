@@ -147,12 +147,13 @@ export function writeCollapsedItemFlow(
 }
 
 const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
-	['vespucci','Vespucci','Vespucci'],
+	['everydoor','Every Door','Every_Door'],
 	['id','iD','ID'],
 	['josm','JOSM','JOSM'],
-	['everydoor','Every Door','Every_Door'],
 	['osmand','OsmAnd','OsmAnd'],
+	['potlatch','Potlatch','Potlatch'],
 	['streetcomplete','StreetComplete','StreetComplete'],
+	['vespucci','Vespucci','Vespucci'],
 ]
 
 export function writeExpandedItemFlow(
