@@ -146,18 +146,19 @@ export function writeCollapsedItemFlow(
 	}
 }
 
-const editorData:[editorId:string,createdByPrefix:string,osmWikiName:string][]=[
-	['everydoor','Every Door','Every_Door'],
-	['gomap','Go Map!!','Go_Map!!'],
-	['id','iD','ID'],
-	['josm','JOSM','JOSM'],
-	['mapsme','MAPS.ME','MAPS.ME'],
-	['organicmaps','Organic Maps','Organic_Maps'],
-	['osmand','OsmAnd','OsmAnd'],
-	['potlatch','Potlatch','Potlatch'],
-	['rapid','RapiD','Rapid'],
-	['streetcomplete','StreetComplete','StreetComplete'],
-	['vespucci','Vespucci','Vespucci'],
+const editorData:[editorId:string,createdByPrefix:string,url:string][]=[
+	['everydoor','Every Door','https://wiki.openstreetmap.org/wiki/Every_Door'],
+	['gomap','Go Map!!','https://wiki.openstreetmap.org/wiki/Go_Map!!'],
+	['id','iD','https://wiki.openstreetmap.org/wiki/ID'],
+	['josm','JOSM','https://wiki.openstreetmap.org/wiki/JOSM'],
+	['mapbuilder','Map builder','https://www.bing.com/mapbuilder/'],
+	['mapsme','MAPS.ME','https://wiki.openstreetmap.org/wiki/MAPS.ME'],
+	['organicmaps','Organic Maps','https://wiki.openstreetmap.org/wiki/Organic_Maps'],
+	['osmand','OsmAnd','https://wiki.openstreetmap.org/wiki/OsmAnd'],
+	['potlatch','Potlatch','https://wiki.openstreetmap.org/wiki/Potlatch'],
+	['rapid','RapiD','https://wiki.openstreetmap.org/wiki/Rapid'],
+	['streetcomplete','StreetComplete','https://wiki.openstreetmap.org/wiki/StreetComplete'],
+	['vespucci','Vespucci','https://wiki.openstreetmap.org/wiki/Vespucci'],
 ]
 
 export function writeExpandedItemFlow(
@@ -171,8 +172,8 @@ export function writeExpandedItemFlow(
 		if (title) $badge.title=title
 		return $badge
 	}
-	const makeKnownEditorBadge=(createdBy: string, editorId: string, osmWikiName: string)=>{
-		const $a=makeLink(``,`https://wiki.openstreetmap.org/wiki/${osmWikiName}`,createdBy)
+	const makeKnownEditorBadge=(createdBy: string, editorId: string, url: string)=>{
+		const $a=makeLink(``,url,createdBy)
 		$a.innerHTML=`<svg width="16" height="16"><use href="#editor-${editorId}" /></svg>`
 		$a.classList.add('editor')
 		return $a
@@ -181,10 +182,10 @@ export function writeExpandedItemFlow(
 		if (!createdBy) {
 			return makeBadge(`🛠️ ?`,`unknown editor`)
 		}
-		for (const [editorId,createdByPrefix,osmWikiName] of editorData) {
+		for (const [editorId,createdByPrefix,url] of editorData) {
 			for (const createdByValue of createdBy.split(';')) {
 				if (createdByValue.toLowerCase().startsWith(createdByPrefix.toLowerCase())) {
-					return makeKnownEditorBadge(createdBy,editorId,osmWikiName)
+					return makeKnownEditorBadge(createdBy,editorId,url)
 				}
 			}
 		}
