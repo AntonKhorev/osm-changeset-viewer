@@ -184,7 +184,8 @@ export function writeExpandedItemFlow(
 				}
 			}
 		}
-		return makeBadge(`🛠️ ${createdBy[0]}`,createdBy)
+		const [createdByLead]=createdBy.split(/\W/,1)
+		return makeBadge(`🛠️ ${createdByLead??'?'}`,createdBy)
 	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
