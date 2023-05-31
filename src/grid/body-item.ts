@@ -181,7 +181,7 @@ export function writeExpandedItemFlow(
 		}
 		for (const [editorId,createdByPrefix,osmWikiName] of editorData) {
 			for (const createdByValue of createdBy.split(';')) {
-				if (createdByValue.startsWith(createdByPrefix)) {
+				if (createdByValue.toLowerCase().startsWith(createdByPrefix.toLowerCase())) {
 					return makeKnownEditorBadge(createdBy,editorId,osmWikiName)
 				}
 			}
