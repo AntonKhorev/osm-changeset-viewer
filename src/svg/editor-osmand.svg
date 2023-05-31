@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 16 16">
+<!-- simplified version based on https://github.com/osmandapp/OsmAnd/blob/master/OsmAnd/res/mipmap-hdpi/icon.png -->
+<defs>
+<linearGradient id="editor-osmand-pin" gradientTransform="rotate(90)">
+<stop offset="0%" stop-color="#ffad00" />
+<stop offset="100%" stop-color="#ff8900" />
+</linearGradient>
+</defs>
+<path d="
+	M-1.7,5.2 A5.5,5.5 0 1 1 1.7,5.2 L0,7 Z
+	M0,-2.5 A2.5,2.5 0 0 0 0,2.5 A2.5,2.5 0 0 0 0,-2.5
+" fill="url(#editor-osmand-pin)" stroke="#b34505" />
+</svg>
