@@ -1,4 +1,5 @@
 import {getHueFromUid} from './colorizer'
+import type {EditorIcon} from './editors'
 import editorData from './editors'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
@@ -158,9 +159,13 @@ export function writeExpandedItemFlow(
 		if (title) $badge.title=title
 		return $badge
 	}
-	const makeKnownEditorBadge=(createdBy: string, editorId: string, url: string)=>{
+	const makeKnownEditorBadge=(createdBy: string, editorIcon: EditorIcon, url: string)=>{
 		const $a=makeLink(``,url,createdBy)
-		$a.innerHTML=`<svg width="16" height="16"><use href="#editor-${editorId}" /></svg>`
+		if (editorIcon.type=='svg') {
+			$a.innerHTML=`<svg width="16" height="16"><use href="#editor-${editorIcon.id}" /></svg>`
+		} else {
+			$a.innerHTML=`<img width="16" height="16" src="${editorIcon.data}">`
+		}
 		$a.classList.add('editor')
 		return $a
 	}
@@ -168,10 +173,10 @@ export function writeExpandedItemFlow(
 		if (!createdBy) {
 			return makeBadge(`🛠️ ?`,`unknown editor`)
 		}
-		for (const [editorId,createdByPrefix,url] of editorData) {
+		for (const [editorIcon,createdByPrefix,url] of editorData) {
 			for (const createdByValue of createdBy.split(';')) {
 				if (createdByValue.toLowerCase().startsWith(createdByPrefix.toLowerCase())) {
-					return makeKnownEditorBadge(createdBy,editorId,url)
+					return makeKnownEditorBadge(createdBy,editorIcon,url)
 				}
 			}
 		}
