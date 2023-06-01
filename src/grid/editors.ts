@@ -44,6 +44,7 @@ const editorData:[editorId: EditorIcon, createdByPrefix: string, url: string][]=
 	[{type:'data',data:merkaartorIcon},'Merkaartor','https://wiki.openstreetmap.org/wiki/Merkaartor'],
 	[{type:'svg',id:'organicmaps'},'Organic Maps','https://wiki.openstreetmap.org/wiki/Organic_Maps'],
 	[{type:'svg',id:'osmand'},'OsmAnd','https://wiki.openstreetmap.org/wiki/OsmAnd'],
+	[{type:'svg',id:'osmose'},'Osmose Editor','https://wiki.openstreetmap.org/wiki/Osmose#Osmose_integrated_tags_editor'],
 	[{type:'svg',id:'potlatch'},'Potlatch','https://wiki.openstreetmap.org/wiki/Potlatch'],
 	[{type:'svg',id:'rapid'},'RapiD','https://wiki.openstreetmap.org/wiki/Rapid'],
 	[{type:'svg',id:'streetcomplete'},'StreetComplete','https://wiki.openstreetmap.org/wiki/StreetComplete'],
