@@ -185,7 +185,7 @@ export function writeExpandedItemFlow(
 			}
 		}
 		let createdByLead=createdBy
-		const match=createdBy.match(/(.*)(\/|\s)+\d/)
+		const match=createdBy.match(/(.*)(\/|\s+|v)\d/)
 		if (match && match[1]) {
 			createdByLead=match[1]
 		}

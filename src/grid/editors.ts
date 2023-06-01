@@ -42,6 +42,14 @@ const editorData: [
 		editorId: EditorIcon
 ][]=[
 	[
+		'ArcGIS Editor',
+		'https://wiki.openstreetmap.org/wiki/ArcGIS_Editor_for_OSM',
+		{type:'text',name:'ArcGIS'},
+	],[
+		'autoAWS',
+		'https://wiki.openstreetmap.org/wiki/AutoAWS',
+		{type:'text',name:'autoAWS'},
+	],[
 		'Every Door',
 		'https://wiki.openstreetmap.org/wiki/Every_Door',
 		{type:'svg',id:'everydoor'},
@@ -54,6 +62,10 @@ const editorData: [
 		'https://wiki.openstreetmap.org/wiki/OSM_%E2%86%94_Wikidata_matcher',
 		{type:'text',name:'OSM↔Wikidata'},
 	],[
+		'https_all_the_things',
+		'https://wiki.openstreetmap.org/wiki/Automated_Edits/b-jazz-bot',
+		{type:'text',name:'https_all_the_things'},
+	],[
 		'iD',
 		'https://wiki.openstreetmap.org/wiki/ID',
 		{type:'svg',id:'id'},
@@ -61,6 +73,10 @@ const editorData: [
 		'JOSM',
 		'https://wiki.openstreetmap.org/wiki/JOSM',
 		{type:'svg',id:'josm'},
+	],[
+		'Level0',
+		'https://wiki.openstreetmap.org/wiki/Level0',
+		{type:'text',name:'Level0'},
 	],[
 		'Map builder',
 		'https://www.bing.com/mapbuilder/',
@@ -82,13 +98,33 @@ const editorData: [
 		'https://wiki.openstreetmap.org/wiki/Organic_Maps',
 		{type:'svg',id:'organicmaps'},
 	],[
+		'osm-bulk-upload/upload.py',
+		'https://wiki.openstreetmap.org/wiki/Upload.py',
+		{type:'text',name:'upload.py'},
+	],[
 		'OsmAnd',
 		'https://wiki.openstreetmap.org/wiki/OsmAnd',
 		{type:'svg',id:'osmand'},
 	],[
+		'osmapi/',
+		'https://wiki.openstreetmap.org/wiki/Osmapi_(Python_library)',
+		{type:'text',name:'osmapi'},
+	],[
+		'OsmHydrant',
+		'https://wiki.openstreetmap.org/wiki/OsmHydrant',
+		{type:'text',name:'OsmHydrant'},
+	],[
+		'OsmInEdit',
+		'https://wiki.openstreetmap.org/wiki/OsmInEdit',
+		{type:'text',name:'OsmInEdit'},
+	],[
 		'Osmose Editor',
 		'https://wiki.openstreetmap.org/wiki/Osmose#Osmose_integrated_tags_editor',
 		{type:'svg',id:'osmose'},
+	],[
+		'osmtools',
+		'https://wiki.openstreetmap.org/wiki/Revert_scripts',
+		{type:'text',name:'osmtools'},
 	],[
 		'Potlatch',
 		'https://wiki.openstreetmap.org/wiki/Potlatch',
@@ -97,6 +133,10 @@ const editorData: [
 		'RapiD',
 		'https://wiki.openstreetmap.org/wiki/Rapid',
 		{type:'svg',id:'rapid'},
+	],[
+		'Redaction bot',
+		'https://wiki.openstreetmap.org/wiki/OSMF_Redaction_Bot',
+		{type:'text',name:'Redaction bot'}
 	],[
 		'StreetComplete',
 		'https://wiki.openstreetmap.org/wiki/StreetComplete',
