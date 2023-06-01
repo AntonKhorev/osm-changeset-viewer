@@ -159,24 +159,28 @@ export function writeExpandedItemFlow(
 		if (title) $badge.title=title
 		return $badge
 	}
-	const makeKnownEditorBadge=(createdBy: string, editorIcon: EditorIcon, url: string)=>{
-		const $a=makeLink(``,url,createdBy)
+	const makeKnownEditorBadgeOrIcon=(createdBy: string, editorIcon: EditorIcon, url: string)=>{
+		const $a=makeLink(``,url)
 		if (editorIcon.type=='svg') {
 			$a.innerHTML=`<svg width="16" height="16"><use href="#editor-${editorIcon.id}" /></svg>`
-		} else {
+		} else if (editorIcon.type=='data') {
 			$a.innerHTML=`<img width="16" height="16" src="${editorIcon.data}">`
+		} else {
+			$a.textContent=`🛠️ `+editorIcon.name
+			return makeBadge($a,createdBy)
 		}
+		$a.title=createdBy
 		$a.classList.add('editor')
 		return $a
 	}
-	const makeEditorBadge=(createdBy: string)=>{
+	const makeEditorBadgeOrIcon=(createdBy: string)=>{
 		if (!createdBy) {
 			return makeBadge(`🛠️ ?`,`unknown editor`)
 		}
-		for (const [editorIcon,createdByPrefix,url] of editorData) {
+		for (const [createdByPrefix,url,editorIcon] of editorData) {
 			for (const createdByValue of createdBy.split(';')) {
 				if (createdByValue.toLowerCase().startsWith(createdByPrefix.toLowerCase())) {
-					return makeKnownEditorBadge(createdBy,editorIcon,url)
+					return makeKnownEditorBadgeOrIcon(createdBy,editorIcon,url)
 				}
 			}
 		}
@@ -216,7 +220,7 @@ export function writeExpandedItemFlow(
 		date = type=='changesetClose' ? item.closedAt : item.createdAt
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
-			` `,makeEditorBadge(item.tags.created_by),
+			` `,makeEditorBadgeOrIcon(item.tags.created_by),
 			` `,makeBadge(`📝 ${item.changes.count}`,`number of changes`),
 			` `,makeBadge(`💬 ${item.comments.count}`,`number of comments`),
 			` `,makeElement('span')()(item.tags?.comment ?? '')

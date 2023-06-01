@@ -4,6 +4,9 @@ export type EditorIcon = {
 } | {
 	type: 'data'
 	data: string
+} | {
+	type: 'text'
+	name: string
 }
 
 const merkaartorIcon =
@@ -33,22 +36,76 @@ const merkaartorIcon =
 "elauUq9VWFjcIBz0oihe0uk0txdrzH30Cp/Ovc+J0ZPIqo+/76" +
 "6i60F0X5DN/5YJ+SX+B9iyZV21U+bvAAAAAElFTkSuQmCC"
 
-const editorData:[editorId: EditorIcon, createdByPrefix: string, url: string][]=[
-	[{type:'svg',id:'everydoor'},'Every Door','https://wiki.openstreetmap.org/wiki/Every_Door'],
-	[{type:'svg',id:'gomap'},'Go Map!!','https://wiki.openstreetmap.org/wiki/Go_Map!!'],
-	[{type:'svg',id:'id'},'iD','https://wiki.openstreetmap.org/wiki/ID'],
-	[{type:'svg',id:'josm'},'JOSM','https://wiki.openstreetmap.org/wiki/JOSM'],
-	[{type:'svg',id:'mapbuilder'},'Map builder','https://www.bing.com/mapbuilder/'],
-	[{type:'svg',id:'mapcomplete'},'MapComplete','https://wiki.openstreetmap.org/wiki/MapComplete'],
-	[{type:'svg',id:'mapsme'},'MAPS.ME','https://wiki.openstreetmap.org/wiki/MAPS.ME'],
-	[{type:'data',data:merkaartorIcon},'Merkaartor','https://wiki.openstreetmap.org/wiki/Merkaartor'],
-	[{type:'svg',id:'organicmaps'},'Organic Maps','https://wiki.openstreetmap.org/wiki/Organic_Maps'],
-	[{type:'svg',id:'osmand'},'OsmAnd','https://wiki.openstreetmap.org/wiki/OsmAnd'],
-	[{type:'svg',id:'osmose'},'Osmose Editor','https://wiki.openstreetmap.org/wiki/Osmose#Osmose_integrated_tags_editor'],
-	[{type:'svg',id:'potlatch'},'Potlatch','https://wiki.openstreetmap.org/wiki/Potlatch'],
-	[{type:'svg',id:'rapid'},'RapiD','https://wiki.openstreetmap.org/wiki/Rapid'],
-	[{type:'svg',id:'streetcomplete'},'StreetComplete','https://wiki.openstreetmap.org/wiki/StreetComplete'],
-	[{type:'svg',id:'vespucci'},'Vespucci','https://wiki.openstreetmap.org/wiki/Vespucci'],
+const editorData: [
+		createdByPrefix: string,
+		url: string,
+		editorId: EditorIcon
+][]=[
+	[
+		'Every Door',
+		'https://wiki.openstreetmap.org/wiki/Every_Door',
+		{type:'svg',id:'everydoor'},
+	],[
+		'Go Map!!',
+		'https://wiki.openstreetmap.org/wiki/Go_Map!!',
+		{type:'svg',id:'gomap'},
+	],[
+		'https://osm.wikidata.link/',
+		'https://wiki.openstreetmap.org/wiki/OSM_%E2%86%94_Wikidata_matcher',
+		{type:'text',name:'OSM↔Wikidata'},
+	],[
+		'iD',
+		'https://wiki.openstreetmap.org/wiki/ID',
+		{type:'svg',id:'id'},
+	],[
+		'JOSM',
+		'https://wiki.openstreetmap.org/wiki/JOSM',
+		{type:'svg',id:'josm'},
+	],[
+		'Map builder',
+		'https://www.bing.com/mapbuilder/',
+		{type:'svg',id:'mapbuilder'},
+	],[
+		'MapComplete',
+		'https://wiki.openstreetmap.org/wiki/MapComplete',
+		{type:'svg',id:'mapcomplete'},
+	],[
+		'MAPS.ME',
+		'https://wiki.openstreetmap.org/wiki/MAPS.ME',
+		{type:'svg',id:'mapsme'},
+	],[
+		'Merkaartor',
+		'https://wiki.openstreetmap.org/wiki/Merkaartor',
+		{type:'data',data:merkaartorIcon},
+	],[
+		'Organic Maps',
+		'https://wiki.openstreetmap.org/wiki/Organic_Maps',
+		{type:'svg',id:'organicmaps'},
+	],[
+		'OsmAnd',
+		'https://wiki.openstreetmap.org/wiki/OsmAnd',
+		{type:'svg',id:'osmand'},
+	],[
+		'Osmose Editor',
+		'https://wiki.openstreetmap.org/wiki/Osmose#Osmose_integrated_tags_editor',
+		{type:'svg',id:'osmose'},
+	],[
+		'Potlatch',
+		'https://wiki.openstreetmap.org/wiki/Potlatch',
+		{type:'svg',id:'potlatch'},
+	],[
+		'RapiD',
+		'https://wiki.openstreetmap.org/wiki/Rapid',
+		{type:'svg',id:'rapid'},
+	],[
+		'StreetComplete',
+		'https://wiki.openstreetmap.org/wiki/StreetComplete',
+		{type:'svg',id:'streetcomplete'},
+	],[
+		'Vespucci',
+		'https://wiki.openstreetmap.org/wiki/Vespucci',
+		{type:'svg',id:'vespucci'},
+	],
 ]
 
 export default editorData
