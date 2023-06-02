@@ -65,8 +65,8 @@ export default class ItemCollection {
 				$splitCell.append(makeCollectionIcon())
 			}
 			for (const $item of $itemsToMove) {
-				$splitCell.append($item)
-				$item.before(' ') // TODO remove in remove() method
+				removeSpaceBefore($item)
+				$splitCell.append(` `,$item)
 			}
 			if (nItems<=$itemsToMove.length) {
 				const $icon=$cell.children[0]
@@ -106,7 +106,7 @@ export default class ItemCollection {
 				}
 				if (copying) {
 					$cell1.append($child)
-					$child.before(' ') // TODO remove in remove() method
+					$child.before(' ')
 				}
 			}
 			$cell1.classList.toggle('with-timeline-below',$cell2.classList.contains('with-timeline-below'))
@@ -127,20 +127,18 @@ export default class ItemCollection {
 				const collectionItemSequencePoint=readItemSequencePoint($existingItem)
 				if (!collectionItemSequencePoint) continue
 				if (isGreaterElementSequencePoint(sequencePoint,collectionItemSequencePoint)) {
-					$existingItem.before($item)
-					$item.before(' ') // TODO remove in remove() method
+					$existingItem.before($item,` `)
 					continue itemLoop
 				}
 			}
 			if (nItems==0) {
 				const $icon=makeCollectionIcon()
 				$cell.prepend($icon)
-				$icon.after($item)
+				$icon.after(` `,$item)
 			} else {
 				const $lastChild=$cell.lastElementChild as Element
-				$lastChild.after($item)
+				$lastChild.after(` `,$item)
 			}
-			$item.before(' ') // TODO remove in remove() method
 		}
 	}
 	remove($items: Iterable<HTMLElement>): void {
@@ -148,6 +146,7 @@ export default class ItemCollection {
 			const $cell=$item.parentElement
 			if (!($cell instanceof HTMLTableCellElement)) continue
 			if ($cell.parentElement!=this.$row) continue
+			removeSpaceBefore($item)
 			$item.remove()
 			if ($cell.querySelector(':scope > .item')) continue
 			$cell.replaceChildren()
@@ -187,4 +186,11 @@ export default class ItemCollection {
 			yield [point,items]
 		}
 	}
+}
+
+function removeSpaceBefore($e: HTMLElement): void {
+	const $s=$e.previousSibling
+	if ($s?.nodeType!=document.TEXT_NODE) return
+	if ($s.textContent!=' ') return
+	$s.remove()
 }

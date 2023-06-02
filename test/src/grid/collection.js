@@ -2,23 +2,25 @@ import {strict as assert} from 'assert'
 import {JSDOM} from 'jsdom'
 import ItemCollection from '../../../test-build/grid/collection.js'
 
-function row(...children) {
+function row(...$cells) {
 	const $row=document.createElement('tr')
 	$row.classList.add('collection')
-	$row.append(...children)
+	$row.append(...$cells)
 	return $row
 }
-function cell(timeline,style,...children) {
+function cell(timeline,style,...$children) {
 	const $cell=document.createElement('td')
 	if (timeline.includes('a')) $cell.classList.add('with-timeline-above')
 	if (timeline.includes('b')) $cell.classList.add('with-timeline-below')
 	$cell.setAttribute('style',style)
-	if (children.length>0) {
+	if ($children.length>0) {
 		const $icon=document.createElement('span')
 		$icon.classList.add('icon')
 		$cell.append($icon)
 	}
-	$cell.append(...children)
+	for (const $child of $children) {
+		$cell.append(' ',$child)
+	}
 	return $cell
 }
 function changeset(date,id) {
@@ -357,11 +359,15 @@ function assertChangesetCollectionRow($row,cells) {
 			assert.equal($cell.children.length,0)
 			continue
 		}
-		assert.equal($cell.children.length,items.length+1,`Expected cell[${i}] to have ${items.length+1} children, got ${$cell.children.length}`)
-		const $iconCell=$cell.children[0]
-		assert($iconCell.classList.contains('icon'))
+		assert.equal($cell.childNodes.length,1+2*items.length,`Expected cell[${i}] to have ${1+2*items.length} child nodes, got ${$cell.childNodes.length}`)
+		const $icon=$cell.children[0]
+		assert($icon.classList.contains('icon'))
 		for (let j=0;j<items.length;j++) {
-			const $item=$cell.children[j+1]
+			const $space=$cell.childNodes[1+j*2]
+			assert.equal($space.nodeType,document.TEXT_NODE)
+			assert.equal($space.textContent,' ')
+			const $item=$cell.childNodes[2+j*2]
+			assert.equal($item.nodeType,document.ELEMENT_NODE)
 			const point=changesetPoint(...items[j])
 			assert.equal($item.dataset.type,point.type)
 			assert.equal($item.dataset.id,String(point.id),`Expected item[${i},${j}] to have id '${point.id}', got '${$item.dataset.id}'`)
