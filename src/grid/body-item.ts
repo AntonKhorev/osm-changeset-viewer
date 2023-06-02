@@ -80,7 +80,7 @@ export function makeItemShell(
 			} else {
 				$item.classList.add(item.action)
 			}
-			$icon.title=`${item.action} 'note' ${id}`
+			$icon.title=`${item.action} note ${id}`
 			commentIconSvg=getSvgOfCommentIcon('note',item.action)
 		} else {
 			$item.classList.add('passive')
