@@ -13,6 +13,7 @@
 <g transform="rotate(225)"><use href="#editor-id-node" /></g>
 <g transform="rotate(270)"><use href="#editor-id-node" /></g>
 <path d="M0,6 A6,6 0 1 1 4.24,4.24" fill="none" stroke="currentColor" />
+<circle cx="-1.5" cy="-2.5" r=".5" fill="currentColor" />
 <line x1="-1.5" y1="-.5" x2="-1.5" y2="2.5" stroke="currentColor" />
-<path d="M.5,2.5 A2.5,2.5 0 0 0 .5,-2.5 Z" fill="none" stroke="currentColor" />
+<path d="M.5,2.5 A2,2.5 0 0 0 .5,-2.5 Z" fill="none" stroke="currentColor" />
 </svg>
