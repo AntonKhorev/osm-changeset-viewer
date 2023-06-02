@@ -286,12 +286,12 @@ export function makeCollectionIcon(): HTMLElement {
 	const c1=-10
 	const c2=10-2*r
 	$icon.innerHTML=makeCenteredSvg(10,
-		`<rect x="${c1}" y="${c1}" width="${2*r}" height="${2*r}" fill="currentColor" />`+
-		`<rect x="${c1}" y="${c2}" width="${2*r}" height="${2*r}" fill="currentColor" />`+
-		`<rect x="${c2}" y="${c1}" width="${2*r}" height="${2*r}" fill="currentColor" />`+
-		`<rect x="${c2}" y="${c2}" width="${2*r}" height="${2*r}" fill="currentColor" />`+
-		`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`
-	)
+		`<rect x="${c1}" y="${c1}" width="${2*r}" height="${2*r}" />`+
+		`<rect x="${c1}" y="${c2}" width="${2*r}" height="${2*r}" />`+
+		`<rect x="${c2}" y="${c1}" width="${2*r}" height="${2*r}" />`+
+		`<rect x="${c2}" y="${c2}" width="${2*r}" height="${2*r}" />`+
+		`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" />`,
+	`fill="currentColor"`)
 	return $icon
 }
 
@@ -312,9 +312,9 @@ function getSvgOfSenderUserIcon(): string {
 function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, size: number): void {
 	if (isClosed) {
 		const $noCheckbox=makeCenteredSvg(6+size,
-			`<line y1="-5" y2="5" stroke="currentColor" stroke-width="2" />`+
-			`<path d="M-5,0 L0,5 L5,0" fill="none" stroke="currentColor" stroke-width="2" />`
-		)
+			`<line y1="-5" y2="5" />`+
+			`<path d="M-5,0 L0,5 L5,0" fill="none" />`,
+		`stroke="currentColor" stroke-width="2"`)
 		$icon.tabIndex=0
 		$icon.title=`closed changeset ${id}`
 		$icon.innerHTML=$noCheckbox
@@ -330,11 +330,11 @@ function writeNoteIcon($icon: HTMLElement, id: number): void {
 	$icon.title=`note ${id}`
 	const s=3
 	$icon.innerHTML=makeCenteredSvg(10,
-		`<path d="${computeNewOutlinePath(9.5,8,10)}" fill="none" stroke="currentColor" stroke-width="1" />`+
-		`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
-		`<line x1="${-s}" x2="${s}" stroke="currentColor" stroke-width="2" />`+
-		`<line y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="2" />`
-	)
+		`<path d="${computeNewOutlinePath(9.5,8,10)}" fill="none" stroke-width="1" />`+
+		`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" />`+
+		`<line x1="${-s}" x2="${s}" />`+
+		`<line y1="${-s}" y2="${s}" />`,
+	`stroke="currentColor" stroke-width="2"`)
 }
 
 function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): string {
@@ -342,19 +342,19 @@ function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): str
 		const s=2.5
 		let actionGlyph: string|undefined
 		if (action=='closed') {
-			actionGlyph=`<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" stroke="currentColor" stroke-width="2" />`
+			actionGlyph=`<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" />`
 		} else if (action=='reopened') {
 			actionGlyph=
-				`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" stroke="currentColor" stroke-width="2" />`+
-				`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" stroke="currentColor" stroke-width="2" />`
+				`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" />`+
+				`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" />`
 		} else if (action=='hidden') {
 			actionGlyph=``
 		}
 		if (actionGlyph!=null) {
 			return makeCenteredSvg(10,
-				`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
-				actionGlyph
-			)
+				`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" />`+
+				actionGlyph,
+			`stroke="currentColor" stroke-width="2"`)
 		} else {
 			const r=4
 			return makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
@@ -372,9 +372,9 @@ function getSvgOfCommentTip(side: -1|1): string {
 	`</svg>`
 }
 function getSvgOfMuteCommentTip(side: -1|1): string {
-	return `<svg class="tip" width="15" height="20" viewBox="${side<0?0:-15} -10 15 20">`+
-		`<circle cx="${-10.5*side}" cy="-3.5" r="4" fill="canvas" stroke="var(--ballon-frame-color)" />`+
-		`<circle cx="${-5.5*side}" cy="1.5" r="2" fill="canvas" stroke="var(--ballon-frame-color)" />`+
+	return `<svg class="tip" width="15" height="20" viewBox="${side<0?0:-15} -10 15 20" fill="canvas" stroke="var(--ballon-frame-color)">`+
+		`<circle cx="${-10.5*side}" cy="-3.5" r="4" />`+
+		`<circle cx="${-5.5*side}" cy="1.5" r="2" />`+
 	`</svg>`
 }
 
@@ -384,9 +384,9 @@ function makeItemDisclosureButton(isExpanded: boolean): HTMLButtonElement {
 	const r=5.5
 	const s=3.5
 	$disclosure.innerHTML=makeCenteredSvg(r,
-		`<line x1="${-s}" x2="${s}" stroke="currentColor" />`+
-		`<line y1="${-s}" y2="${s}" stroke="currentColor" class='vertical-stroke' />`
-	)
+		`<line x1="${-s}" x2="${s}" />`+
+		`<line y1="${-s}" y2="${s}" class='vertical-stroke' />`,
+	`stroke="currentColor"`)
 	return $disclosure
 }
 
@@ -398,8 +398,8 @@ export function setItemDisclosureButtonState($disclosure: HTMLButtonElement, isE
 	$disclosure.title=(isExpanded?`Collapse`:`Expand`)+` item info`
 }
 
-export function makeCenteredSvg(r: number, content: string): string {
-	return `<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}">${content}</svg>`
+export function makeCenteredSvg(r: number, content: string, attrs?: string): string {
+	return `<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}"${attrs?' '+attrs:''}>${content}</svg>`
 }
 
 function computeMarkerOutlinePath(h: number, r: number): string {
