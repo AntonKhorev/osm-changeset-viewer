@@ -13,9 +13,14 @@ export function escapeXml(text: string) { // https://github.com/Inist-CNRS/node-
 }
 
 export function escapeHash(text: string) {
-	return text.replace(
-		/[^0-9a-zA-Z?/:@._~!$'()*+,;-]/g, // https://stackoverflow.com/a/26119120 except & and =
-		c=>`%${c.charCodeAt(0).toString(16).toUpperCase()}` // escape like in https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI#encoding_for_rfc3986
+	// fns escape all chars but:
+	// encodeURIComponent: A–Za–z0–9-_.!~*'()
+	// encodeURI:          A–Za–z0–9-_.!~*'();/?:@$+,&=#
+	// we need:            A-Za-z0-9-_.!~*'();/?:@$+,
+	// we need anything allowed in url hash except & and = https://stackoverflow.com/a/26119120
+	return encodeURI(text).replace(
+		/[&=#]/g,
+		c=>encodeURIComponent(c)
 	)
 }
 
