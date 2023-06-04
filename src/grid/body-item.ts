@@ -154,9 +154,10 @@ export function writeExpandedItemFlow(
 	{type,item}: MuxBatchItem,
 	usernames: Map<number, string>
 ): void {
-	const makeBadge=(content:string|HTMLElement,title?:string)=>{
-		const $badge=makeElement('span')('badge')(content)
+	const makeBadge=(contents:(string|HTMLElement)[],title?:string,isEmpty=false)=>{
+		const $badge=makeElement('span')('badge')(...contents)
 		if (title) $badge.title=title
+		if (isEmpty) $badge.classList.add('empty')
 		return $badge
 	}
 	const makeKnownEditorBadgeOrIcon=(createdBy: string, editorIcon: EditorIcon, url: string)=>{
@@ -167,7 +168,7 @@ export function writeExpandedItemFlow(
 			$a.innerHTML=`<img width="16" height="16" src="${editorIcon.data}">`
 		} else {
 			$a.textContent=`🛠️ `+editorIcon.name
-			return makeBadge($a,createdBy)
+			return makeBadge([$a],createdBy)
 		}
 		$a.title=createdBy
 		$a.classList.add('editor')
@@ -175,7 +176,7 @@ export function writeExpandedItemFlow(
 	}
 	const makeEditorBadgeOrIcon=(createdBy: string)=>{
 		if (!createdBy) {
-			return makeBadge(`🛠️ ?`,`unknown editor`)
+			return makeBadge([`🛠️ ?`],`unknown editor`)
 		}
 		for (const [createdByPrefix,url,editorIcon] of editorData) {
 			for (const createdByValue of createdBy.split(';')) {
@@ -189,21 +190,31 @@ export function writeExpandedItemFlow(
 		if (match && match[1]) {
 			createdByLead=match[1]
 		}
-		return makeBadge(`🛠️ ${createdByLead??'?'}`,createdBy)
+		return makeBadge([`🛠️ ${createdByLead??'?'}`],createdBy)
 	}
 	const makeCommentsBadge=(commentsCount: number)=>{
 		if (commentsCount) {
-			return makeBadge(`💬 ${commentsCount}`,`number of comments`)
+			return makeBadge([`💬 ${commentsCount}`],`number of comments`)
 		} else {
-			const $badge=makeBadge(`💬`,`no comments`)
-			$badge.classList.add('empty')
-			return $badge
+			return makeBadge([`💬`],`no comments`,true)
+		}
+	}
+	const makeSourceBadge=(source: string|undefined)=>{
+		const bracket=(text:string)=>[
+			makeElement('span')('delimiter')(`[`),
+			text,
+			makeElement('span')('delimiter')(`]`)
+		]
+		if (source) {
+			return makeBadge(bracket(source),`source`)
+		} else {
+			return makeBadge(bracket(`?`),`unspecified source`,true)
 		}
 	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
 			makeLink(String(id),href),` `,
-			makeBadge(makeLink(`api`,apiHref))
+			makeBadge([makeLink(`api`,apiHref)])
 		)
 	}
 	const rewriteWithChangesetLinks=(id: number)=>{
@@ -230,7 +241,8 @@ export function writeExpandedItemFlow(
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
 			` `,makeEditorBadgeOrIcon(item.tags.created_by),
-			` `,makeBadge(`📝 ${item.changes.count}`,`number of changes`),
+			` `,makeSourceBadge(item.tags.source),
+			` `,makeBadge([`📝 ${item.changes.count}`],`number of changes`),
 			` `,makeCommentsBadge(item.comments.count),
 			` `,makeElement('span')()(item.tags?.comment ?? '')
 		)

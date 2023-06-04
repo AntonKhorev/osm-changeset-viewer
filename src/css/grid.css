@@ -474,6 +474,7 @@
 
 /*** item inner ballon flow elements ***/
 .ui .grid tbody .item .ballon .flow .badge {
+	--passive-color: color-mix(in srgb, currentColor 30%, transparent);
 	border-radius: 4px;
 	padding: 1px 2px;
 	font-family: sans-serif;
@@ -482,8 +483,9 @@
 	color: var(--light-text-color);
 	white-space: nowrap;
 }
-.ui .grid tbody .item .ballon .flow .badge.empty {
-	color: color-mix(in srgb, currentColor 30%, transparent);
+.ui .grid tbody .item .ballon .flow .badge.empty,
+.ui .grid tbody .item .ballon .flow .badge .delimiter {
+	color: var(--passive-color);
 }
 .ui .grid tbody .item .ballon .flow .editor {
 	color: unset;
