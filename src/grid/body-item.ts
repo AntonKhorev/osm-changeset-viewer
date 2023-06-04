@@ -191,6 +191,15 @@ export function writeExpandedItemFlow(
 		}
 		return makeBadge(`🛠️ ${createdByLead??'?'}`,createdBy)
 	}
+	const makeCommentsBadge=(commentsCount: number)=>{
+		if (commentsCount) {
+			return makeBadge(`💬 ${commentsCount}`,`number of comments`)
+		} else {
+			const $badge=makeBadge(`💬`,`no comments`)
+			$badge.classList.add('empty')
+			return $badge
+		}
+	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
 			makeLink(String(id),href),` `,
@@ -222,7 +231,7 @@ export function writeExpandedItemFlow(
 		$flow.append(
 			` `,makeEditorBadgeOrIcon(item.tags.created_by),
 			` `,makeBadge(`📝 ${item.changes.count}`,`number of changes`),
-			` `,makeBadge(`💬 ${item.comments.count}`,`number of comments`),
+			` `,makeCommentsBadge(item.comments.count),
 			` `,makeElement('span')()(item.tags?.comment ?? '')
 		)
 	} else if (type=='note') {
