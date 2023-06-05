@@ -69,6 +69,23 @@
 	padding: 0 var(--spacer);
 }
 
+.ui footer > .list > section h2 {
+	margin: 0;
+}
+.ui footer > .list > section > .io {
+	display: flex;
+	flex-direction: column;
+	gap: .5rem;
+}
+@media (min-width: 50em) {
+	.ui footer > .list > section > .io {
+		flex-direction: row;
+	}
+}
+.ui footer > .list > section > .io > * {
+	width: 100%;
+}
+
 .ui footer > .toolbar {
 	border-top: var(--frame-line);
 	padding: var(--spacer);

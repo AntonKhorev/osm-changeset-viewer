@@ -5,6 +5,7 @@ import {WorkerBroadcastReceiver} from '../broadcast-channel'
 import LogPanel from './panel-log'
 import GridSettingsPanel from './panel-grid-settings'
 import ActionsPanel from './panel-actions'
+import ListPanel from './panel-list'
 import {makeElement, makeDiv, makeLabel} from '../util/html'
 import {strong} from '../util/html-shortcuts'
 
@@ -24,6 +25,7 @@ export default function writeFooter(
 	if (server) addPanel(new LogPanel(server).makePanelAndButton())
 	if (grid) addPanel(new GridSettingsPanel(grid).makePanelAndButton())
 	if (server && grid) addPanel(new ActionsPanel(server,grid).makePanelAndButton())
+	if (server && grid) addPanel(new ListPanel(server,grid).makePanelAndButton())
 	const $toolbar=makeDiv('toolbar')()
 	$footer.append($toolbar)
 	{
