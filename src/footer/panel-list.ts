@@ -21,10 +21,16 @@ export default class ListPanel extends Panel {
 		$inputTextarea.rows=$outputTextarea.rows=10
 		$skipMarkersCheckbox.type='checkbox'
 		$addButton.disabled=true
-		$inputTextarea.oninput=()=>{
+		$inputTextarea.oninput=$skipMarkersCheckbox.oninput=()=>{
 			queries=[]
 			let output=``
-			for (const line of $inputTextarea.value.split('\n')) {
+			for (let line of $inputTextarea.value.split('\n')) {
+				if ($skipMarkersCheckbox.checked) {
+					const match=line.match(/^\s*\d*[-.*)]\s+(.*)/)
+					if (match) {
+						;[,line]=match
+					}
+				}
 				const query=toUserQuery(this.server.api,this.server.web,line)
 				if (query.type=='empty') {
 				} else if (query.type=='id') {
