@@ -8,7 +8,7 @@ import {
 	makeFormTab, makeFormCard, makeFormSelector
 } from './head-item'
 import {getHueFromUid} from './colorizer'
-import {ValidUserQuery} from '../osm'
+import type {ValidUserQuery} from '../osm'
 import {toUserQuery} from '../osm'
 import MuxUserItemDbStream from '../mux-user-item-db-stream'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
