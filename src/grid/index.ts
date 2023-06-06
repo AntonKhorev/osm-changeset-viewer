@@ -87,6 +87,9 @@ export default class Grid {
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
 		await this.head.receiveUpdatedUserQueries(userQueries)
 	}
+	async addUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
+		await this.head.addUserQueries(userQueries)
+	}
 	updateTableAccordingToSettings(): void {
 		this.body.updateTableAccordingToSettings()
 	}

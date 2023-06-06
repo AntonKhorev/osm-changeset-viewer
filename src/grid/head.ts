@@ -172,6 +172,15 @@ export default class GridHead {
 		this.rewriteUserEntriesInHead()
 		this.restartStream()
 	}
+	async addUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
+		for (const query of userQueries) {
+			const entry=await this.makeQueryUserEntry(query)
+			this.userEntries.push(entry)
+		}
+		this.rewriteUserEntriesInHead()
+		this.sendUpdatedUserQueries()
+		this.restartStream()
+	}
 	updateSelectors(): void {
 		const [hasChecked,hasUnchecked,selectedChangesetIds]=this.getColumnCheckboxStatuses()
 		for (const [iColumn,{$selector}] of this.userEntries.entries()) {

@@ -48,6 +48,9 @@ export default class ListPanel extends Panel {
 			$outputTextarea.value=output
 			$addButton.disabled=queries.length==0
 		}
+		$addButton.onclick=async()=>{
+			await this.grid.addUserQueries(queries)
+		}
 		$section.append(
 			makeElement('h2')()(`Add a list of users`),
 			makeDiv('io')(
