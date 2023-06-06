@@ -12,15 +12,30 @@ export default class ListPanel extends Panel {
 		super()
 	}
 	writeSection($section: HTMLElement): void {
+		const scrollSyncTimeout=300
+		let lastInputScrollTimestamp=0
+		let lastOutputScrollTimestamp=0
 		let queries: ValidUserQuery[] = []
 		const $inputTextarea=makeElement('textarea')()()
 		const $outputTextarea=makeElement('textarea')()()
 		const $skipMarkersCheckbox=makeElement('input')()()
 		const $addButton=makeElement('button')()(`Add users`)
-		$outputTextarea.disabled=true
+		$outputTextarea.setAttribute('readonly','')
 		$inputTextarea.rows=$outputTextarea.rows=10
 		$skipMarkersCheckbox.type='checkbox'
 		$addButton.disabled=true
+		$inputTextarea.onscroll=()=>{
+			const t=performance.now()
+			if (t-lastOutputScrollTimestamp<scrollSyncTimeout) return
+			lastInputScrollTimestamp=t
+			$outputTextarea.scrollTop=$inputTextarea.scrollTop
+		}
+		$outputTextarea.onscroll=()=>{
+			const t=performance.now()
+			if (t-lastInputScrollTimestamp<scrollSyncTimeout) return
+			lastOutputScrollTimestamp=t
+			$inputTextarea.scrollTop=$outputTextarea.scrollTop
+		}
 		$inputTextarea.oninput=$skipMarkersCheckbox.oninput=()=>{
 			queries=[]
 			let output=``
