@@ -25,6 +25,7 @@ export default class ListPanel extends Panel {
 			queries=[]
 			let output=``
 			for (let line of $inputTextarea.value.split('\n')) {
+				if (output) output+=`\n`
 				if ($skipMarkersCheckbox.checked) {
 					const match=line.match(/^\s*\d*[-.*)]\s+(.*)/)
 					if (match) {
@@ -33,16 +34,16 @@ export default class ListPanel extends Panel {
 				}
 				const query=toUserQuery(this.server.api,this.server.web,line)
 				if (query.type=='empty') {
+					output+=` `
 				} else if (query.type=='id') {
 					queries.push(query)
-					output+=` uid | `+query.uid
+					output+=` uid # `+query.uid
 				} else if (query.type=='name') {
 					queries.push(query)
-					output+=`name | `+query.username
+					output+=`name : `+query.username
 				} else {
 					output+=`????`
 				}
-				output+=`\n`
 			}
 			$outputTextarea.value=output
 			$addButton.disabled=queries.length==0
