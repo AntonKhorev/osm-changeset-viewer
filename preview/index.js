@@ -4906,7 +4906,7 @@ function isHiddenItem($item) {
 function isSameMonthTimestamps(t1, t2) {
     const d1 = new Date(t1);
     const d2 = new Date(t2);
-    return d1.getUTCFullYear() == d2.getFullYear() && d1.getUTCMonth() == d2.getUTCMonth();
+    return d1.getUTCFullYear() == d2.getUTCFullYear() && d1.getUTCMonth() == d2.getUTCMonth();
 }
 function union(sets) {
     return new Set((function* () {
