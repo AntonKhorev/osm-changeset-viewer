@@ -822,6 +822,24 @@ describe("GridBody",()=>{
 			})
 		})
 	})
+	it("adds 2 collapsed items right before new year",()=>{
+		const gridBody=makeSingleColumnGrid()
+		gridBody.addItem(makeChangesetBatchItem(2,'2022-12-31T23:32:00Z','2022-12-31T23:32:10Z'),usernames,false)
+		gridBody.addItem(makeChangesetBatchItem(1,'2022-12-31T23:31:00Z','2022-12-31T23:31:10Z'),usernames,false)
+		gridBody.updateTableAccordingToSettings()
+		assertEach(gridBody.$gridBody.rows,$row=>{
+			assertRowIsSeparator($row)
+			assertSeparatorData($row,2022,12)
+		},$row=>assertRowIsCollectionWithItems($row,
+			$item=>{
+				assertItemClass($item,'changeset')
+				assertItemData($item,Date.parse('2022-12-31T23:32:00Z'),'changeset',10002)
+			},$item=>{
+				assertItemClass($item,'changeset')
+				assertItemData($item,Date.parse('2022-12-31T23:31:00Z'),'changeset',10001)
+			})
+		)
+	})
 })
 
 // combined asserts for single-column grids

@@ -574,7 +574,7 @@ function isHiddenItem($item: HTMLElement): boolean {
 function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	const d1=new Date(t1)
 	const d2=new Date(t2)
-	return d1.getUTCFullYear()==d2.getFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
+	return d1.getUTCFullYear()==d2.getUTCFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
 }
 
 function union<T>(sets: Iterable<Set<T>>): Set<T> {
