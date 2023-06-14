@@ -13,28 +13,44 @@ export default class ActionsPanel extends Panel {
 		super()
 	}
 	writeSection($section: HTMLElement): void {
-		const $copyButton=makeElement('button')()(`Copy URLs to clipboard`)
-		$copyButton.onclick=async()=>{
-			let text=''
-			for (const id of this.grid.listSelectedChangesetIds()) {
-				const changesetUrl=this.server.web.getUrl(e`changeset/${id}`)
-				text+=changesetUrl+'\n'
+		const $buttons: HTMLButtonElement[] = []
+		{
+			const $button=makeElement('button')()(`Copy URLs to clipboard`)
+			$button.onclick=async()=>{
+				let text=''
+				for (const id of this.grid.listSelectedChangesetIds()) {
+					const changesetUrl=this.server.web.getUrl(e`changeset/${id}`)
+					text+=changesetUrl+'\n'
+				}
+				await navigator.clipboard.writeText(text)
 			}
-			await navigator.clipboard.writeText(text)
-		}
-		const $rcButton=makeElement('button')()(`Open with RC`)
-		$rcButton.onclick=async()=>{
-			for (const id of this.grid.listSelectedChangesetIds()) {
-				const changesetUrl=this.server.web.getUrl(e`changeset/${id}`)
-				const rcPath=e`import?url=${changesetUrl}`
-				await openRcPath($rcButton,rcPath)
+			$buttons.push($button)
+		}{
+			const $button=makeElement('button')()(`Open with RC`)
+			$button.onclick=async()=>{
+				for (const id of this.grid.listSelectedChangesetIds()) {
+					const changesetUrl=this.server.web.getUrl(e`changeset/${id}`)
+					const rcPath=e`import?url=${changesetUrl}`
+					await openRcPath($button,rcPath)
+				}
 			}
+			$buttons.push($button)
+		}{
+			const $button=makeElement('button')()(`Revert with RC`)
+			$button.onclick=async()=>{
+				for (const id of this.grid.listSelectedChangesetIds()) {
+					const rcPath=e`revert_changeset?id=${id}`
+					await openRcPath($button,rcPath)
+				}
+			}
+			$buttons.push($button)
 		}
 		$section.append(
-			makeElement('h2')()(`Actions`),` `,
-			makeDiv('input-group')($copyButton),` `,
-			makeDiv('input-group')($rcButton)
+			makeElement('h2')()(`Actions`)
 		)
+		for (const $button of $buttons) {
+			$section.append(makeDiv('input-group')($button))
+		}
 	}
 }
 
