@@ -182,9 +182,12 @@ export default class GridBody {
 	}
 	collapseItem(descriptor: ItemDescriptor): void {
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
-			const itemCopies=listSingleRowItemCopies($row)
-			if (!itemCopies) return
-			const [sequencePoint,$items,iColumns]=itemCopies
+			const $collection=new EmbeddedItemCollection($row,this.withCompactIds)
+			const itemSequence=[...$collection.getItemSequence()]
+			if (itemSequence.length==0) return
+			const [[sequencePoint,items]]=itemSequence
+			const iColumns=items.map(([iColumn])=>iColumn)
+			const $items=items.map(([,$item])=>$item)
 			const $prevRow=$row.previousElementSibling
 			const $nextRow=$row.nextElementSibling
 			$row.remove()
@@ -528,35 +531,13 @@ export default class GridBody {
 }
 
 function getSingleRowLeadingItem($row: HTMLTableRowElement): HTMLElement|null {
-	const itemCopies=listSingleRowItemCopies($row)
-	if (!itemCopies) return null
-	const [,$items]=itemCopies
-	if ($items.length==0) return null
-	return $items[0]
-}
-function listSingleRowItemCopies($row: HTMLTableRowElement): [
-	sequencePoint: ItemSequencePoint, $items:HTMLElement[], iColumns:number[]
-] | null { // TODO rewrite for *-column because what should be in iColumns?
-	let sequencePoint: ItemSequencePoint|null = null
-	const $items: HTMLElement[] = []
-	const iColumns: number[] = []
-	for (let iColumn=0;iColumn<$row.cells.length;iColumn++) {
-		const $cell=$row.cells[iColumn]
-		const $item=$cell.querySelector(':scope > .item')
-		if (!($item instanceof HTMLElement)) continue
-		if (!sequencePoint) {
-			sequencePoint=readItemSequencePoint($item)
-			if (!sequencePoint) return null
-		} else {
-			const comparedSequencePoint=readItemSequencePoint($item)
-			if (!comparedSequencePoint) return null
-			if (!isEqualItemSequencePoint(sequencePoint,comparedSequencePoint)) return null
-		}
-		$items.push($item)
-		iColumns.push(iColumn)
-	}
-	if (!sequencePoint) return null
-	return [sequencePoint,$items,iColumns]
+	const $collection=new EmbeddedItemCollection($row,false)
+	const itemSequence=[...$collection.getItemSequence()]
+	if (itemSequence.length==0) return null
+	const [[,items]]=itemSequence
+	if (items.length==0) return null
+	const [[,$item]]=items
+	return $item
 }
 
 function isChangesetOpenedClosedPair($openedItem: HTMLElement, $closedItem: HTMLElement): boolean {

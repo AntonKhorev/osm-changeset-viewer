@@ -845,7 +845,7 @@ describe("GridBody",()=>{
 // combined asserts for single-column grids
 function assertRowIsCollectionWithItems($row,...fns) {
 	assertRowIsCollection($row)
-	assertEach($row.cells,$cell=>{
+	assertEach($row.cells,()=>{},$cell=>{
 		assertEach($cell.children,$item=>{
 			assertCellChildIsIcon($item)
 		},...fns.map(fn=>$item=>{
@@ -856,7 +856,7 @@ function assertRowIsCollectionWithItems($row,...fns) {
 }
 function assertRowIsSingleWithItem($row,fn) {
 	assertRowIsSingle($row)
-	assertEach($row.cells,$cell=>{
+	assertEach($row.cells,()=>{},$cell=>{
 		assertEach($cell.children,$item=>{
 			assertCellChildIsExpandedItem($item)
 			fn($item)
