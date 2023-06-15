@@ -491,7 +491,7 @@ export default class GridBody {
 				makeElement('time')()(yearMonthString)
 			)
 		)
-		$cell.colSpan=this.nColumns+1
+		$cell.colSpan=this.nColumns+2
 		return $separator
 	}
 	private findRowsMatchingClassAndItemDescriptor(className: string, descriptor: ItemDescriptor): Iterable<HTMLTableRowElement> {
