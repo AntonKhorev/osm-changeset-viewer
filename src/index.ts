@@ -7,7 +7,8 @@ import writeFooter from './footer'
 import makeNetDialog from './net-dialog'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
-import {makeElement, makeDiv} from './util/html'
+import {makeElement, makeDiv, makeLink} from './util/html'
+import {p} from './util/html-shortcuts'
 import {PrefixedLocalStorage} from './util/storage'
 import {escapeHash} from './util/escape'
 
@@ -24,6 +25,15 @@ async function main() {
 	document.body.append($root)
 	installRelativeTimeListeners($root)
 
+	const $content=makeElement('main')()(
+		makeElement('h1')()(`Changeset viewer`)
+	)
+	const contentResizeObserver=new ResizeObserver(entries=>{
+		const mainWidth=entries[0].target.clientWidth
+		$content.style.setProperty('--main-width',`${mainWidth}px`)
+	})
+	contentResizeObserver.observe($content)
+
 	const storage=new PrefixedLocalStorage(appName+'-')
 	const net=new Net(
 		appName,'read_prefs',
@@ -34,49 +44,54 @@ async function main() {
 		()=>{} // TODO event like bubbleEvent($root,'osmChangesetViewer:loginChange')
 	)
 
-	const $content=makeElement('main')()(
-		makeElement('h1')()(`Changeset viewer`)
-	)
-	const contentResizeObserver=new ResizeObserver(entries=>{
-		const mainWidth=entries[0].target.clientWidth
-		$content.style.setProperty('--main-width',`${mainWidth}px`)
-	})
-	contentResizeObserver.observe($content)
-
 	const $footer=makeElement('footer')()()
 	const $netDialog=makeNetDialog(net)
 	$root.append($content,$footer,$netDialog)
 	let $grid: HTMLElement|undefined
 
-	if (net.cx) {
-		const cx=net.cx
-		const db=await ChangesetViewerDBReader.open(cx.server.host)
-		const worker=new SharedWorker('worker.js')
-		const more=new More()
-		const grid=new Grid(cx,db,worker,more,userQueries=>{
-			net.serverSelector.pushHostlessHashInHistory(
-				getHashFromUserQueries(userQueries)
-			)
-		})
-		$grid=grid.$grid
-		$content.append(
-			makeElement('h2')()(`Select users and changesets`),
-			grid.$grid,
-			more.$div
-		)
-		net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
-			grid.receiveUpdatedUserQueries(
-				getUserQueriesFromHash(hostlessHash)
-			)
-		},true)
-		writeFooter($root,$footer,$netDialog,net.cx.server,grid,more)
-	} else {
+	if (!net.cx) {
 		$content.append(
 			makeDiv('notice')(`Please select a valid server`)
 		)
 		net.serverSelector.installHashChangeListener(net.cx,()=>{})
 		writeFooter($root,$footer,$netDialog)
+		return
 	}
+
+	const cx=net.cx
+	let db: ChangesetViewerDBReader
+	try {
+		db=await ChangesetViewerDBReader.open(cx.server.host)
+	} catch (ex) {
+		$content.append(
+			makeDiv('notice')(`Cannot open the database`),
+			p(
+				`This app uses `,makeLink(`IndexedDB`,`https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API`),` to store downloaded request results. `,
+				`Some browsers may restrict access to IndexedDB in private/incognito mode. `,
+				`If you are using private windows in Firefox, you may try `,makeLink(`this workaround`,`https://bugzilla.mozilla.org/show_bug.cgi?id=1639542#c9`),`.`
+			)
+		)
+		return
+	}
+	const worker=new SharedWorker('worker.js')
+	const more=new More()
+	const grid=new Grid(cx,db,worker,more,userQueries=>{
+		net.serverSelector.pushHostlessHashInHistory(
+			getHashFromUserQueries(userQueries)
+		)
+	})
+	$grid=grid.$grid
+	$content.append(
+		makeElement('h2')()(`Select users and changesets`),
+		grid.$grid,
+		more.$div
+	)
+	net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
+		grid.receiveUpdatedUserQueries(
+			getUserQueriesFromHash(hostlessHash)
+		)
+	},true)
+	writeFooter($root,$footer,$netDialog,net.cx.server,grid,more)
 }
 
 function getUserQueriesFromHash(hash: string): ValidUserQuery[] {

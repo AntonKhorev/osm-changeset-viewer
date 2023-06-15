@@ -3,6 +3,7 @@
 	--frame-color: #AAA;
 	--light-frame-lightness: 87%;
 	--hover-color: #DEF;
+	--notice-background-color: #FFB;
 
 	--frame-line: solid 1px var(--frame-color);
 	--spacer: .5rem;
@@ -14,6 +15,7 @@
 		--frame-color: #666;
 		--light-frame-lightness: 27%;
 		--hover-color: #246;
+		--notice-background-color: #662;
 	}
 }
 
@@ -36,11 +38,12 @@ body > .symbols {
 	flex-basis: 100%;
 	overflow-y: auto;
 }
-.ui main > h1,
-.ui main > h2,
-.ui main > [class$="-input-group"] {
-	padding-left: var(--spacer);
-	padding-right: var(--spacer);
+.ui main > :where(h1, h2, p, [class$="-input-group"]) {
+	padding-inline: var(--spacer);
+}
+.ui main > .notice {
+	padding: var(--spacer);
+	background: var(--notice-background-color);
 }
 
 .ui [class$="-input-group"] {
