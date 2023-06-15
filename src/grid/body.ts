@@ -130,8 +130,8 @@ export default class GridBody {
 						$laterItem=$item
 					}
 				}
-				const collection=new EmbeddedItemCollection($row,this.withCompactIds)
-				collection.updateIds()
+				const collection=new EmbeddedItemCollection($row)
+				collection.updateIds(this.withCompactIds)
 				// spanColumns($row) // TODO need to merge/split collected items in cells
 				$itemRowAbove=undefined
 			} else if ($row.classList.contains('single')) {
@@ -182,7 +182,7 @@ export default class GridBody {
 	}
 	collapseItem(descriptor: ItemDescriptor): void {
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
-			const $collection=new EmbeddedItemCollection($row,this.withCompactIds)
+			const $collection=new EmbeddedItemCollection($row)
 			const itemSequence=[...$collection.getItemSequence()]
 			if (itemSequence.length==0) return
 			const [[sequencePoint,items]]=itemSequence
@@ -201,9 +201,9 @@ export default class GridBody {
 				$prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
 				$nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')
 			) {
-				const collection=new EmbeddedItemCollection($prevRow,this.withCompactIds)
-				const nextCollection=new EmbeddedItemCollection($nextRow,this.withCompactIds)
-				collection.merge(nextCollection)
+				const collection=new EmbeddedItemCollection($prevRow)
+				const nextCollection=new EmbeddedItemCollection($nextRow)
+				collection.merge(nextCollection,this.withCompactIds)
 			}
 			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$items)
 		}
@@ -256,7 +256,7 @@ export default class GridBody {
 	async expandItem(descriptor: ItemDescriptor): Promise<void> {
 		const $rows=this.findRowsMatchingClassAndItemDescriptor('collection',descriptor)
 		for (const $row of $rows) {
-			const collection=new EmbeddedItemCollection($row,this.withCompactIds)
+			const collection=new EmbeddedItemCollection($row)
 			const itemSequence=[...collection.getItemSequence()]
 			const isEverythingBetweenTargetPositionsHidden=[true]
 			for (const [point,columnItems] of itemSequence) {
@@ -336,8 +336,8 @@ export default class GridBody {
 				setItemDisclosureButtonState($disclosureButton,true)
 			}
 		}
-		const collection=new EmbeddedItemCollection($row,this.withCompactIds)
-		collection.remove($items)
+		const collection=new EmbeddedItemCollection($row)
+		collection.remove($items,this.withCompactIds)
 		const iColumns=items.map(([iColumn])=>iColumn)
 		this.insertItem(iColumns,point,{isExpanded:true,batchItem,usernames},$items)
 	}
@@ -388,8 +388,8 @@ export default class GridBody {
 					$rowBefore=insertionRowInfo.$rowBefore
 				} else {
 					$rowBefore=insertionRowInfo.$row
-					const collection=new EmbeddedItemCollection($rowBefore,this.withCompactIds)
-					collection.split(sequencePoint)
+					const collection=new EmbeddedItemCollection($rowBefore)
+					collection.split(sequencePoint,this.withCompactIds)
 				}
 				$rowBefore.after($row)
 			}
@@ -417,8 +417,8 @@ export default class GridBody {
 				$row=insertionRowInfo.$row
 			}
 			updateTimelineOnInsert($row,iColumns)
-			const collection=new EmbeddedItemCollection($row,this.withCompactIds)
-			collection.insert(sequencePoint,iColumns,$items)
+			const collection=new EmbeddedItemCollection($row)
+			collection.insert(sequencePoint,iColumns,$items,this.withCompactIds)
 		}
 	}
 	private makeRow(): HTMLTableRowElement {
@@ -448,7 +448,7 @@ export default class GridBody {
 				$row.classList.contains('single') ||
 				$row.classList.contains('collection')
 			) {
-				const collection=new EmbeddedItemCollection($row,this.withCompactIds)
+				const collection=new EmbeddedItemCollection($row)
 				const [greaterCollectionPoint,lesserCollectionPoint]=collection.getBoundarySequencePoints()
 				if (!greaterCollectionPoint || !lesserCollectionPoint) continue
 				if (isGreaterElementSequencePoint(sequencePoint,greaterCollectionPoint)) continue
@@ -531,7 +531,7 @@ export default class GridBody {
 }
 
 function getSingleRowLeadingItem($row: HTMLTableRowElement): HTMLElement|null {
-	const $collection=new EmbeddedItemCollection($row,false)
+	const $collection=new EmbeddedItemCollection($row)
 	const itemSequence=[...$collection.getItemSequence()]
 	if (itemSequence.length==0) return null
 	const [[,items]]=itemSequence

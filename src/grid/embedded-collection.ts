@@ -5,8 +5,7 @@ import {isItem} from './info'
 export default class EmbeddedItemCollection {
 	collection: ItemCollection
 	constructor(
-		rowOrCollection: HTMLTableRowElement|ItemCollection,
-		private withCompactIds: boolean
+		rowOrCollection: HTMLTableRowElement|ItemCollection
 	) {
 		if (rowOrCollection instanceof ItemCollection) {
 			this.collection=rowOrCollection
@@ -20,31 +19,31 @@ export default class EmbeddedItemCollection {
 	] {
 		return this.collection.getBoundarySequencePoints()
 	}
-	split(sequencePoint: ItemSequencePoint): EmbeddedItemCollection {
+	split(sequencePoint: ItemSequencePoint, withCompactIds: boolean): EmbeddedItemCollection {
 		const splitCollection=this.collection.split(sequencePoint)
 		this.collection.$row.after(splitCollection.$row)
-		const splitGridCollection=new EmbeddedItemCollection(splitCollection,this.withCompactIds)
-		splitGridCollection.updateIds()
+		const splitGridCollection=new EmbeddedItemCollection(splitCollection)
+		splitGridCollection.updateIds(withCompactIds)
 		return splitGridCollection
 	}
-	merge(that: EmbeddedItemCollection): void {
+	merge(that: EmbeddedItemCollection, withCompactIds: boolean): void {
 		this.collection.merge(that.collection)
 		that.collection.$row.remove()
-		this.updateIds()
+		this.updateIds(withCompactIds)
 	}
-	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[]): void {
+	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[], withCompactIds: boolean): void {
 		this.collection.insert(sequencePoint,iColumns,$items)
-		this.updateIds()
+		this.updateIds(withCompactIds)
 	}
-	remove($items: Iterable<HTMLElement>): void {
+	remove($items: Iterable<HTMLElement>, withCompactIds: boolean): void {
 		this.collection.remove($items)
 		if (this.collection.isEmpty()) {
 			this.collection.$row.remove()
 		} else {
-			this.updateIds()
+			this.updateIds(withCompactIds)
 		}
 	}
-	updateIds(): void {
+	updateIds(withCompactIds: boolean): void {
 		for (const $cell of this.collection.$row.cells) {
 			let lastId=''
 			for (const $item of $cell.children) {
@@ -61,7 +60,7 @@ export default class EmbeddedItemCollection {
 					continue
 				}
 				let compacted=false
-				if (this.withCompactIds && id.length==lastId.length) {
+				if (withCompactIds && id.length==lastId.length) {
 					let shortId=''
 					for (let i=0;i<id.length;i++) {
 						if (id[i]==lastId[i]) continue
