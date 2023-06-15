@@ -16,6 +16,9 @@
 	--temp-accent-color: hsl(var(--hue) 50% 50%);
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
 }
+.ui .grid col.all {
+	width: calc(var(--icon-size) + 2 * var(--spacer));
+}
 .ui .grid col.adder {
 	width: var(--adder-width);
 }

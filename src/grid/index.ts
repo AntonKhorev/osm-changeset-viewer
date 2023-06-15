@@ -5,7 +5,6 @@ import type {ChangesetViewerDBReader} from '../db'
 import type More from '../more'
 import type {ValidUserQuery} from '../osm'
 import {makeElement} from '../util/html'
-import {moveInArray} from '../util/types'
 
 export default class Grid {
 	$grid=makeElement('table')('grid')()
@@ -75,6 +74,9 @@ export default class Grid {
 		this.body.setColumns(columnUids)
 		this.$grid.style.setProperty('--columns',String(nColumns))
 		this.$colgroup.replaceChildren()
+		this.$colgroup.append(
+			makeElement('col')('all')()
+		)
 		for (let i=0;i<nColumns;i++) {
 			this.$colgroup.append(
 				makeElement('col')()()

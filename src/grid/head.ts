@@ -4,6 +4,7 @@ import {WorkerBroadcastReceiver} from '../broadcast-channel'
 import installTabDragListeners from './head-drag'
 import type {UserInfo, CompleteUserInfo} from './head-item'
 import {
+	makeAllTab,
 	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
 	makeFormTab, makeFormCard, makeFormSelector
 } from './head-item'
@@ -380,9 +381,17 @@ export default class GridHead {
 	// 	this.$adderCell.before(userEntry.$card)
 	// }
 	private rewriteUserEntriesInHead(): void {
-		this.$tabRow.replaceChildren()
-		this.$cardRow.replaceChildren()
-		this.$selectorRow.replaceChildren()
+		this.$tabRow.replaceChildren(
+			makeElement('th')()(
+				makeAllTab()
+			)
+		)
+		this.$cardRow.replaceChildren(
+			makeElement('td')()()
+		)
+		this.$selectorRow.replaceChildren(
+			makeElement('td')()()
+		)
 		const gridHeadCells: {
 			$tabCell: HTMLTableCellElement
 			$cardCell: HTMLTableCellElement

@@ -393,7 +393,7 @@ export default class GridBody {
 			$row.classList.add('single')
 			updateTimelineOnInsert($row,iColumns)
 			for (const [iItem,iColumn] of iColumns.entries()) {
-				const $cell=$row.cells[iColumn]
+				const $cell=$row.cells[iColumn+1]
 				const $item=$items[iItem]
 				$cell.append($item)
 			}
@@ -420,6 +420,7 @@ export default class GridBody {
 	}
 	private makeRow(): HTMLTableRowElement {
 		const $row=makeElement('tr')()()
+		$row.insertCell()
 		for (const uid of this.columnUids) {
 			const $cell=$row.insertCell()
 			if (uid!=null) {
@@ -535,7 +536,7 @@ function getSingleRowLeadingItem($row: HTMLTableRowElement): HTMLElement|null {
 }
 function listSingleRowItemCopies($row: HTMLTableRowElement): [
 	sequencePoint: ItemSequencePoint, $items:HTMLElement[], iColumns:number[]
-] | null {
+] | null { // TODO rewrite for *-column because what should be in iColumns?
 	let sequencePoint: ItemSequencePoint|null = null
 	const $items: HTMLElement[] = []
 	const iColumns: number[] = []

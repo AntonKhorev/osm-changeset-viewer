@@ -12,6 +12,17 @@ export type UserInfo = {
 	status: 'pending'|'failed'|'running'
 } | CompleteUserInfo
 
+export function makeAllTab(): HTMLElement {
+	const $icon=makeElement('span')('icon')()
+	$icon.title=`all user items`
+	$icon.innerHTML=makeCenteredSvg(8,
+		`<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" />`+
+		`<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(60)" />`+
+		`<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(-60)" />`
+	)
+	return makeDiv('tab')($icon)
+}
+
 export function makeUserTab(
 	removeColumnClickListener: (this:HTMLElement)=>void,
 	query: ValidUserQuery
