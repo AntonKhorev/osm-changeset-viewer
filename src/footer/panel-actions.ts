@@ -1,7 +1,7 @@
 import Panel from './panel'
 import type {Server} from '../net'
 import type Grid from '../grid'
-import {makeElement, makeDiv} from '../util/html'
+import {makeElement, makeDiv, makeLabel} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
@@ -21,21 +21,38 @@ export default class ActionsPanel extends Panel {
 				new Option('URLs'),
 				new Option('ids')
 			)
+			const $separatorInput=makeElement('input')()()
+			$separatorInput.type='text'
+			$separatorInput.size=3
+			$separatorInput.value=`\\n`
 			const $button=makeElement('button')()(`📋`)
 			$button.onclick=async()=>{
+				const separator=$separatorInput.value.replace(/\\(.)/g,(_,c)=>{
+					if (c=='n') return '\n'
+					if (c=='t') return '\t'
+					return c
+				})
 				let text=''
+				let first=true
 				for (const id of this.grid.listSelectedChangesetIds()) {
+					if (first) {
+						first=false
+					} else {
+						text+=separator
+					}
 					if ($typeSelect.value=='URLs') {
 						const changesetUrl=this.server.web.getUrl(e`changeset/${id}`)
-						text+=changesetUrl+'\n'
+						text+=changesetUrl
 					} else {
-						text+=id+'\n'
+						text+=id
 					}
 				}
 				await navigator.clipboard.writeText(text)
 			}
 			$section.append(makeDiv('input-group')(
-				`Copy `,$typeSelect,` to clipboard `,$button
+				`Copy `,$typeSelect,` `,
+				makeLabel()(`separated by `,$separatorInput),` `,
+				`to clipboard `,$button
 			))
 		}{
 			const $button=makeElement('button')()(`Open with RC`)
