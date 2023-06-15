@@ -119,7 +119,7 @@ export default class ItemCollection {
 		itemLoop: for (let iItem=0;iItem<iColumns.length;iItem++) {
 			const iColumn=iColumns[iItem]
 			const $item=$items[iItem]
-			const $cell=this.$row.cells[iColumn]
+			const $cell=this.$row.cells[iColumn+1]
 			let nItems=0
 			for (const $existingItem of $cell.children) {
 				if (!isItem($existingItem)) continue

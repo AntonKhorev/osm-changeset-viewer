@@ -5,6 +5,7 @@ import ItemCollection from '../../../test-build/grid/collection.js'
 function row(...$cells) {
 	const $row=document.createElement('tr')
 	$row.classList.add('collection')
+	$row.insertCell()
 	$row.append(...$cells)
 	return $row
 }
@@ -349,9 +350,9 @@ describe("ItemCollection",()=>{
 
 function assertChangesetCollectionRow($row,cells) {
 	assert($row.classList.contains('collection'))
-	assert.equal($row.cells.length,cells.length)
-	for (let i=0;i<cells.length;i++) {
-		const $cell=$row.cells[i]
+	assert.equal($row.cells.length,cells.length+1)
+	for (let i=0;i<cells.length-1;i++) {
+		const $cell=$row.cells[i+1]
 		const [timeline,style,...items]=cells[i]
 		assertTimelineClasses($cell,timeline,`cell[${i}]`)
 		assert.equal($cell.getAttribute('style'),style)
