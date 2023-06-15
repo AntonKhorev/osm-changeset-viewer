@@ -288,7 +288,7 @@ describe("ItemCollection",()=>{
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-01',10001),[
-				[0,$row.cells[0].children[1]],
+				[0,$row.cells[1].children[1]],
 			]],
 		])
 	})
@@ -303,10 +303,10 @@ describe("ItemCollection",()=>{
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-02',10002),[
-				[0,$row.cells[0].children[1]],
+				[0,$row.cells[1].children[1]],
 			]],
 			[changesetPoint('2023-04-01',10001),[
-				[0,$row.cells[0].children[2]],
+				[0,$row.cells[1].children[2]],
 			]],
 		])
 	})
@@ -322,8 +322,8 @@ describe("ItemCollection",()=>{
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-03',10003),[
-				[0,$row.cells[0].children[1]],
-				[1,$row.cells[1].children[1]],
+				[0,$row.cells[1].children[1]],
+				[1,$row.cells[2].children[1]],
 			]],
 		])
 	})
@@ -339,10 +339,10 @@ describe("ItemCollection",()=>{
 		const result=[...collection.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-04',10004),[
-				[1,$row.cells[1].children[1]],
+				[1,$row.cells[2].children[1]],
 			]],
 			[changesetPoint('2023-04-03',10003),[
-				[0,$row.cells[0].children[1]],
+				[0,$row.cells[1].children[1]],
 			]],
 		])
 	})

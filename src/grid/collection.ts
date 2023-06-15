@@ -153,13 +153,15 @@ export default class ItemCollection {
 		}
 	}
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
-		const nColumns=this.$row.cells.length
+		const nColumns=this.$row.cells.length-1
 		if (nColumns==0) return
 		const iColumnPositions=Array<number>(nColumns).fill(0)
 		while (true) {
 			let point: ItemSequencePoint|undefined
 			let items: [iColumn: number, $item: HTMLElement][] = []
-			for (const [iColumn,$cell] of [...this.$row.cells].entries()) {
+			for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
+				if (iRawColumn==0) continue
+				const iColumn=iRawColumn-1
 				let $item: Element|undefined
 				let columnPoint: ItemSequencePoint|null = null
 				for (;iColumnPositions[iColumn]<$cell.children.length;iColumnPositions[iColumn]++) {
