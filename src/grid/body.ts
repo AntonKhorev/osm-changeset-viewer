@@ -3,15 +3,15 @@ import type {SingleItemDBReader} from '../db'
 import type {ItemDescriptor, ItemSequencePoint} from './info'
 import {
 	readItemDescriptor, getItemDescriptorSelector, isEqualItemDescriptor,
-	isGreaterElementSequencePoint, isEqualItemSequencePoint, writeSeparatorSequencePoint, readElementSequencePoint, writeElementSequencePoint,
-	getBatchItemSequencePoint, readItemSequencePoint
+	isGreaterElementSequencePoint, writeSeparatorSequencePoint, readElementSequencePoint, writeElementSequencePoint,
+	getBatchItemSequencePoint
 } from './info'
 import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
 	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
 } from './body-item'
 import {getHueFromUid} from './colorizer'
-import EmbeddedItemCollection from './embedded-collection'
+import EmbeddedItemRow from './embedded-row'
 import {updateTimelineOnInsert} from './timeline'
 import GridBodyCheckboxHandler from './body-checkbox'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
@@ -130,8 +130,8 @@ export default class GridBody {
 						$laterItem=$item
 					}
 				}
-				const collection=new EmbeddedItemCollection($row)
-				collection.updateIds(this.withCompactIds)
+				const row=new EmbeddedItemRow($row)
+				row.updateIds(this.withCompactIds)
 				// spanColumns($row) // TODO need to merge/split collected items in cells
 				$itemRowAbove=undefined
 			} else if ($row.classList.contains('single')) {
@@ -182,14 +182,13 @@ export default class GridBody {
 	}
 	collapseItem(descriptor: ItemDescriptor): void {
 		const collapseRowItems=($row:HTMLTableRowElement)=>{
-			const $collection=new EmbeddedItemCollection($row)
-			const itemSequence=[...$collection.getItemSequence()]
+			const row=new EmbeddedItemRow($row)
+			const itemSequence=[...row.getItemSequence()]
 			if (itemSequence.length==0) return
 			const [[sequencePoint,items]]=itemSequence
 			const iColumns=items.map(([iColumn])=>iColumn)
 			const $items=items.map(([,$item])=>$item)
-			const collection=new EmbeddedItemCollection($row)
-			collection.cut(this.withCompactIds)
+			row.cut(this.withCompactIds)
 			for (const $item of $items) {
 				const $disclosureButton=getItemDisclosureButton($item)
 				if ($disclosureButton) {
@@ -247,8 +246,8 @@ export default class GridBody {
 	async expandItem(descriptor: ItemDescriptor): Promise<void> {
 		const $rows=this.findRowsMatchingClassAndItemDescriptor('collection',descriptor)
 		for (const $row of $rows) {
-			const collection=new EmbeddedItemCollection($row)
-			const itemSequence=[...collection.getItemSequence()]
+			const row=new EmbeddedItemRow($row)
+			const itemSequence=[...row.getItemSequence()]
 			const isEverythingBetweenTargetPositionsHidden=[true]
 			for (const [point,columnItems] of itemSequence) {
 				if (isEqualItemDescriptor(descriptor,point)) {
@@ -327,8 +326,8 @@ export default class GridBody {
 				setItemDisclosureButtonState($disclosureButton,true)
 			}
 		}
-		const collection=new EmbeddedItemCollection($row)
-		collection.remove($items,this.withCompactIds)
+		const row=new EmbeddedItemRow($row)
+		row.remove($items,this.withCompactIds)
 		const iColumns=items.map(([iColumn])=>iColumn)
 		this.insertItem(iColumns,point,{isExpanded:true,batchItem,usernames},$items)
 	}
@@ -378,8 +377,8 @@ export default class GridBody {
 					const $rowBefore=insertionRowInfo.$rowBefore
 					$rowBefore.after($row)
 				} else {
-					const collection=new EmbeddedItemCollection(insertionRowInfo.$row)
-					collection.paste($row,sequencePoint,this.withCompactIds)
+					const row=new EmbeddedItemRow(insertionRowInfo.$row)
+					row.paste($row,sequencePoint,this.withCompactIds)
 				}
 			}
 			$row.classList.add('single')
@@ -406,8 +405,8 @@ export default class GridBody {
 				$row=insertionRowInfo.$row
 			}
 			updateTimelineOnInsert($row,iColumns)
-			const collection=new EmbeddedItemCollection($row)
-			collection.insert(sequencePoint,iColumns,$items,this.withCompactIds)
+			const row=new EmbeddedItemRow($row)
+			row.insert(sequencePoint,iColumns,$items,this.withCompactIds)
 		}
 	}
 	private makeRow(): HTMLTableRowElement {
@@ -437,8 +436,8 @@ export default class GridBody {
 				$row.classList.contains('single') ||
 				$row.classList.contains('collection')
 			) {
-				const collection=new EmbeddedItemCollection($row)
-				const [greaterCollectionPoint,lesserCollectionPoint]=collection.getBoundarySequencePoints()
+				const row=new EmbeddedItemRow($row)
+				const [greaterCollectionPoint,lesserCollectionPoint]=row.getBoundarySequencePoints()
 				if (!greaterCollectionPoint || !lesserCollectionPoint) continue
 				if (isGreaterElementSequencePoint(sequencePoint,greaterCollectionPoint)) continue
 				if (isGreaterElementSequencePoint(sequencePoint,lesserCollectionPoint)) {
@@ -520,8 +519,8 @@ export default class GridBody {
 }
 
 function getSingleRowLeadingItem($row: HTMLTableRowElement): HTMLElement|null {
-	const $collection=new EmbeddedItemCollection($row)
-	const itemSequence=[...$collection.getItemSequence()]
+	const row=new EmbeddedItemRow($row)
+	const itemSequence=[...row.getItemSequence()]
 	if (itemSequence.length==0) return null
 	const [[,items]]=itemSequence
 	if (items.length==0) return null

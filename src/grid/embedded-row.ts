@@ -3,7 +3,7 @@ import ItemCollectionRow from './collection-row'
 import type {ItemSequencePoint} from './info'
 import {isItem} from './info'
 
-export default class EmbeddedItemCollection { // TODO rename
+export default class EmbeddedItemRow {
 	row: ItemRow
 	constructor(
 		row: HTMLTableRowElement|ItemRow
@@ -25,10 +25,10 @@ export default class EmbeddedItemCollection { // TODO rename
 	paste($row: HTMLTableRowElement, sequencePoint: ItemSequencePoint, withCompactIds: boolean): void {
 		this.row.$row.after($row)
 		if (!(this.row instanceof ItemCollectionRow)) return
-		const splitCollection=this.row.split(sequencePoint)
-		$row.after(splitCollection.$row)
-		const splitGridCollection=new EmbeddedItemCollection(splitCollection)
-		splitGridCollection.updateIds(withCompactIds)
+		const splitRow=this.row.split(sequencePoint)
+		$row.after(splitRow.$row)
+		const splitEmbeddedRow=new EmbeddedItemRow(splitRow)
+		splitEmbeddedRow.updateIds(withCompactIds)
 	}
 	cut(withCompactIds: boolean): void {
 		const $row=this.row.$row
@@ -39,15 +39,15 @@ export default class EmbeddedItemCollection { // TODO rename
 			$prevRow && $prevRow instanceof HTMLTableRowElement &&
 			$nextRow && $nextRow instanceof HTMLTableRowElement
 		) {
-			const prevEmbeddedCollection=new EmbeddedItemCollection($prevRow)
-			const nextEmbeddedCollection=new EmbeddedItemCollection($nextRow)
+			const prevEmbeddedRow=new EmbeddedItemRow($prevRow)
+			const nextEmbeddedRow=new EmbeddedItemRow($nextRow)
 			if (
-				prevEmbeddedCollection.row instanceof ItemCollectionRow &&
-				nextEmbeddedCollection.row instanceof ItemCollectionRow
+				prevEmbeddedRow.row instanceof ItemCollectionRow &&
+				nextEmbeddedRow.row instanceof ItemCollectionRow
 			) {
-				prevEmbeddedCollection.row.merge(nextEmbeddedCollection.row)
-				nextEmbeddedCollection.row.$row.remove()
-				prevEmbeddedCollection.updateIds(withCompactIds)
+				prevEmbeddedRow.row.merge(nextEmbeddedRow.row)
+				nextEmbeddedRow.row.$row.remove()
+				prevEmbeddedRow.updateIds(withCompactIds)
 			}
 		}
 	}
