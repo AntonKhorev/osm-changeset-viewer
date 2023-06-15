@@ -5,6 +5,7 @@ import {updateTimelineOnInsert} from '../../../test-build/grid/timeline.js'
 function insertRow($tbody,className,cells) {
 	const $row=$tbody.insertRow()
 	$row.classList.add(className)
+	$row.insertCell()
 	for (const cell of cells) {
 		const $cell=$row.insertCell()
 		if (cell.includes('a')) $cell.classList.add('with-timeline-above')
@@ -16,6 +17,7 @@ function insertRow($tbody,className,cells) {
 function insertBlankRow($tbody,className,nCells) {
 	const $row=$tbody.insertRow()
 	$row.classList.add(className)
+	$row.insertCell()
 	for (let i=0;i<nCells;i++) {
 		$row.insertCell()
 	}
@@ -162,13 +164,21 @@ describe("timeline module",()=>{
 })
 
 function assertRows($tbody,rows) {
-	assert.equal($tbody.rows.length,rows.length,`Expected table body to have ${rows.length} rows, found ${$tbody.rows.length}`)
+	assert.equal(
+		$tbody.rows.length,
+		rows.length,
+		`Expected table body to have ${rows.length} rows, found ${$tbody.rows.length}`
+	)
 	for (let i=0;i<rows.length;i++) {
 		const $row=$tbody.rows[i]
 		const cells=rows[i]
-		assert.equal($row.cells.length,cells.length,`Expected table row to have ${cells.length} cells, found ${$row.cells.length}`)
-		for (let j=0;j<cells.length;j++) {
-			const $cell=$row.cells[j]
+		assert.equal(
+			$row.cells.length,
+			cells.length+1,
+			`Expected table row to have ${cells.length+1} cells, found ${$row.cells.length}`
+		)
+		for (let j=0;j<cells.length-1;j++) {
+			const $cell=$row.cells[j+1]
 			const cell=cells[j]
 			const cellName=`cell[${i},${j}]`
 			assertTimelineClasses($cell,cell,cellName)
