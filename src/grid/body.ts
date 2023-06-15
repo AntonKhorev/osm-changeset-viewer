@@ -162,7 +162,7 @@ export default class GridBody {
 		for (const $row of this.$gridBody.rows) {
 			if (!$row.classList.contains('single') && !$row.classList.contains('collection')) continue
 			const $cells=[...$row.cells]
-			moveInArray($cells,iShiftFrom,iShiftTo)
+			moveInArray($cells,iShiftFrom+1,iShiftTo+1)
 			$row.replaceChildren(...$cells)
 		}
 	}
