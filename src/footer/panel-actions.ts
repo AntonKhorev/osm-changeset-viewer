@@ -13,18 +13,30 @@ export default class ActionsPanel extends Panel {
 		super()
 	}
 	writeSection($section: HTMLElement): void {
-		const $buttons: HTMLButtonElement[] = []
+		$section.append(
+			makeElement('h2')()(`Actions`)
+		)
 		{
-			const $button=makeElement('button')()(`Copy URLs to clipboard`)
+			const $typeSelect=makeElement('select')()(
+				new Option('URLs'),
+				new Option('ids')
+			)
+			const $button=makeElement('button')()(`📋`)
 			$button.onclick=async()=>{
 				let text=''
 				for (const id of this.grid.listSelectedChangesetIds()) {
-					const changesetUrl=this.server.web.getUrl(e`changeset/${id}`)
-					text+=changesetUrl+'\n'
+					if ($typeSelect.value=='URLs') {
+						const changesetUrl=this.server.web.getUrl(e`changeset/${id}`)
+						text+=changesetUrl+'\n'
+					} else {
+						text+=id+'\n'
+					}
 				}
 				await navigator.clipboard.writeText(text)
 			}
-			$buttons.push($button)
+			$section.append(makeDiv('input-group')(
+				`Copy `,$typeSelect,` to clipboard `,$button
+			))
 		}{
 			const $button=makeElement('button')()(`Open with RC`)
 			$button.onclick=async()=>{
@@ -34,7 +46,7 @@ export default class ActionsPanel extends Panel {
 					await openRcPath($button,rcPath)
 				}
 			}
-			$buttons.push($button)
+			$section.append(makeDiv('input-group')($button))
 		}{
 			const $button=makeElement('button')()(`Revert with RC`)
 			$button.onclick=async()=>{
@@ -43,12 +55,6 @@ export default class ActionsPanel extends Panel {
 					await openRcPath($button,rcPath)
 				}
 			}
-			$buttons.push($button)
-		}
-		$section.append(
-			makeElement('h2')()(`Actions`)
-		)
-		for (const $button of $buttons) {
 			$section.append(makeDiv('input-group')($button))
 		}
 	}
