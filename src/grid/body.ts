@@ -374,15 +374,13 @@ export default class GridBody {
 		if (isExpanded) {
 			const $row=this.makeRow()
 			{
-				let $rowBefore:HTMLTableRowElement
 				if (insertionRowInfo.type=='betweenRows') {
-					$rowBefore=insertionRowInfo.$rowBefore
+					const $rowBefore=insertionRowInfo.$rowBefore
+					$rowBefore.after($row)
 				} else {
-					$rowBefore=insertionRowInfo.$row
-					const collection=new EmbeddedItemCollection($rowBefore)
-					collection.split(sequencePoint,this.withCompactIds)
+					const collection=new EmbeddedItemCollection(insertionRowInfo.$row)
+					collection.paste($row,sequencePoint,this.withCompactIds)
 				}
-				$rowBefore.after($row)
 			}
 			$row.classList.add('single')
 			updateTimelineOnInsert($row,iColumns)

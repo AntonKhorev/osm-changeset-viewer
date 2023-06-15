@@ -1,61 +1,72 @@
-import ItemCollection from './collection'
+import ItemRow from './row'
+import ItemCollectionRow from './collection-row'
 import type {ItemSequencePoint} from './info'
 import {isItem} from './info'
 
-export default class EmbeddedItemCollection {
-	collection: ItemCollection
+export default class EmbeddedItemCollection { // TODO rename
+	row: ItemRow
 	constructor(
-		rowOrCollection: HTMLTableRowElement|ItemCollection
+		row: HTMLTableRowElement|ItemRow
 	) {
-		if (rowOrCollection instanceof ItemCollection) {
-			this.collection=rowOrCollection
+		if (row instanceof ItemRow) {
+			this.row=row
+		} else if (row.classList.contains('collection')) {
+			this.row=new ItemCollectionRow(row)
 		} else {
-			this.collection=new ItemCollection(rowOrCollection)
+			this.row=new ItemRow(row)
 		}
 	}
 	getBoundarySequencePoints(): [
 		greaterPoint: ItemSequencePoint|null,
 		lesserPoint: ItemSequencePoint|null
 	] {
-		return this.collection.getBoundarySequencePoints()
+		return this.row.getBoundarySequencePoints()
 	}
-	split(sequencePoint: ItemSequencePoint, withCompactIds: boolean): EmbeddedItemCollection {
-		const splitCollection=this.collection.split(sequencePoint)
-		this.collection.$row.after(splitCollection.$row)
+	paste($row: HTMLTableRowElement, sequencePoint: ItemSequencePoint, withCompactIds: boolean): void {
+		this.row.$row.after($row)
+		if (!(this.row instanceof ItemCollectionRow)) return
+		const splitCollection=this.row.split(sequencePoint)
+		$row.after(splitCollection.$row)
 		const splitGridCollection=new EmbeddedItemCollection(splitCollection)
 		splitGridCollection.updateIds(withCompactIds)
-		return splitGridCollection
 	}
 	cut(withCompactIds: boolean): void {
-		const $row=this.collection.$row
+		const $row=this.row.$row
 		const $prevRow=$row.previousElementSibling
 		const $nextRow=$row.nextElementSibling
 		$row.remove()
 		if (
-			$prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
-			$nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')
+			$prevRow && $prevRow instanceof HTMLTableRowElement &&
+			$nextRow && $nextRow instanceof HTMLTableRowElement
 		) {
 			const prevEmbeddedCollection=new EmbeddedItemCollection($prevRow)
 			const nextEmbeddedCollection=new EmbeddedItemCollection($nextRow)
-			prevEmbeddedCollection.collection.merge(nextEmbeddedCollection.collection)
-			nextEmbeddedCollection.collection.$row.remove()
-			prevEmbeddedCollection.updateIds(withCompactIds)
+			if (
+				prevEmbeddedCollection.row instanceof ItemCollectionRow &&
+				nextEmbeddedCollection.row instanceof ItemCollectionRow
+			) {
+				prevEmbeddedCollection.row.merge(nextEmbeddedCollection.row)
+				nextEmbeddedCollection.row.$row.remove()
+				prevEmbeddedCollection.updateIds(withCompactIds)
+			}
 		}
 	}
 	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[], withCompactIds: boolean): void {
-		this.collection.insert(sequencePoint,iColumns,$items)
+		if (!(this.row instanceof ItemCollectionRow)) throw new TypeError(`attempt to insert into non-collection row`)
+		this.row.insert(sequencePoint,iColumns,$items)
 		this.updateIds(withCompactIds)
 	}
 	remove($items: Iterable<HTMLElement>, withCompactIds: boolean): void {
-		this.collection.remove($items)
-		if (this.collection.isEmpty()) {
-			this.collection.$row.remove()
+		if (!(this.row instanceof ItemCollectionRow)) throw new TypeError(`attempt to remove from non-collection row`)
+		this.row.remove($items)
+		if (this.row.isEmpty()) {
+			this.row.$row.remove()
 		} else {
 			this.updateIds(withCompactIds)
 		}
 	}
 	updateIds(withCompactIds: boolean): void {
-		for (const $cell of this.collection.$row.cells) {
+		for (const $cell of this.row.$row.cells) {
 			let lastId=''
 			for (const $item of $cell.children) {
 				if (!isItem($item)) continue
@@ -93,6 +104,6 @@ export default class EmbeddedItemCollection {
 		}
 	}
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
-		yield *this.collection.getItemSequence()
+		yield *this.row.getItemSequence()
 	}
 }
