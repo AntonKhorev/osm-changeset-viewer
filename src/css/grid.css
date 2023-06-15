@@ -1,4 +1,5 @@
 .ui .grid {
+	--all-width: calc(var(--icon-size) + 2 * var(--spacer));
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
 	--icon-size: 1.25rem;
@@ -6,7 +7,7 @@
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
-	min-width: calc(var(--column-min-width) * var(--columns) + var(--adder-width));
+	min-width: calc(var(--all-width) + var(--column-min-width) * var(--columns) + var(--adder-width));
 }
 .ui .grid :is(td,th) {
 	padding: 0;
@@ -17,7 +18,7 @@
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
 }
 .ui .grid col.all {
-	width: calc(var(--icon-size) + 2 * var(--spacer));
+	width: var(--all-width);
 }
 .ui .grid col.adder {
 	width: var(--adder-width);
