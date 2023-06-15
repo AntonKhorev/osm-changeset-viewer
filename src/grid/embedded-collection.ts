@@ -26,10 +26,21 @@ export default class EmbeddedItemCollection {
 		splitGridCollection.updateIds(withCompactIds)
 		return splitGridCollection
 	}
-	merge(that: EmbeddedItemCollection, withCompactIds: boolean): void {
-		this.collection.merge(that.collection)
-		that.collection.$row.remove()
-		this.updateIds(withCompactIds)
+	cut(withCompactIds: boolean): void {
+		const $row=this.collection.$row
+		const $prevRow=$row.previousElementSibling
+		const $nextRow=$row.nextElementSibling
+		$row.remove()
+		if (
+			$prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
+			$nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')
+		) {
+			const prevEmbeddedCollection=new EmbeddedItemCollection($prevRow)
+			const nextEmbeddedCollection=new EmbeddedItemCollection($nextRow)
+			prevEmbeddedCollection.collection.merge(nextEmbeddedCollection.collection)
+			nextEmbeddedCollection.collection.$row.remove()
+			prevEmbeddedCollection.updateIds(withCompactIds)
+		}
 	}
 	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[], withCompactIds: boolean): void {
 		this.collection.insert(sequencePoint,iColumns,$items)

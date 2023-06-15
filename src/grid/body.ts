@@ -188,22 +188,13 @@ export default class GridBody {
 			const [[sequencePoint,items]]=itemSequence
 			const iColumns=items.map(([iColumn])=>iColumn)
 			const $items=items.map(([,$item])=>$item)
-			const $prevRow=$row.previousElementSibling
-			const $nextRow=$row.nextElementSibling
-			$row.remove()
+			const collection=new EmbeddedItemCollection($row)
+			collection.cut(this.withCompactIds)
 			for (const $item of $items) {
 				const $disclosureButton=getItemDisclosureButton($item)
 				if ($disclosureButton) {
 					setItemDisclosureButtonState($disclosureButton,false)
 				}
-			}
-			if (
-				$prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
-				$nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')
-			) {
-				const collection=new EmbeddedItemCollection($prevRow)
-				const nextCollection=new EmbeddedItemCollection($nextRow)
-				collection.merge(nextCollection,this.withCompactIds)
 			}
 			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$items)
 		}
