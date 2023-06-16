@@ -684,7 +684,7 @@ describe("GridBody",()=>{
 		},usernames,isExpanded)
 		gridBody.updateTableAccordingToSettings()
 		await gridBody[actionMethod]({type:'user',id:101})
-		const $cell=gridBody.$gridBody.rows[1].cells[0]
+		const $cell=gridBody.$gridBody.rows[1].cells[1]
 		assertElementClasses($cell,['with-timeline-above','with-timeline-below'],['with-timeline-above'],`Cell`)
 	})
 	it("expands second comment",async()=>{
@@ -721,7 +721,7 @@ describe("GridBody",()=>{
 			}
 		))
 	})
-	it("makes adds items to two-column collection",()=>{
+	it("adds items to two-column collection",()=>{
 		const gridBody=new GridBody(server,null)
 		gridBody.setColumns([101,102])
 		gridBody.addItem({
@@ -740,7 +740,7 @@ describe("GridBody",()=>{
 			assertSeparatorData($row,2023,3)
 		},$row=>{
 			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
+			assertEach($row.cells,()=>{},$cell=>{
 				assertEach($cell.children,$item=>{
 					assertCellChildIsIcon($item)
 				},$item=>{
@@ -788,7 +788,7 @@ describe("GridBody",()=>{
 			assertSeparatorData($row,2023,3)
 		},$row=>{
 			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
+			assertEach($row.cells,()=>{},$cell=>{
 				assertEach($cell.children,$item=>{
 					assertCellChildIsIcon($item)
 				},$item=>{
@@ -800,7 +800,7 @@ describe("GridBody",()=>{
 			})
 		},$row=>{
 			assertRowIsSingle($row)
-			assertEach($row.cells,$cell=>{
+			assertEach($row.cells,()=>{},$cell=>{
 				assertEach($cell.children)
 			},$cell=>{
 				assertEach($cell.children,$item=>{
@@ -810,7 +810,7 @@ describe("GridBody",()=>{
 			})
 		},$row=>{
 			assertRowIsCollection($row)
-			assertEach($row.cells,$cell=>{
+			assertEach($row.cells,()=>{},$cell=>{
 				assertEach($cell.children)
 			},$cell=>{
 				assertEach($cell.children,$item=>{
