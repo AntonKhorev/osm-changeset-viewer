@@ -66,9 +66,6 @@ export default class Grid {
 	set withClosedChangesets(value: boolean) {
 		this.body.withClosedChangesets=value
 	}
-	set inOneColumn(value: boolean) {
-		this.body.inOneColumn=value
-	}
 	private setColumns(columnUids: (number|null)[]) {
 		const nColumns=columnUids.length
 		this.body.setColumns(columnUids)

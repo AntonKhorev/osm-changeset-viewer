@@ -24,7 +24,6 @@ export default class GridBody {
 	readonly $gridBody=makeElement('tbody')()()
 	withCompactIds=false
 	withClosedChangesets=false
-	inOneColumn=false
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
 	private columnUids: (number|null)[] = []
 	constructor(
@@ -105,24 +104,24 @@ export default class GridBody {
 				}
 			}
 		}
-		const spanColumns=($row:HTMLTableRowElement)=>{
-			let spanned=false
-			for (const $cell of $row.cells) {
-				if (this.inOneColumn) {
-					if (!spanned && $cell.childNodes.length) {
-						$cell.hidden=false
-						$cell.colSpan=this.nColumns+1
-						spanned=true
-					} else {
-						$cell.hidden=true
-						$cell.removeAttribute('colspan')
-					}
-				} else {
-					$cell.hidden=false
-					$cell.removeAttribute('colspan')
-				}
-			}
-		}
+		// const spanColumns=($row:HTMLTableRowElement)=>{
+		// 	let spanned=false
+		// 	for (const $cell of $row.cells) {
+		// 		if (this.inOneColumn) {
+		// 			if (!spanned && $cell.childNodes.length) {
+		// 				$cell.hidden=false
+		// 				$cell.colSpan=this.nColumns+1
+		// 				spanned=true
+		// 			} else {
+		// 				$cell.hidden=true
+		// 				$cell.removeAttribute('colspan')
+		// 			}
+		// 		} else {
+		// 			$cell.hidden=false
+		// 			$cell.removeAttribute('colspan')
+		// 		}
+		// 	}
+		// }
 		let $itemRowAbove: HTMLTableRowElement|undefined
 		for (const $row of this.$gridBody.rows) {
 			if ($row.classList.contains('collection')) {
@@ -155,7 +154,7 @@ export default class GridBody {
 					}
 					if ($item instanceof HTMLElement) combineChangesets($item,$itemAbove)
 				}
-				spanColumns($row)
+				// spanColumns($row)
 				$itemRowAbove=$row
 			} else {
 				$itemRowAbove=undefined

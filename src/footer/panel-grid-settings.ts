@@ -34,10 +34,6 @@ export default class GridSettingsPanel extends Panel {
 			makeGridCheckbox(
 				value=>this.grid.withClosedChangesets=value,
 				`changeset close events`,`visible only if there's some other event between changeset opening and closing`
-			),
-			makeGridCheckbox(
-				value=>this.grid.inOneColumn=value,
-				`one column`
 			)
 		)
 	}
