@@ -23,9 +23,11 @@ describe("GridBodyCheckboxHandler",()=>{
 	it("triggers checkbox",()=>{
 		const $gridBody=document.createElement('tbody')
 		$gridBody.innerHTML=`<tr class="single"><td></td><td>`+
-			`<span class="item changeset" data-timestamp="1666666666666" data-type="changeset" data-id="111111111">`+
-				`<span class="icon"><input type="checkbox"></span>`+
-			`</span>`+
+			`<div>`+
+				`<span class="item changeset" data-timestamp="1666666666666" data-type="changeset" data-id="111111111">`+
+					`<span class="icon"><input type="checkbox"></span>`+
+				`</span>`+
+			`</div>`+
 		`</td></tr>`
 		const handler=new GridBodyCheckboxHandler($gridBody)
 		handler.triggerColumnCheckboxes(0,true)

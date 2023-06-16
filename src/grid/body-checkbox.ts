@@ -126,7 +126,7 @@ function *listRowCheckboxes($row: HTMLTableRowElement, columnFilter: (iColumn:nu
 	for (const [iRawColumn,$cell] of [...$row.cells].entries()) {
 		const iColumn=iRawColumn-1
 		if (!columnFilter(iColumn)) continue
-		for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
+		for (const $changeset of $cell.querySelectorAll(':scope > * > .changeset')) {
 			if (!($changeset instanceof HTMLElement)) continue
 			const descriptor=readItemDescriptor($changeset)
 			if (!descriptor || descriptor.type!='changeset') continue
