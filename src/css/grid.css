@@ -216,21 +216,25 @@
 	user-select: none;
 }
 
-/*** separator ***/
-.ui .grid tbody tr.separator td .month {
-	padding: var(--spacer) 0;
-	text-align: center;
+/*** stretched column ***/
+.ui .grid tbody td[colspan] > .stretch {
 	position: sticky;
 	left: 0;
 	width: var(--main-width);
-	height: 1rem;
 }
-.ui .grid tbody tr.separator td .month time {
+
+/*** separator ***/
+.ui .grid tbody tr.separator td > .stretch {
+	height: 1rem;
+	padding: var(--spacer) 0;
+	text-align: center;
+}
+.ui .grid tbody tr.separator td > .stretch time {
 	background: canvas;
 	padding: 0 .5em;
 	color: var(--light-text-color);
 }
-.ui .grid tbody tr.separator td .month::before {
+.ui .grid tbody tr.separator td > .stretch::before {
 	content: '';
 	position: absolute;
 	z-index: -1;
@@ -250,11 +254,21 @@
 	--item-spacer: 4px;
 	position: relative;
 }
-.ui .grid tbody tr.single td {
+.ui .grid tbody tr.single td:not(:first-child) {
 	padding-left: calc(var(--spacer) + var(--icon-size));
 }
-.ui .grid tbody tr.collection td {
+.ui .grid tbody tr.single td:first-child > .stretch {
+	padding-left: calc(var(--spacer) + var(--icon-size));
+	padding-right: var(--spacer);
+	box-sizing: border-box;
+}
+.ui .grid tbody tr.collection td:not(:first-child) {
 	padding-left: calc(var(--spacer) + var(--icon-size) + var(--item-spacer));
+}
+.ui .grid tbody tr.collection td:first-child > .stretch {
+	padding-left: calc(var(--spacer) + var(--icon-size) + var(--item-spacer));
+	padding-right: var(--spacer);
+	box-sizing: border-box;
 }
 .ui .grid tbody tr:is(.single,.collection) td.with-timeline-above::before,
 .ui .grid tbody tr:is(.single,.collection) td.with-timeline-below::after {
@@ -282,8 +296,8 @@
 .ui .grid tbody tr.collection {
 	line-height: 24px;
 }
-.ui .grid tbody tr.single td > .item > .icon:first-child,
-.ui .grid tbody tr.collection td > .icon:first-child {
+.ui .grid tbody tr.single :where(td:not(:first-child), td:first-child > .stretch) > .item > .icon:first-child,
+.ui .grid tbody tr.collection :where(td:not(:first-child), td:first-child > .stretch) > .icon:first-child {
 	position: absolute;
 	left: var(--spacer);
 	top: var(--icon-vertical-margin);

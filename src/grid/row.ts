@@ -1,5 +1,6 @@
 import type {ItemSequencePoint} from './info'
 import {isItem, readItemSequencePoint, isGreaterElementSequencePoint} from './info'
+import {makeDiv} from '../util/html'
 
 export default class ItemRow {
 	constructor(
@@ -70,6 +71,8 @@ export default class ItemRow {
 		const itemSequence=[...this.getItemSequence()]
 		const $spannedCell=this.$row.cells[0]
 		$spannedCell.colSpan=nTotalColumns
+		const $stretchContainer=makeDiv('stretch')()
+		$spannedCell.append($stretchContainer)
 		for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
 			if (iRawColumn==0) continue
 			$cell.hidden=true
@@ -77,7 +80,7 @@ export default class ItemRow {
 		for (const [,items] of itemSequence) {
 			const [[iColumn,$item]]=items
 			$item.dataset.column=String(iColumn)
-			$spannedCell.append(` `,$item)
+			$stretchContainer.append(` `,$item)
 		}
 	}
 }

@@ -485,7 +485,7 @@ export default class GridBody {
 		writeSeparatorSequencePoint($separator,date)
 		const $cell=$separator.insertCell()
 		$cell.append(
-			makeDiv('month')(
+			makeDiv('stretch')(
 				makeElement('time')()(yearMonthString)
 			)
 		)
