@@ -4,17 +4,23 @@
 	--column-min-width: 25ch;
 	--icon-size: 1.25rem;
 	--tab-height: calc(1rem + 2 * var(--spacer));
+	--accent-saturation: 50%;
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
 	min-width: calc(var(--all-width) + var(--column-min-width) * var(--columns) + var(--adder-width));
+}
+@media (prefers-color-scheme: dark) {
+	.ui .grid {
+		--accent-saturation: 70%;
+	}
 }
 .ui .grid :is(td,th) {
 	padding: 0;
 	vertical-align: top;
 }
 .ui .grid :is(td,th,.item>.icon,.item>.ballon) {
-	--temp-accent-color: hsl(var(--hue) 50% 50%);
+	--temp-accent-color: hsl(var(--hue) var(--accent-saturation) 50%);
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
 }
 .ui .grid col.all {
