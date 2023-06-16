@@ -115,9 +115,9 @@ function getElementColumn($e: HTMLElement): number|null {
 	const $row=$e.closest('tr')
 	const $cell=$e.closest('td')
 	if (!$row || !$cell) return null
-	const iColumn=[...$row.cells].indexOf($cell)
-	if (iColumn<0) return null
-	return iColumn
+	const iRawColumn=[...$row.cells].indexOf($cell)
+	if (iRawColumn<0) return null
+	return iRawColumn-1
 }
 
 function *listRowCheckboxes($row: HTMLTableRowElement, columnFilter: (iColumn:number)=>boolean = ()=>true): Iterable<[
@@ -126,7 +126,8 @@ function *listRowCheckboxes($row: HTMLTableRowElement, columnFilter: (iColumn:nu
 	iColumn: number
 ]> {
 	if (!$row.classList.contains('single') && !$row.classList.contains('collection')) return
-	for (const [iColumn,$cell] of [...$row.cells].entries()) {
+	for (const [iRawColumn,$cell] of [...$row.cells].entries()) {
+		const iColumn=iRawColumn-1
 		if (!columnFilter(iColumn)) continue
 		for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
 			if (!($changeset instanceof HTMLElement)) continue
