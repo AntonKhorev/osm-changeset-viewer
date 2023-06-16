@@ -67,6 +67,36 @@ export default class GridBody {
 			$items
 		)
 	}
+	stretchAllItems(): void {
+		// const spanColumns=($row:HTMLTableRowElement)=>{
+		// 	let spanned=false
+		// 	for (const $cell of $row.cells) {
+		// 		if (this.inOneColumn) {
+		// 			if (!spanned && $cell.childNodes.length) {
+		// 				$cell.hidden=false
+		// 				$cell.colSpan=this.nColumns+1
+		// 				spanned=true
+		// 			} else {
+		// 				$cell.hidden=true
+		// 				$cell.removeAttribute('colspan')
+		// 			}
+		// 		} else {
+		// 			$cell.hidden=false
+		// 			$cell.removeAttribute('colspan')
+		// 		}
+		// 	}
+		// }
+		for (const $row of this.$gridBody.rows) {
+			if (
+				!$row.classList.contains('single')
+				// && !$row.classList.contains('collection') // TODO
+			) continue
+			const row=new EmbeddedItemRow($row)
+			row.stretch(this.withCompactIds)
+		}
+	}
+	shrinkAllItems(): void {
+	}
 	updateTableAccordingToSettings(): void {
 		const setCheckboxTitles=($item: HTMLElement, title: string)=>{
 			if ($item instanceof HTMLTableRowElement) {
@@ -104,24 +134,6 @@ export default class GridBody {
 				}
 			}
 		}
-		// const spanColumns=($row:HTMLTableRowElement)=>{
-		// 	let spanned=false
-		// 	for (const $cell of $row.cells) {
-		// 		if (this.inOneColumn) {
-		// 			if (!spanned && $cell.childNodes.length) {
-		// 				$cell.hidden=false
-		// 				$cell.colSpan=this.nColumns+1
-		// 				spanned=true
-		// 			} else {
-		// 				$cell.hidden=true
-		// 				$cell.removeAttribute('colspan')
-		// 			}
-		// 		} else {
-		// 			$cell.hidden=false
-		// 			$cell.removeAttribute('colspan')
-		// 		}
-		// 	}
-		// }
 		let $itemRowAbove: HTMLTableRowElement|undefined
 		for (const $row of this.$gridBody.rows) {
 			if ($row.classList.contains('collection')) {
@@ -135,7 +147,6 @@ export default class GridBody {
 				}
 				const row=new EmbeddedItemRow($row)
 				row.updateIds(this.withCompactIds)
-				// spanColumns($row) // TODO need to merge/split collected items in cells
 				$itemRowAbove=undefined
 			} else if ($row.classList.contains('single')) {
 				for (let i=0;i<$row.cells.length;i++) {
@@ -154,7 +165,6 @@ export default class GridBody {
 					}
 					if ($item instanceof HTMLElement) combineChangesets($item,$itemAbove)
 				}
-				// spanColumns($row)
 				$itemRowAbove=$row
 			} else {
 				$itemRowAbove=undefined

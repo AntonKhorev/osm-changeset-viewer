@@ -65,4 +65,19 @@ export default class ItemRow {
 			yield [point,items]
 		}
 	}
+	stretch(): void {
+		const nTotalColumns=this.$row.cells.length+1
+		const itemSequence=[...this.getItemSequence()]
+		const $spannedCell=this.$row.cells[0]
+		$spannedCell.colSpan=nTotalColumns
+		for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
+			if (iRawColumn==0) continue
+			$cell.hidden=true
+		}
+		for (const [,items] of itemSequence) {
+			const [[iColumn,$item]]=items
+			$item.dataset.column=String(iColumn)
+			$spannedCell.append(` `,$item)
+		}
+	}
 }

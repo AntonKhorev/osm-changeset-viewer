@@ -102,6 +102,12 @@ export default class Grid {
 			this.body.collapseItem({type:'changeset',id})
 		}
 	}
+	stretchAllItems(): void {
+		this.body.stretchAllItems()
+	}
+	shrinkAllItems(): void {
+		this.body.shrinkAllItems()
+	}
 	listSelectedChangesetIds(): Iterable<number> {
 		return this.body.listSelectedChangesetIds()
 	}

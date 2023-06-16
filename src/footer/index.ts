@@ -85,20 +85,18 @@ export default function writeFooter(
 		)
 	}
 	if (grid) {
-		const $button=makeElement('button')()(`+`)
-		$button.title=`Expand selected items`
-		$button.onclick=()=>{
-			grid.expandSelectedItems()
+		const buttonData: [label: string, title: string, action: ()=>void][] = [
+			[`+`,`Expand selected items`,()=>{ grid.expandSelectedItems() }],
+			[`−`,`Collapse selected items`,()=>{ grid.collapseSelectedItems() }],
+			[`<*>`,`Stretch all items`,()=>{ grid.stretchAllItems() }],
+			[`>*<`,`Shrink all items`,()=>{ grid.shrinkAllItems() }],
+		]
+		for (const [label,title,action] of buttonData) {
+			const $button=makeElement('button')()(label)
+			$button.title=title
+			$button.onclick=action
+			$toolbar.append($button)
 		}
-		$toolbar.append($button)
-	}
-	if (grid) {
-		const $button=makeElement('button')()(`−`)
-		$button.title=`Collapse selected items`
-		$button.onclick=()=>{
-			grid.collapseSelectedItems()
-		}
-		$toolbar.append($button)
 	}
 	for (const $button of $panelButtons) {
 		$toolbar.append($button)
