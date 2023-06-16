@@ -7,7 +7,7 @@ export default class ItemRow {
 		public $row: HTMLTableRowElement
 	) {}
 	isEmpty(): boolean {
-		return !this.$row.querySelector(':scope > td > .item')
+		return !this.$row.querySelector(':scope > td > * > .item')
 	}
 	getBoundarySequencePoints(): [
 		greaterPoint: ItemSequencePoint|null,
@@ -16,7 +16,9 @@ export default class ItemRow {
 		let greaterPoint: ItemSequencePoint|null = null
 		let lesserPoint: ItemSequencePoint|null = null
 		for (const $cell of this.$row.cells) {
-			for (const $item of $cell.children) {
+			const [$container]=$cell.children
+			if (!($container instanceof HTMLElement)) continue
+			for (const $item of $container.children) {
 				if (!isItem($item)) continue
 				const point=readItemSequencePoint($item)
 				if (!point) continue
@@ -31,7 +33,7 @@ export default class ItemRow {
 		return [greaterPoint,lesserPoint]
 	}
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
-		const nColumns=this.$row.cells.length-1
+		const nColumns=this.$row.cells.length-1 // TODO go with raw columns instead
 		if (nColumns==0) return
 		const iColumnPositions=Array<number>(nColumns).fill(0)
 		while (true) {
@@ -39,17 +41,19 @@ export default class ItemRow {
 			let items: [iColumn: number, $item: HTMLElement][] = []
 			for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
 				if (iRawColumn==0) continue
+				const [$container]=$cell.children
+				if (!($container instanceof HTMLElement)) continue
 				const iColumn=iRawColumn-1
 				let $item: Element|undefined
 				let columnPoint: ItemSequencePoint|null = null
-				for (;iColumnPositions[iColumn]<$cell.children.length;iColumnPositions[iColumn]++) {
-					$item=$cell.children[iColumnPositions[iColumn]]
+				for (;iColumnPositions[iColumn]<$container.children.length;iColumnPositions[iColumn]++) {
+					$item=$container.children[iColumnPositions[iColumn]]
 					if (!isItem($item)) continue
 					columnPoint=readItemSequencePoint($item)
 					if (!columnPoint) continue
 					break
 				}
-				if (iColumnPositions[iColumn]>=$cell.children.length) continue
+				if (iColumnPositions[iColumn]>=$container.children.length) continue
 				if (!$item || !isItem($item) || !columnPoint) continue
 				if (point && isGreaterElementSequencePoint(point,columnPoint)) continue
 				if (!point || isGreaterElementSequencePoint(columnPoint,point)) {

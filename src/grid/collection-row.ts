@@ -2,7 +2,7 @@ import ItemRow from './row'
 import type {ItemSequencePoint} from './info'
 import {isItem, readItemSequencePoint, isGreaterElementSequencePoint} from './info'
 import {makeCollectionIcon} from './body-item'
-import {makeElement} from '../util/html'
+import {makeElement, makeDiv} from '../util/html'
 
 export default class ItemCollectionRow extends ItemRow {
 	constructor(
@@ -23,34 +23,39 @@ export default class ItemCollectionRow extends ItemRow {
 			if (style) {
 				$splitCell.setAttribute('style',style)
 			}
+			const [$container]=$cell.children
+			const $splitContainer=makeDiv()()
+			$splitCell.append($splitContainer)
 			let startedMoving=false
 			let nItems=0
 			const $itemsToMove:HTMLElement[]=[]
-			for (const $item of $cell.children) {
-				if (!isItem($item)) continue
-				nItems++
-				if (!startedMoving) {
-					const collectionItemSequencePoint=readItemSequencePoint($item)
-					if (!collectionItemSequencePoint) continue
-					if (isGreaterElementSequencePoint(sequencePoint,collectionItemSequencePoint)) {
-						startedMoving=true
+			if ($container instanceof HTMLElement) {
+				for (const $item of $container.children) {
+					if (!isItem($item)) continue
+					nItems++
+					if (!startedMoving) {
+						const collectionItemSequencePoint=readItemSequencePoint($item)
+						if (!collectionItemSequencePoint) continue
+						if (isGreaterElementSequencePoint(sequencePoint,collectionItemSequencePoint)) {
+							startedMoving=true
+						}
+					}
+					if (startedMoving) {
+						$itemsToMove.push($item)
 					}
 				}
-				if (startedMoving) {
-					$itemsToMove.push($item)
+				if ($itemsToMove.length>0) {
+					$splitContainer.append(makeCollectionIcon())
 				}
-			}
-			if ($itemsToMove.length>0) {
-				$splitCell.append(makeCollectionIcon())
-			}
-			for (const $item of $itemsToMove) {
-				removeSpaceBefore($item)
-				$splitCell.append(` `,$item)
-			}
-			if (nItems<=$itemsToMove.length) {
-				const $icon=$cell.children[0]
-				if ($icon && $icon.classList.contains('icon')) {
-					$icon.remove()
+				for (const $item of $itemsToMove) {
+					removeSpaceBefore($item)
+					$splitContainer.append(` `,$item)
+				}
+				if (nItems<=$itemsToMove.length) {
+					const $icon=$container.children[0]
+					if ($icon && $icon.classList.contains('icon')) {
+						$icon.remove()
+					}
 				}
 			}
 			if ($cell.classList.contains('with-timeline-below')) {
@@ -65,6 +70,21 @@ export default class ItemCollectionRow extends ItemRow {
 		return new ItemCollectionRow($splitRow)
 	}
 	merge(that: ItemCollectionRow): void {
+		const copyChildren=($container1:HTMLElement,$container2:HTMLElement)=>{
+			let copying=false
+			for (const $child of [...$container2.children]) {
+				if ($child.classList.contains('item')) {
+					copying=true
+					if ($container1.children.length==0) {
+						$container1.append(makeCollectionIcon())
+					}
+				}
+				if (copying) {
+					$container1.append($child)
+					$child.before(' ')
+				}
+			}
+		}
 		const $cells1=[...this.$row.cells]
 		const $cells2=[...that.$row.cells]
 		for (let i=0;i<$cells1.length&&i<$cells2.length;i++) {
@@ -75,17 +95,13 @@ export default class ItemCollectionRow extends ItemRow {
 				this.$row.append($cell2)
 				continue
 			}
-			let copying=false
-			for (const $child of [...$cell2.children]) {
-				if ($child.classList.contains('item')) {
-					copying=true
-					if ($cell1.children.length==0) {
-						$cell1.append(makeCollectionIcon())
-					}
-				}
-				if (copying) {
-					$cell1.append($child)
-					$child.before(' ')
+			const [$container1]=$cell1.children
+			const [$container2]=$cell2.children
+			if ($container2 instanceof HTMLElement) {
+				if ($container1 instanceof HTMLElement) {
+					copyChildren($container1,$container2)
+				} else {
+					$cell1.append($container2)
 				}
 			}
 			$cell1.classList.toggle('with-timeline-below',$cell2.classList.contains('with-timeline-below'))
@@ -99,8 +115,14 @@ export default class ItemCollectionRow extends ItemRow {
 			const iColumn=iColumns[iItem]
 			const $item=$items[iItem]
 			const $cell=this.$row.cells[iColumn+1]
+			let [$container]=$cell.children
+			if (!($container instanceof HTMLElement)) {
+				$cell.append(
+					$container=makeDiv()()
+				)
+			}
 			let nItems=0
-			for (const $existingItem of $cell.children) {
+			for (const $existingItem of $container.children) {
 				if (!isItem($existingItem)) continue
 				nItems++
 				const collectionItemSequencePoint=readItemSequencePoint($existingItem)
@@ -112,23 +134,25 @@ export default class ItemCollectionRow extends ItemRow {
 			}
 			if (nItems==0) {
 				const $icon=makeCollectionIcon()
-				$cell.prepend($icon)
+				$container.prepend($icon)
 				$icon.after(` `,$item)
 			} else {
-				const $lastChild=$cell.lastElementChild as Element
+				const $lastChild=$container.lastElementChild as Element
 				$lastChild.after(` `,$item)
 			}
 		}
 	}
 	remove($items: Iterable<HTMLElement>): void {
 		for (const $item of $items) {
-			const $cell=$item.parentElement
+			const $container=$item.parentElement
+			if (!($container instanceof HTMLElement)) continue
+			const $cell=$container.parentElement
 			if (!($cell instanceof HTMLTableCellElement)) continue
 			if ($cell.parentElement!=this.$row) continue
 			removeSpaceBefore($item)
 			$item.remove()
-			if ($cell.querySelector(':scope > .item')) continue
-			$cell.replaceChildren()
+			if ($container.querySelector(':scope > .item')) continue
+			$container.replaceChildren()
 		}
 	}
 }

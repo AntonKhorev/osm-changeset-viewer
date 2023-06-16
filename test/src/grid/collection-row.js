@@ -14,13 +14,15 @@ function makeCell(timeline,style,...$children) {
 	if (timeline.includes('a')) $cell.classList.add('with-timeline-above')
 	if (timeline.includes('b')) $cell.classList.add('with-timeline-below')
 	$cell.setAttribute('style',style)
+	const $container=document.createElement('div')
+	$cell.append($container)
 	if ($children.length>0) {
 		const $icon=document.createElement('span')
 		$icon.classList.add('icon')
-		$cell.append($icon)
+		$container.append($icon)
 	}
 	for (const $child of $children) {
-		$cell.append(' ',$child)
+		$container.append(' ',$child)
 	}
 	return $cell
 }
@@ -288,7 +290,7 @@ describe("ItemCollectionRow",()=>{
 		const result=[...row.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-01',10001),[
-				[0,$row.cells[1].children[1]],
+				[0,$row.cells[1].children[0].children[1]],
 			]],
 		])
 	})
@@ -303,10 +305,10 @@ describe("ItemCollectionRow",()=>{
 		const result=[...row.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-02',10002),[
-				[0,$row.cells[1].children[1]],
+				[0,$row.cells[1].children[0].children[1]],
 			]],
 			[changesetPoint('2023-04-01',10001),[
-				[0,$row.cells[1].children[2]],
+				[0,$row.cells[1].children[0].children[2]],
 			]],
 		])
 	})
@@ -322,8 +324,8 @@ describe("ItemCollectionRow",()=>{
 		const result=[...row.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-03',10003),[
-				[0,$row.cells[1].children[1]],
-				[1,$row.cells[2].children[1]],
+				[0,$row.cells[1].children[0].children[1]],
+				[1,$row.cells[2].children[0].children[1]],
 			]],
 		])
 	})
@@ -339,10 +341,10 @@ describe("ItemCollectionRow",()=>{
 		const result=[...row.getItemSequence()]
 		assert.deepEqual(result,[
 			[changesetPoint('2023-04-04',10004),[
-				[1,$row.cells[2].children[1]],
+				[1,$row.cells[2].children[0].children[1]],
 			]],
 			[changesetPoint('2023-04-03',10003),[
-				[0,$row.cells[1].children[1]],
+				[0,$row.cells[1].children[0].children[1]],
 			]],
 		])
 	})
@@ -356,18 +358,20 @@ function assertChangesetCollectionRow($row,cells) {
 		const [timeline,style,...items]=cells[i]
 		assertTimelineClasses($cell,timeline,`cell[${i}]`)
 		assert.equal($cell.getAttribute('style'),style)
+		assert.equal($cell.children.length,1)
+		const [$container]=$cell.children
 		if (items.length==0) {
-			assert.equal($cell.children.length,0)
+			assert.equal($container.children.length,0)
 			continue
 		}
-		assert.equal($cell.childNodes.length,1+2*items.length,`Expected cell[${i}] to have ${1+2*items.length} child nodes, got ${$cell.childNodes.length}`)
-		const $icon=$cell.children[0]
+		assert.equal($container.childNodes.length,1+2*items.length,`Expected cell[${i}] to have ${1+2*items.length} child nodes, got ${$container.childNodes.length}`)
+		const $icon=$container.children[0]
 		assert($icon.classList.contains('icon'))
 		for (let j=0;j<items.length;j++) {
-			const $space=$cell.childNodes[1+j*2]
+			const $space=$container.childNodes[1+j*2]
 			assert.equal($space.nodeType,document.TEXT_NODE)
 			assert.equal($space.textContent,' ')
-			const $item=$cell.childNodes[2+j*2]
+			const $item=$container.childNodes[2+j*2]
 			assert.equal($item.nodeType,document.ELEMENT_NODE)
 			const point=changesetPoint(...items[j])
 			assert.equal($item.dataset.type,point.type)
