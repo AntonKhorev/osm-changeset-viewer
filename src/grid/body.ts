@@ -26,13 +26,17 @@ export default class GridBody {
 	withClosedChangesets=false
 	inOneColumn=false
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
-	private readonly wrappedItemDisclosureButtonListener: (ev:Event)=>void
 	private columnUids: (number|null)[] = []
 	constructor(
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader
 	) {
-		this.wrappedItemDisclosureButtonListener=(ev:Event)=>this.toggleItemDisclosureWithButton(ev.currentTarget)
+		this.$gridBody.onclick=ev=>{
+			if (!(ev.target instanceof Element)) return
+			const $button=ev.target.closest('button.disclosure')
+			if (!($button instanceof HTMLButtonElement)) return
+			this.toggleItemDisclosureWithButton($button)
+		}
 	}
 	get nColumns() {
 		return this.columnUids.length
@@ -358,8 +362,6 @@ export default class GridBody {
 			if ($checkbox) {
 				this.checkboxHandler.listen($checkbox)
 			}
-			const $disclosureButton=getItemDisclosureButton($item)
-			$disclosureButton?.addEventListener('click',this.wrappedItemDisclosureButtonListener)
 		}
 		return true
 	}
@@ -497,8 +499,7 @@ export default class GridBody {
 		}
 		return $rows
 	}
-	private async toggleItemDisclosureWithButton($disclosureButton: EventTarget|null): Promise<void> {
-		if (!($disclosureButton instanceof HTMLButtonElement)) return
+	private async toggleItemDisclosureWithButton($disclosureButton: HTMLButtonElement): Promise<void> {
 		const $item=$disclosureButton.closest('.item')
 		if (!($item instanceof HTMLElement)) return
 		const itemDescriptor=readItemDescriptor($item)
