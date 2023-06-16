@@ -31,12 +31,12 @@ export default class GridBody {
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader
 	) {
-		this.$gridBody.onclick=ev=>{
+		this.$gridBody.addEventListener('click',ev=>{
 			if (!(ev.target instanceof Element)) return
 			const $button=ev.target.closest('button.disclosure')
 			if (!($button instanceof HTMLButtonElement)) return
 			this.toggleItemDisclosureWithButton($button)
-		}
+		})
 	}
 	get nColumns() {
 		return this.columnUids.length
@@ -357,10 +357,6 @@ export default class GridBody {
 				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
 			} else {
 				writeCollapsedItemFlow($flow,this.server,sequencePoint.type,sequencePoint.id)
-			}
-			const $checkbox=getItemCheckbox($item)
-			if ($checkbox) {
-				this.checkboxHandler.listen($checkbox)
 			}
 		}
 		return true

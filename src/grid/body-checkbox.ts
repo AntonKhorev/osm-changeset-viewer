@@ -4,19 +4,16 @@ import {getItemCheckbox} from './body-item'
 export default class GridBodyCheckboxHandler {
 	onItemSelect: ()=>void = ()=>{}
 	private $lastClickedCheckbox: HTMLInputElement|undefined
-	private readonly wrappedClickListener: (this: HTMLElement, ev: MouseEvent)=>void
 	constructor(private $gridBody: HTMLTableSectionElement) {
-		const self=this
-		this.wrappedClickListener=function(ev: MouseEvent){
-			if (!(this instanceof HTMLInputElement)) return
-			self.clickListener(this,ev.shiftKey)
-		}
+		$gridBody.addEventListener('click',ev=>{
+			const $checkbox=ev.target
+			if (!($checkbox instanceof HTMLInputElement)) return
+			if ($checkbox.type!='checkbox') return
+			this.clickListener($checkbox,ev.shiftKey)
+		})
 	}
 	resetLastClickedCheckbox(): void {
 		this.$lastClickedCheckbox=undefined
-	}
-	listen($checkbox: HTMLElement): void {
-		$checkbox.addEventListener('click',this.wrappedClickListener)
 	}
 	triggerColumnCheckboxes(iColumn: number, isChecked: boolean): void {
 		for (const $row of this.$gridBody.rows) {
