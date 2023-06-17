@@ -915,6 +915,8 @@ function assertRowIsSingle($row) {
 }
 
 function assertCellIsEmpty($cell) {
+	assert($cell.children.length==0 || $cell.children.length==1)
+	if ($cell.children.length==0) return
 	assertEach($cell.children,$container=>{
 		assertEach($container.children)
 	})
