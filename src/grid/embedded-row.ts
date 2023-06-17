@@ -140,4 +140,7 @@ export default class EmbeddedItemRow {
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
 		yield *this.row.getItemSequence()
 	}
+	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
+		this.row.reorderColumns(iShiftFrom,iShiftTo)
+	}
 }

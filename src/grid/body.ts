@@ -18,7 +18,6 @@ import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
-import {moveInArray} from '../util/types'
 
 export default class GridBody {
 	readonly $gridBody=makeElement('tbody')()()
@@ -151,9 +150,7 @@ export default class GridBody {
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
 		for (const $row of this.$gridBody.rows) {
 			if (!EmbeddedItemRow.isItemRow($row)) continue
-			const $cells=[...$row.cells]
-			moveInArray($cells,iShiftFrom+1,iShiftTo+1)
-			$row.replaceChildren(...$cells)
+			new EmbeddedItemRow($row).reorderColumns(iShiftFrom,iShiftTo)
 		}
 	}
 	getColumnCheckboxStatuses(): [

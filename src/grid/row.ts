@@ -1,6 +1,7 @@
 import type {ItemSequencePoint} from './info'
 import {isItem, readItemSequencePoint, isGreaterElementSequencePoint} from './info'
 import {makeDiv} from '../util/html'
+import {moveInArray} from '../util/types'
 
 export default class ItemRow {
 	constructor(
@@ -120,8 +121,8 @@ export default class ItemRow {
 		if (!($stretchContainer instanceof HTMLElement)) return
 		for (const $item of $stretchContainer.querySelectorAll(':scope > .item')) {
 			if (!($item instanceof HTMLElement)) continue
-			const iColumn=Number($item.dataset.column)+1
-			const $targetCell=this.$row.cells[iColumn]
+			const iColumn=Number($item.dataset.column)
+			const $targetCell=this.$row.cells[iColumn+1]
 			if (!($targetCell instanceof HTMLTableCellElement)) continue
 			let [$targetContainer]=$targetCell.children
 			if (!($targetContainer instanceof HTMLElement)) {
@@ -130,6 +131,22 @@ export default class ItemRow {
 			appendToContainer($targetContainer,$item)
 		}
 		$stretchContainer.replaceChildren()
+	}
+	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
+		const $cells=[...this.$row.cells]
+		moveInArray($cells,iShiftFrom+1,iShiftTo+1)
+		this.$row.replaceChildren(...$cells)
+		const nColumns=this.$row.cells.length-1
+		const iMap=Array(nColumns).fill(0).map((_,i)=>i)
+		moveInArray(iMap,iShiftTo,iShiftFrom)
+		const $stretchCell=this.$row.cells[0]
+		for (const $item of $stretchCell.querySelectorAll(':scope > * > .item')) {
+			if (!($item instanceof HTMLElement)) continue
+			const iColumn=Number($item.dataset.column)
+			if (iMap[iColumn]!=null) {
+				$item.dataset.column=String(iMap[iColumn])
+			}
+		}
 	}
 }
 
