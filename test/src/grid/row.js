@@ -154,4 +154,19 @@ describe("ItemRow",()=>{
 			[,,['2023-05-07',10101]],['ab',hue]
 		])
 	})
+	it("stretches repeated item",()=>{
+		const $row=makeSingleRow(
+			makeCell('ab',hue,makeChangeset('2023-05-07',10101)),
+			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
+		)
+		const row=new ItemRow($row)
+		for (let i=0;i<2;i++) {
+			row.stretch()
+			assertChangesetSingleRow($row,[
+				[,,['2023-05-07',10101]],
+				['ab',hue],
+				['ab',hue,['2023-05-07',10101]]
+			])
+		}
+	})
 })

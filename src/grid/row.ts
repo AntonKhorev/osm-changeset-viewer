@@ -79,7 +79,12 @@ export default class ItemRow {
 			)
 		}
 	}
+	private get isStretched(): boolean {
+		const $stretchCell=this.$row.cells[0]
+		return $stretchCell.colSpan>1
+	}
 	stretch(): void {
+		if (this.isStretched) return
 		const nTotalColumns=this.$row.cells.length+1
 		const itemSequence=[...this.getItemSequence()]
 		const $stretchCell=this.$row.cells[0]
