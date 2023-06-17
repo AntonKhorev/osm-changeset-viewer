@@ -76,6 +76,11 @@ export default class ItemCollectionRow extends ItemRow {
 		return new ItemCollectionRow($splitRow)
 	}
 	merge(that: ItemCollectionRow): void {
+		if (this.isStretched && !that.isStretched) {
+			that.stretch()
+		} else if (!this.isStretched && that.isStretched) {
+			this.stretch()
+		}
 		const copyChildren=($container1:HTMLElement,$container2:HTMLElement)=>{
 			let copying=false
 			for (const $child of [...$container2.children]) {
