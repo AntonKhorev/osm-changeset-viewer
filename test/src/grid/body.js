@@ -741,18 +741,22 @@ describe("GridBody",()=>{
 		},$row=>{
 			assertRowIsCollection($row)
 			assertEach($row.cells,()=>{},$cell=>{
-				assertEach($cell.children,$item=>{
-					assertCellChildIsIcon($item)
-				},$item=>{
-					assertCellChildIsCollapsedItem($item)
-					assertItemData($item,Date.parse('2023-03-02'),'changeset',10002)
+				assertEach($cell.children,$container=>{
+					assertEach($container.children,$item=>{
+						assertCellChildIsIcon($item)
+					},$item=>{
+						assertCellChildIsCollapsedItem($item)
+						assertItemData($item,Date.parse('2023-03-02'),'changeset',10002)
+					})
 				})
 			},$cell=>{
-				assertEach($cell.children,$item=>{
-					assertCellChildIsIcon($item)
-				},$item=>{
-					assertCellChildIsCollapsedItem($item)
-					assertItemData($item,Date.parse('2023-03-01'),'changeset',10001)
+				assertEach($cell.children,$container=>{
+					assertEach($container.children,$item=>{
+						assertCellChildIsIcon($item)
+					},$item=>{
+						assertCellChildIsCollapsedItem($item)
+						assertItemData($item,Date.parse('2023-03-01'),'changeset',10001)
+					})
 				})
 			})
 		})
@@ -789,35 +793,41 @@ describe("GridBody",()=>{
 		},$row=>{
 			assertRowIsCollection($row)
 			assertEach($row.cells,()=>{},$cell=>{
-				assertEach($cell.children,$item=>{
-					assertCellChildIsIcon($item)
-				},$item=>{
-					assertCellChildIsCollapsedItem($item)
-					assertItemData($item,Date.parse('2023-03-03'),'changeset',10003)
+				assertEach($cell.children,$container=>{
+					assertEach($container.children,$item=>{
+						assertCellChildIsIcon($item)
+					},$item=>{
+						assertCellChildIsCollapsedItem($item)
+						assertItemData($item,Date.parse('2023-03-03'),'changeset',10003)
+					})
 				})
 			},$cell=>{
-				assertEach($cell.children)
+				assertCellIsEmpty($cell)
 			})
 		},$row=>{
 			assertRowIsSingle($row)
 			assertEach($row.cells,()=>{},$cell=>{
-				assertEach($cell.children)
+				assertCellIsEmpty($cell)
 			},$cell=>{
-				assertEach($cell.children,$item=>{
-					assertCellChildIsExpandedItem($item)
-					assertItemData($item,Date.parse('2023-03-02'),'changeset',10002)
+				assertEach($cell.children,$container=>{
+					assertEach($container.children,$item=>{
+						assertCellChildIsExpandedItem($item)
+						assertItemData($item,Date.parse('2023-03-02'),'changeset',10002)
+					})
 				})
 			})
 		},$row=>{
 			assertRowIsCollection($row)
 			assertEach($row.cells,()=>{},$cell=>{
-				assertEach($cell.children)
+				assertCellIsEmpty($cell)
 			},$cell=>{
-				assertEach($cell.children,$item=>{
-					assertCellChildIsIcon($item)
-				},$item=>{
-					assertCellChildIsCollapsedItem($item)
-					assertItemData($item,Date.parse('2023-03-01'),'changeset',10001)
+				assertEach($cell.children,$container=>{
+					assertEach($container.children,$item=>{
+						assertCellChildIsIcon($item)
+					},$item=>{
+						assertCellChildIsCollapsedItem($item)
+						assertItemData($item,Date.parse('2023-03-01'),'changeset',10001)
+					})
 				})
 			})
 		})
@@ -902,6 +912,12 @@ function assertRowIsSingle($row) {
 	assert($button,`No expected disclosure button`)
 	const expandedState=$button.getAttribute('aria-expanded')
 	assert.equal(expandedState,'true',`Expected 'true' as disclosure button expanded state, got '${expandedState}'`)
+}
+
+function assertCellIsEmpty($cell) {
+	assertEach($cell.children,$container=>{
+		assertEach($container.children)
+	})
 }
 
 function assertCellChildIsIcon($e) {

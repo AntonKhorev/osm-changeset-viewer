@@ -2,6 +2,7 @@ import ItemRow from './row'
 import ItemCollectionRow from './collection-row'
 import type {ItemSequencePoint} from './info'
 import {isItem} from './info'
+import {makeDiv} from '../util/html'
 
 export default class EmbeddedItemRow {
 	row: ItemRow
@@ -27,6 +28,7 @@ export default class EmbeddedItemRow {
 			if (hue!=null) {
 				$cell.style.setProperty('--hue',String(hue))
 			}
+			$cell.append(makeDiv()())
 		}
 		return new EmbeddedItemRow($row)
 	}
