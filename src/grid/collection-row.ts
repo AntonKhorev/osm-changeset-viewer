@@ -112,9 +112,15 @@ export default class ItemCollectionRow extends ItemRow {
 	 */
 	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[]): void {
 		itemLoop: for (let iItem=0;iItem<iColumns.length;iItem++) {
-			const iColumn=iColumns[iItem]
 			const $item=$items[iItem]
-			const $cell=this.$row.cells[iColumn+1]
+			const iColumn=iColumns[iItem]
+			let $cell: HTMLTableCellElement
+			if (this.isStretched && iItem==0) {
+				$cell=this.$row.cells[0]
+				$item.dataset.column=String(iColumn)
+			} else {
+				$cell=this.$row.cells[iColumn+1]
+			}
 			let [$container]=$cell.children
 			if (!($container instanceof HTMLElement)) {
 				$cell.append(
@@ -157,13 +163,18 @@ export default class ItemCollectionRow extends ItemRow {
 	}
 	stretch(): void {
 		super.stretch()
-		const $stretchCell=this.$row.cells[0]
-		const $stretchContainer=$stretchCell.firstElementChild
-		if (!($stretchContainer instanceof HTMLElement)) return
-		const $firstChild=$stretchContainer.firstElementChild
-		if (!($firstChild instanceof HTMLElement)) return
-		if ($firstChild.classList.contains('icon')) return
-		$stretchContainer.prepend(makeCollectionIcon(),` `)
+		for (const $cell of this.$row.cells) {
+			const $container=$cell.firstElementChild
+			if (!($container instanceof HTMLElement)) continue
+			if (!$container.querySelector(':scope > .item')) {
+				$container.replaceChildren()
+			} else {
+				const $firstChild=$container.firstElementChild
+				if (!($firstChild instanceof HTMLElement)) return
+				if ($firstChild.classList.contains('icon')) return
+				$container.prepend(makeCollectionIcon(),` `)
+			}
+		}
 	}
 }
 

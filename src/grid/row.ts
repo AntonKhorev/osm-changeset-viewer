@@ -79,7 +79,7 @@ export default class ItemRow {
 			)
 		}
 	}
-	private get isStretched(): boolean {
+	protected get isStretched(): boolean {
 		const $stretchCell=this.$row.cells[0]
 		return $stretchCell.colSpan>1
 	}

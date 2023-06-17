@@ -167,4 +167,27 @@ describe("ItemCollectionRow",()=>{
 			['ab',hue,['2023-02-02',10202]],
 		])
 	})
+	it("stretches single item collection",()=>{
+		const $row=makeCollectionRow(
+			makeCell('a',hue,makeChangeset('2023-03-01',10001))
+		)
+		const row=new ItemCollectionRow($row)
+		row.stretch()
+		assertChangesetCollectionRow($row,[
+			[,,['2023-03-01',10001]],
+			['a',hue]
+		])
+	})
+	it("inserts item into stretched row",()=>{
+		const $row=makeCollectionRow(
+			makeCell('a',hue,makeChangeset('2023-03-01',10001))
+		)
+		const row=new ItemCollectionRow($row)
+		row.stretch()
+		row.insert(makeChangesetPoint('2023-03-02',10002),[0],[makeChangeset('2023-03-02',10002)])
+		assertChangesetCollectionRow($row,[
+			[,,['2023-03-02',10002],['2023-03-01',10001]],
+			['a',hue]
+		])
+	})
 })
