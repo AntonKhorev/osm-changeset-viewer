@@ -68,24 +68,6 @@ export default class GridBody {
 		)
 	}
 	stretchAllItems(): void {
-		// const spanColumns=($row:HTMLTableRowElement)=>{
-		// 	let spanned=false
-		// 	for (const $cell of $row.cells) {
-		// 		if (this.inOneColumn) {
-		// 			if (!spanned && $cell.childNodes.length) {
-		// 				$cell.hidden=false
-		// 				$cell.colSpan=this.nColumns+1
-		// 				spanned=true
-		// 			} else {
-		// 				$cell.hidden=true
-		// 				$cell.removeAttribute('colspan')
-		// 			}
-		// 		} else {
-		// 			$cell.hidden=false
-		// 			$cell.removeAttribute('colspan')
-		// 		}
-		// 	}
-		// }
 		for (const $row of this.$gridBody.rows) {
 			if (
 				!$row.classList.contains('single') && 
@@ -96,7 +78,14 @@ export default class GridBody {
 		}
 	}
 	shrinkAllItems(): void {
-		// TODO
+		for (const $row of this.$gridBody.rows) {
+			if (
+				!$row.classList.contains('single') && 
+				!$row.classList.contains('collection')
+			) continue
+			const row=new EmbeddedItemRow($row)
+			row.shrink(this.withCompactIds)
+		}
 	}
 	updateTableAccordingToSettings(): void {
 		const setCheckboxTitle=($item: HTMLElement, title: string)=>{

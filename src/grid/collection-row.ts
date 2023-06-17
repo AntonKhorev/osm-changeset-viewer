@@ -163,6 +163,13 @@ export default class ItemCollectionRow extends ItemRow {
 	}
 	stretch(): void {
 		super.stretch()
+		this.fixCollectionIcons()
+	}
+	shrink(): void {
+		super.shrink()
+		this.fixCollectionIcons()
+	}
+	private fixCollectionIcons(): void {
 		for (const $cell of this.$row.cells) {
 			const $container=$cell.firstElementChild
 			if (!($container instanceof HTMLElement)) continue

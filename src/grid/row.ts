@@ -89,6 +89,10 @@ export default class ItemRow {
 		const itemSequence=[...this.getItemSequence()]
 		const $stretchCell=this.$row.cells[0]
 		$stretchCell.colSpan=nTotalColumns
+		for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
+			if (iRawColumn==0) continue
+			$cell.hidden=true
+		}
 		let [$stretchContainer]=$stretchCell.children
 		if (!($stretchContainer instanceof HTMLElement)) {
 			$stretchCell.append(
@@ -96,17 +100,40 @@ export default class ItemRow {
 			)
 		}
 		$stretchCell.append($stretchContainer)
-		for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
-			if (iRawColumn==0) continue
-			$cell.hidden=true
-		}
 		for (const [,items] of itemSequence) {
 			const [[iColumn,$item]]=items
 			$item.dataset.column=String(iColumn)
-			if ($stretchContainer.children.length>0) {
-				$stretchContainer.append(` `)
-			}
-			$stretchContainer.append($item)
+			appendToContainer($stretchContainer,$item)
 		}
 	}
+	shrink(): void {
+		if (!this.isStretched) return
+		const $stretchCell=this.$row.cells[0]
+		$stretchCell.removeAttribute('colspan')
+		for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
+			if (iRawColumn==0) continue
+			$cell.hidden=false
+		}
+		const [$stretchContainer]=$stretchCell.children
+		if (!($stretchContainer instanceof HTMLElement)) return
+		for (const $item of $stretchContainer.querySelectorAll(':scope > .item')) {
+			if (!($item instanceof HTMLElement)) continue
+			const iColumn=Number($item.dataset.column)+1
+			const $targetCell=this.$row.cells[iColumn]
+			if (!($targetCell instanceof HTMLTableCellElement)) continue
+			let [$targetContainer]=$targetCell.children
+			if (!($targetContainer instanceof HTMLElement)) {
+				$targetCell.append($targetContainer=makeDiv()())
+			}
+			appendToContainer($targetContainer,$item)
+		}
+		$stretchContainer.replaceChildren()
+	}
+}
+
+function appendToContainer($container: Element, $item: HTMLElement): void {
+	if ($container.children.length>0) {
+		$container.append(` `)
+	}
+	$container.append($item)
 }

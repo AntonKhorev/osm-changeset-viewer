@@ -86,6 +86,10 @@ export default class EmbeddedItemRow {
 		this.row.stretch()
 		this.updateIds(withCompactIds)
 	}
+	shrink(withCompactIds: boolean): void {
+		this.row.shrink()
+		this.updateIds(withCompactIds)
+	}
 	updateIds(withCompactIds: boolean): void {
 		for (const $cell of this.row.$row.cells) {
 			let lastId=''
