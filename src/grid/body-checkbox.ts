@@ -124,10 +124,16 @@ function *listRowCheckboxes($row: HTMLTableRowElement, columnFilter: (iColumn:nu
 ]> {
 	if (!$row.classList.contains('single') && !$row.classList.contains('collection')) return
 	for (const [iRawColumn,$cell] of [...$row.cells].entries()) {
-		const iColumn=iRawColumn-1
-		if (!columnFilter(iColumn)) continue
 		for (const $changeset of $cell.querySelectorAll(':scope > * > .changeset')) {
 			if (!($changeset instanceof HTMLElement)) continue
+			let iColumn: number
+			if (iRawColumn==0) {
+				iColumn=Number($changeset.dataset.column)
+				if (!Number.isInteger(iColumn)) continue
+			} else {
+				iColumn=iRawColumn-1
+			}
+			if (!columnFilter(iColumn)) continue
 			const descriptor=readItemDescriptor($changeset)
 			if (!descriptor || descriptor.type!='changeset') continue
 			const $checkbox=getItemCheckbox($changeset)
