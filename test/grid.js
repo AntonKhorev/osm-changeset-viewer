@@ -1,3 +1,4 @@
+import {strict as assert} from 'assert'
 import {JSDOM} from 'jsdom'
 
 export function setupTestHooks() {
@@ -61,5 +62,58 @@ export function makeChangesetPoint(date,id) {
 		timestamp: Date.parse(date),
 		type: 'changeset',
 		id,
+	}
+}
+
+export function assertChangesetCollectionRow($row,cells) {
+	assert($row.classList.contains('collection'))
+	assert.equal($row.cells.length,cells.length)
+	for (let i=0;i<cells.length;i++) {
+		const $cell=$row.cells[i]
+		const [timeline,style,...items]=cells[i]
+		if (timeline!=null) {
+			assertTimelineClasses($cell,timeline,`cell[${i}]`)
+		}
+		if (style!=null) {
+			assert.equal($cell.getAttribute('style'),style)
+		}
+		if (items.length==0) {
+			assert($cell.children.length==0 || $cell.children.length==1)
+			if ($cell.children.length==1) {
+				const [$container]=$cell.children
+				assert.equal($container.children.length,0)
+			}
+		} else {
+			assert.equal($cell.children.length,1)
+			const [$container]=$cell.children
+			if (items.length==0) {
+				assert.equal($container.children.length,0)
+				continue
+			}
+			assert.equal($container.childNodes.length,1+2*items.length,`Expected cell[${i}] to have ${1+2*items.length} child nodes, got ${$container.childNodes.length}`)
+			const $icon=$container.children[0]
+			assert($icon.classList.contains('icon'))
+			for (let j=0;j<items.length;j++) {
+				const $space=$container.childNodes[1+j*2]
+				assert.equal($space.nodeType,document.TEXT_NODE)
+				assert.equal($space.textContent,' ')
+				const $item=$container.childNodes[2+j*2]
+				assert.equal($item.nodeType,document.ELEMENT_NODE)
+				const point=makeChangesetPoint(...items[j])
+				assert.equal($item.dataset.type,point.type)
+				assert.equal($item.dataset.id,String(point.id),`Expected item[${i},${j}] to have id '${point.id}', got '${$item.dataset.id}'`)
+				assert.equal($item.dataset.timestamp,String(point.timestamp))
+			}
+		}
+	}
+}
+function assertTimelineClasses($cell,keys,cellName='cell') {
+	for (const [key,word] of [['a','above'],['b','below']]) {
+		const className=`with-timeline-${word}`
+		if (keys.includes(key)) {
+			assert($cell.classList.contains(className),`Expected ${cellName} class '${className}' missing`)
+		} else {
+			assert(!$cell.classList.contains(className),`Unexpected ${cellName} class '${className}' present`)
+		}
 	}
 }
