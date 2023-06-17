@@ -155,6 +155,16 @@ export default class ItemCollectionRow extends ItemRow {
 			$container.replaceChildren()
 		}
 	}
+	stretch(): void {
+		super.stretch()
+		const $stretchCell=this.$row.cells[0]
+		const $stretchContainer=$stretchCell.firstElementChild
+		if (!($stretchContainer instanceof HTMLElement)) return
+		const $firstChild=$stretchContainer.firstElementChild
+		if (!($firstChild instanceof HTMLElement)) return
+		if ($firstChild.classList.contains('icon')) return
+		$stretchContainer.prepend(makeCollectionIcon())
+	}
 }
 
 function removeSpaceBefore($e: HTMLElement): void {
