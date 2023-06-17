@@ -217,24 +217,27 @@
 }
 
 /*** stretched column ***/
-.ui .grid tbody td[colspan] > .stretch {
+.ui .grid tbody tr td > * {
+	position: relative;
+}
+.ui .grid tbody tr td[colspan] > * {
 	position: sticky;
 	left: 0;
 	width: var(--main-width);
 }
 
 /*** separator ***/
-.ui .grid tbody tr.separator td > .stretch {
+.ui .grid tbody tr.separator td > * {
 	height: 1rem;
 	padding: var(--spacer) 0;
 	text-align: center;
 }
-.ui .grid tbody tr.separator td > .stretch time {
+.ui .grid tbody tr.separator td > * time {
 	background: canvas;
 	padding: 0 .5em;
 	color: var(--light-text-color);
 }
-.ui .grid tbody tr.separator td > .stretch::before {
+.ui .grid tbody tr.separator td > *::before {
 	content: '';
 	position: absolute;
 	z-index: -1;
@@ -254,19 +257,17 @@
 	--item-spacer: 4px;
 	position: relative;
 }
-.ui .grid tbody tr.single td:not(:first-child) {
+.ui .grid tbody tr.single td > * {
 	padding-left: calc(var(--spacer) + var(--icon-size));
 }
-.ui .grid tbody tr.single td:first-child > .stretch {
-	padding-left: calc(var(--spacer) + var(--icon-size));
+.ui .grid tbody tr.single td[colspan] > * {
 	padding-right: var(--spacer);
 	box-sizing: border-box;
 }
-.ui .grid tbody tr.collection td:not(:first-child) {
+.ui .grid tbody tr.collection td > * {
 	padding-left: calc(var(--spacer) + var(--icon-size) + var(--item-spacer));
 }
-.ui .grid tbody tr.collection td:first-child > .stretch {
-	padding-left: calc(var(--spacer) + var(--icon-size) + var(--item-spacer));
+.ui .grid tbody tr.collection td[colspan] > * {
 	padding-right: var(--spacer);
 	box-sizing: border-box;
 }
@@ -296,8 +297,8 @@
 .ui .grid tbody tr.collection {
 	line-height: 24px;
 }
-.ui .grid tbody tr.single :where(td:not(:first-child), td:first-child > .stretch) > .item > .icon:first-child,
-.ui .grid tbody tr.collection :where(td:not(:first-child), td:first-child > .stretch) > .icon:first-child {
+.ui .grid tbody tr.single td > * > .item > .icon:first-child,
+.ui .grid tbody tr.collection td > * > .icon:first-child {
 	position: absolute;
 	left: var(--spacer);
 	top: var(--icon-vertical-margin);

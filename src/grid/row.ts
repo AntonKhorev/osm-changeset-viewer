@@ -70,12 +70,21 @@ export default class ItemRow {
 			yield [point,items]
 		}
 	}
+	put(iColumns: number[], $items: HTMLElement[]): void {
+		for (const [iItem,iColumn] of iColumns.entries()) {
+			const $cell=this.$row.cells[iColumn+1]
+			const $item=$items[iItem]
+			$cell.replaceChildren(
+				makeDiv()($item)
+			)
+		}
+	}
 	stretch(): void {
 		const nTotalColumns=this.$row.cells.length+1
 		const itemSequence=[...this.getItemSequence()]
 		const $spannedCell=this.$row.cells[0]
 		$spannedCell.colSpan=nTotalColumns
-		const $stretchContainer=makeDiv('stretch')()
+		const $stretchContainer=makeDiv()()
 		$spannedCell.append($stretchContainer)
 		for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
 			if (iRawColumn==0) continue

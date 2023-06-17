@@ -846,20 +846,24 @@ describe("GridBody",()=>{
 function assertRowIsCollectionWithItems($row,...fns) {
 	assertRowIsCollection($row)
 	assertEach($row.cells,()=>{},$cell=>{
-		assertEach($cell.children,$item=>{
-			assertCellChildIsIcon($item)
-		},...fns.map(fn=>$item=>{
-			assertCellChildIsCollapsedItem($item)
-			fn($item)
-		}))
+		assertEach($cell.children,$container=>{
+			assertEach($container.children,$item=>{
+				assertCellChildIsIcon($item)
+			},...fns.map(fn=>$item=>{
+				assertCellChildIsCollapsedItem($item)
+				fn($item)
+			}))
+		})
 	})
 }
 function assertRowIsSingleWithItem($row,fn) {
 	assertRowIsSingle($row)
 	assertEach($row.cells,()=>{},$cell=>{
-		assertEach($cell.children,$item=>{
-			assertCellChildIsExpandedItem($item)
-			fn($item)
+		assertEach($cell.children,$container=>{
+			assertEach($container.children,$item=>{
+				assertCellChildIsExpandedItem($item)
+				fn($item)
+			})
 		})
 	})
 }

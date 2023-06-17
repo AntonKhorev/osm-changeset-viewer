@@ -96,18 +96,12 @@ export default class GridBody {
 		}
 	}
 	shrinkAllItems(): void {
+		// TODO
 	}
 	updateTableAccordingToSettings(): void {
-		const setCheckboxTitles=($item: HTMLElement, title: string)=>{
-			if ($item instanceof HTMLTableRowElement) {
-				for (const $cell of $item.cells) {
-					const $checkbox=getItemCheckbox($cell)
-					if ($checkbox) $checkbox.title=title
-				}
-			} else {
-				const $checkbox=getItemCheckbox($item)
-				if ($checkbox) $checkbox.title=title
-			}
+		const setCheckboxTitle=($item: HTMLElement, title: string)=>{
+			const $checkbox=getItemCheckbox($item)
+			if ($checkbox) $checkbox.title=title
 		}
 		const combineChangesets=($item: HTMLElement, $laterItem: HTMLElement|undefined)=>{
 			const isConnectedWithLaterItem=(
@@ -126,10 +120,10 @@ export default class GridBody {
 							$laterItem.hidden=true
 						}
 						$item.classList.add('combined')
-						setCheckboxTitles($item,`changeset ${id}`)
+						setCheckboxTitle($item,`changeset ${id}`)
 					} else {
 						$item.classList.remove('combined')
-						setCheckboxTitles($item,`opened changeset ${id}`)
+						setCheckboxTitle($item,`opened changeset ${id}`)
 					}
 				}
 			}
@@ -139,7 +133,7 @@ export default class GridBody {
 			if ($row.classList.contains('collection')) {
 				for (const $cell of $row.cells) {
 					let $laterItem: HTMLElement|undefined
-					for (const $item of $cell.querySelectorAll(':scope > .item')) {
+					for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
 						if (!($item instanceof HTMLElement)) continue
 						combineChangesets($item,$laterItem)
 						$laterItem=$item
@@ -151,14 +145,14 @@ export default class GridBody {
 			} else if ($row.classList.contains('single')) {
 				for (let i=0;i<$row.cells.length;i++) {
 					const $cell=$row.cells[i]
-					const $item=$cell.querySelector(':scope > .item')
+					const $item=$cell.querySelector(':scope > * > .item')
 					let $cellAbove: HTMLElement|undefined
 					if ($itemRowAbove) {
 						$cellAbove=$itemRowAbove.cells[i]
 					}
 					let $itemAbove: HTMLElement|undefined
 					if ($cellAbove) {
-						const $itemAboveCandidate=$cellAbove.querySelector(':scope > .item')
+						const $itemAboveCandidate=$cellAbove.querySelector(':scope > * > .item')
 						if ($itemAboveCandidate instanceof HTMLElement) {
 							$itemAbove=$itemAboveCandidate
 						}
@@ -378,35 +372,28 @@ export default class GridBody {
 	): void {
 		const insertionRowInfo=this.findInsertionRow(sequencePoint)
 		if (isExpanded) {
-			const $row=this.makeRow()
-			{
-				if (insertionRowInfo.type=='betweenRows') {
-					const $rowBefore=insertionRowInfo.$rowBefore
-					$rowBefore.after($row)
-				} else {
-					const row=new EmbeddedItemRow(insertionRowInfo.$row)
-					row.paste($row,sequencePoint,this.withCompactIds)
-				}
+			const $row=makeElement('tr')()()
+			if (insertionRowInfo.type=='betweenRows') {
+				const $rowBefore=insertionRowInfo.$rowBefore
+				$rowBefore.after($row)
+			} else {
+				const row=new EmbeddedItemRow(insertionRowInfo.$row)
+				row.paste($row,sequencePoint,this.withCompactIds)
 			}
-			$row.classList.add('single')
+			const row=EmbeddedItemRow.fromEmptyRow($row,'single',this.columnHues)
 			updateTimelineOnInsert($row,iColumns)
-			for (const [iItem,iColumn] of iColumns.entries()) {
-				const $cell=$row.cells[iColumn+1]
-				const $item=$items[iItem]
-				$cell.append($item)
-			}
+			row.put(iColumns,$items)
 		} else {
 			let $row: HTMLTableRowElement
 			if (insertionRowInfo.type=='betweenRows') {
 				if (insertionRowInfo.$rowBefore.classList.contains('collection')) {
 					$row=insertionRowInfo.$rowBefore
-					
 				} else if (insertionRowInfo.$rowAfter?.classList.contains('collection')) {
 					$row=insertionRowInfo.$rowAfter
 				} else {
-					$row=this.makeRow()
-					$row.classList.add('collection')
+					$row=makeElement('tr')()()
 					insertionRowInfo.$rowBefore.after($row)
+					EmbeddedItemRow.fromEmptyRow($row,'collection',this.columnHues)
 				}
 			} else {
 				$row=insertionRowInfo.$row
@@ -416,17 +403,8 @@ export default class GridBody {
 			row.insert(sequencePoint,iColumns,$items,this.withCompactIds)
 		}
 	}
-	private makeRow(): HTMLTableRowElement {
-		const $row=makeElement('tr')()()
-		$row.insertCell()
-		for (const uid of this.columnUids) {
-			const $cell=$row.insertCell()
-			if (uid!=null) {
-				const hue=getHueFromUid(uid)
-				$cell.style.setProperty('--hue',String(hue))
-			}
-		}
-		return $row
+	private get columnHues(): (number|null)[] {
+		return this.columnUids.map(uid=>uid==null?null:getHueFromUid(uid))
 	}
 	private findInsertionRow(sequencePoint: ItemSequencePoint): {
 		type: 'betweenRows'
@@ -485,7 +463,7 @@ export default class GridBody {
 		writeSeparatorSequencePoint($separator,date)
 		const $cell=$separator.insertCell()
 		$cell.append(
-			makeDiv('stretch')(
+			makeDiv()(
 				makeElement('time')()(yearMonthString)
 			)
 		)

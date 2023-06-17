@@ -16,6 +16,20 @@ export default class EmbeddedItemRow {
 			this.row=new ItemRow(row)
 		}
 	}
+	static fromEmptyRow(
+		$row: HTMLTableRowElement,
+		className: string, columnHues: (number|null)[]
+	): EmbeddedItemRow {
+		$row.insertCell()
+		$row.classList.add(className)
+		for (const hue of columnHues) {
+			const $cell=$row.insertCell()
+			if (hue!=null) {
+				$cell.style.setProperty('--hue',String(hue))
+			}
+		}
+		return new EmbeddedItemRow($row)
+	}
 	getBoundarySequencePoints(): [
 		greaterPoint: ItemSequencePoint|null,
 		lesserPoint: ItemSequencePoint|null
@@ -50,6 +64,9 @@ export default class EmbeddedItemRow {
 				prevEmbeddedRow.updateIds(withCompactIds)
 			}
 		}
+	}
+	put(iColumns: number[], $items: HTMLElement[]): void {
+		this.row.put(iColumns,$items)
 	}
 	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[], withCompactIds: boolean): void {
 		if (!(this.row instanceof ItemCollectionRow)) throw new TypeError(`attempt to insert into non-collection row`)
