@@ -169,4 +169,19 @@ describe("ItemRow",()=>{
 			])
 		}
 	})
+	it("gets item sequence of stretched 1-item row",()=>{
+		const $row=makeSingleRow(
+			makeCell('ab',hue,
+				makeChangeset('2023-04-01',10001)
+			)
+		)
+		const row=new ItemRow($row)
+		row.stretch()
+		const result=[...row.getItemSequence()]
+		assert.deepEqual(result,[
+			[makeChangesetPoint('2023-04-01',10001),[
+				[0,$row.cells[0].children[0].children[0]],
+			]],
+		])
+	})
 })

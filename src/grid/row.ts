@@ -33,40 +33,42 @@ export default class ItemRow {
 		return [greaterPoint,lesserPoint]
 	}
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
-		const nColumns=this.$row.cells.length-1 // TODO go with raw columns instead
-		if (nColumns==0) return
-		const iColumnPositions=Array<number>(nColumns).fill(0)
+		const nRawColumns=this.$row.cells.length
+		if (nRawColumns==0) return
+		const iRawColumnPositions=Array<number>(nRawColumns).fill(0)
 		while (true) {
 			let point: ItemSequencePoint|undefined
-			let items: [iColumn: number, $item: HTMLElement][] = []
+			let rawItems: [iRawColumn: number, $item: HTMLElement][] = []
 			for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
-				if (iRawColumn==0) continue
 				const [$container]=$cell.children
 				if (!($container instanceof HTMLElement)) continue
-				const iColumn=iRawColumn-1
 				let $item: Element|undefined
 				let columnPoint: ItemSequencePoint|null = null
-				for (;iColumnPositions[iColumn]<$container.children.length;iColumnPositions[iColumn]++) {
-					$item=$container.children[iColumnPositions[iColumn]]
+				for (;iRawColumnPositions[iRawColumn]<$container.children.length;iRawColumnPositions[iRawColumn]++) {
+					$item=$container.children[iRawColumnPositions[iRawColumn]]
 					if (!isItem($item)) continue
 					columnPoint=readItemSequencePoint($item)
 					if (!columnPoint) continue
 					break
 				}
-				if (iColumnPositions[iColumn]>=$container.children.length) continue
+				if (iRawColumnPositions[iRawColumn]>=$container.children.length) continue
 				if (!$item || !isItem($item) || !columnPoint) continue
 				if (point && isGreaterElementSequencePoint(point,columnPoint)) continue
 				if (!point || isGreaterElementSequencePoint(columnPoint,point)) {
 					point=columnPoint
-					items=[[iColumn,$item]]
+					rawItems=[[iRawColumn,$item]]
 				} else {
-					items.push([iColumn,$item])
+					rawItems.push([iRawColumn,$item])
 				}
 			}
 			if (!point) break
-			for (const [iColumn] of items) {
-				iColumnPositions[iColumn]++
+			for (const [iRawColumn] of rawItems) {
+				iRawColumnPositions[iRawColumn]++
 			}
+			const items: [iColumn: number, $item: HTMLElement][] = rawItems.map(([iRawColumn,$item])=>[
+				iRawColumn==0?Number($item.dataset.column):iRawColumn-1,
+				$item
+			])
 			yield [point,items]
 		}
 	}
