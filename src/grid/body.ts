@@ -88,8 +88,8 @@ export default class GridBody {
 		// }
 		for (const $row of this.$gridBody.rows) {
 			if (
-				!$row.classList.contains('single')
-				// && !$row.classList.contains('collection') // TODO
+				!$row.classList.contains('single') && 
+				!$row.classList.contains('collection')
 			) continue
 			const row=new EmbeddedItemRow($row)
 			row.stretch(this.withCompactIds)

@@ -82,10 +82,15 @@ export default class ItemRow {
 	stretch(): void {
 		const nTotalColumns=this.$row.cells.length+1
 		const itemSequence=[...this.getItemSequence()]
-		const $spannedCell=this.$row.cells[0]
-		$spannedCell.colSpan=nTotalColumns
-		const $stretchContainer=makeDiv()()
-		$spannedCell.append($stretchContainer)
+		const $stretchCell=this.$row.cells[0]
+		$stretchCell.colSpan=nTotalColumns
+		let [$stretchContainer]=$stretchCell.children
+		if (!($stretchContainer instanceof HTMLElement)) {
+			$stretchCell.append(
+				$stretchContainer=makeDiv()()
+			)
+		}
+		$stretchCell.append($stretchContainer)
 		for (const [iRawColumn,$cell] of [...this.$row.cells].entries()) {
 			if (iRawColumn==0) continue
 			$cell.hidden=true
