@@ -66,6 +66,12 @@ export default class ItemCollectionRow extends ItemRow {
 				$cell.classList.add('with-timeline-below')
 				$splitCell.classList.add('with-timeline-above')
 			}
+			if ($cell.colSpan>1) {
+				$splitCell.colSpan=$cell.colSpan
+			}
+			if ($cell.hidden) {
+				$splitCell.hidden=true
+			}
 		}
 		return new ItemCollectionRow($splitRow)
 	}

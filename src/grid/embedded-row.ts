@@ -30,6 +30,15 @@ export default class EmbeddedItemRow {
 		}
 		return new EmbeddedItemRow($row)
 	}
+	static isItemRow($row: HTMLTableRowElement): boolean {
+		return (
+			$row.classList.contains('single') ||
+			$row.classList.contains('collection')
+		)
+	}
+	get isStretched(): boolean {
+		return this.row.isStretched
+	}
 	getBoundarySequencePoints(): [
 		greaterPoint: ItemSequencePoint|null,
 		lesserPoint: ItemSequencePoint|null

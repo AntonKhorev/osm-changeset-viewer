@@ -69,20 +69,14 @@ export default class GridBody {
 	}
 	stretchAllItems(): void {
 		for (const $row of this.$gridBody.rows) {
-			if (
-				!$row.classList.contains('single') && 
-				!$row.classList.contains('collection')
-			) continue
+			if (!EmbeddedItemRow.isItemRow($row)) continue
 			const row=new EmbeddedItemRow($row)
 			row.stretch(this.withCompactIds)
 		}
 	}
 	shrinkAllItems(): void {
 		for (const $row of this.$gridBody.rows) {
-			if (
-				!$row.classList.contains('single') && 
-				!$row.classList.contains('collection')
-			) continue
+			if (!EmbeddedItemRow.isItemRow($row)) continue
 			const row=new EmbeddedItemRow($row)
 			row.shrink(this.withCompactIds)
 		}
@@ -156,7 +150,7 @@ export default class GridBody {
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
 		for (const $row of this.$gridBody.rows) {
-			if (!$row.classList.contains('single') && !$row.classList.contains('collection')) continue
+			if (!EmbeddedItemRow.isItemRow($row)) continue
 			const $cells=[...$row.cells]
 			moveInArray($cells,iShiftFrom+1,iShiftTo+1)
 			$row.replaceChildren(...$cells)
@@ -361,17 +355,32 @@ export default class GridBody {
 	): void {
 		const insertionRowInfo=this.findInsertionRow(sequencePoint)
 		if (isExpanded) {
+			let needStretch=false
 			const $row=makeElement('tr')()()
 			if (insertionRowInfo.type=='betweenRows') {
-				const $rowBefore=insertionRowInfo.$rowBefore
-				$rowBefore.after($row)
+				insertionRowInfo.$rowBefore.after($row)
+				if (
+					EmbeddedItemRow.isItemRow(insertionRowInfo.$rowBefore)
+				) {
+					needStretch||=new EmbeddedItemRow(insertionRowInfo.$rowBefore).isStretched
+				}
+				if (
+					insertionRowInfo.$rowAfter &&
+					EmbeddedItemRow.isItemRow(insertionRowInfo.$rowAfter)
+				) {
+					needStretch||=new EmbeddedItemRow(insertionRowInfo.$rowAfter).isStretched
+				}
 			} else {
-				const row=new EmbeddedItemRow(insertionRowInfo.$row)
-				row.paste($row,sequencePoint,this.withCompactIds)
+				const insertionRow=new EmbeddedItemRow(insertionRowInfo.$row)
+				insertionRow.paste($row,sequencePoint,this.withCompactIds)
+				needStretch=insertionRow.isStretched
 			}
 			const row=EmbeddedItemRow.fromEmptyRow($row,'single',this.columnHues)
 			updateTimelineOnInsert($row,iColumns)
 			row.put(iColumns,$items)
+			if (needStretch) {
+				row.stretch(this.withCompactIds)
+			}
 		} else {
 			let $row: HTMLTableRowElement
 			if (insertionRowInfo.type=='betweenRows') {
@@ -406,10 +415,7 @@ export default class GridBody {
 		for (let i=this.$gridBody.rows.length-1;i>=0;i--) {
 			const $row=this.$gridBody.rows[i]
 			const $rowAfter=this.$gridBody.rows[i+1]
-			if (
-				$row.classList.contains('single') ||
-				$row.classList.contains('collection')
-			) {
+			if (EmbeddedItemRow.isItemRow($row)) {
 				const row=new EmbeddedItemRow($row)
 				const [greaterCollectionPoint,lesserCollectionPoint]=row.getBoundarySequencePoints()
 				if (!greaterCollectionPoint || !lesserCollectionPoint) continue

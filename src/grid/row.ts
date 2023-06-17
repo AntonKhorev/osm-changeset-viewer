@@ -9,6 +9,10 @@ export default class ItemRow {
 	isEmpty(): boolean {
 		return !this.$row.querySelector(':scope > td > * > .item')
 	}
+	get isStretched(): boolean {
+		const $stretchCell=this.$row.cells[0]
+		return $stretchCell.colSpan>1
+	}
 	getBoundarySequencePoints(): [
 		greaterPoint: ItemSequencePoint|null,
 		lesserPoint: ItemSequencePoint|null
@@ -80,10 +84,6 @@ export default class ItemRow {
 				makeDiv()($item)
 			)
 		}
-	}
-	protected get isStretched(): boolean {
-		const $stretchCell=this.$row.cells[0]
-		return $stretchCell.colSpan>1
 	}
 	stretch(): void {
 		if (this.isStretched) return
