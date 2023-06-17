@@ -163,7 +163,7 @@ export default class ItemCollectionRow extends ItemRow {
 		const $firstChild=$stretchContainer.firstElementChild
 		if (!($firstChild instanceof HTMLElement)) return
 		if ($firstChild.classList.contains('icon')) return
-		$stretchContainer.prepend(makeCollectionIcon())
+		$stretchContainer.prepend(makeCollectionIcon(),` `)
 	}
 }
 

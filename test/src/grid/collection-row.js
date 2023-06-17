@@ -1,6 +1,6 @@
 import {
 	setupTestHooks,
-	makeRow, makeCell, makeChangeset, makeChangesetPoint,
+	makeCollectionRow, makeCell, makeChangeset, makeChangesetPoint,
 	assertChangesetCollectionRow
 } from '../../grid.js'
 import ItemCollectionRow from '../../../test-build/grid/collection-row.js'
@@ -10,7 +10,7 @@ const hue='--hue: 123;'
 describe("ItemCollectionRow",()=>{
 	setupTestHooks()
 	it("splits single-cell collection",()=>{
-		const $row=makeRow(makeCell('ab',hue,
+		const $row=makeCollectionRow(makeCell('ab',hue,
 			makeChangeset('2023-05-09',10103),
 			makeChangeset('2023-05-07',10101)
 		))
@@ -24,7 +24,7 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("splits single-cell collection with terminating timeline",()=>{
-		const $row=makeRow(makeCell('a',hue,
+		const $row=makeCollectionRow(makeCell('a',hue,
 			makeChangeset('2023-05-09',10103),
 			makeChangeset('2023-05-07',10101)
 		))
@@ -38,7 +38,7 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("splits 2-cell collection",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,makeChangeset('2023-05-09',10103)),
 			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
 		)
@@ -56,7 +56,7 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("splits collection with one filled and one blank cell without timeline",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,
 				makeChangeset('2023-05-09',10103),
 				makeChangeset('2023-05-07',10101)
@@ -76,7 +76,7 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("splits 2-cell collection with timeline end and one blank cell after split",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('a',hue,
 				makeChangeset('2023-05-09',10103),
 				makeChangeset('2023-05-07',10101)
@@ -98,8 +98,8 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("merges with timeline-terminating row",()=>{
-		const $row1=makeRow(makeCell('ab',hue,makeChangeset('2023-05-09',10103)))
-		const $row2=makeRow(makeCell('a ',hue,makeChangeset('2023-05-08',10102)))
+		const $row1=makeCollectionRow(makeCell('ab',hue,makeChangeset('2023-05-09',10103)))
+		const $row2=makeCollectionRow(makeCell('a ',hue,makeChangeset('2023-05-08',10102)))
 		const row1=new ItemCollectionRow($row1)
 		const row2=new ItemCollectionRow($row2)
 		row1.merge(row2)
@@ -108,11 +108,11 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("merges with empty cells in different columns",()=>{
-		const $row1=makeRow(
+		const $row1=makeCollectionRow(
 			makeCell('ab',hue,makeChangeset('2023-05-09',10103)),
 			makeCell('ab',hue)
 		)
-		const $row2=makeRow(
+		const $row2=makeCollectionRow(
 			makeCell('ab',hue),
 			makeCell('ab',hue,makeChangeset('2023-05-08',10102))
 		)
@@ -126,7 +126,7 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("inserts item at the beginning of one cell",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('a',hue,makeChangeset('2023-03-01',10001))
 		)
 		const row=new ItemCollectionRow($row)
@@ -136,7 +136,7 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("inserts item at the end of one cell in 2-cell row",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,makeChangeset('2023-05-09',10103)),
 			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
 		)
@@ -149,7 +149,7 @@ describe("ItemCollectionRow",()=>{
 		])
 	})
 	it("removes items from different 1-item cells",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,
 				makeChangeset('2023-02-02',10202),
 				makeChangeset('2023-01-01',10101)

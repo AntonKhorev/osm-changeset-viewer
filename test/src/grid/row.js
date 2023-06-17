@@ -1,5 +1,9 @@
 import {strict as assert} from 'assert'
-import {setupTestHooks, makeRow, makeCell, makeChangeset, makeChangesetPoint} from '../../grid.js'
+import {
+	setupTestHooks,
+	makeSingleRow, makeCollectionRow, makeCell, makeChangeset, makeChangesetPoint,
+	assertChangesetSingleRow
+} from '../../grid.js'
 import ItemRow from '../../../test-build/grid/row.js'
 
 const hue='--hue: 123;'
@@ -7,17 +11,17 @@ const hue='--hue: 123;'
 describe("ItemRow",()=>{
 	setupTestHooks()
 	it("reports empty collection",()=>{
-		const $row=makeRow(makeCell('',hue))
+		const $row=makeCollectionRow(makeCell('',hue))
 		const row=new ItemRow($row)
 		assert.equal(row.isEmpty(),true)
 	})
 	it("reports nonempty collection",()=>{
-		const $row=makeRow(makeCell('ab',hue,makeChangeset('2023-05-07',10101)))
+		const $row=makeCollectionRow(makeCell('ab',hue,makeChangeset('2023-05-07',10101)))
 		const row=new ItemRow($row)
 		assert.equal(row.isEmpty(),false)
 	})
 	it("gets boundary points of empty collection",()=>{
-		const $row=makeRow(makeCell('',hue))
+		const $row=makeCollectionRow(makeCell('',hue))
 		const row=new ItemRow($row)
 		assert.deepEqual(row.getBoundarySequencePoints(),[
 			null,
@@ -25,7 +29,7 @@ describe("ItemRow",()=>{
 		])
 	})
 	it("gets boundary points of single-element collection",()=>{
-		const $row=makeRow(makeCell('ab',hue,makeChangeset('2023-05-07',10101)))
+		const $row=makeCollectionRow(makeCell('ab',hue,makeChangeset('2023-05-07',10101)))
 		const row=new ItemRow($row)
 		assert.deepEqual(row.getBoundarySequencePoints(),[
 			makeChangesetPoint('2023-05-07',10101),
@@ -33,7 +37,7 @@ describe("ItemRow",()=>{
 		])
 	})
 	it("gets boundary points of 2-element collection",()=>{
-		const $row=makeRow(makeCell('ab',hue,
+		const $row=makeCollectionRow(makeCell('ab',hue,
 			makeChangeset('2023-05-08',10102),
 			makeChangeset('2023-05-07',10101)
 		))
@@ -44,7 +48,7 @@ describe("ItemRow",()=>{
 		])
 	})
 	it("gets boundary points of 2-column 2-element collection",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,makeChangeset('2023-05-09',10103)),
 			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
 		)
@@ -55,7 +59,7 @@ describe("ItemRow",()=>{
 		])
 	})
 	it("gets boundary points of 2-element collection with empty cell",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,makeChangeset('2023-05-09',10103)),
 			makeCell('ab',hue),
 			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
@@ -67,7 +71,7 @@ describe("ItemRow",()=>{
 		])
 	})
 	it("gets item sequence of empty collection",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue)
 		)
 		const row=new ItemRow($row)
@@ -75,7 +79,7 @@ describe("ItemRow",()=>{
 		assert.deepEqual(result,[])
 	})
 	it("gets item sequence of 1-item collection",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,
 				makeChangeset('2023-04-01',10001)
 			)
@@ -89,7 +93,7 @@ describe("ItemRow",()=>{
 		])
 	})
 	it("gets item sequence of 2-item collection",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,
 				makeChangeset('2023-04-02',10002),
 				makeChangeset('2023-04-01',10001)
@@ -107,7 +111,7 @@ describe("ItemRow",()=>{
 		])
 	})
 	it("gets item sequence of 2-column same-item collection",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,
 				makeChangeset('2023-04-03',10003)
 			),makeCell('ab',hue,
@@ -124,7 +128,7 @@ describe("ItemRow",()=>{
 		])
 	})
 	it("gets item sequence of 2-column different-item collection",()=>{
-		const $row=makeRow(
+		const $row=makeCollectionRow(
 			makeCell('ab',hue,
 				makeChangeset('2023-04-03',10003)
 			),makeCell('ab',hue,
@@ -140,6 +144,14 @@ describe("ItemRow",()=>{
 			[makeChangesetPoint('2023-04-03',10003),[
 				[0,$row.cells[1].children[0].children[1]],
 			]],
+		])
+	})
+	it("stretches single item",()=>{
+		const $row=makeSingleRow(makeCell('ab',hue,makeChangeset('2023-05-07',10101)))
+		const row=new ItemRow($row)
+		row.stretch()
+		assertChangesetSingleRow($row,[
+			[,,['2023-05-07',10101]],['ab',hue]
 		])
 	})
 })

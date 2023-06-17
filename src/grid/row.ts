@@ -98,7 +98,10 @@ export default class ItemRow {
 		for (const [,items] of itemSequence) {
 			const [[iColumn,$item]]=items
 			$item.dataset.column=String(iColumn)
-			$stretchContainer.append(` `,$item)
+			if ($stretchContainer.children.length>0) {
+				$stretchContainer.append(` `)
+			}
+			$stretchContainer.append($item)
 		}
 	}
 }
