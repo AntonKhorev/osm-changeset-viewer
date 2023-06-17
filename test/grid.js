@@ -1,3 +1,29 @@
+import {JSDOM} from 'jsdom'
+
+export function setupTestHooks() {
+	const globalProperties=[
+		'document',
+		'HTMLElement',
+		'HTMLAnchorElement',
+		'HTMLButtonElement',
+		'HTMLInputElement',
+		'HTMLTableCellElement',
+		'HTMLTableRowElement',
+	]
+	beforeEach(function(){
+		const jsdom=new JSDOM()
+		this.window=jsdom.window
+		for (const property of globalProperties) {
+			global[property]=jsdom.window[property]
+		}
+	})
+	afterEach(function(){
+		for (const property of globalProperties) {
+			delete global[property]
+		}
+	})
+}
+
 export function makeRow(...$cells) {
 	const $row=document.createElement('tr')
 	$row.classList.add('collection')

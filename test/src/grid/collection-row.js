@@ -1,28 +1,11 @@
 import {strict as assert} from 'assert'
-import {JSDOM} from 'jsdom'
-import {makeRow, makeCell, makeChangeset, makeChangesetPoint} from '../../grid.js'
+import {setupTestHooks, makeRow, makeCell, makeChangeset, makeChangesetPoint} from '../../grid.js'
 import ItemCollectionRow from '../../../test-build/grid/collection-row.js'
 
 const hue='--hue: 123;'
 
 describe("ItemCollectionRow",()=>{
-	const globalProperties=[
-		'document',
-		'HTMLElement',
-		'HTMLTableCellElement',
-	]
-	beforeEach(function(){
-		const jsdom=new JSDOM()
-		this.window=jsdom.window
-		for (const property of globalProperties) {
-			global[property]=jsdom.window[property]
-		}
-	})
-	afterEach(function(){
-		for (const property of globalProperties) {
-			delete global[property]
-		}
-	})
+	setupTestHooks()
 	it("splits single-cell collection",()=>{
 		const $row=makeRow(makeCell('ab',hue,
 			makeChangeset('2023-05-09',10103),

@@ -1,5 +1,5 @@
 import {strict as assert} from 'assert'
-import {JSDOM} from 'jsdom'
+import {setupTestHooks} from '../../grid.js'
 import GridBody from '../../../test-build/grid/body.js'
 
 const server={
@@ -102,27 +102,7 @@ function makeSingleColumnGrid(itemReader) {
 }
 
 describe("GridBody",()=>{
-	const globalProperties=[
-		'document',
-		'HTMLElement',
-		'HTMLAnchorElement',
-		'HTMLButtonElement',
-		'HTMLInputElement',
-		'HTMLTableCellElement',
-		'HTMLTableRowElement',
-	]
-	beforeEach(function(){
-		const jsdom=new JSDOM()
-		this.window=jsdom.window
-		for (const property of globalProperties) {
-			global[property]=jsdom.window[property]
-		}
-	})
-	afterEach(function(){
-		for (const property of globalProperties) {
-			delete global[property]
-		}
-	})
+	setupTestHooks()
 	it("creates empty table body",()=>{
 		const gridBody=makeSingleColumnGrid()
 		assert.equal(gridBody.$gridBody.rows.length,0)

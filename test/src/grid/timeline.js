@@ -1,5 +1,5 @@
 import {strict as assert} from 'assert'
-import {JSDOM} from 'jsdom'
+import {setupTestHooks} from '../../grid.js'
 import {updateTimelineOnInsert} from '../../../test-build/grid/timeline.js'
 
 function insertRow($tbody,className,cells) {
@@ -25,22 +25,7 @@ function insertBlankRow($tbody,className,nCells) {
 }
 
 describe("timeline module",()=>{
-	const globalProperties=[
-		'document',
-		'HTMLTableRowElement',
-	]
-	beforeEach(function(){
-		const jsdom=new JSDOM()
-		this.window=jsdom.window
-		for (const property of globalProperties) {
-			global[property]=jsdom.window[property]
-		}
-	})
-	afterEach(function(){
-		for (const property of globalProperties) {
-			delete global[property]
-		}
-	})
+	setupTestHooks()
 	it("sets row appended to empty table",()=>{
 		const $tbody=document.createElement('tbody')
 		const $row=insertBlankRow($tbody,'single',1)

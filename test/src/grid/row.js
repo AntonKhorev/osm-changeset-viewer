@@ -1,28 +1,11 @@
 import {strict as assert} from 'assert'
-import {JSDOM} from 'jsdom'
-import {makeRow, makeCell, makeChangeset, makeChangesetPoint} from '../../grid.js'
+import {setupTestHooks, makeRow, makeCell, makeChangeset, makeChangesetPoint} from '../../grid.js'
 import ItemRow from '../../../test-build/grid/row.js'
 
 const hue='--hue: 123;'
 
 describe("ItemRow",()=>{
-	const globalProperties=[
-		'document',
-		'HTMLElement',
-		'HTMLTableCellElement',
-	]
-	beforeEach(function(){
-		const jsdom=new JSDOM()
-		this.window=jsdom.window
-		for (const property of globalProperties) {
-			global[property]=jsdom.window[property]
-		}
-	})
-	afterEach(function(){
-		for (const property of globalProperties) {
-			delete global[property]
-		}
-	})
+	setupTestHooks()
 	it("reports empty collection",()=>{
 		const $row=makeRow(makeCell('',hue))
 		const row=new ItemRow($row)

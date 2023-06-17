@@ -1,25 +1,9 @@
 import {strict as assert} from 'assert'
-import {JSDOM} from 'jsdom'
+import {setupTestHooks} from '../../grid.js'
 import GridBodyCheckboxHandler from '../../../test-build/grid/body-checkbox.js'
 
 describe("GridBodyCheckboxHandler",()=>{
-	const globalProperties=[
-		'document',
-		'HTMLElement',
-		'HTMLInputElement',
-	]
-	beforeEach(function(){
-		const jsdom=new JSDOM()
-		this.window=jsdom.window
-		for (const property of globalProperties) {
-			global[property]=jsdom.window[property]
-		}
-	})
-	afterEach(function(){
-		for (const property of globalProperties) {
-			delete global[property]
-		}
-	})
+	setupTestHooks()
 	it("triggers checkbox",()=>{
 		const $gridBody=document.createElement('tbody')
 		$gridBody.innerHTML=`<tr class="single"><td></td><td>`+
