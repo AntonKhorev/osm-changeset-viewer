@@ -1,47 +1,7 @@
 import {strict as assert} from 'assert'
 import {JSDOM} from 'jsdom'
+import {makeRow, makeCell, makeChangeset, makeChangesetPoint} from '../../grid.js'
 import ItemCollectionRow from '../../../test-build/grid/collection-row.js'
-
-function makeRow(...$cells) {
-	const $row=document.createElement('tr')
-	$row.classList.add('collection')
-	$row.insertCell()
-	$row.append(...$cells)
-	return $row
-}
-function makeCell(timeline,style,...$children) {
-	const $cell=document.createElement('td')
-	if (timeline.includes('a')) $cell.classList.add('with-timeline-above')
-	if (timeline.includes('b')) $cell.classList.add('with-timeline-below')
-	$cell.setAttribute('style',style)
-	const $container=document.createElement('div')
-	$cell.append($container)
-	if ($children.length>0) {
-		const $icon=document.createElement('span')
-		$icon.classList.add('icon')
-		$container.append($icon)
-	}
-	for (const $child of $children) {
-		$container.append(' ',$child)
-	}
-	return $cell
-}
-function makeChangeset(date,id) {
-	const $changeset=document.createElement('span')
-	$changeset.classList.add('item','changeset','combined')
-	$changeset.dataset.timestamp=Date.parse(date)
-	$changeset.dataset.type='changeset'
-	$changeset.dataset.id=id
-	return $changeset
-}
-
-function changesetPoint(date,id) {
-	return {
-		timestamp: Date.parse(date),
-		type: 'changeset',
-		id,
-	}
-}
 
 const hue='--hue: 123;'
 
@@ -63,73 +23,13 @@ describe("ItemCollectionRow",()=>{
 			delete global[property]
 		}
 	})
-	it("reports empty collection",()=>{
-		const $row=makeRow(makeCell('',hue))
-		const row=new ItemCollectionRow($row)
-		assert.equal(row.isEmpty(),true)
-	})
-	it("reports nonempty collection",()=>{
-		const $row=makeRow(makeCell('ab',hue,makeChangeset('2023-05-07',10101)))
-		const row=new ItemCollectionRow($row)
-		assert.equal(row.isEmpty(),false)
-	})
-	it("gets boundary points of empty collection",()=>{
-		const $row=makeRow(makeCell('',hue))
-		const row=new ItemCollectionRow($row)
-		assert.deepEqual(row.getBoundarySequencePoints(),[
-			null,
-			null
-		])
-	})
-	it("gets boundary points of single-element collection",()=>{
-		const $row=makeRow(makeCell('ab',hue,makeChangeset('2023-05-07',10101)))
-		const row=new ItemCollectionRow($row)
-		assert.deepEqual(row.getBoundarySequencePoints(),[
-			changesetPoint('2023-05-07',10101),
-			changesetPoint('2023-05-07',10101)
-		])
-	})
-	it("gets boundary points of 2-element collection",()=>{
-		const $row=makeRow(makeCell('ab',hue,
-			makeChangeset('2023-05-08',10102),
-			makeChangeset('2023-05-07',10101)
-		))
-		const row=new ItemCollectionRow($row)
-		assert.deepEqual(row.getBoundarySequencePoints(),[
-			changesetPoint('2023-05-08',10102),
-			changesetPoint('2023-05-07',10101)
-		])
-	})
-	it("gets boundary points of 2-column 2-element collection",()=>{
-		const $row=makeRow(
-			makeCell('ab',hue,makeChangeset('2023-05-09',10103)),
-			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
-		)
-		const row=new ItemCollectionRow($row)
-		assert.deepEqual(row.getBoundarySequencePoints(),[
-			changesetPoint('2023-05-09',10103),
-			changesetPoint('2023-05-07',10101)
-		])
-	})
-	it("gets boundary points of 2-element collection with empty cell",()=>{
-		const $row=makeRow(
-			makeCell('ab',hue,makeChangeset('2023-05-09',10103)),
-			makeCell('ab',hue),
-			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
-		)
-		const row=new ItemCollectionRow($row)
-		assert.deepEqual(row.getBoundarySequencePoints(),[
-			changesetPoint('2023-05-09',10103),
-			changesetPoint('2023-05-07',10101)
-		])
-	})
 	it("splits single-cell collection",()=>{
 		const $row=makeRow(makeCell('ab',hue,
 			makeChangeset('2023-05-09',10103),
 			makeChangeset('2023-05-07',10101)
 		))
 		const row=new ItemCollectionRow($row)
-		const $splitRow=row.split(changesetPoint('2023-05-08',10102)).$row
+		const $splitRow=row.split(makeChangesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]]
 		])
@@ -143,7 +43,7 @@ describe("ItemCollectionRow",()=>{
 			makeChangeset('2023-05-07',10101)
 		))
 		const row=new ItemCollectionRow($row)
-		const $splitRow=row.split(changesetPoint('2023-05-08',10102)).$row
+		const $splitRow=row.split(makeChangesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]]
 		])
@@ -157,7 +57,7 @@ describe("ItemCollectionRow",()=>{
 			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
 		)
 		const row=new ItemCollectionRow($row)
-		const $splitRow=row.split(changesetPoint('2023-05-08',10102)).$row
+		const $splitRow=row.split(makeChangesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]],
 			['ab',hue]
@@ -175,7 +75,7 @@ describe("ItemCollectionRow",()=>{
 			),makeCell('',hue)
 		)
 		const row=new ItemCollectionRow($row)
-		const $splitRow=row.split(changesetPoint('2023-05-08',10102)).$row
+		const $splitRow=row.split(makeChangesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]],
 			['  ',hue]
@@ -195,7 +95,7 @@ describe("ItemCollectionRow",()=>{
 			)
 		)
 		const row=new ItemCollectionRow($row)
-		const $splitRow=row.split(changesetPoint('2023-05-08',10102)).$row
+		const $splitRow=row.split(makeChangesetPoint('2023-05-08',10102)).$row
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103]],
 			['a ',hue,['2023-05-10',10104]]
@@ -237,7 +137,7 @@ describe("ItemCollectionRow",()=>{
 			makeCell('a',hue,makeChangeset('2023-03-01',10001))
 		)
 		const row=new ItemCollectionRow($row)
-		row.insert(changesetPoint('2023-03-02',10002),[0],[makeChangeset('2023-03-02',10002)])
+		row.insert(makeChangesetPoint('2023-03-02',10002),[0],[makeChangeset('2023-03-02',10002)])
 		assertChangesetCollectionRow($row,[
 			['a',hue,['2023-03-02',10002],['2023-03-01',10001]]
 		])
@@ -248,7 +148,7 @@ describe("ItemCollectionRow",()=>{
 			makeCell('ab',hue,makeChangeset('2023-05-07',10101))
 		)
 		const row=new ItemCollectionRow($row)
-		row.insert(changesetPoint('2023-05-08',10102),[0],[makeChangeset('2023-05-08',10102)])
+		row.insert(makeChangesetPoint('2023-05-08',10102),[0],[makeChangeset('2023-05-08',10102)])
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-05-09',10103],['2023-05-08',10102]],
 			['ab',hue,['2023-05-07',10101]]
@@ -270,82 +170,6 @@ describe("ItemCollectionRow",()=>{
 		assertChangesetCollectionRow($row,[
 			['ab',hue,['2023-02-02',10202]],
 			['ab',hue,['2023-02-02',10202]],
-		])
-	})
-	it("gets item sequence of empty collection",()=>{
-		const $row=makeRow(
-			makeCell('ab',hue)
-		)
-		const row=new ItemCollectionRow($row)
-		const result=[...row.getItemSequence()]
-		assert.deepEqual(result,[])
-	})
-	it("gets item sequence of 1-item collection",()=>{
-		const $row=makeRow(
-			makeCell('ab',hue,
-				makeChangeset('2023-04-01',10001)
-			)
-		)
-		const row=new ItemCollectionRow($row)
-		const result=[...row.getItemSequence()]
-		assert.deepEqual(result,[
-			[changesetPoint('2023-04-01',10001),[
-				[0,$row.cells[1].children[0].children[1]],
-			]],
-		])
-	})
-	it("gets item sequence of 2-item collection",()=>{
-		const $row=makeRow(
-			makeCell('ab',hue,
-				makeChangeset('2023-04-02',10002),
-				makeChangeset('2023-04-01',10001)
-			)
-		)
-		const row=new ItemCollectionRow($row)
-		const result=[...row.getItemSequence()]
-		assert.deepEqual(result,[
-			[changesetPoint('2023-04-02',10002),[
-				[0,$row.cells[1].children[0].children[1]],
-			]],
-			[changesetPoint('2023-04-01',10001),[
-				[0,$row.cells[1].children[0].children[2]],
-			]],
-		])
-	})
-	it("gets item sequence of 2-column same-item collection",()=>{
-		const $row=makeRow(
-			makeCell('ab',hue,
-				makeChangeset('2023-04-03',10003)
-			),makeCell('ab',hue,
-				makeChangeset('2023-04-03',10003)
-			)
-		)
-		const row=new ItemCollectionRow($row)
-		const result=[...row.getItemSequence()]
-		assert.deepEqual(result,[
-			[changesetPoint('2023-04-03',10003),[
-				[0,$row.cells[1].children[0].children[1]],
-				[1,$row.cells[2].children[0].children[1]],
-			]],
-		])
-	})
-	it("gets item sequence of 2-column different-item collection",()=>{
-		const $row=makeRow(
-			makeCell('ab',hue,
-				makeChangeset('2023-04-03',10003)
-			),makeCell('ab',hue,
-				makeChangeset('2023-04-04',10004)
-			)
-		)
-		const row=new ItemCollectionRow($row)
-		const result=[...row.getItemSequence()]
-		assert.deepEqual(result,[
-			[changesetPoint('2023-04-04',10004),[
-				[1,$row.cells[2].children[0].children[1]],
-			]],
-			[changesetPoint('2023-04-03',10003),[
-				[0,$row.cells[1].children[0].children[1]],
-			]],
 		])
 	})
 })
@@ -373,7 +197,7 @@ function assertChangesetCollectionRow($row,cells) {
 			assert.equal($space.textContent,' ')
 			const $item=$container.childNodes[2+j*2]
 			assert.equal($item.nodeType,document.ELEMENT_NODE)
-			const point=changesetPoint(...items[j])
+			const point=makeChangesetPoint(...items[j])
 			assert.equal($item.dataset.type,point.type)
 			assert.equal($item.dataset.id,String(point.id),`Expected item[${i},${j}] to have id '${point.id}', got '${$item.dataset.id}'`)
 			assert.equal($item.dataset.timestamp,String(point.timestamp))
