@@ -2,7 +2,7 @@ import ItemRow from './row'
 import type {ItemSequencePoint} from './info'
 import {isItem, readItemSequencePoint, isGreaterElementSequencePoint} from './info'
 import {makeCollectionIcon} from './body-item'
-import {makeElement, makeDiv} from '../util/html'
+import {makeElement, makeDiv, removeInlineElement} from '../util/html'
 
 export default class ItemCollectionRow extends ItemRow {
 	constructor(
@@ -48,7 +48,7 @@ export default class ItemCollectionRow extends ItemRow {
 					$splitContainer.append(makeCollectionIcon())
 				}
 				for (const $item of $itemsToMove) {
-					removeSpaceBefore($item)
+					removeInlineElement($item)
 					$splitContainer.append(` `,$item)
 				}
 				if (nItems<=$itemsToMove.length) {
@@ -166,8 +166,7 @@ export default class ItemCollectionRow extends ItemRow {
 			const $cell=$container.parentElement
 			if (!($cell instanceof HTMLTableCellElement)) continue
 			if ($cell.parentElement!=this.$row) continue
-			removeSpaceBefore($item)
-			$item.remove()
+			removeInlineElement($item)
 			if ($container.querySelector(':scope > .item')) continue
 			$container.replaceChildren()
 		}
@@ -194,11 +193,4 @@ export default class ItemCollectionRow extends ItemRow {
 			}
 		}
 	}
-}
-
-export function removeSpaceBefore($e: Element): void {
-	const $s=$e.previousSibling
-	if ($s?.nodeType!=document.TEXT_NODE) return
-	if ($s.textContent!=' ') return
-	$s.remove()
 }

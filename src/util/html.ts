@@ -34,6 +34,17 @@ function semiLinkKeydownListener(this: HTMLAnchorElement, ev: KeyboardEvent): vo
 	ev.stopPropagation()
 }
 
+export function removeInlineElement($e: Element): void {
+	const $s1=$e.previousSibling
+	const $s2=$e.nextSibling
+	if ($s1?.nodeType==document.TEXT_NODE && $s1.textContent==' ') {
+		$s1.remove()
+	} else if ($s2?.nodeType==document.TEXT_NODE && $s2.textContent==' ') {
+		$s2.remove()
+	}
+	$e.remove()
+}
+
 export function startAnimation($element: HTMLElement, animationName: string, animationDuration: string): void {
 	if (resetAnimation($element,animationName)) return
 	$element.style.animationName=animationName

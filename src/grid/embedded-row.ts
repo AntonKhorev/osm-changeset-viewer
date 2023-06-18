@@ -1,8 +1,8 @@
 import ItemRow, {getCellContainer} from './row'
-import ItemCollectionRow ,{removeSpaceBefore} from './collection-row'
+import ItemCollectionRow from './collection-row'
 import type {ItemSequencePoint} from './info'
 import {isItem} from './info'
-import {makeElement, makeDiv} from '../util/html'
+import {makeElement, removeInlineElement} from '../util/html'
 
 export default class EmbeddedItemRow {
 	row: ItemRow
@@ -168,8 +168,7 @@ export default class EmbeddedItemRow {
 	private removeStretchButton(): void {
 		const $stretchButton=this.row.$row.querySelector(':scope > :first-child > * > button.stretch')
 		if (!$stretchButton) return
-		removeSpaceBefore($stretchButton)
-		$stretchButton.remove()
+		removeInlineElement($stretchButton)
 	}
 	private addStretchButton(): void {
 		const $button=makeElement('button')('stretch')(this.isStretched?`><`:`<>`)
