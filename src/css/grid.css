@@ -104,6 +104,7 @@
 }
 .ui .grid thead th.all .tab {
 	border-color: transparent;
+	cursor: unset;
 }
 .ui .grid thead th .tab > * {
 	position: absolute;
