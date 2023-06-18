@@ -85,18 +85,20 @@ export default function writeFooter(
 		)
 	}
 	if (grid) {
-		const buttonData: [label: string, title: string, action: ()=>void][] = [
-			[`+`,`Expand selected items`,()=>{ grid.expandSelectedItems() }],
-			[`−`,`Collapse selected items`,()=>{ grid.collapseSelectedItems() }],
-			[`<*>`,`Stretch all items`,()=>{ grid.stretchAllItems() }],
-			[`>*<`,`Shrink all items`,()=>{ grid.shrinkAllItems() }],
-		]
-		for (const [label,title,action] of buttonData) {
+		const addButton=(label: string, title: string, action: ()=>void)=>{
 			const $button=makeElement('button')()(label)
 			$button.title=title
 			$button.onclick=action
 			$toolbar.append($button)
+			return $button
 		}
+		addButton(`+`,`Expand selected items`,()=>{ grid.expandSelectedItems() })
+		addButton(`−`,`Collapse selected items`,()=>{ grid.collapseSelectedItems() })
+		const $stretchAllButton=addButton(`<*>`,`Stretch all items`,()=>{ grid.stretchAllItems() })
+		const $shrinkAllButton=addButton(`>*<`,`Shrink all items`,()=>{ grid.shrinkAllItems() })
+		;(grid.onExternalControlsStateUpdate=()=>{
+			$stretchAllButton.disabled=$shrinkAllButton.disabled=!grid.withTotalColumn
+		})()
 	}
 	for (const $button of $panelButtons) {
 		$toolbar.append($button)

@@ -9,6 +9,7 @@ import {makeElement} from '../util/html'
 export default class Grid {
 	$grid=makeElement('table')('grid')()
 	addExpandedItems=false
+	onExternalControlsStateUpdate: ()=>void = ()=>{}
 	private $colgroup=makeElement('colgroup')()()
 	private head: GridHead
 	private body: GridBody
@@ -87,6 +88,7 @@ export default class Grid {
 		this.$colgroup.append(
 			makeElement('col')('adder')()
 		)
+		this.onExternalControlsStateUpdate()
 	}
 	async receiveUpdatedUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
 		await this.head.receiveUpdatedUserQueries(userQueries)
