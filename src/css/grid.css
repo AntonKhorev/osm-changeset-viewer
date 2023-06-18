@@ -217,15 +217,6 @@
 }
 
 /*** stretched column ***/
-.ui .grid tbody tr {
-	height: 100%;
-}
-.ui .grid tbody tr td {
-	height: 100%;
-}
-.ui .grid tbody tr td > * {
-	height: 100%;
-}
 .ui .grid tbody tr td[colspan] > * {
 	position: sticky;
 	left: 0;
@@ -234,9 +225,9 @@
 .ui .grid tbody tr td:first-child > * > button.stretch {
 	position: absolute;
 	box-sizing: border-box;
-	height: calc(100% - 4px);
 	width: var(--icon-size);
 	top: 2px;
+	bottom: 2px;
 	right: var(--spacer);
 	padding: 0;
 	border: var(--frame-line);
