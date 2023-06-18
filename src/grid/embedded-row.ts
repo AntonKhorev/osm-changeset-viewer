@@ -120,7 +120,7 @@ export default class EmbeddedItemRow {
 	updateIds(withCompactIds: boolean): void {
 		for (const $cell of this.row.$row.cells) {
 			let lastId=''
-			for (const $item of $cell.children) {
+			for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
 				if (!isItem($item)) continue
 				if ($item.hidden) continue
 				const $a=$item.querySelector(':scope > .ballon > .flow > a')
