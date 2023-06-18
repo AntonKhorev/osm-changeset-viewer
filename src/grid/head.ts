@@ -390,7 +390,13 @@ export default class GridHead {
 			makeElement('td')()()
 		)
 		this.$selectorRow.replaceChildren(
-			makeElement('td')()()
+			makeElement('td')()(
+				makeUserSelector($checkbox=>{
+					for (const iColumn of this.userEntries.keys()) {
+						this.triggerColumnCheckboxes(iColumn,$checkbox.checked)
+					}
+				})
+			)
 		)
 		const gridHeadCells: {
 			$tabCell: HTMLTableCellElement
