@@ -183,12 +183,15 @@ export default class GridHead {
 		this.restartStream()
 	}
 	updateSelectors(): void {
+		const updateCheckboxState=($checkbox: HTMLInputElement, checked: boolean, unchecked: boolean)=>{
+			$checkbox.checked=(checked && !unchecked)
+			$checkbox.indeterminate=(checked && unchecked)
+		}
 		const [hasChecked,hasUnchecked,selectedChangesetIds]=this.getColumnCheckboxStatuses()
 		for (const [iColumn,{$selector}] of this.userEntries.entries()) {
 			const $checkbox=$selector.querySelector('input[type=checkbox]')
 			if ($checkbox instanceof HTMLInputElement) {
-				$checkbox.checked=(hasChecked[iColumn] && !hasUnchecked[iColumn])
-				$checkbox.indeterminate=(hasChecked[iColumn] && hasUnchecked[iColumn])
+				updateCheckboxState($checkbox,hasChecked[iColumn],hasUnchecked[iColumn])
 			}
 			const $count=$selector.querySelector('output')
 			if ($count) {
@@ -199,6 +202,12 @@ export default class GridHead {
 						`${selectedChangesetIds[iColumn].size} selected`
 					)
 				}
+			}
+		}
+		{
+			const $checkbox=this.$selectorRow.querySelector(':scope > td:first-child input[type=checkbox]')
+			if ($checkbox instanceof HTMLInputElement) {
+				updateCheckboxState($checkbox,hasChecked.some(v=>v),hasUnchecked.some(v=>v))
 			}
 		}
 	}
@@ -392,8 +401,9 @@ export default class GridHead {
 		this.$selectorRow.replaceChildren(
 			makeElement('td')()(
 				makeUserSelector($checkbox=>{
+					const checked=$checkbox.checked
 					for (const iColumn of this.userEntries.keys()) {
-						this.triggerColumnCheckboxes(iColumn,$checkbox.checked)
+						this.triggerColumnCheckboxes(iColumn,checked)
 					}
 				})
 			)
