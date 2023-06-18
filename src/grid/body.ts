@@ -31,9 +31,13 @@ export default class GridBody {
 	) {
 		this.$gridBody.addEventListener('click',ev=>{
 			if (!(ev.target instanceof Element)) return
-			const $button=ev.target.closest('button.disclosure')
-			if (!($button instanceof HTMLButtonElement)) return
-			this.toggleItemDisclosureWithButton($button)
+			const $button=ev.target.closest('button')
+			if (!$button) return
+			if ($button.classList.contains('disclosure')) {
+				this.toggleItemDisclosureWithButton($button)
+			} else if ($button.classList.contains('stretch')) {
+				this.toggleRowStretchWithButton($button)
+			}
 		})
 	}
 	get nColumns() {
@@ -474,23 +478,33 @@ export default class GridBody {
 		}
 		return $rows
 	}
-	private async toggleItemDisclosureWithButton($disclosureButton: HTMLButtonElement): Promise<void> {
-		const $item=$disclosureButton.closest('.item')
+	private async toggleItemDisclosureWithButton($button: HTMLButtonElement): Promise<void> {
+		const $item=$button.closest('.item')
 		if (!($item instanceof HTMLElement)) return
 		const itemDescriptor=readItemDescriptor($item)
 		if (!itemDescriptor) return
-		if (getItemDisclosureButtonState($disclosureButton)) {
+		if (getItemDisclosureButtonState($button)) {
 			this.collapseItem(itemDescriptor)
 		} else {
-			$disclosureButton.disabled=true
+			$button.disabled=true
 			await this.expandItem(itemDescriptor)
-			$disclosureButton.disabled=false
+			$button.disabled=false
 		}
-		const $newItem=$disclosureButton.closest('.item')
+		const $newItem=$button.closest('.item')
 		if ($newItem instanceof HTMLElement) {
 			$newItem.scrollIntoView({block:'nearest'}) // focusing on button is enough to scroll it in, but it's then too close to the edge
 		}
-		$disclosureButton.focus()
+		$button.focus()
+	}
+	private toggleRowStretchWithButton($button: HTMLButtonElement): void {
+		const $row=$button.closest('tr')
+		if (!$row) return
+		const row=new EmbeddedItemRow($row)
+		if (row.isStretched) {
+			row.shrink(this.withCompactIds)
+		} else {
+			row.stretch(this.withCompactIds)
+		}
 	}
 }
 
