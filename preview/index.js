@@ -2555,6 +2555,14 @@ function setColor($e, uid) {
     }
 }
 
+function makeAllTab() {
+    const $icon = makeElement('span')('icon')();
+    $icon.title = `all user items`;
+    $icon.innerHTML = makeCenteredSvg(8, `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" />` +
+        `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(60)" />` +
+        `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(-60)" />`);
+    return makeDiv('tab')($icon);
+}
 function makeUserTab(removeColumnClickListener, query) {
     const $icon = makeElement('span')('icon')();
     $icon.title = `user`;
@@ -3637,9 +3645,9 @@ class GridHead {
     // 	this.$adderCell.before(userEntry.$card)
     // }
     rewriteUserEntriesInHead() {
-        this.$tabRow.replaceChildren();
-        this.$cardRow.replaceChildren();
-        this.$selectorRow.replaceChildren();
+        this.$tabRow.replaceChildren(makeElement('th')()(makeAllTab()));
+        this.$cardRow.replaceChildren(makeElement('td')()());
+        this.$selectorRow.replaceChildren(makeElement('td')()());
         const gridHeadCells = [];
         for (const userEntry of this.userEntries) {
             const { $tab, $card, $selector } = userEntry;
@@ -3709,11 +3717,6 @@ function isGreaterElementSequencePoint(a, b) {
     if (a.id != b.id)
         return (a.id ?? 0) > (b.id ?? 0);
     return (a.order ?? 0) > (b.order ?? 0);
-}
-function isEqualItemSequencePoint(a, b) {
-    if (a.timestamp != b.timestamp)
-        return false;
-    return isEqualItemDescriptor(a, b);
 }
 function isEqualItemDescriptor(a, b) {
     return a.type == b.type && a.id == b.id && a.order == b.order;
@@ -3849,18 +3852,25 @@ function getLastTimestampOfMonth(date) {
     return Date.UTC(year, monthIndex) - 1;
 }
 
-class ItemCollection {
+class ItemRow {
     constructor($row) {
         this.$row = $row;
     }
     isEmpty() {
-        return !this.$row.querySelector(':scope > td > .item');
+        return !this.$row.querySelector(':scope > td > * > .item');
+    }
+    get isStretched() {
+        const $stretchCell = this.$row.cells[0];
+        return $stretchCell.colSpan > 1;
     }
     getBoundarySequencePoints() {
         let greaterPoint = null;
         let lesserPoint = null;
         for (const $cell of this.$row.cells) {
-            for (const $item of $cell.children) {
+            const [$container] = $cell.children;
+            if (!($container instanceof HTMLElement))
+                continue;
+            for (const $item of $container.children) {
                 if (!isItem($item))
                     continue;
                 const point = readItemSequencePoint($item);
@@ -3876,6 +3886,144 @@ class ItemCollection {
         }
         return [greaterPoint, lesserPoint];
     }
+    *getItemSequence() {
+        const nRawColumns = this.$row.cells.length;
+        if (nRawColumns == 0)
+            return;
+        const iRawColumnPositions = Array(nRawColumns).fill(0);
+        while (true) {
+            let point;
+            let rawItems = [];
+            for (const [iRawColumn, $cell] of [...this.$row.cells].entries()) {
+                const [$container] = $cell.children;
+                if (!($container instanceof HTMLElement))
+                    continue;
+                let $item;
+                let columnPoint = null;
+                for (; iRawColumnPositions[iRawColumn] < $container.children.length; iRawColumnPositions[iRawColumn]++) {
+                    $item = $container.children[iRawColumnPositions[iRawColumn]];
+                    if (!isItem($item))
+                        continue;
+                    columnPoint = readItemSequencePoint($item);
+                    if (!columnPoint)
+                        continue;
+                    break;
+                }
+                if (iRawColumnPositions[iRawColumn] >= $container.children.length)
+                    continue;
+                if (!$item || !isItem($item) || !columnPoint)
+                    continue;
+                if (point && isGreaterElementSequencePoint(point, columnPoint))
+                    continue;
+                if (!point || isGreaterElementSequencePoint(columnPoint, point)) {
+                    point = columnPoint;
+                    rawItems = [[iRawColumn, $item]];
+                }
+                else {
+                    rawItems.push([iRawColumn, $item]);
+                }
+            }
+            if (!point)
+                break;
+            for (const [iRawColumn] of rawItems) {
+                iRawColumnPositions[iRawColumn]++;
+            }
+            const items = rawItems.map(([iRawColumn, $item]) => [
+                iRawColumn == 0 ? Number($item.dataset.column) : iRawColumn - 1,
+                $item
+            ]);
+            yield [point, items];
+        }
+    }
+    put(iColumns, $items) {
+        for (const [iItem, iColumn] of iColumns.entries()) {
+            const $cell = this.$row.cells[iColumn + 1];
+            const $item = $items[iItem];
+            $cell.replaceChildren(makeDiv()($item));
+        }
+    }
+    stretch() {
+        if (this.isStretched)
+            return;
+        const nTotalColumns = this.$row.cells.length + 1;
+        const itemSequence = [...this.getItemSequence()];
+        const $stretchCell = this.$row.cells[0];
+        $stretchCell.colSpan = nTotalColumns;
+        for (const [iRawColumn, $cell] of [...this.$row.cells].entries()) {
+            if (iRawColumn == 0)
+                continue;
+            $cell.hidden = true;
+        }
+        const $stretchContainer = getCellContainer($stretchCell);
+        for (const [, items] of itemSequence) {
+            const [[iColumn, $item]] = items;
+            $item.dataset.column = String(iColumn);
+            appendToContainer($stretchContainer, $item);
+        }
+    }
+    shrink() {
+        if (!this.isStretched)
+            return;
+        const $stretchCell = this.$row.cells[0];
+        $stretchCell.removeAttribute('colspan');
+        for (const [iRawColumn, $cell] of [...this.$row.cells].entries()) {
+            if (iRawColumn == 0)
+                continue;
+            $cell.hidden = false;
+        }
+        const [$stretchContainer] = $stretchCell.children;
+        if (!($stretchContainer instanceof HTMLElement))
+            return;
+        for (const $item of $stretchContainer.querySelectorAll(':scope > .item')) {
+            if (!($item instanceof HTMLElement))
+                continue;
+            const iColumn = Number($item.dataset.column);
+            const $targetCell = this.$row.cells[iColumn + 1];
+            if (!($targetCell instanceof HTMLTableCellElement))
+                continue;
+            const $targetContainer = getCellContainer($targetCell);
+            appendToContainer($targetContainer, $item);
+        }
+        $stretchContainer.replaceChildren();
+    }
+    reorderColumns(iShiftFrom, iShiftTo) {
+        const $cells = [...this.$row.cells];
+        moveInArray($cells, iShiftFrom + 1, iShiftTo + 1);
+        this.$row.replaceChildren(...$cells);
+        const nColumns = this.$row.cells.length - 1;
+        const iMap = Array(nColumns).fill(0).map((_, i) => i);
+        moveInArray(iMap, iShiftTo, iShiftFrom);
+        const $stretchCell = this.$row.cells[0];
+        for (const $item of $stretchCell.querySelectorAll(':scope > * > .item')) {
+            if (!($item instanceof HTMLElement))
+                continue;
+            const iColumn = Number($item.dataset.column);
+            if (iMap[iColumn] != null) {
+                $item.dataset.column = String(iMap[iColumn]);
+            }
+        }
+    }
+}
+function getCellContainer($cell) {
+    const [$existingContainer] = $cell.children;
+    if ($existingContainer instanceof HTMLElement) {
+        return $existingContainer;
+    }
+    const $newContainer = makeDiv()();
+    $cell.append($newContainer);
+    return $newContainer;
+}
+function appendToContainer($container, $item) {
+    if ($container.children.length > 0) {
+        $container.append(` `);
+    }
+    $container.append($item);
+}
+
+class ItemCollectionRow extends ItemRow {
+    constructor($row) {
+        super($row);
+    }
     /**
      * Split collection into two rows at the given sequence point
      *
@@ -3889,36 +4037,41 @@ class ItemCollection {
             if (style) {
                 $splitCell.setAttribute('style', style);
             }
+            const [$container] = $cell.children;
+            const $splitContainer = makeDiv()();
+            $splitCell.append($splitContainer);
             let startedMoving = false;
             let nItems = 0;
             const $itemsToMove = [];
-            for (const $item of $cell.children) {
-                if (!isItem($item))
-                    continue;
-                nItems++;
-                if (!startedMoving) {
-                    const collectionItemSequencePoint = readItemSequencePoint($item);
-                    if (!collectionItemSequencePoint)
+            if ($container instanceof HTMLElement) {
+                for (const $item of $container.children) {
+                    if (!isItem($item))
                         continue;
-                    if (isGreaterElementSequencePoint(sequencePoint, collectionItemSequencePoint)) {
-                        startedMoving = true;
+                    nItems++;
+                    if (!startedMoving) {
+                        const collectionItemSequencePoint = readItemSequencePoint($item);
+                        if (!collectionItemSequencePoint)
+                            continue;
+                        if (isGreaterElementSequencePoint(sequencePoint, collectionItemSequencePoint)) {
+                            startedMoving = true;
+                        }
+                    }
+                    if (startedMoving) {
+                        $itemsToMove.push($item);
                     }
                 }
-                if (startedMoving) {
-                    $itemsToMove.push($item);
+                if ($itemsToMove.length > 0) {
+                    $splitContainer.append(makeCollectionIcon());
                 }
-            }
-            if ($itemsToMove.length > 0) {
-                $splitCell.append(makeCollectionIcon());
-            }
-            for (const $item of $itemsToMove) {
-                removeSpaceBefore($item);
-                $splitCell.append(` `, $item);
-            }
-            if (nItems <= $itemsToMove.length) {
-                const $icon = $cell.children[0];
-                if ($icon && $icon.classList.contains('icon')) {
-                    $icon.remove();
+                for (const $item of $itemsToMove) {
+                    removeSpaceBefore($item);
+                    $splitContainer.append(` `, $item);
+                }
+                if (nItems <= $itemsToMove.length) {
+                    const $icon = $container.children[0];
+                    if ($icon && $icon.classList.contains('icon')) {
+                        $icon.remove();
+                    }
                 }
             }
             if ($cell.classList.contains('with-timeline-below')) {
@@ -3929,10 +4082,37 @@ class ItemCollection {
                 $cell.classList.add('with-timeline-below');
                 $splitCell.classList.add('with-timeline-above');
             }
+            if ($cell.colSpan > 1) {
+                $splitCell.colSpan = $cell.colSpan;
+            }
+            if ($cell.hidden) {
+                $splitCell.hidden = true;
+            }
         }
-        return new ItemCollection($splitRow);
+        return new ItemCollectionRow($splitRow);
     }
     merge(that) {
+        if (this.isStretched && !that.isStretched) {
+            that.stretch();
+        }
+        else if (!this.isStretched && that.isStretched) {
+            this.stretch();
+        }
+        const copyChildren = ($container1, $container2) => {
+            let copying = false;
+            for (const $child of [...$container2.children]) {
+                if ($child.classList.contains('item')) {
+                    copying = true;
+                    if ($container1.children.length == 0) {
+                        $container1.append(makeCollectionIcon());
+                    }
+                }
+                if (copying) {
+                    $container1.append($child);
+                    $child.before(' ');
+                }
+            }
+        };
         const $cells1 = [...this.$row.cells];
         const $cells2 = [...that.$row.cells];
         for (let i = 0; i < $cells1.length && i < $cells2.length; i++) {
@@ -3944,17 +4124,14 @@ class ItemCollection {
                 this.$row.append($cell2);
                 continue;
             }
-            let copying = false;
-            for (const $child of [...$cell2.children]) {
-                if ($child.classList.contains('item')) {
-                    copying = true;
-                    if ($cell1.children.length == 0) {
-                        $cell1.append(makeCollectionIcon());
-                    }
+            const [$container1] = $cell1.children;
+            const [$container2] = $cell2.children;
+            if ($container2 instanceof HTMLElement) {
+                if ($container1 instanceof HTMLElement) {
+                    copyChildren($container1, $container2);
                 }
-                if (copying) {
-                    $cell1.append($child);
-                    $child.before(' ');
+                else {
+                    $cell1.append($container2);
                 }
             }
             $cell1.classList.toggle('with-timeline-below', $cell2.classList.contains('with-timeline-below'));
@@ -3965,11 +4142,22 @@ class ItemCollection {
      */
     insert(sequencePoint, iColumns, $items) {
         itemLoop: for (let iItem = 0; iItem < iColumns.length; iItem++) {
-            const iColumn = iColumns[iItem];
             const $item = $items[iItem];
-            const $cell = this.$row.cells[iColumn];
+            const iColumn = iColumns[iItem];
+            let $cell;
+            if (this.isStretched && iItem == 0) {
+                $cell = this.$row.cells[0];
+                $item.dataset.column = String(iColumn);
+            }
+            else {
+                $cell = this.$row.cells[iColumn + 1];
+            }
+            let [$container] = $cell.children;
+            if (!($container instanceof HTMLElement)) {
+                $cell.append($container = makeDiv()());
+            }
             let nItems = 0;
-            for (const $existingItem of $cell.children) {
+            for (const $existingItem of $container.children) {
                 if (!isItem($existingItem))
                     continue;
                 nItems++;
@@ -3983,69 +4171,56 @@ class ItemCollection {
             }
             if (nItems == 0) {
                 const $icon = makeCollectionIcon();
-                $cell.prepend($icon);
+                $container.prepend($icon);
                 $icon.after(` `, $item);
             }
             else {
-                const $lastChild = $cell.lastElementChild;
+                const $lastChild = $container.lastElementChild;
                 $lastChild.after(` `, $item);
             }
         }
     }
     remove($items) {
         for (const $item of $items) {
-            const $cell = $item.parentElement;
+            const $container = $item.parentElement;
+            if (!($container instanceof HTMLElement))
+                continue;
+            const $cell = $container.parentElement;
             if (!($cell instanceof HTMLTableCellElement))
                 continue;
             if ($cell.parentElement != this.$row)
                 continue;
             removeSpaceBefore($item);
             $item.remove();
-            if ($cell.querySelector(':scope > .item'))
+            if ($container.querySelector(':scope > .item'))
                 continue;
-            $cell.replaceChildren();
+            $container.replaceChildren();
         }
     }
-    *getItemSequence() {
-        const nColumns = this.$row.cells.length;
-        if (nColumns == 0)
-            return;
-        const iColumnPositions = Array(nColumns).fill(0);
-        while (true) {
-            let point;
-            let items = [];
-            for (const [iColumn, $cell] of [...this.$row.cells].entries()) {
-                let $item;
-                let columnPoint = null;
-                for (; iColumnPositions[iColumn] < $cell.children.length; iColumnPositions[iColumn]++) {
-                    $item = $cell.children[iColumnPositions[iColumn]];
-                    if (!isItem($item))
-                        continue;
-                    columnPoint = readItemSequencePoint($item);
-                    if (!columnPoint)
-                        continue;
-                    break;
-                }
-                if (iColumnPositions[iColumn] >= $cell.children.length)
-                    continue;
-                if (!$item || !isItem($item) || !columnPoint)
-                    continue;
-                if (point && isGreaterElementSequencePoint(point, columnPoint))
-                    continue;
-                if (!point || isGreaterElementSequencePoint(columnPoint, point)) {
-                    point = columnPoint;
-                    items = [[iColumn, $item]];
-                }
-                else {
-                    items.push([iColumn, $item]);
-                }
+    stretch() {
+        super.stretch();
+        this.fixCollectionIcons();
+    }
+    shrink() {
+        super.shrink();
+        this.fixCollectionIcons();
+    }
+    fixCollectionIcons() {
+        for (const $cell of this.$row.cells) {
+            const $container = $cell.firstElementChild;
+            if (!($container instanceof HTMLElement))
+                continue;
+            if (!$container.querySelector(':scope > .item')) {
+                $container.replaceChildren();
             }
-            if (!point)
-                break;
-            for (const [iColumn] of items) {
-                iColumnPositions[iColumn]++;
+            else {
+                const $firstChild = $container.firstElementChild;
+                if (!($firstChild instanceof HTMLElement))
+                    return;
+                if ($firstChild.classList.contains('icon'))
+                    return;
+                $container.prepend(makeCollectionIcon(), ` `);
             }
-            yield [point, items];
         }
     }
 }
@@ -4058,46 +4233,112 @@ function removeSpaceBefore($e) {
     $s.remove();
 }
 
-class EmbeddedItemCollection {
-    constructor(rowOrCollection, withCompactIds) {
-        this.withCompactIds = withCompactIds;
-        if (rowOrCollection instanceof ItemCollection) {
-            this.collection = rowOrCollection;
+class EmbeddedItemRow {
+    constructor(row) {
+        if (row instanceof ItemRow) {
+            this.row = row;
+        }
+        else if (row.classList.contains('collection')) {
+            this.row = new ItemCollectionRow(row);
         }
         else {
-            this.collection = new ItemCollection(rowOrCollection);
+            this.row = new ItemRow(row);
         }
+    }
+    static fromEmptyRow($row, className, columnHues) {
+        $row.insertCell();
+        $row.classList.add(className);
+        for (const hue of columnHues) {
+            const $cell = $row.insertCell();
+            if (hue != null) {
+                $cell.style.setProperty('--hue', String(hue));
+            }
+        }
+        const embeddedRow = new EmbeddedItemRow($row);
+        embeddedRow.addStretchButton();
+        return embeddedRow;
+    }
+    static isItemRow($row) {
+        return ($row.classList.contains('single') ||
+            $row.classList.contains('collection'));
+    }
+    get isStretched() {
+        return this.row.isStretched;
     }
     getBoundarySequencePoints() {
-        return this.collection.getBoundarySequencePoints();
+        return this.row.getBoundarySequencePoints();
     }
-    split(sequencePoint) {
-        const splitCollection = this.collection.split(sequencePoint);
-        this.collection.$row.after(splitCollection.$row);
-        const splitGridCollection = new EmbeddedItemCollection(splitCollection, this.withCompactIds);
-        splitGridCollection.updateIds();
-        return splitGridCollection;
+    paste($row, sequencePoint, withCompactIds) {
+        this.removeStretchButton();
+        this.row.$row.after($row);
+        if (!(this.row instanceof ItemCollectionRow))
+            return;
+        const splitRow = this.row.split(sequencePoint);
+        $row.after(splitRow.$row);
+        const splitEmbeddedRow = new EmbeddedItemRow(splitRow);
+        splitEmbeddedRow.updateIds(withCompactIds);
+        this.addStretchButton();
+        splitEmbeddedRow.addStretchButton();
     }
-    merge(that) {
-        this.collection.merge(that.collection);
-        that.collection.$row.remove();
-        this.updateIds();
+    cut(withCompactIds) {
+        const $row = this.row.$row;
+        const $prevRow = $row.previousElementSibling;
+        const $nextRow = $row.nextElementSibling;
+        $row.remove();
+        if ($prevRow && $prevRow instanceof HTMLTableRowElement &&
+            $nextRow && $nextRow instanceof HTMLTableRowElement) {
+            const prevEmbeddedRow = new EmbeddedItemRow($prevRow);
+            const nextEmbeddedRow = new EmbeddedItemRow($nextRow);
+            if (prevEmbeddedRow.row instanceof ItemCollectionRow &&
+                nextEmbeddedRow.row instanceof ItemCollectionRow) {
+                prevEmbeddedRow.removeStretchButton();
+                nextEmbeddedRow.removeStretchButton();
+                prevEmbeddedRow.row.merge(nextEmbeddedRow.row);
+                nextEmbeddedRow.row.$row.remove();
+                prevEmbeddedRow.updateIds(withCompactIds);
+                prevEmbeddedRow.addStretchButton();
+                nextEmbeddedRow.addStretchButton();
+            }
+        }
     }
-    insert(sequencePoint, iColumns, $items) {
-        this.collection.insert(sequencePoint, iColumns, $items);
-        this.updateIds();
+    put(iColumns, $items) {
+        this.row.put(iColumns, $items);
     }
-    remove($items) {
-        this.collection.remove($items);
-        if (this.collection.isEmpty()) {
-            this.collection.$row.remove();
+    insert(sequencePoint, iColumns, $items, withCompactIds) {
+        if (!(this.row instanceof ItemCollectionRow))
+            throw new TypeError(`attempt to insert into non-collection row`);
+        this.removeStretchButton();
+        this.row.insert(sequencePoint, iColumns, $items);
+        this.updateIds(withCompactIds);
+        this.addStretchButton();
+    }
+    remove($items, withCompactIds) {
+        if (!(this.row instanceof ItemCollectionRow))
+            throw new TypeError(`attempt to remove from non-collection row`);
+        this.removeStretchButton();
+        this.row.remove($items);
+        if (this.row.isEmpty()) {
+            this.row.$row.remove();
         }
         else {
-            this.updateIds();
+            this.updateIds(withCompactIds);
         }
+        this.addStretchButton();
     }
-    updateIds() {
-        for (const $cell of this.collection.$row.cells) {
+    stretch(withCompactIds) {
+        this.removeStretchButton();
+        this.row.stretch();
+        this.updateIds(withCompactIds);
+        this.addStretchButton();
+    }
+    shrink(withCompactIds) {
+        this.removeStretchButton();
+        this.row.shrink();
+        this.updateIds(withCompactIds);
+        this.addStretchButton();
+    }
+    updateIds(withCompactIds) {
+        for (const $cell of this.row.$row.cells) {
             let lastId = '';
             for (const $item of $cell.children) {
                 if (!isItem($item))
@@ -4115,7 +4356,7 @@ class EmbeddedItemCollection {
                     continue;
                 }
                 let compacted = false;
-                if (this.withCompactIds && id.length == lastId.length) {
+                if (withCompactIds && id.length == lastId.length) {
                     let shortId = '';
                     for (let i = 0; i < id.length; i++) {
                         if (id[i] == lastId[i])
@@ -4137,8 +4378,34 @@ class EmbeddedItemCollection {
             }
         }
     }
+    updateStretchButtonHiddenState() {
+        const $stretchButton = this.row.$row.querySelector(':scope > :first-child > * > button.stretch');
+        if (!($stretchButton instanceof HTMLButtonElement))
+            return;
+        $stretchButton.hidden = !this.row.$row.querySelector('.item:not([hidden])');
+    }
     *getItemSequence() {
-        yield* this.collection.getItemSequence();
+        yield* this.row.getItemSequence();
+    }
+    reorderColumns(iShiftFrom, iShiftTo) {
+        this.row.reorderColumns(iShiftFrom, iShiftTo);
+    }
+    removeStretchButton() {
+        const $stretchButton = this.row.$row.querySelector(':scope > :first-child > * > button.stretch');
+        if (!$stretchButton)
+            return;
+        removeSpaceBefore($stretchButton);
+        $stretchButton.remove();
+    }
+    addStretchButton() {
+        const $button = makeElement('button')('stretch')(this.isStretched ? `><` : `<>`);
+        $button.title = this.isStretched ? `Show in multiple columns` : `Show in one stretched column`;
+        const $stretchCell = this.row.$row.cells[0];
+        const $stretchContainer = getCellContainer($stretchCell);
+        if ($stretchContainer.hasChildNodes()) {
+            $stretchContainer.append(` `);
+        }
+        $stretchContainer.append($button);
     }
 }
 
@@ -4155,14 +4422,20 @@ function updateTimelineOnInsert($row, iColumns) {
         $rowBelow = $rowBelow.nextElementSibling;
         if (!isContentRow($rowBelow))
             continue;
-        for (const [iColumn, $cellBelow] of [...$rowBelow.cells].entries()) {
+        for (const [iRawColumn, $cellBelow] of [...$rowBelow.cells].entries()) {
+            if (iRawColumn == 0)
+                continue;
+            const iColumn = iRawColumn - 1;
             if ($cellBelow.classList.contains('with-timeline-above')) {
                 inInsertedTimeline[iColumn] = true;
             }
         }
         break;
     }
-    for (const [iColumn, $cell] of [...$row.cells].entries()) {
+    for (const [iRawColumn, $cell] of [...$row.cells].entries()) {
+        if (iRawColumn == 0)
+            continue;
+        const iColumn = iRawColumn - 1;
         if (inInsertedTimeline[iColumn]) {
             $cell.classList.add('with-timeline-below');
         }
@@ -4178,7 +4451,10 @@ function updateTimelineOnInsert($row, iColumns) {
         $rowAbove = $rowAbove.previousElementSibling;
         if (!isContentRow($rowAbove))
             continue;
-        for (const [iColumn, $cell] of [...$rowAbove.cells].entries()) {
+        for (const [iRawColumn, $cell] of [...$rowAbove.cells].entries()) {
+            if (iRawColumn == 0)
+                continue;
+            const iColumn = iRawColumn - 1;
             if (!inInsertedTimeline[iColumn])
                 continue;
             $cell.classList.add('with-timeline-below');
@@ -4200,18 +4476,17 @@ class GridBodyCheckboxHandler {
     constructor($gridBody) {
         this.$gridBody = $gridBody;
         this.onItemSelect = () => { };
-        const self = this;
-        this.wrappedClickListener = function (ev) {
-            if (!(this instanceof HTMLInputElement))
+        $gridBody.addEventListener('click', ev => {
+            const $checkbox = ev.target;
+            if (!($checkbox instanceof HTMLInputElement))
                 return;
-            self.clickListener(this, ev.shiftKey);
-        };
+            if ($checkbox.type != 'checkbox')
+                return;
+            this.clickListener($checkbox, ev.shiftKey);
+        });
     }
     resetLastClickedCheckbox() {
         this.$lastClickedCheckbox = undefined;
-    }
-    listen($checkbox) {
-        $checkbox.addEventListener('click', this.wrappedClickListener);
     }
     triggerColumnCheckboxes(iColumn, isChecked) {
         for (const $row of this.$gridBody.rows) {
@@ -4317,19 +4592,28 @@ function getElementColumn($e) {
     const $cell = $e.closest('td');
     if (!$row || !$cell)
         return null;
-    const iColumn = [...$row.cells].indexOf($cell);
-    if (iColumn < 0)
+    const iRawColumn = [...$row.cells].indexOf($cell);
+    if (iRawColumn < 0)
         return null;
-    return iColumn;
+    return iRawColumn - 1;
 }
 function* listRowCheckboxes($row, columnFilter = () => true) {
     if (!$row.classList.contains('single') && !$row.classList.contains('collection'))
         return;
-    for (const [iColumn, $cell] of [...$row.cells].entries()) {
-        if (!columnFilter(iColumn))
-            continue;
-        for (const $changeset of $cell.querySelectorAll(':scope > .changeset')) {
+    for (const [iRawColumn, $cell] of [...$row.cells].entries()) {
+        for (const $changeset of $cell.querySelectorAll(':scope > * > .changeset')) {
             if (!($changeset instanceof HTMLElement))
+                continue;
+            let iColumn;
+            if (iRawColumn == 0) {
+                iColumn = Number($changeset.dataset.column);
+                if (!Number.isInteger(iColumn))
+                    continue;
+            }
+            else {
+                iColumn = iRawColumn - 1;
+            }
+            if (!columnFilter(iColumn))
                 continue;
             const descriptor = readItemDescriptor($changeset);
             if (!descriptor || descriptor.type != 'changeset')
@@ -4352,10 +4636,21 @@ class GridBody {
         this.$gridBody = makeElement('tbody')()();
         this.withCompactIds = false;
         this.withClosedChangesets = false;
-        this.inOneColumn = false;
         this.checkboxHandler = new GridBodyCheckboxHandler(this.$gridBody);
         this.columnUids = [];
-        this.wrappedItemDisclosureButtonListener = (ev) => this.toggleItemDisclosureWithButton(ev.currentTarget);
+        this.$gridBody.addEventListener('click', ev => {
+            if (!(ev.target instanceof Element))
+                return;
+            const $button = ev.target.closest('button');
+            if (!$button)
+                return;
+            if ($button.classList.contains('disclosure')) {
+                this.toggleItemDisclosureWithButton($button);
+            }
+            else if ($button.classList.contains('stretch')) {
+                this.toggleRowStretchWithButton($button);
+            }
+        });
     }
     get nColumns() {
         return this.columnUids.length;
@@ -4380,20 +4675,27 @@ class GridBody {
         });
         return this.insertItem(batchItem.iColumns, sequencePoint, !isExpanded ? { isExpanded } : { isExpanded, batchItem, usernames }, $items);
     }
+    stretchAllItems() {
+        for (const $row of this.$gridBody.rows) {
+            if (!EmbeddedItemRow.isItemRow($row))
+                continue;
+            const row = new EmbeddedItemRow($row);
+            row.stretch(this.withCompactIds);
+        }
+    }
+    shrinkAllItems() {
+        for (const $row of this.$gridBody.rows) {
+            if (!EmbeddedItemRow.isItemRow($row))
+                continue;
+            const row = new EmbeddedItemRow($row);
+            row.shrink(this.withCompactIds);
+        }
+    }
     updateTableAccordingToSettings() {
-        const setCheckboxTitles = ($item, title) => {
-            if ($item instanceof HTMLTableRowElement) {
-                for (const $cell of $item.cells) {
-                    const $checkbox = getItemCheckbox($cell);
-                    if ($checkbox)
-                        $checkbox.title = title;
-                }
-            }
-            else {
-                const $checkbox = getItemCheckbox($item);
-                if ($checkbox)
-                    $checkbox.title = title;
-            }
+        const setCheckboxTitle = ($item, title) => {
+            const $checkbox = getItemCheckbox($item);
+            if ($checkbox)
+                $checkbox.title = title;
         };
         const combineChangesets = ($item, $laterItem) => {
             const isConnectedWithLaterItem = ($laterItem &&
@@ -4411,32 +4713,12 @@ class GridBody {
                             $laterItem.hidden = true;
                         }
                         $item.classList.add('combined');
-                        setCheckboxTitles($item, `changeset ${id}`);
+                        setCheckboxTitle($item, `changeset ${id}`);
                     }
                     else {
                         $item.classList.remove('combined');
-                        setCheckboxTitles($item, `opened changeset ${id}`);
+                        setCheckboxTitle($item, `opened changeset ${id}`);
                     }
-                }
-            }
-        };
-        const spanColumns = ($row) => {
-            let spanned = false;
-            for (const $cell of $row.cells) {
-                if (this.inOneColumn) {
-                    if (!spanned && $cell.childNodes.length) {
-                        $cell.hidden = false;
-                        $cell.colSpan = this.nColumns + 1;
-                        spanned = true;
-                    }
-                    else {
-                        $cell.hidden = true;
-                        $cell.removeAttribute('colspan');
-                    }
-                }
-                else {
-                    $cell.hidden = false;
-                    $cell.removeAttribute('colspan');
                 }
             }
         };
@@ -4445,29 +4727,28 @@ class GridBody {
             if ($row.classList.contains('collection')) {
                 for (const $cell of $row.cells) {
                     let $laterItem;
-                    for (const $item of $cell.querySelectorAll(':scope > .item')) {
+                    for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
                         if (!($item instanceof HTMLElement))
                             continue;
                         combineChangesets($item, $laterItem);
                         $laterItem = $item;
                     }
                 }
-                const collection = new EmbeddedItemCollection($row, this.withCompactIds);
-                collection.updateIds();
-                // spanColumns($row) // TODO need to merge/split collected items in cells
+                const row = new EmbeddedItemRow($row);
+                row.updateIds(this.withCompactIds);
                 $itemRowAbove = undefined;
             }
             else if ($row.classList.contains('single')) {
                 for (let i = 0; i < $row.cells.length; i++) {
                     const $cell = $row.cells[i];
-                    const $item = $cell.querySelector(':scope > .item');
+                    const $item = $cell.querySelector(':scope > * > .item');
                     let $cellAbove;
                     if ($itemRowAbove) {
                         $cellAbove = $itemRowAbove.cells[i];
                     }
                     let $itemAbove;
                     if ($cellAbove) {
-                        const $itemAboveCandidate = $cellAbove.querySelector(':scope > .item');
+                        const $itemAboveCandidate = $cellAbove.querySelector(':scope > * > .item');
                         if ($itemAboveCandidate instanceof HTMLElement) {
                             $itemAbove = $itemAboveCandidate;
                         }
@@ -4475,21 +4756,23 @@ class GridBody {
                     if ($item instanceof HTMLElement)
                         combineChangesets($item, $itemAbove);
                 }
-                spanColumns($row);
                 $itemRowAbove = $row;
             }
             else {
                 $itemRowAbove = undefined;
             }
         }
+        for (const $row of this.$gridBody.rows) {
+            if (!EmbeddedItemRow.isItemRow($row))
+                continue;
+            new EmbeddedItemRow($row).updateStretchButtonHiddenState();
+        }
     }
     reorderColumns(iShiftFrom, iShiftTo) {
         for (const $row of this.$gridBody.rows) {
-            if (!$row.classList.contains('single') && !$row.classList.contains('collection'))
+            if (!EmbeddedItemRow.isItemRow($row))
                 continue;
-            const $cells = [...$row.cells];
-            moveInArray($cells, iShiftFrom, iShiftTo);
-            $row.replaceChildren(...$cells);
+            new EmbeddedItemRow($row).reorderColumns(iShiftFrom, iShiftTo);
         }
     }
     getColumnCheckboxStatuses() {
@@ -4504,24 +4787,19 @@ class GridBody {
     }
     collapseItem(descriptor) {
         const collapseRowItems = ($row) => {
-            const itemCopies = listSingleRowItemCopies($row);
-            if (!itemCopies)
+            const row = new EmbeddedItemRow($row);
+            const itemSequence = [...row.getItemSequence()];
+            if (itemSequence.length == 0)
                 return;
-            const [sequencePoint, $items, iColumns] = itemCopies;
-            const $prevRow = $row.previousElementSibling;
-            const $nextRow = $row.nextElementSibling;
-            $row.remove();
+            const [[sequencePoint, items]] = itemSequence;
+            const iColumns = items.map(([iColumn]) => iColumn);
+            const $items = items.map(([, $item]) => $item);
+            row.cut(this.withCompactIds);
             for (const $item of $items) {
                 const $disclosureButton = getItemDisclosureButton($item);
                 if ($disclosureButton) {
                     setItemDisclosureButtonState($disclosureButton, false);
                 }
-            }
-            if ($prevRow && $prevRow instanceof HTMLTableRowElement && $prevRow.classList.contains('collection') &&
-                $nextRow && $nextRow instanceof HTMLTableRowElement && $nextRow.classList.contains('collection')) {
-                const collection = new EmbeddedItemCollection($prevRow, this.withCompactIds);
-                const nextCollection = new EmbeddedItemCollection($nextRow, this.withCompactIds);
-                collection.merge(nextCollection);
             }
             this.insertItem(iColumns, sequencePoint, { isExpanded: false }, $items);
         };
@@ -4576,8 +4854,8 @@ class GridBody {
         var _a;
         const $rows = this.findRowsMatchingClassAndItemDescriptor('collection', descriptor);
         for (const $row of $rows) {
-            const collection = new EmbeddedItemCollection($row, this.withCompactIds);
-            const itemSequence = [...collection.getItemSequence()];
+            const row = new EmbeddedItemRow($row);
+            const itemSequence = [...row.getItemSequence()];
             const isEverythingBetweenTargetPositionsHidden = [true];
             for (const [point, columnItems] of itemSequence) {
                 if (isEqualItemDescriptor(descriptor, point)) {
@@ -4669,8 +4947,8 @@ class GridBody {
                 setItemDisclosureButtonState($disclosureButton, true);
             }
         }
-        const collection = new EmbeddedItemCollection($row, this.withCompactIds);
-        collection.remove($items);
+        const row = new EmbeddedItemRow($row);
+        row.remove($items, this.withCompactIds);
         const iColumns = items.map(([iColumn]) => iColumn);
         this.insertItem(iColumns, point, { isExpanded: true, batchItem, usernames }, $items);
     }
@@ -4689,37 +4967,35 @@ class GridBody {
             else {
                 writeCollapsedItemFlow($flow, this.server, sequencePoint.type, sequencePoint.id);
             }
-            const $checkbox = getItemCheckbox($item);
-            if ($checkbox) {
-                this.checkboxHandler.listen($checkbox);
-            }
-            const $disclosureButton = getItemDisclosureButton($item);
-            $disclosureButton?.addEventListener('click', this.wrappedItemDisclosureButtonListener);
         }
         return true;
     }
     insertItemElements(iColumns, sequencePoint, isExpanded, $items) {
         const insertionRowInfo = this.findInsertionRow(sequencePoint);
         if (isExpanded) {
-            const $row = this.makeRow();
-            {
-                let $rowBefore;
-                if (insertionRowInfo.type == 'betweenRows') {
-                    $rowBefore = insertionRowInfo.$rowBefore;
+            let needStretch = false;
+            const $row = makeElement('tr')()();
+            if (insertionRowInfo.type == 'betweenRows') {
+                insertionRowInfo.$rowBefore.after($row);
+                if (EmbeddedItemRow.isItemRow(insertionRowInfo.$rowBefore)) {
+                    needStretch || (needStretch = new EmbeddedItemRow(insertionRowInfo.$rowBefore).isStretched);
                 }
-                else {
-                    $rowBefore = insertionRowInfo.$row;
-                    const collection = new EmbeddedItemCollection($rowBefore, this.withCompactIds);
-                    collection.split(sequencePoint);
+                if (insertionRowInfo.$rowAfter &&
+                    EmbeddedItemRow.isItemRow(insertionRowInfo.$rowAfter)) {
+                    needStretch || (needStretch = new EmbeddedItemRow(insertionRowInfo.$rowAfter).isStretched);
                 }
-                $rowBefore.after($row);
             }
-            $row.classList.add('single');
+            else {
+                const insertionRow = new EmbeddedItemRow(insertionRowInfo.$row);
+                insertionRow.paste($row, sequencePoint, this.withCompactIds);
+                needStretch = insertionRow.isStretched;
+            }
+            const row = EmbeddedItemRow.fromEmptyRow($row, 'single', this.columnHues);
             updateTimelineOnInsert($row, iColumns);
-            for (const [iItem, iColumn] of iColumns.entries()) {
-                const $cell = $row.cells[iColumn];
-                const $item = $items[iItem];
-                $cell.append($item);
+            row.put(iColumns, $items);
+            row.updateStretchButtonHiddenState();
+            if (needStretch) {
+                row.stretch(this.withCompactIds);
             }
         }
         else {
@@ -4732,38 +5008,29 @@ class GridBody {
                     $row = insertionRowInfo.$rowAfter;
                 }
                 else {
-                    $row = this.makeRow();
-                    $row.classList.add('collection');
+                    $row = makeElement('tr')()();
                     insertionRowInfo.$rowBefore.after($row);
+                    EmbeddedItemRow.fromEmptyRow($row, 'collection', this.columnHues);
                 }
             }
             else {
                 $row = insertionRowInfo.$row;
             }
             updateTimelineOnInsert($row, iColumns);
-            const collection = new EmbeddedItemCollection($row, this.withCompactIds);
-            collection.insert(sequencePoint, iColumns, $items);
+            const row = new EmbeddedItemRow($row);
+            row.insert(sequencePoint, iColumns, $items, this.withCompactIds);
         }
     }
-    makeRow() {
-        const $row = makeElement('tr')()();
-        for (const uid of this.columnUids) {
-            const $cell = $row.insertCell();
-            if (uid != null) {
-                const hue = getHueFromUid(uid);
-                $cell.style.setProperty('--hue', String(hue));
-            }
-        }
-        return $row;
+    get columnHues() {
+        return this.columnUids.map(uid => uid == null ? null : getHueFromUid(uid));
     }
     findInsertionRow(sequencePoint) {
         for (let i = this.$gridBody.rows.length - 1; i >= 0; i--) {
             const $row = this.$gridBody.rows[i];
             const $rowAfter = this.$gridBody.rows[i + 1];
-            if ($row.classList.contains('single') ||
-                $row.classList.contains('collection')) {
-                const collection = new EmbeddedItemCollection($row, this.withCompactIds);
-                const [greaterCollectionPoint, lesserCollectionPoint] = collection.getBoundarySequencePoints();
+            if (EmbeddedItemRow.isItemRow($row)) {
+                const row = new EmbeddedItemRow($row);
+                const [greaterCollectionPoint, lesserCollectionPoint] = row.getBoundarySequencePoints();
                 if (!greaterCollectionPoint || !lesserCollectionPoint)
                     continue;
                 if (isGreaterElementSequencePoint(sequencePoint, greaterCollectionPoint))
@@ -4812,8 +5079,8 @@ class GridBody {
         }
         writeSeparatorSequencePoint($separator, date);
         const $cell = $separator.insertCell();
-        $cell.append(makeDiv('month')(makeElement('time')()(yearMonthString)));
-        $cell.colSpan = this.nColumns + 1;
+        $cell.append(makeDiv()(makeElement('time')()(yearMonthString)));
+        $cell.colSpan = this.nColumns + 2;
         return $separator;
     }
     findRowsMatchingClassAndItemDescriptor(className, descriptor) {
@@ -4829,66 +5096,51 @@ class GridBody {
         }
         return $rows;
     }
-    async toggleItemDisclosureWithButton($disclosureButton) {
-        if (!($disclosureButton instanceof HTMLButtonElement))
-            return;
-        const $item = $disclosureButton.closest('.item');
+    async toggleItemDisclosureWithButton($button) {
+        const $item = $button.closest('.item');
         if (!($item instanceof HTMLElement))
             return;
         const itemDescriptor = readItemDescriptor($item);
         if (!itemDescriptor)
             return;
-        if (getItemDisclosureButtonState($disclosureButton)) {
+        if (getItemDisclosureButtonState($button)) {
             this.collapseItem(itemDescriptor);
         }
         else {
-            $disclosureButton.disabled = true;
+            $button.disabled = true;
             await this.expandItem(itemDescriptor);
-            $disclosureButton.disabled = false;
+            $button.disabled = false;
         }
-        const $newItem = $disclosureButton.closest('.item');
+        const $newItem = $button.closest('.item');
         if ($newItem instanceof HTMLElement) {
             $newItem.scrollIntoView({ block: 'nearest' }); // focusing on button is enough to scroll it in, but it's then too close to the edge
         }
-        $disclosureButton.focus();
+        $button.focus();
+    }
+    toggleRowStretchWithButton($button) {
+        const $row = $button.closest('tr');
+        if (!$row)
+            return;
+        const row = new EmbeddedItemRow($row);
+        if (row.isStretched) {
+            row.shrink(this.withCompactIds);
+        }
+        else {
+            row.stretch(this.withCompactIds);
+        }
+        $button.focus();
     }
 }
 function getSingleRowLeadingItem($row) {
-    const itemCopies = listSingleRowItemCopies($row);
-    if (!itemCopies)
+    const row = new EmbeddedItemRow($row);
+    const itemSequence = [...row.getItemSequence()];
+    if (itemSequence.length == 0)
         return null;
-    const [, $items] = itemCopies;
-    if ($items.length == 0)
+    const [[, items]] = itemSequence;
+    if (items.length == 0)
         return null;
-    return $items[0];
-}
-function listSingleRowItemCopies($row) {
-    let sequencePoint = null;
-    const $items = [];
-    const iColumns = [];
-    for (let iColumn = 0; iColumn < $row.cells.length; iColumn++) {
-        const $cell = $row.cells[iColumn];
-        const $item = $cell.querySelector(':scope > .item');
-        if (!($item instanceof HTMLElement))
-            continue;
-        if (!sequencePoint) {
-            sequencePoint = readItemSequencePoint($item);
-            if (!sequencePoint)
-                return null;
-        }
-        else {
-            const comparedSequencePoint = readItemSequencePoint($item);
-            if (!comparedSequencePoint)
-                return null;
-            if (!isEqualItemSequencePoint(sequencePoint, comparedSequencePoint))
-                return null;
-        }
-        $items.push($item);
-        iColumns.push(iColumn);
-    }
-    if (!sequencePoint)
-        return null;
-    return [sequencePoint, $items, iColumns];
+    const [[, $item]] = items;
+    return $item;
 }
 function isChangesetOpenedClosedPair($openedItem, $closedItem) {
     if ($openedItem.dataset.type != 'changeset' || $closedItem.dataset.type != 'changesetClose')
@@ -4956,14 +5208,12 @@ class Grid {
     set withClosedChangesets(value) {
         this.body.withClosedChangesets = value;
     }
-    set inOneColumn(value) {
-        this.body.inOneColumn = value;
-    }
     setColumns(columnUids) {
         const nColumns = columnUids.length;
         this.body.setColumns(columnUids);
         this.$grid.style.setProperty('--columns', String(nColumns));
         this.$colgroup.replaceChildren();
+        this.$colgroup.append(makeElement('col')('all')());
         for (let i = 0; i < nColumns; i++) {
             this.$colgroup.append(makeElement('col')()());
         }
@@ -4987,6 +5237,12 @@ class Grid {
         for (const id of this.body.listSelectedChangesetIds()) {
             this.body.collapseItem({ type: 'changeset', id });
         }
+    }
+    stretchAllItems() {
+        this.body.stretchAllItems();
+    }
+    shrinkAllItems() {
+        this.body.shrinkAllItems();
     }
     listSelectedChangesetIds() {
         return this.body.listSelectedChangesetIds();
@@ -5189,7 +5445,7 @@ class GridSettingsPanel extends Panel {
                 $label.title = labelTitle;
             return makeDiv('input-group')($label);
         };
-        $section.append(makeElement('h2')()(`Grid settings`), makeGridCheckbox(value => this.grid.withCompactIds = value, `compact ids in collections`), makeGridCheckbox(value => this.grid.withClosedChangesets = value, `changeset close events`, `visible only if there's some other event between changeset opening and closing`), makeGridCheckbox(value => this.grid.inOneColumn = value, `one column`));
+        $section.append(makeElement('h2')()(`Grid settings`), makeGridCheckbox(value => this.grid.withCompactIds = value, `compact ids in collections`), makeGridCheckbox(value => this.grid.withClosedChangesets = value, `changeset close events`, `visible only if there's some other event between changeset opening and closing`));
     }
 }
 
@@ -5414,20 +5670,18 @@ function writeFooter($root, $footer, $netDialog, server, grid, more) {
         $toolbar.append(makeDiv('input-group')(makeLabel()($checkbox, ` add expanded items`)));
     }
     if (grid) {
-        const $button = makeElement('button')()(`+`);
-        $button.title = `Expand selected items`;
-        $button.onclick = () => {
-            grid.expandSelectedItems();
-        };
-        $toolbar.append($button);
-    }
-    if (grid) {
-        const $button = makeElement('button')()(`−`);
-        $button.title = `Collapse selected items`;
-        $button.onclick = () => {
-            grid.collapseSelectedItems();
-        };
-        $toolbar.append($button);
+        const buttonData = [
+            [`+`, `Expand selected items`, () => { grid.expandSelectedItems(); }],
+            [`−`, `Collapse selected items`, () => { grid.collapseSelectedItems(); }],
+            [`<*>`, `Stretch all items`, () => { grid.stretchAllItems(); }],
+            [`>*<`, `Shrink all items`, () => { grid.shrinkAllItems(); }],
+        ];
+        for (const [label, title, action] of buttonData) {
+            const $button = makeElement('button')()(label);
+            $button.title = title;
+            $button.onclick = action;
+            $toolbar.append($button);
+        }
     }
     for (const $button of $panelButtons) {
         $toolbar.append($button);

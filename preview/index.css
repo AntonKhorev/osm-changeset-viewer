@@ -103,22 +103,32 @@ body > .symbols {
 
 /*** css/grid.css ***/
 .ui .grid {
+	--all-width: calc(var(--icon-size) + 2 * var(--spacer));
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
 	--icon-size: 1.25rem;
 	--tab-height: calc(1rem + 2 * var(--spacer));
+	--accent-saturation: 50%;
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
-	min-width: calc(var(--column-min-width) * var(--columns) + var(--adder-width));
+	min-width: calc(var(--all-width) + var(--column-min-width) * var(--columns) + var(--adder-width));
+}
+@media (prefers-color-scheme: dark) {
+	.ui .grid {
+		--accent-saturation: 70%;
+	}
 }
 .ui .grid :is(td,th) {
 	padding: 0;
 	vertical-align: top;
 }
 .ui .grid :is(td,th,.item>.icon,.item>.ballon) {
-	--temp-accent-color: hsl(var(--hue) 50% 50%);
+	--temp-accent-color: hsl(var(--hue) var(--accent-saturation) 50%);
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
+}
+.ui .grid col.all {
+	width: var(--all-width);
 }
 .ui .grid col.adder {
 	width: var(--adder-width);
@@ -310,21 +320,39 @@ body > .symbols {
 	user-select: none;
 }
 
-/*** separator ***/
-.ui .grid tbody tr.separator td .month {
-	padding: var(--spacer) 0;
-	text-align: center;
+/*** stretched column ***/
+.ui .grid tbody tr td[colspan] > * {
 	position: sticky;
 	left: 0;
 	width: var(--main-width);
-	height: 1rem;
 }
-.ui .grid tbody tr.separator td .month time {
+.ui .grid tbody tr td:first-child > * > button.stretch {
+	position: absolute;
+	box-sizing: border-box;
+	width: var(--icon-size);
+	top: 2px;
+	bottom: 2px;
+	right: var(--spacer);
+	padding: 0;
+	border: var(--frame-line);
+	background: transparent;
+}
+.ui .grid tbody tr td:first-child > * > button.stretch:hover {
+	background: var(--hover-color);
+}
+
+/*** separator ***/
+.ui .grid tbody tr.separator td > * {
+	height: 1rem;
+	padding: var(--spacer) 0;
+	text-align: center;
+}
+.ui .grid tbody tr.separator td > * time {
 	background: canvas;
 	padding: 0 .5em;
 	color: var(--light-text-color);
 }
-.ui .grid tbody tr.separator td .month::before {
+.ui .grid tbody tr.separator td > *::before {
 	content: '';
 	position: absolute;
 	z-index: -1;
@@ -344,11 +372,15 @@ body > .symbols {
 	--item-spacer: 4px;
 	position: relative;
 }
-.ui .grid tbody tr.single td {
+.ui .grid tbody tr.single td > * {
 	padding-left: calc(var(--spacer) + var(--icon-size));
 }
-.ui .grid tbody tr.collection td {
+.ui .grid tbody tr.collection td > * {
 	padding-left: calc(var(--spacer) + var(--icon-size) + var(--item-spacer));
+}
+.ui .grid tbody tr:is(.single,.collection) td[colspan] > * {
+	padding-right: calc(var(--item-spacer) + var(--icon-size) + var(--item-spacer));
+	box-sizing: border-box;
 }
 .ui .grid tbody tr:is(.single,.collection) td.with-timeline-above::before,
 .ui .grid tbody tr:is(.single,.collection) td.with-timeline-below::after {
@@ -376,8 +408,8 @@ body > .symbols {
 .ui .grid tbody tr.collection {
 	line-height: 24px;
 }
-.ui .grid tbody tr.single td > .item > .icon:first-child,
-.ui .grid tbody tr.collection td > .icon:first-child {
+.ui .grid tbody tr.single td > * > .item > .icon:first-child,
+.ui .grid tbody tr.collection td > * > .icon:first-child {
 	position: absolute;
 	left: var(--spacer);
 	top: var(--icon-vertical-margin);
