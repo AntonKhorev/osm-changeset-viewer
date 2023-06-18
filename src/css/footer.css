@@ -70,7 +70,7 @@
 }
 .ui footer > .tools > section > fieldset {
 	display: inline-flex;
-	gap: 1rem;
+	gap: .5rem;
 }
 .ui footer > .tools > section > fieldset > .input-group {
 	padding: 0;
