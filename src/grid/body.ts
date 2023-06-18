@@ -43,6 +43,9 @@ export default class GridBody {
 	get nColumns() {
 		return this.columnUids.length
 	}
+	get withTotalColumn(): boolean {
+		return this.nColumns>=2
+	}
 	set onItemSelect(callback: ()=>void) {
 		this.checkboxHandler.onItemSelect=callback
 	}
@@ -462,13 +465,14 @@ export default class GridBody {
 			this.$gridBody.prepend($separator)
 		}
 		writeSeparatorSequencePoint($separator,date)
+		if (!this.withTotalColumn) $separator.insertCell()
 		const $cell=$separator.insertCell()
 		$cell.append(
 			makeDiv()(
 				makeElement('time')()(yearMonthString)
 			)
 		)
-		$cell.colSpan=this.nColumns+2
+		$cell.colSpan=this.nColumns+1+(this.withTotalColumn?1:0)
 		return $separator
 	}
 	private findRowsMatchingClassAndItemDescriptor(className: string, descriptor: ItemDescriptor): Iterable<HTMLTableRowElement> {

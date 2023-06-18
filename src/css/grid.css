@@ -217,6 +217,9 @@
 }
 
 /*** stretched column ***/
+.ui .grid.without-total-column :is(thead,tbody) tr > :first-child {
+	display: none;
+}
 .ui .grid tbody tr td[colspan] > * {
 	position: sticky;
 	left: 0;

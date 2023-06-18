@@ -66,15 +66,20 @@ export default class Grid {
 	set withClosedChangesets(value: boolean) {
 		this.body.withClosedChangesets=value
 	}
+	get withTotalColumn(): boolean {
+		return this.body.withTotalColumn
+	}
 	private setColumns(columnUids: (number|null)[]) {
-		const nColumns=columnUids.length
 		this.body.setColumns(columnUids)
-		this.$grid.style.setProperty('--columns',String(nColumns))
+		this.$grid.classList.toggle('without-total-column',!this.withTotalColumn)
+		this.$grid.style.setProperty('--columns',String(this.body.nColumns))
 		this.$colgroup.replaceChildren()
-		this.$colgroup.append(
-			makeElement('col')('all')()
-		)
-		for (let i=0;i<nColumns;i++) {
+		if (this.withTotalColumn) {
+			this.$colgroup.append(
+				makeElement('col')('all')()
+			)
+		}
+		for (let i=0;i<this.body.nColumns;i++) {
 			this.$colgroup.append(
 				makeElement('col')()()
 			)
