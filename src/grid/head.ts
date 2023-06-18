@@ -391,15 +391,15 @@ export default class GridHead {
 	// }
 	private rewriteUserEntriesInHead(): void {
 		this.$tabRow.replaceChildren(
-			makeElement('th')()(
+			makeElement('th')('all')(
 				makeAllTab()
 			)
 		)
 		this.$cardRow.replaceChildren(
-			makeElement('td')()()
+			makeElement('td')('all')()
 		)
 		this.$selectorRow.replaceChildren(
-			makeElement('td')()(
+			makeElement('td')('all')(
 				makeUserSelector($checkbox=>{
 					const checked=$checkbox.checked
 					for (const iColumn of this.userEntries.keys()) {

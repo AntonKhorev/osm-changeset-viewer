@@ -102,6 +102,9 @@
 	background: canvas;
 	box-shadow: 0 4px 4px -4px #AAA;
 }
+.ui .grid thead th.all .tab {
+	border-color: transparent;
+}
 .ui .grid thead th .tab > * {
 	position: absolute;
 }
