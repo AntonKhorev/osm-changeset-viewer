@@ -206,6 +206,10 @@ body > .symbols {
 	background: canvas;
 	box-shadow: 0 4px 4px -4px #AAA;
 }
+.ui .grid thead th.all .tab {
+	border-color: transparent;
+	cursor: unset;
+}
 .ui .grid thead th .tab > * {
 	position: absolute;
 }
@@ -321,6 +325,9 @@ body > .symbols {
 }
 
 /*** stretched column ***/
+.ui .grid.without-total-column :is(thead,tbody) tr > :first-child {
+	display: none;
+}
 .ui .grid tbody tr td[colspan] > * {
 	position: sticky;
 	left: 0;

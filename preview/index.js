@@ -3459,12 +3459,15 @@ class GridHead {
         this.restartStream();
     }
     updateSelectors() {
+        const updateCheckboxState = ($checkbox, checked, unchecked) => {
+            $checkbox.checked = (checked && !unchecked);
+            $checkbox.indeterminate = (checked && unchecked);
+        };
         const [hasChecked, hasUnchecked, selectedChangesetIds] = this.getColumnCheckboxStatuses();
         for (const [iColumn, { $selector }] of this.userEntries.entries()) {
             const $checkbox = $selector.querySelector('input[type=checkbox]');
             if ($checkbox instanceof HTMLInputElement) {
-                $checkbox.checked = (hasChecked[iColumn] && !hasUnchecked[iColumn]);
-                $checkbox.indeterminate = (hasChecked[iColumn] && hasUnchecked[iColumn]);
+                updateCheckboxState($checkbox, hasChecked[iColumn], hasUnchecked[iColumn]);
             }
             const $count = $selector.querySelector('output');
             if ($count) {
@@ -3474,6 +3477,12 @@ class GridHead {
                 else {
                     $count.replaceChildren(`${selectedChangesetIds[iColumn].size} selected`);
                 }
+            }
+        }
+        {
+            const $checkbox = this.$selectorRow.querySelector(':scope > td:first-child input[type=checkbox]');
+            if ($checkbox instanceof HTMLInputElement) {
+                updateCheckboxState($checkbox, hasChecked.some(v => v), hasUnchecked.some(v => v));
             }
         }
     }
@@ -3645,9 +3654,14 @@ class GridHead {
     // 	this.$adderCell.before(userEntry.$card)
     // }
     rewriteUserEntriesInHead() {
-        this.$tabRow.replaceChildren(makeElement('th')()(makeAllTab()));
-        this.$cardRow.replaceChildren(makeElement('td')()());
-        this.$selectorRow.replaceChildren(makeElement('td')()());
+        this.$tabRow.replaceChildren(makeElement('th')('all')(makeAllTab()));
+        this.$cardRow.replaceChildren(makeElement('td')('all')());
+        this.$selectorRow.replaceChildren(makeElement('td')('all')(makeUserSelector($checkbox => {
+            const checked = $checkbox.checked;
+            for (const iColumn of this.userEntries.keys()) {
+                this.triggerColumnCheckboxes(iColumn, checked);
+            }
+        })));
         const gridHeadCells = [];
         for (const userEntry of this.userEntries) {
             const { $tab, $card, $selector } = userEntry;
@@ -4655,6 +4669,9 @@ class GridBody {
     get nColumns() {
         return this.columnUids.length;
     }
+    get withTotalColumn() {
+        return this.nColumns >= 2;
+    }
     set onItemSelect(callback) {
         this.checkboxHandler.onItemSelect = callback;
     }
@@ -5078,9 +5095,11 @@ class GridBody {
             this.$gridBody.prepend($separator);
         }
         writeSeparatorSequencePoint($separator, date);
+        if (!this.withTotalColumn)
+            $separator.insertCell();
         const $cell = $separator.insertCell();
         $cell.append(makeDiv()(makeElement('time')()(yearMonthString)));
-        $cell.colSpan = this.nColumns + 2;
+        $cell.colSpan = this.nColumns + 1 + (this.withTotalColumn ? 1 : 0);
         return $separator;
     }
     findRowsMatchingClassAndItemDescriptor(className, descriptor) {
@@ -5171,6 +5190,7 @@ class Grid {
     constructor(cx, db, worker, more, sendUpdatedUserQueriesReceiver) {
         this.$grid = makeElement('table')('grid')();
         this.addExpandedItems = false;
+        this.onExternalControlsStateUpdate = () => { };
         this.$colgroup = makeElement('colgroup')()();
         this.body = new GridBody(cx.server, db.getSingleItemReader());
         this.head = new GridHead(cx, db, worker, columnUids => this.setColumns(columnUids), (iShiftFrom, iShiftTo) => this.body.reorderColumns(iShiftFrom, iShiftTo), () => this.body.getColumnCheckboxStatuses(), (iColumn, isChecked) => this.body.triggerColumnCheckboxes(iColumn, isChecked), sendUpdatedUserQueriesReceiver, () => {
@@ -5207,16 +5227,22 @@ class Grid {
     set withClosedChangesets(value) {
         this.body.withClosedChangesets = value;
     }
+    get withTotalColumn() {
+        return this.body.withTotalColumn;
+    }
     setColumns(columnUids) {
-        const nColumns = columnUids.length;
         this.body.setColumns(columnUids);
-        this.$grid.style.setProperty('--columns', String(nColumns));
+        this.$grid.classList.toggle('without-total-column', !this.withTotalColumn);
+        this.$grid.style.setProperty('--columns', String(this.body.nColumns));
         this.$colgroup.replaceChildren();
-        this.$colgroup.append(makeElement('col')('all')());
-        for (let i = 0; i < nColumns; i++) {
+        if (this.withTotalColumn) {
+            this.$colgroup.append(makeElement('col')('all')());
+        }
+        for (let i = 0; i < this.body.nColumns; i++) {
             this.$colgroup.append(makeElement('col')()());
         }
         this.$colgroup.append(makeElement('col')('adder')());
+        this.onExternalControlsStateUpdate();
     }
     async receiveUpdatedUserQueries(userQueries) {
         await this.head.receiveUpdatedUserQueries(userQueries);
@@ -5669,18 +5695,20 @@ function writeFooter($root, $footer, $netDialog, server, grid, more) {
         $toolbar.append(makeDiv('input-group')(makeLabel()($checkbox, ` add expanded items`)));
     }
     if (grid) {
-        const buttonData = [
-            [`+`, `Expand selected items`, () => { grid.expandSelectedItems(); }],
-            [`−`, `Collapse selected items`, () => { grid.collapseSelectedItems(); }],
-            [`<*>`, `Stretch all items`, () => { grid.stretchAllItems(); }],
-            [`>*<`, `Shrink all items`, () => { grid.shrinkAllItems(); }],
-        ];
-        for (const [label, title, action] of buttonData) {
+        const addButton = (label, title, action) => {
             const $button = makeElement('button')()(label);
             $button.title = title;
             $button.onclick = action;
             $toolbar.append($button);
-        }
+            return $button;
+        };
+        addButton(`+`, `Expand selected items`, () => { grid.expandSelectedItems(); });
+        addButton(`−`, `Collapse selected items`, () => { grid.collapseSelectedItems(); });
+        const $stretchAllButton = addButton(`<*>`, `Stretch all items`, () => { grid.stretchAllItems(); });
+        const $shrinkAllButton = addButton(`>*<`, `Shrink all items`, () => { grid.shrinkAllItems(); });
+        (grid.onExternalControlsStateUpdate = () => {
+            $stretchAllButton.disabled = $shrinkAllButton.disabled = !grid.withTotalColumn;
+        })();
     }
     for (const $button of $panelButtons) {
         $toolbar.append($button);
