@@ -154,6 +154,10 @@ export function writeExpandedItemFlow(
 	{type,item}: MuxBatchItem,
 	usernames: Map<number, string>
 ): void {
+	const optionalize=(name:string,$e:HTMLElement)=>{
+		$e.dataset.optional=name
+		return $e
+	}
 	const makeBadge=(contents:(string|HTMLElement)[],title?:string,isEmpty=false)=>{
 		const $badge=makeElement('span')('badge')(...contents)
 		if (title) $badge.title=title
@@ -213,8 +217,8 @@ export function writeExpandedItemFlow(
 	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
-			makeLink(String(id),href),` `,
-			makeBadge([makeLink(`api`,apiHref)])
+			optionalize('id',makeLink(String(id),href)),` `,
+			optionalize('api',makeBadge([makeLink(`api`,apiHref)]))
 		)
 	}
 	const rewriteWithChangesetLinks=(id: number)=>{
@@ -234,16 +238,16 @@ export function writeExpandedItemFlow(
 	if (type=='user') {
 		date=item.createdAt
 		$flow.replaceChildren(
-			`account created`
+			optionalize('id',makeElement('span')()(`account created`)) // abuse id slot for this text
 		)
 	} else if (type=='changeset' || type=='changesetClose') {
 		date = type=='changesetClose' ? item.closedAt : item.createdAt
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
-			` `,makeEditorBadgeOrIcon(item.tags.created_by),
-			` `,makeSourceBadge(item.tags.source),
-			` `,makeBadge([`📝 ${item.changes.count}`],`number of changes`),
-			` `,makeCommentsBadge(item.comments.count),
+			` `,optionalize('editor',makeEditorBadgeOrIcon(item.tags.created_by)),
+			` `,optionalize('source',makeSourceBadge(item.tags.source)),
+			` `,optionalize('changes',makeBadge([`📝 ${item.changes.count}`],`number of changes`)),
+			` `,optionalize('comments',makeCommentsBadge(item.comments.count)),
 			` `,makeElement('span')()(item.tags?.comment ?? '')
 		)
 	} else if (type=='note') {
@@ -291,9 +295,11 @@ export function writeExpandedItemFlow(
 	} else {
 		return
 	}
-	$flow.prepend(
-		date?makeDateOutput(date):`???`,` `
-	)
+	if (date) {
+		$flow.prepend(
+			optionalize('date',makeDateOutput(date)),` `
+		)
+	}
 	if (from.length>0) {
 		$flow.prepend(
 			makeElement('span')('from')(...from),` `

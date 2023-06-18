@@ -11,6 +11,7 @@ export default class ItemOptions {
 	api     : boolean
 	editor  : boolean
 	source  : boolean
+	changes : boolean
 	comments: boolean
 	constructor(isExpanded: boolean) {
 		if (isExpanded) {
@@ -19,6 +20,7 @@ export default class ItemOptions {
 			this.api     =true
 			this.editor  =true
 			this.source  =true
+			this.changes =true
 			this.comments=true
 		} else {
 			this.date    =false
@@ -26,6 +28,7 @@ export default class ItemOptions {
 			this.api     =false
 			this.editor  =false
 			this.source  =false
+			this.changes =false
 			this.comments=false
 		}
 	}
@@ -36,6 +39,7 @@ export default class ItemOptions {
 			{ get: ()=>this.api     , set: v=>this.api     =v, title: 'api'     , label: 'api', },
 			{ get: ()=>this.editor  , set: v=>this.editor  =v, title: 'editor'  , label: '🛠️', },
 			{ get: ()=>this.source  , set: v=>this.source  =v, title: 'source'  , label: '[]', },
+			{ get: ()=>this.changes , set: v=>this.changes =v, title: 'changes' , label: '📝', },
 			{ get: ()=>this.comments, set: v=>this.comments=v, title: 'comments', label: '💬', },
 		]
 	}
