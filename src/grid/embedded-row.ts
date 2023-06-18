@@ -2,6 +2,7 @@ import ItemRow from './row'
 import ItemCollectionRow from './collection-row'
 import type {ItemSequencePoint} from './info'
 import {isItem} from './info'
+import {makeElement, makeDiv} from '../util/html'
 
 export default class EmbeddedItemRow {
 	row: ItemRow
@@ -20,7 +21,11 @@ export default class EmbeddedItemRow {
 		$row: HTMLTableRowElement,
 		className: string, columnHues: (number|null)[]
 	): EmbeddedItemRow {
-		$row.insertCell()
+		$row.insertCell().append(
+			makeDiv()(
+				makeElement('button')('stretch')(`<>`)
+			)
+		)
 		$row.classList.add(className)
 		for (const hue of columnHues) {
 			const $cell=$row.insertCell()

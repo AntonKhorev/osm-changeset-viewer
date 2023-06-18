@@ -217,13 +217,34 @@
 }
 
 /*** stretched column ***/
+.ui .grid tbody tr {
+	height: 100%;
+}
+.ui .grid tbody tr td {
+	height: 100%;
+}
 .ui .grid tbody tr td > * {
 	position: relative;
+	height: 100%;
 }
 .ui .grid tbody tr td[colspan] > * {
 	position: sticky;
 	left: 0;
 	width: var(--main-width);
+}
+.ui .grid tbody tr td:first-child > * > button.stretch {
+	position: absolute;
+	box-sizing: border-box;
+	height: calc(100% - 4px);
+	width: var(--icon-size);
+	top: 2px;
+	right: var(--spacer);
+	padding: 0;
+	border: var(--frame-line);
+	background: transparent;
+}
+.ui .grid tbody tr td:first-child > * > button.stretch:hover {
+	background: var(--hover-color);
 }
 
 /*** separator ***/
@@ -260,15 +281,11 @@
 .ui .grid tbody tr.single td > * {
 	padding-left: calc(var(--spacer) + var(--icon-size));
 }
-.ui .grid tbody tr.single td[colspan] > * {
-	padding-right: var(--spacer);
-	box-sizing: border-box;
-}
 .ui .grid tbody tr.collection td > * {
 	padding-left: calc(var(--spacer) + var(--icon-size) + var(--item-spacer));
 }
-.ui .grid tbody tr.collection td[colspan] > * {
-	padding-right: var(--spacer);
+.ui .grid tbody tr:is(.single,.collection) td[colspan] > * {
+	padding-right: calc(var(--item-spacer) + var(--icon-size) + var(--item-spacer));
 	box-sizing: border-box;
 }
 .ui .grid tbody tr:is(.single,.collection) td.with-timeline-above::before,
