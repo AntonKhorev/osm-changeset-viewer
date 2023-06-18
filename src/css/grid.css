@@ -224,7 +224,6 @@
 	height: 100%;
 }
 .ui .grid tbody tr td > * {
-	position: relative;
 	height: 100%;
 }
 .ui .grid tbody tr td[colspan] > * {
