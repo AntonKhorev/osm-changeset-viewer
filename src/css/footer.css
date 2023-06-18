@@ -68,6 +68,13 @@
 .ui footer > .tools > section .input-group {
 	padding: 0 var(--spacer);
 }
+.ui footer > .tools > section > fieldset {
+	display: inline-flex;
+	gap: 1rem;
+}
+.ui footer > .tools > section > fieldset > .input-group {
+	padding: 0;
+}
 
 .ui footer > .list > section h2 {
 	margin: 0;

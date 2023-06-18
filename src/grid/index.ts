@@ -1,10 +1,13 @@
 import GridHead from './head'
 import GridBody from './body'
+import ItemOptions from './item-options'
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader} from '../db'
 import type More from '../more'
 import type {ValidUserQuery} from '../osm'
 import {makeElement} from '../util/html'
+
+export {ItemOptions}
 
 export default class Grid {
 	$grid=makeElement('table')('grid')()
@@ -69,6 +72,12 @@ export default class Grid {
 	}
 	get withTotalColumn(): boolean {
 		return this.body.withTotalColumn
+	}
+	get expandedItemOptions(): ItemOptions {
+		return this.body.expandedItemOptions
+	}
+	get collapsedItemOptions(): ItemOptions {
+		return this.body.collapsedItemOptions
 	}
 	private setColumns(columnUids: (number|null)[]) {
 		this.body.setColumns(columnUids)

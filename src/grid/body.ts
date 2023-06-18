@@ -14,6 +14,7 @@ import {getHueFromUid} from './colorizer'
 import EmbeddedItemRow from './embedded-row'
 import {updateTimelineOnInsert} from './timeline'
 import GridBodyCheckboxHandler from './body-checkbox'
+import ItemOptions from './item-options'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
@@ -23,6 +24,8 @@ export default class GridBody {
 	readonly $gridBody=makeElement('tbody')()()
 	withCompactIds=false
 	withClosedChangesets=false
+	expandedItemOptions=new ItemOptions(true)
+	collapsedItemOptions=new ItemOptions(false)
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
 	private columnUids: (number|null)[] = []
 	constructor(
