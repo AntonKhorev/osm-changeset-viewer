@@ -4340,7 +4340,7 @@ class EmbeddedItemRow {
     updateIds(withCompactIds) {
         for (const $cell of this.row.$row.cells) {
             let lastId = '';
-            for (const $item of $cell.children) {
+            for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
                 if (!isItem($item))
                     continue;
                 if ($item.hidden)
@@ -5128,7 +5128,6 @@ class GridBody {
         else {
             row.stretch(this.withCompactIds);
         }
-        $button.focus();
     }
 }
 function getSingleRowLeadingItem($row) {
