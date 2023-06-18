@@ -142,6 +142,11 @@ export default class EmbeddedItemRow {
 			}
 		}
 	}
+	updateStretchButtonHiddenState(): void {
+		const $stretchButton=this.row.$row.querySelector(':scope > :first-child > * > button.stretch')
+		if (!($stretchButton instanceof HTMLButtonElement)) return
+		$stretchButton.hidden=!this.row.$row.querySelector('.item:not([hidden])')
+	}
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
 		yield *this.row.getItemSequence()
 	}

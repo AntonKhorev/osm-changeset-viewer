@@ -150,6 +150,10 @@ export default class GridBody {
 				$itemRowAbove=undefined
 			}
 		}
+		for (const $row of this.$gridBody.rows) {
+			if (!EmbeddedItemRow.isItemRow($row)) continue
+			new EmbeddedItemRow($row).updateStretchButtonHiddenState()
+		}
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
 		for (const $row of this.$gridBody.rows) {
@@ -379,6 +383,7 @@ export default class GridBody {
 			const row=EmbeddedItemRow.fromEmptyRow($row,'single',this.columnHues)
 			updateTimelineOnInsert($row,iColumns)
 			row.put(iColumns,$items)
+			row.updateStretchButtonHiddenState()
 			if (needStretch) {
 				row.stretch(this.withCompactIds)
 			}
