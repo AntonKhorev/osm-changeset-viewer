@@ -17,6 +17,7 @@ export default class GridSettingsPanel extends Panel {
 		)=>{
 			const $checkbox=makeElement('input')()()
 			$checkbox.type='checkbox'
+			$checkbox.checked=initialValue
 			$checkbox.oninput=()=>{
 				setOption($checkbox.checked)
 				this.grid.updateTableAccordingToSettings()
