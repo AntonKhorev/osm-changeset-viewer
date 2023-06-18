@@ -196,7 +196,7 @@ export default class ItemCollectionRow extends ItemRow {
 	}
 }
 
-function removeSpaceBefore($e: HTMLElement): void {
+export function removeSpaceBefore($e: Element): void {
 	const $s=$e.previousSibling
 	if ($s?.nodeType!=document.TEXT_NODE) return
 	if ($s.textContent!=' ') return

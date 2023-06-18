@@ -1,5 +1,5 @@
-import ItemRow from './row'
-import ItemCollectionRow from './collection-row'
+import ItemRow, {getCellContainer} from './row'
+import ItemCollectionRow ,{removeSpaceBefore} from './collection-row'
 import type {ItemSequencePoint} from './info'
 import {isItem} from './info'
 import {makeElement, makeDiv} from '../util/html'
@@ -21,11 +21,7 @@ export default class EmbeddedItemRow {
 		$row: HTMLTableRowElement,
 		className: string, columnHues: (number|null)[]
 	): EmbeddedItemRow {
-		$row.insertCell().append(
-			makeDiv()(
-				makeElement('button')('stretch')(`<>`)
-			)
-		)
+		$row.insertCell()
 		$row.classList.add(className)
 		for (const hue of columnHues) {
 			const $cell=$row.insertCell()
@@ -33,7 +29,9 @@ export default class EmbeddedItemRow {
 				$cell.style.setProperty('--hue',String(hue))
 			}
 		}
-		return new EmbeddedItemRow($row)
+		const embeddedRow=new EmbeddedItemRow($row)
+		embeddedRow.addStretchButton()
+		return embeddedRow
 	}
 	static isItemRow($row: HTMLTableRowElement): boolean {
 		return (
@@ -51,12 +49,15 @@ export default class EmbeddedItemRow {
 		return this.row.getBoundarySequencePoints()
 	}
 	paste($row: HTMLTableRowElement, sequencePoint: ItemSequencePoint, withCompactIds: boolean): void {
+		this.removeStretchButton()
 		this.row.$row.after($row)
 		if (!(this.row instanceof ItemCollectionRow)) return
 		const splitRow=this.row.split(sequencePoint)
 		$row.after(splitRow.$row)
 		const splitEmbeddedRow=new EmbeddedItemRow(splitRow)
 		splitEmbeddedRow.updateIds(withCompactIds)
+		this.addStretchButton()
+		splitEmbeddedRow.addStretchButton()
 	}
 	cut(withCompactIds: boolean): void {
 		const $row=this.row.$row
@@ -73,9 +74,13 @@ export default class EmbeddedItemRow {
 				prevEmbeddedRow.row instanceof ItemCollectionRow &&
 				nextEmbeddedRow.row instanceof ItemCollectionRow
 			) {
+				prevEmbeddedRow.removeStretchButton()
+				nextEmbeddedRow.removeStretchButton()
 				prevEmbeddedRow.row.merge(nextEmbeddedRow.row)
 				nextEmbeddedRow.row.$row.remove()
 				prevEmbeddedRow.updateIds(withCompactIds)
+				prevEmbeddedRow.addStretchButton()
+				nextEmbeddedRow.addStretchButton()
 			}
 		}
 	}
@@ -84,25 +89,33 @@ export default class EmbeddedItemRow {
 	}
 	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[], withCompactIds: boolean): void {
 		if (!(this.row instanceof ItemCollectionRow)) throw new TypeError(`attempt to insert into non-collection row`)
+		this.removeStretchButton()
 		this.row.insert(sequencePoint,iColumns,$items)
 		this.updateIds(withCompactIds)
+		this.addStretchButton()
 	}
 	remove($items: Iterable<HTMLElement>, withCompactIds: boolean): void {
 		if (!(this.row instanceof ItemCollectionRow)) throw new TypeError(`attempt to remove from non-collection row`)
+		this.removeStretchButton()
 		this.row.remove($items)
 		if (this.row.isEmpty()) {
 			this.row.$row.remove()
 		} else {
 			this.updateIds(withCompactIds)
 		}
+		this.addStretchButton()
 	}
 	stretch(withCompactIds: boolean): void {
+		this.removeStretchButton()
 		this.row.stretch()
 		this.updateIds(withCompactIds)
+		this.addStretchButton()
 	}
 	shrink(withCompactIds: boolean): void {
+		this.removeStretchButton()
 		this.row.shrink()
 		this.updateIds(withCompactIds)
+		this.addStretchButton()
 	}
 	updateIds(withCompactIds: boolean): void {
 		for (const $cell of this.row.$row.cells) {
@@ -152,5 +165,21 @@ export default class EmbeddedItemRow {
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
 		this.row.reorderColumns(iShiftFrom,iShiftTo)
+	}
+	private removeStretchButton(): void {
+		const $stretchButton=this.row.$row.querySelector(':scope > :first-child > * > button.stretch')
+		if (!$stretchButton) return
+		removeSpaceBefore($stretchButton)
+		$stretchButton.remove()
+	}
+	private addStretchButton(): void {
+		const $button=makeElement('button')('stretch')(this.isStretched?`><`:`<>`)
+		$button.title=this.isStretched?`Show in multiple columns`:`Show in one stretched column`
+		const $stretchCell=this.row.$row.cells[0]
+		const $stretchContainer=getCellContainer($stretchCell)
+		if ($stretchContainer.hasChildNodes()) {
+			$stretchContainer.append(` `)
+		}
+		$stretchContainer.append($button)
 	}
 }

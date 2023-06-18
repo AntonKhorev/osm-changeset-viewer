@@ -96,13 +96,7 @@ export default class ItemRow {
 			if (iRawColumn==0) continue
 			$cell.hidden=true
 		}
-		let [$stretchContainer]=$stretchCell.children
-		if (!($stretchContainer instanceof HTMLElement)) {
-			$stretchCell.append(
-				$stretchContainer=makeDiv()()
-			)
-		}
-		$stretchCell.append($stretchContainer)
+		const $stretchContainer=getCellContainer($stretchCell)
 		for (const [,items] of itemSequence) {
 			const [[iColumn,$item]]=items
 			$item.dataset.column=String(iColumn)
@@ -124,10 +118,7 @@ export default class ItemRow {
 			const iColumn=Number($item.dataset.column)
 			const $targetCell=this.$row.cells[iColumn+1]
 			if (!($targetCell instanceof HTMLTableCellElement)) continue
-			let [$targetContainer]=$targetCell.children
-			if (!($targetContainer instanceof HTMLElement)) {
-				$targetCell.append($targetContainer=makeDiv()())
-			}
+			const $targetContainer=getCellContainer($targetCell)
 			appendToContainer($targetContainer,$item)
 		}
 		$stretchContainer.replaceChildren()
@@ -148,6 +139,16 @@ export default class ItemRow {
 			}
 		}
 	}
+}
+
+export function getCellContainer($cell: HTMLTableCellElement): HTMLElement {
+	const [$existingContainer]=$cell.children
+	if ($existingContainer instanceof HTMLElement) {
+		return $existingContainer
+	}
+	const $newContainer=makeDiv()()
+	$cell.append($newContainer)
+	return $newContainer
 }
 
 function appendToContainer($container: Element, $item: HTMLElement): void {
