@@ -80,7 +80,6 @@ export default class EmbeddedItemRow {
 				nextEmbeddedRow.row.$row.remove()
 				prevEmbeddedRow.updateIds(withCompactIds)
 				prevEmbeddedRow.addStretchButton()
-				nextEmbeddedRow.addStretchButton()
 			}
 		}
 	}
@@ -156,9 +155,9 @@ export default class EmbeddedItemRow {
 		}
 	}
 	updateStretchButtonHiddenState(): void {
-		const $stretchButton=this.row.$row.querySelector(':scope > :first-child > * > button.stretch')
-		if (!($stretchButton instanceof HTMLButtonElement)) return
-		$stretchButton.hidden=!this.row.$row.querySelector('.item:not([hidden])')
+		const $button=this.row.$row.querySelector(':scope > :first-child > * > button.stretch')
+		if (!($button instanceof HTMLButtonElement)) return
+		$button.hidden=!this.row.$row.querySelector('.item:not([hidden])')
 	}
 	*getItemSequence(): Iterable<[point: ItemSequencePoint, items: [iColumn: number, $item: HTMLElement][]]> {
 		yield *this.row.getItemSequence()
@@ -181,5 +180,6 @@ export default class EmbeddedItemRow {
 			$stretchContainer.append(` `)
 		}
 		$stretchContainer.append($button)
+		this.updateStretchButtonHiddenState()
 	}
 }
