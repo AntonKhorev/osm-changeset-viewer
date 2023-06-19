@@ -122,7 +122,7 @@ export default class EmbeddedItemRow {
 			for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
 				if (!isItem($item)) continue
 				if ($item.hidden) continue
-				const $a=$item.querySelector(':scope > .ballon > .flow > a')
+				const $a=$item.querySelector(':scope > .ballon > .flow > a[data-optional="id"]')
 				if (!($a instanceof HTMLAnchorElement)) {
 					lastId=''
 					continue

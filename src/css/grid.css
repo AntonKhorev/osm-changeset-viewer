@@ -531,7 +531,7 @@
 }
 .ui .grid tbody .item .ballon .flow a.editor {
 	display: inline-block;
-	vertical-align: bottom;
+	vertical-align: -3px;
 	height: 16px;
 	width: 16px;
 }

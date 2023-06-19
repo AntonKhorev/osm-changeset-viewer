@@ -1,6 +1,7 @@
 import {getHueFromUid} from './colorizer'
 import type {EditorIcon} from './editors'
 import editorData from './editors'
+import type ItemOptions from './item-options'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {makeElement, makeLink} from '../util/html'
@@ -125,26 +126,16 @@ export function makeItemShell(
 	return $item
 }
 
-export function writeCollapsedItemFlow(
+export function trimToCollapsedItemFlow(
 	$flow: HTMLElement,
-	server: ServerUrlGetter,
-	type: string,
-	id: number
+	itemOptions: ItemOptions
 ): void {
-	if (type=='user') {
-		$flow.replaceChildren(
-			`account created`
-		)
-	} else if (type=='changeset' || type=='changesetClose' || type=='changesetComment') {
-		const href=server.web.getUrl(e`changeset/${id}`)
-		$flow.replaceChildren(
-			makeLink(String(id),href)
-		)
-	} else if (type=='note' || type=='noteComment') {
-		const href=server.web.getUrl(e`note/${id}`)
-		$flow.replaceChildren(
-			makeLink(String(id),href)
-		)
+	const query=itemOptions.list.flatMap(({get,name})=>get()?[`:scope > [data-optional="${name}"]`]:[]).join(', ')
+	const $pieces=$flow.querySelectorAll(query)
+	$flow.replaceChildren()
+	for (const [i,$piece] of $pieces.entries()) {
+		if (i) $flow.append(' ')
+		$flow.append($piece)
 	}
 }
 

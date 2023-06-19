@@ -34,7 +34,7 @@ export default class GridSettingsPanel extends Panel {
 		)=>{
 			return makeElement('fieldset')()(
 				makeElement('legend')()(legend),
-				...itemOptions.list().map(({get,set,label,title})=>makeGridCheckbox(set,get(),label,title))
+				...itemOptions.list.map(({get,set,label,name})=>makeGridCheckbox(set,get(),label,name))
 			)
 		}
 		$section.append(

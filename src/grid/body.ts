@@ -8,7 +8,7 @@ import {
 } from './info'
 import {
 	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
-	makeItemShell, writeCollapsedItemFlow, writeExpandedItemFlow
+	makeItemShell, writeExpandedItemFlow, trimToCollapsedItemFlow
 } from './body-item'
 import {getHueFromUid} from './colorizer'
 import EmbeddedItemRow from './embedded-row'
@@ -65,11 +65,12 @@ export default class GridBody {
 	): boolean {
 		const sequencePoint=getBatchItemSequencePoint(batchItem)
 		if (!sequencePoint) return false
-		const $items=batchItem.iColumns.map(()=>{
-			const $item=makeItemShell(batchItem,isExpanded,usernames)
-			writeElementSequencePoint($item,sequencePoint)
-			return $item
-		})
+		const $item=makeItemShell(batchItem,isExpanded,usernames)
+		writeElementSequencePoint($item,sequencePoint)
+		const $flow=$item.querySelector('.flow')
+		if (!($flow instanceof HTMLElement)) return false
+		writeExpandedItemFlow($flow,this.server,batchItem,usernames)
+		const $items=batchItem.iColumns.map(()=>$item.cloneNode(true) as HTMLElement)
 		return this.insertItem(
 			batchItem.iColumns,sequencePoint,
 			!isExpanded?{isExpanded}:{isExpanded,batchItem,usernames},
@@ -349,11 +350,11 @@ export default class GridBody {
 		for (const $item of $items) {
 			const $flow=$item.querySelector('.flow')
 			if (!($flow instanceof HTMLElement)) continue
-			$flow.replaceChildren() // TODO don't replaceChildren() in flow writers
 			if (insertItemInfo.isExpanded) {
+				$flow.replaceChildren() // TODO don't replaceChildren() in flow writers
 				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
 			} else {
-				writeCollapsedItemFlow($flow,this.server,sequencePoint.type,sequencePoint.id)
+				trimToCollapsedItemFlow($flow,this.collapsedItemOptions)
 			}
 		}
 		return true

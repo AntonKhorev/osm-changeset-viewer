@@ -1,7 +1,7 @@
 type ItemOptionsEntry = {
 	get: ()=>boolean
 	set: (v:boolean)=>void
-	title: string
+	name: string
 	label: string
 }
 
@@ -13,6 +13,7 @@ export default class ItemOptions {
 	source  : boolean
 	changes : boolean
 	comments: boolean
+	list: ItemOptionsEntry[]
 	constructor(isExpanded: boolean) {
 		if (isExpanded) {
 			this.date    =true
@@ -31,16 +32,14 @@ export default class ItemOptions {
 			this.changes =false
 			this.comments=false
 		}
-	}
-	list(): ItemOptionsEntry[] {
-		return [
-			{ get: ()=>this.date    , set: v=>this.date    =v, title: 'date'    , label: '📅', },
-			{ get: ()=>this.id      , set: v=>this.id      =v, title: 'id'      , label: '#', },
-			{ get: ()=>this.api     , set: v=>this.api     =v, title: 'api'     , label: 'api', },
-			{ get: ()=>this.editor  , set: v=>this.editor  =v, title: 'editor'  , label: '🛠️', },
-			{ get: ()=>this.source  , set: v=>this.source  =v, title: 'source'  , label: '[]', },
-			{ get: ()=>this.changes , set: v=>this.changes =v, title: 'changes' , label: '📝', },
-			{ get: ()=>this.comments, set: v=>this.comments=v, title: 'comments', label: '💬', },
+		this.list=[
+			{ get: ()=>this.date    , set: v=>this.date    =v, name: 'date'    , label: '📅', },
+			{ get: ()=>this.id      , set: v=>this.id      =v, name: 'id'      , label: '#', },
+			{ get: ()=>this.api     , set: v=>this.api     =v, name: 'api'     , label: 'api', },
+			{ get: ()=>this.editor  , set: v=>this.editor  =v, name: 'editor'  , label: '🛠️', },
+			{ get: ()=>this.source  , set: v=>this.source  =v, name: 'source'  , label: '[]', },
+			{ get: ()=>this.changes , set: v=>this.changes =v, name: 'changes' , label: '📝', },
+			{ get: ()=>this.comments, set: v=>this.comments=v, name: 'comments', label: '💬', },
 		]
 	}
 }
