@@ -635,7 +635,7 @@ body > .symbols {
 }
 .ui .grid tbody .item .ballon .flow a.editor {
 	display: inline-block;
-	vertical-align: bottom;
+	vertical-align: -3px;
 	height: 16px;
 	width: 16px;
 }
@@ -710,6 +710,13 @@ body > .symbols {
 }
 .ui footer > .tools > section .input-group {
 	padding: 0 var(--spacer);
+}
+.ui footer > .tools > section > fieldset {
+	display: inline-flex;
+	gap: .5rem;
+}
+.ui footer > .tools > section > fieldset > .input-group {
+	padding: 0;
 }
 
 .ui footer > .list > section h2 {
