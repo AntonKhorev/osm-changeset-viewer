@@ -13,6 +13,7 @@ export default class ItemOptions {
 	source  : boolean
 	changes : boolean
 	comments: boolean
+	comment : boolean
 	list: ItemOptionsEntry[]
 	constructor(isExpanded: boolean) {
 		if (isExpanded) {
@@ -23,6 +24,7 @@ export default class ItemOptions {
 			this.source  =true
 			this.changes =true
 			this.comments=true
+			this.comment =true
 		} else {
 			this.date    =false
 			this.id      =true
@@ -31,6 +33,7 @@ export default class ItemOptions {
 			this.source  =false
 			this.changes =false
 			this.comments=false
+			this.comment =false
 		}
 		this.list=[
 			{ get: ()=>this.date    , set: v=>this.date    =v, name: 'date'    , label: '📅', },
@@ -40,6 +43,7 @@ export default class ItemOptions {
 			{ get: ()=>this.source  , set: v=>this.source  =v, name: 'source'  , label: '[]', },
 			{ get: ()=>this.changes , set: v=>this.changes =v, name: 'changes' , label: '📝', },
 			{ get: ()=>this.comments, set: v=>this.comments=v, name: 'comments', label: '💬', },
+			{ get: ()=>this.comments, set: v=>this.comments=v, name: 'comment' , label: '📣', },
 		]
 	}
 }

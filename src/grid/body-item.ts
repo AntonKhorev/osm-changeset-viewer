@@ -238,15 +238,19 @@ export function writeExpandedItemFlow(
 			` `,optionalize('editor',makeEditorBadgeOrIcon(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
 			` `,optionalize('changes',makeBadge([`📝 ${item.changes.count}`],`number of changes`)),
-			` `,optionalize('comments',makeCommentsBadge(item.comments.count)),
-			` `,makeElement('span')()(item.tags?.comment ?? '')
+			` `,optionalize('comments',makeCommentsBadge(item.comments.count))
 		)
+		if (item.tags?.comment) {
+			$flow.append(
+				` `,optionalize('comment',makeElement('span')()(item.tags?.comment ?? ''))
+			)
+		}
 	} else if (type=='note') {
 		date=item.createdAt
 		rewriteWithNoteLinks(item.id)
 		if (item.openingComment) {
 			$flow.append(
-				` `,item.openingComment
+				` `,optionalize('comment',makeElement('span')()(item.openingComment))
 			)
 		}
 	} else if (type=='changesetComment' || type=='noteComment') {
