@@ -2281,8 +2281,14 @@ function makeItemShell({ type, item }, isExpanded, usernames) {
     return $item;
 }
 function trimToCollapsedItemFlow($flow, itemOptions) {
-    const query = itemOptions.list.flatMap(({ get, name }) => get() ? [`:scope > [data-optional="${name}"]`] : []).join(', ');
-    const $pieces = $flow.querySelectorAll(query);
+    const $pieces = [];
+    for (const { get, name } of itemOptions.list) {
+        const $piece = $flow.querySelector(`:scope > [data-optional="${name}"]`);
+        if (!($piece instanceof HTMLElement))
+            continue;
+        $piece.hidden = !get();
+        $pieces.push($piece);
+    }
     $flow.replaceChildren();
     for (const [i, $piece] of $pieces.entries()) {
         if (i)
@@ -2290,9 +2296,10 @@ function trimToCollapsedItemFlow($flow, itemOptions) {
         $flow.append($piece);
     }
 }
-function writeExpandedItemFlow($flow, server, { type, item }, usernames) {
+function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOptions) {
     const optionalize = (name, $e) => {
         $e.dataset.optional = name;
+        $e.hidden = !itemOptions[name];
         return $e;
     };
     const makeBadge = (contents, title, isEmpty = false) => {
@@ -2377,13 +2384,16 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames) {
     else if (type == 'changeset' || type == 'changesetClose') {
         date = type == 'changesetClose' ? item.closedAt : item.createdAt;
         rewriteWithChangesetLinks(item.id);
-        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIcon(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeBadge([`📝 ${item.changes.count}`], `number of changes`)), ` `, optionalize('comments', makeCommentsBadge(item.comments.count)), ` `, makeElement('span')()(item.tags?.comment ?? ''));
+        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIcon(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeBadge([`📝 ${item.changes.count}`], `number of changes`)), ` `, optionalize('comments', makeCommentsBadge(item.comments.count)));
+        if (item.tags?.comment) {
+            $flow.append(` `, optionalize('comment', makeElement('span')()(item.tags?.comment ?? '')));
+        }
     }
     else if (type == 'note') {
         date = item.createdAt;
         rewriteWithNoteLinks(item.id);
         if (item.openingComment) {
-            $flow.append(` `, item.openingComment);
+            $flow.append(` `, optionalize('comment', makeElement('span')()(item.openingComment)));
         }
     }
     else if (type == 'changesetComment' || type == 'noteComment') {
@@ -2419,7 +2429,7 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames) {
             }
         }
         if (item.text) {
-            $flow.append(` `, item.text);
+            $flow.append(` `, optionalize('comment', makeElement('span')()(item.text)));
         }
     }
     else {
@@ -4658,6 +4668,7 @@ class ItemOptions {
             this.source = true;
             this.changes = true;
             this.comments = true;
+            this.comment = true;
         }
         else {
             this.date = false;
@@ -4667,15 +4678,17 @@ class ItemOptions {
             this.source = false;
             this.changes = false;
             this.comments = false;
+            this.comment = false;
         }
         this.list = [
-            { get: () => this.date, set: v => this.date = v, name: 'date', label: '📅', },
-            { get: () => this.id, set: v => this.id = v, name: 'id', label: '#', },
-            { get: () => this.api, set: v => this.api = v, name: 'api', label: 'api', },
-            { get: () => this.editor, set: v => this.editor = v, name: 'editor', label: '🛠️', },
-            { get: () => this.source, set: v => this.source = v, name: 'source', label: '[]', },
-            { get: () => this.changes, set: v => this.changes = v, name: 'changes', label: '📝', },
-            { get: () => this.comments, set: v => this.comments = v, name: 'comments', label: '💬', },
+            { get: () => this.date, set: v => this.date = v, name: 'date', label: '📅' },
+            { get: () => this.id, set: v => this.id = v, name: 'id', label: '#' },
+            { get: () => this.api, set: v => this.api = v, name: 'api', label: 'api' },
+            { get: () => this.editor, set: v => this.editor = v, name: 'editor', label: '🛠️' },
+            { get: () => this.source, set: v => this.source = v, name: 'source', label: '[]' },
+            { get: () => this.changes, set: v => this.changes = v, name: 'changes', label: '📝', title: 'changes count' },
+            { get: () => this.comments, set: v => this.comments = v, name: 'comments', label: '💬', title: 'comments count' },
+            { get: () => this.comment, set: v => this.comment = v, name: 'comment', label: '📣' },
         ];
     }
 }
@@ -4729,7 +4742,7 @@ class GridBody {
         const $flow = $item.querySelector('.flow');
         if (!($flow instanceof HTMLElement))
             return false;
-        writeExpandedItemFlow($flow, this.server, batchItem, usernames);
+        writeExpandedItemFlow($flow, this.server, batchItem, usernames, this.expandedItemOptions);
         const $items = batchItem.iColumns.map(() => $item.cloneNode(true));
         return this.insertItem(batchItem.iColumns, sequencePoint, !isExpanded ? { isExpanded } : { isExpanded, batchItem, usernames }, $items);
     }
@@ -4824,6 +4837,23 @@ class GridBody {
             if (!EmbeddedItemRow.isItemRow($row))
                 continue;
             new EmbeddedItemRow($row).updateStretchButtonHiddenState();
+        }
+        this.updateTableAccordingToExpandedItemOptions();
+        this.updateTableAccordingToCollapsedItemOptions();
+    }
+    updateTableAccordingToExpandedItemOptions() {
+        this.updateTableAccordingToItemOptions(this.expandedItemOptions, 'single');
+    }
+    updateTableAccordingToCollapsedItemOptions() {
+        this.updateTableAccordingToItemOptions(this.collapsedItemOptions, 'collection');
+    }
+    updateTableAccordingToItemOptions(itemOptions, rowClass) {
+        for (const { get, name } of itemOptions.list) {
+            for (const $piece of this.$gridBody.querySelectorAll(`:scope > tr.${rowClass} .item .ballon .flow [data-optional="${name}"]`)) {
+                if (!($piece instanceof HTMLElement))
+                    continue;
+                $piece.hidden = !get();
+            }
         }
     }
     reorderColumns(iShiftFrom, iShiftTo) {
@@ -5020,7 +5050,7 @@ class GridBody {
                 continue;
             if (insertItemInfo.isExpanded) {
                 $flow.replaceChildren(); // TODO don't replaceChildren() in flow writers
-                writeExpandedItemFlow($flow, this.server, insertItemInfo.batchItem, insertItemInfo.usernames);
+                writeExpandedItemFlow($flow, this.server, insertItemInfo.batchItem, insertItemInfo.usernames, this.expandedItemOptions);
             }
             else {
                 trimToCollapsedItemFlow($flow, this.collapsedItemOptions);
@@ -5300,6 +5330,12 @@ class Grid {
     updateTableAccordingToSettings() {
         this.body.updateTableAccordingToSettings();
     }
+    updateTableAccordingToExpandedItemOptions() {
+        this.body.updateTableAccordingToExpandedItemOptions();
+    }
+    updateTableAccordingToCollapsedItemOptions() {
+        this.body.updateTableAccordingToCollapsedItemOptions();
+    }
     async expandSelectedItems() {
         for (const id of this.body.listSelectedChangesetIds()) {
             await this.body.expandItem({ type: 'changeset', id });
@@ -5509,21 +5545,25 @@ class GridSettingsPanel extends Panel {
             const $checkbox = makeElement('input')()();
             $checkbox.type = 'checkbox';
             $checkbox.checked = initialValue;
-            $checkbox.oninput = () => {
-                setOption($checkbox.checked);
-                this.grid.updateTableAccordingToSettings();
-            };
+            $checkbox.oninput = () => setOption($checkbox.checked);
             const $label = makeLabel()($checkbox, ` `, label);
             if (labelTitle)
                 $label.title = labelTitle;
             return makeDiv('input-group')($label);
         };
-        const makeItemOptionsFieldset = (itemOptions, legend) => {
-            return makeElement('fieldset')()(makeElement('legend')()(legend), ...itemOptions.list.map(({ get, set, label, name }) => makeGridCheckbox(set, get(), label, name)));
+        const makeItemOptionsFieldset = (updateTable, itemOptions, legend) => {
+            return makeElement('fieldset')()(makeElement('legend')()(legend), ...itemOptions.list.map(({ get, set, label, name, title }) => makeGridCheckbox(value => {
+                set(value);
+                updateTable();
+            }, get(), label, title ?? name)));
         };
-        $section.append(makeElement('h2')()(`Grid settings`), makeGridCheckbox(value => this.grid.withCompactIds = value, false, `compact ids in collections`), makeGridCheckbox(value => this.grid.withClosedChangesets = value, false, `changeset close events`, `visible only if there's some other event between changeset opening and closing`), 
-        // makeItemOptionsFieldset(this.grid.expandedItemOptions,`expanded items`),
-        makeItemOptionsFieldset(this.grid.collapsedItemOptions, `collapsed items`));
+        $section.append(makeElement('h2')()(`Grid settings`), makeGridCheckbox(value => {
+            this.grid.withCompactIds = value;
+            this.grid.updateTableAccordingToSettings();
+        }, false, `compact ids in collections`), makeGridCheckbox(value => {
+            this.grid.withClosedChangesets = value;
+            this.grid.updateTableAccordingToSettings();
+        }, false, `changeset close events`, `visible only if there's some other event between changeset opening and closing`), makeItemOptionsFieldset(() => this.grid.updateTableAccordingToExpandedItemOptions(), this.grid.expandedItemOptions, `expanded items`), makeItemOptionsFieldset(() => this.grid.updateTableAccordingToCollapsedItemOptions(), this.grid.collapsedItemOptions, `collapsed items`));
     }
 }
 

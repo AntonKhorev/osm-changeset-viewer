@@ -633,7 +633,7 @@ body > .symbols {
 .ui .grid tbody .item .ballon .flow .editor {
 	color: unset;
 }
-.ui .grid tbody .item .ballon .flow a.editor {
+.ui .grid tbody .item .ballon .flow a.editor:not([hidden]) {
 	display: inline-block;
 	vertical-align: -3px;
 	height: 16px;
