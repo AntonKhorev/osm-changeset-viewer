@@ -28,9 +28,10 @@ export default class GridSettingsPanel extends Panel {
 		const makeItemOptionsFieldset=(
 			updateTable: ()=>void,
 			itemOptions: ItemOptions,
+			fieldsetClass: string,
 			$icon: HTMLElement
 		)=>{
-			return makeElement('fieldset')()(
+			return makeElement('fieldset')(fieldsetClass)(
 				makeElement('legend')()($icon),
 				...itemOptions.list.map(({get,set,label,name,title})=>makeGridCheckbox(
 					value=>{
@@ -69,11 +70,13 @@ export default class GridSettingsPanel extends Panel {
 			makeItemOptionsFieldset(
 				()=>this.grid.updateTableAccordingToExpandedItemOptions(),
 				this.grid.expandedItemOptions,
+				'for-expanded-items',
 				$expandedIcon
 			),
 			makeItemOptionsFieldset(
 				()=>this.grid.updateTableAccordingToCollapsedItemOptions(),
 				this.grid.collapsedItemOptions,
+				'for-collapsed-items',
 				$collapsedIcon
 			)
 		)

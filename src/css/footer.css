@@ -82,6 +82,9 @@
 	position: absolute;
 	left: -13px;
 }
+.ui footer > .tools > section > fieldset.for-expanded-items > legend {
+	left: -14px;
+}
 .ui footer > .tools > section > fieldset > .input-group {
 	padding: 0;
 }
