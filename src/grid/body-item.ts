@@ -148,10 +148,12 @@ export function writeExpandedItemFlow(
 	$flow: HTMLElement,
 	server: ServerUrlGetter,
 	{type,item}: MuxBatchItem,
-	usernames: Map<number, string>
+	usernames: Map<number, string>,
+	itemOptions: ItemOptions
 ): void {
-	const optionalize=(name:string,$e:HTMLElement)=>{
+	const optionalize=(name:keyof ItemOptions,$e:HTMLElement)=>{
 		$e.dataset.optional=name
+		$e.hidden=!itemOptions[name]
 		return $e
 	}
 	const makeBadge=(contents:(string|HTMLElement)[],title?:string,isEmpty=false)=>{

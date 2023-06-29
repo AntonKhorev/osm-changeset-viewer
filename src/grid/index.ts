@@ -108,6 +108,9 @@ export default class Grid {
 	updateTableAccordingToSettings(): void {
 		this.body.updateTableAccordingToSettings()
 	}
+	updateTableAccordingToExpandedItemOptions(): void {
+		this.body.updateTableAccordingToExpandedItemOptions()
+	}
 	updateTableAccordingToCollapsedItemOptions(): void {
 		this.body.updateTableAccordingToCollapsedItemOptions()
 	}

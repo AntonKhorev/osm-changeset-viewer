@@ -69,7 +69,7 @@ export default class GridBody {
 		writeElementSequencePoint($item,sequencePoint)
 		const $flow=$item.querySelector('.flow')
 		if (!($flow instanceof HTMLElement)) return false
-		writeExpandedItemFlow($flow,this.server,batchItem,usernames)
+		writeExpandedItemFlow($flow,this.server,batchItem,usernames,this.expandedItemOptions)
 		const $items=batchItem.iColumns.map(()=>$item.cloneNode(true) as HTMLElement)
 		return this.insertItem(
 			batchItem.iColumns,sequencePoint,
@@ -161,12 +161,19 @@ export default class GridBody {
 			if (!EmbeddedItemRow.isItemRow($row)) continue
 			new EmbeddedItemRow($row).updateStretchButtonHiddenState()
 		}
+		this.updateTableAccordingToExpandedItemOptions()
 		this.updateTableAccordingToCollapsedItemOptions()
 	}
+	updateTableAccordingToExpandedItemOptions(): void {
+		this.updateTableAccordingToItemOptions(this.expandedItemOptions,'single')
+	}
 	updateTableAccordingToCollapsedItemOptions(): void {
-		for (const {get,name} of this.collapsedItemOptions.list) {
+		this.updateTableAccordingToItemOptions(this.collapsedItemOptions,'collection')
+	}
+	private updateTableAccordingToItemOptions(itemOptions: ItemOptions, rowClass: string): void {
+		for (const {get,name} of itemOptions.list) {
 			for (const $piece of this.$gridBody.querySelectorAll(
-				`:scope > tr.collection .item .ballon .flow [data-optional="${name}"]`
+				`:scope > tr.${rowClass} .item .ballon .flow [data-optional="${name}"]`
 			)) {
 				if (!($piece instanceof HTMLElement)) continue
 				$piece.hidden=!get()
@@ -363,7 +370,7 @@ export default class GridBody {
 			if (!($flow instanceof HTMLElement)) continue
 			if (insertItemInfo.isExpanded) {
 				$flow.replaceChildren() // TODO don't replaceChildren() in flow writers
-				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames)
+				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames,this.expandedItemOptions)
 			} else {
 				trimToCollapsedItemFlow($flow,this.collapsedItemOptions)
 			}

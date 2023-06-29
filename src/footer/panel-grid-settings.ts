@@ -62,7 +62,11 @@ export default class GridSettingsPanel extends Panel {
 				`changeset close events`,
 				`visible only if there's some other event between changeset opening and closing`
 			),
-			// makeItemOptionsFieldset(this.grid.expandedItemOptions,`expanded items`),
+			makeItemOptionsFieldset(
+				()=>this.grid.updateTableAccordingToExpandedItemOptions(),
+				this.grid.expandedItemOptions,
+				`expanded items`
+			),
 			makeItemOptionsFieldset(
 				()=>this.grid.updateTableAccordingToCollapsedItemOptions(),
 				this.grid.collapsedItemOptions,
