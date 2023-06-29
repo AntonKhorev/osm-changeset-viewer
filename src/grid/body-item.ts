@@ -291,7 +291,7 @@ export function writeExpandedItemFlow(
 		}
 		if (item.text) {
 			$flow.append(
-				` `,item.text
+				` `,optionalize('comment',makeElement('span')()(item.text))
 			)
 		}
 	} else {
