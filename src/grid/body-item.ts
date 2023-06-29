@@ -176,7 +176,7 @@ export function writeExpandedItemFlow(
 		$a.classList.add('editor')
 		return $a
 	}
-	const makeEditorBadgeOrIcon=(createdBy: string)=>{
+	const makeEditorBadgeOrIconFromCreatedBy=(createdBy: string)=>{
 		if (!createdBy) {
 			return makeBadge([`🛠️ ?`],`unknown editor`)
 		}
@@ -193,6 +193,17 @@ export function writeExpandedItemFlow(
 			createdByLead=match[1]
 		}
 		return makeBadge([`🛠️ ${createdByLead??'?'}`],createdBy)
+	}
+	const makeEditorBadgeOrIconFromNoteComment=(comment: string)=>{
+		for (const [,url,editorIcon,noteRegExp] of editorData) {
+			if (!noteRegExp) continue
+			let match
+			if (match=comment.match(noteRegExp)) {
+				const [,createdBy]=match
+				return makeKnownEditorBadgeOrIcon(createdBy,editorIcon,url)
+			}
+		}
+		return null
 	}
 	const makeCommentsBadge=(commentsCount: number)=>{
 		if (commentsCount) {
@@ -242,7 +253,7 @@ export function writeExpandedItemFlow(
 		date = type=='changesetClose' ? item.closedAt : item.createdAt
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
-			` `,optionalize('editor',makeEditorBadgeOrIcon(item.tags.created_by)),
+			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
 			` `,optionalize('changes',makeBadge([`📝 ${item.changes.count}`],`number of changes`)),
 			` `,optionalize('comments',makeCommentsBadge(item.comments.count))
@@ -256,6 +267,12 @@ export function writeExpandedItemFlow(
 		date=item.createdAt
 		rewriteWithNoteLinks(item.id)
 		if (item.openingComment) {
+			const $editorBadge=makeEditorBadgeOrIconFromNoteComment(item.openingComment)
+			if ($editorBadge) {
+				$flow.append(
+					` `,optionalize('editor',$editorBadge)
+				)
+			}
 			$flow.append(
 				` `,optionalize('comment',makeElement('span')()(item.openingComment))
 			)

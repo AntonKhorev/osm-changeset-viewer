@@ -39,7 +39,8 @@ const merkaartorIcon =
 const editorData: [
 		createdByPrefix: string,
 		url: string,
-		editorId: EditorIcon
+		editorId: EditorIcon,
+		noteRegExp?: RegExp
 ][]=[
 	[
 		'ArcGIS Editor',
@@ -141,6 +142,7 @@ const editorData: [
 		'StreetComplete',
 		'https://wiki.openstreetmap.org/wiki/StreetComplete',
 		{type:'svg',id:'streetcomplete'},
+		/(?:^Unable to answer.*?|\n\n)via (StreetComplete\s+.*?):?$/m
 	],[
 		'Vespucci',
 		'https://wiki.openstreetmap.org/wiki/Vespucci',
