@@ -1,6 +1,7 @@
 import GridHead from './head'
 import GridBody from './body'
 import ItemOptions from './item-options'
+import {makeCenteredSvg} from './body-item'
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader} from '../db'
 import type More from '../more'
@@ -8,6 +9,22 @@ import type {ValidUserQuery} from '../osm'
 import {makeElement} from '../util/html'
 
 export {ItemOptions}
+
+export {makeCollectionIcon} from './body-item'
+
+export function makeSingleIcon(): HTMLElement {
+	const $icon=makeElement('span')('icon')()
+	const r=4
+	const c1=-10
+	const c2=10-2*r
+
+	$icon.innerHTML=makeCenteredSvg(10,
+		`<rect x="${c1}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`+
+		`<rect x="${c2}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`+
+		`<rect x="${c1+.5}" y="${-r+.5}" width="${20-1}" height="${2*r-1}" fill="none" stroke="currentColor" />`
+	)
+	return $icon
+}
 
 export default class Grid {
 	$grid=makeElement('table')('grid')()

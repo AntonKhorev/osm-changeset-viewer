@@ -8,6 +8,7 @@
 	--frame-line: solid 1px var(--frame-color);
 	--spacer: .5rem;
 	--major-button-padding: .3rem;
+	--icon-size: 1.25rem;
 }
 @media (prefers-color-scheme: dark) {
 	:root {

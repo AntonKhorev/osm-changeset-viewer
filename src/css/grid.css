@@ -2,7 +2,6 @@
 	--all-width: calc(var(--icon-size) + 2 * var(--spacer));
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
-	--icon-size: 1.25rem;
 	--tab-height: calc(1rem + 2 * var(--spacer));
 	--accent-saturation: 50%;
 	table-layout: fixed;

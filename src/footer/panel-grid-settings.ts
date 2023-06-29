@@ -1,6 +1,6 @@
 import Panel from './panel'
 import type Grid from '../grid'
-import type {ItemOptions} from '../grid'
+import {ItemOptions, makeCollectionIcon, makeSingleIcon} from '../grid'
 import {makeElement, makeDiv, makeLabel} from '../util/html'
 
 export default class GridSettingsPanel extends Panel {
@@ -28,10 +28,10 @@ export default class GridSettingsPanel extends Panel {
 		const makeItemOptionsFieldset=(
 			updateTable: ()=>void,
 			itemOptions: ItemOptions,
-			legend: string
+			$icon: HTMLElement
 		)=>{
 			return makeElement('fieldset')()(
-				makeElement('legend')()(legend),
+				makeElement('legend')()($icon),
 				...itemOptions.list.map(({get,set,label,name,title})=>makeGridCheckbox(
 					value=>{
 						set(value)
@@ -43,6 +43,10 @@ export default class GridSettingsPanel extends Panel {
 				))
 			)
 		}
+		const $expandedIcon=makeSingleIcon()
+		$expandedIcon.title=`expanded items`
+		const $collapsedIcon=makeCollectionIcon()
+		$collapsedIcon.title=`collapsed items`
 		$section.append(
 			makeElement('h2')()(`Grid settings`),
 			makeGridCheckbox(
@@ -65,12 +69,12 @@ export default class GridSettingsPanel extends Panel {
 			makeItemOptionsFieldset(
 				()=>this.grid.updateTableAccordingToExpandedItemOptions(),
 				this.grid.expandedItemOptions,
-				`expanded items`
+				$expandedIcon
 			),
 			makeItemOptionsFieldset(
 				()=>this.grid.updateTableAccordingToCollapsedItemOptions(),
 				this.grid.collapsedItemOptions,
-				`collapsed items`
+				$collapsedIcon
 			)
 		)
 	}
