@@ -161,6 +161,9 @@ export default class GridBody {
 			if (!EmbeddedItemRow.isItemRow($row)) continue
 			new EmbeddedItemRow($row).updateStretchButtonHiddenState()
 		}
+		this.updateTableAccordingToCollapsedItemOptions()
+	}
+	updateTableAccordingToCollapsedItemOptions(): void {
 		for (const {get,name} of this.collapsedItemOptions.list) {
 			for (const $piece of this.$gridBody.querySelectorAll(
 				`:scope > tr.collection .item .ballon .flow [data-optional="${name}"]`

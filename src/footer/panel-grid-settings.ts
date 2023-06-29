@@ -18,10 +18,7 @@ export default class GridSettingsPanel extends Panel {
 			const $checkbox=makeElement('input')()()
 			$checkbox.type='checkbox'
 			$checkbox.checked=initialValue
-			$checkbox.oninput=()=>{
-				setOption($checkbox.checked)
-				this.grid.updateTableAccordingToSettings()
-			}
+			$checkbox.oninput=()=>setOption($checkbox.checked)
 			const $label=makeLabel()(
 				$checkbox,` `,label
 			)
@@ -29,29 +26,48 @@ export default class GridSettingsPanel extends Panel {
 			return makeDiv('input-group')($label)
 		}
 		const makeItemOptionsFieldset=(
+			updateTable: ()=>void,
 			itemOptions: ItemOptions,
 			legend: string
 		)=>{
 			return makeElement('fieldset')()(
 				makeElement('legend')()(legend),
-				...itemOptions.list.map(({get,set,label,name,title})=>makeGridCheckbox(set,get(),label,title??name))
+				...itemOptions.list.map(({get,set,label,name,title})=>makeGridCheckbox(
+					value=>{
+						set(value)
+						updateTable()
+					},
+					get(),
+					label,
+					title??name
+				))
 			)
 		}
 		$section.append(
 			makeElement('h2')()(`Grid settings`),
 			makeGridCheckbox(
-				value=>this.grid.withCompactIds=value,
+				value=>{
+					this.grid.withCompactIds=value
+					this.grid.updateTableAccordingToSettings()
+				},
 				false,
 				`compact ids in collections`
 			),
 			makeGridCheckbox(
-				value=>this.grid.withClosedChangesets=value,
+				value=>{
+					this.grid.withClosedChangesets=value
+					this.grid.updateTableAccordingToSettings()
+				},
 				false,
 				`changeset close events`,
 				`visible only if there's some other event between changeset opening and closing`
 			),
 			// makeItemOptionsFieldset(this.grid.expandedItemOptions,`expanded items`),
-			makeItemOptionsFieldset(this.grid.collapsedItemOptions,`collapsed items`)
+			makeItemOptionsFieldset(
+				()=>this.grid.updateTableAccordingToCollapsedItemOptions(),
+				this.grid.collapsedItemOptions,
+				`collapsed items`
+			)
 		)
 	}
 }

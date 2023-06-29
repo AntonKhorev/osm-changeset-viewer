@@ -108,6 +108,9 @@ export default class Grid {
 	updateTableAccordingToSettings(): void {
 		this.body.updateTableAccordingToSettings()
 	}
+	updateTableAccordingToCollapsedItemOptions(): void {
+		this.body.updateTableAccordingToCollapsedItemOptions()
+	}
 	async expandSelectedItems(): Promise<void> {
 		for (const id of this.body.listSelectedChangesetIds()) {
 			await this.body.expandItem({type:'changeset',id})
