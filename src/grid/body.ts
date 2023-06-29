@@ -161,6 +161,14 @@ export default class GridBody {
 			if (!EmbeddedItemRow.isItemRow($row)) continue
 			new EmbeddedItemRow($row).updateStretchButtonHiddenState()
 		}
+		for (const {get,name} of this.collapsedItemOptions.list) {
+			for (const $piece of this.$gridBody.querySelectorAll(
+				`:scope > tr.collection .item .ballon .flow [data-optional="${name}"]`
+			)) {
+				if (!($piece instanceof HTMLElement)) continue
+				$piece.hidden=!get()
+			}
+		}
 	}
 	reorderColumns(iShiftFrom: number, iShiftTo: number): void {
 		for (const $row of this.$gridBody.rows) {

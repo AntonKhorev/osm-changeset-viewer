@@ -102,7 +102,7 @@ export function makeItemShell(
 			$senderIcon.classList.add('sender')
 			setColor($senderIcon,item.uid)
 			const username=item.uid?usernames.get(item.uid):undefined
-				if (username!=null) {
+			if (username!=null) {
 				$senderIcon.title=username
 			} else if (item.uid!=null) {
 				$senderIcon.title=`#`+item.uid
@@ -130,8 +130,13 @@ export function trimToCollapsedItemFlow(
 	$flow: HTMLElement,
 	itemOptions: ItemOptions
 ): void {
-	const query=itemOptions.list.flatMap(({get,name})=>get()?[`:scope > [data-optional="${name}"]`]:[]).join(', ')
-	const $pieces=$flow.querySelectorAll(query)
+	const $pieces: HTMLElement[] = []
+	for (const {get,name} of itemOptions.list) {
+		const $piece=$flow.querySelector(`:scope > [data-optional="${name}"]`)
+		if (!($piece instanceof HTMLElement)) continue
+		$piece.hidden=!get()
+		$pieces.push($piece)
+	}
 	$flow.replaceChildren()
 	for (const [i,$piece] of $pieces.entries()) {
 		if (i) $flow.append(' ')
