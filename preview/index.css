@@ -8,6 +8,7 @@
 	--frame-line: solid 1px var(--frame-color);
 	--spacer: .5rem;
 	--major-button-padding: .3rem;
+	--icon-size: 1.25rem;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
@@ -106,7 +107,6 @@ body > .symbols {
 	--all-width: calc(var(--icon-size) + 2 * var(--spacer));
 	--adder-width: 10ch;
 	--column-min-width: 25ch;
-	--icon-size: 1.25rem;
 	--tab-height: calc(1rem + 2 * var(--spacer));
 	--accent-saturation: 50%;
 	table-layout: fixed;
@@ -533,6 +533,15 @@ body > .symbols {
 .ui .grid tbody .item.comment.mute .ballon {
 	--ballon-border-radius: calc(2 * var(--spacer));
 }
+.ui .grid tbody .item.highlighted .ballon {
+	background: var(--hover-color);
+}
+.ui .grid tbody .item.highlighted .icon svg.tip .ballon-part {
+	fill: var(--hover-color);
+}
+.ui .grid tbody .item.changeset.highlighted .icon {
+	z-index: 1; /* fix for oversized icons clashing with item highlight */
+}
 
 /*** item disclosure button ***/
 .ui .grid tbody .item .ballon button.disclosure {
@@ -712,8 +721,21 @@ body > .symbols {
 	padding: 0 var(--spacer);
 }
 .ui footer > .tools > section > fieldset {
+	position: relative;
 	display: inline-flex;
+	margin: 0 var(--spacer) 0 calc(var(--spacer) + 10px);
+	border: solid 1px var(--frame-color);
+	border-width: 1px 2px;
+	padding: .25rem;
+	padding-left: calc(.25rem + .5 * var(--icon-size));
 	gap: .5rem;
+}
+.ui footer > .tools > section > fieldset > legend {
+	position: absolute;
+	left: -13px;
+}
+.ui footer > .tools > section > fieldset.for-expanded-items > legend {
+	left: -14px;
 }
 .ui footer > .tools > section > fieldset > .input-group {
 	padding: 0;

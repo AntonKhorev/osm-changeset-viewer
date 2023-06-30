@@ -2095,6 +2095,7 @@ const editorData = [
         'StreetComplete',
         'https://wiki.openstreetmap.org/wiki/StreetComplete',
         { type: 'svg', id: 'streetcomplete' },
+        /(?:^Unable to answer.*?|\n\n)via (StreetComplete\s+.*?):?$/m
     ], [
         'Vespucci',
         'https://wiki.openstreetmap.org/wiki/Vespucci',
@@ -2326,7 +2327,7 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
         $a.classList.add('editor');
         return $a;
     };
-    const makeEditorBadgeOrIcon = (createdBy) => {
+    const makeEditorBadgeOrIconFromCreatedBy = (createdBy) => {
         if (!createdBy) {
             return makeBadge([`🛠️ ?`], `unknown editor`);
         }
@@ -2343,6 +2344,18 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
             createdByLead = match[1];
         }
         return makeBadge([`🛠️ ${createdByLead ?? '?'}`], createdBy);
+    };
+    const makeEditorBadgeOrIconFromNoteComment = (comment) => {
+        for (const [, url, editorIcon, noteRegExp] of editorData) {
+            if (!noteRegExp)
+                continue;
+            let match;
+            if (match = comment.match(noteRegExp)) {
+                const [, createdBy] = match;
+                return makeKnownEditorBadgeOrIcon(createdBy, editorIcon, url);
+            }
+        }
+        return null;
     };
     const makeCommentsBadge = (commentsCount) => {
         if (commentsCount) {
@@ -2384,7 +2397,7 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
     else if (type == 'changeset' || type == 'changesetClose') {
         date = type == 'changesetClose' ? item.closedAt : item.createdAt;
         rewriteWithChangesetLinks(item.id);
-        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIcon(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeBadge([`📝 ${item.changes.count}`], `number of changes`)), ` `, optionalize('comments', makeCommentsBadge(item.comments.count)));
+        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeBadge([`📝 ${item.changes.count}`], `number of changes`)), ` `, optionalize('comments', makeCommentsBadge(item.comments.count)));
         if (item.tags?.comment) {
             $flow.append(` `, optionalize('comment', makeElement('span')()(item.tags?.comment ?? '')));
         }
@@ -2393,6 +2406,10 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
         date = item.createdAt;
         rewriteWithNoteLinks(item.id);
         if (item.openingComment) {
+            const $editorBadge = makeEditorBadgeOrIconFromNoteComment(item.openingComment);
+            if ($editorBadge) {
+                $flow.append(` `, optionalize('editor', $editorBadge));
+            }
             $flow.append(` `, optionalize('comment', makeElement('span')()(item.openingComment)));
         }
     }
@@ -2515,15 +2532,15 @@ function getSvgOfCommentIcon(itemType, action) {
     }
 }
 function getSvgOfCommentTip(side) {
-    return `<svg class="tip" width="7" height="13" viewBox="${side < 0 ? -.5 : -5.5} -6.5 7 13">` +
-        `<path d="M0,0L${-7 * side},7V-7Z" fill="canvas"></path>` +
+    return `<svg class="tip" width="7" height="13" viewBox="${side < 0 ? -.5 : -5.5} -6.5 7 13" fill="canvas">` +
+        `<path d="M0,0L${-7 * side},7V-7Z" class="ballon-part"></path>` +
         `<path d="M${-6 * side},-6L0,0L${-6 * side},6" fill="none" stroke="var(--ballon-frame-color)"></path>` +
         `</svg>`;
 }
 function getSvgOfMuteCommentTip(side) {
     return `<svg class="tip" width="15" height="20" viewBox="${side < 0 ? 0 : -15} -10 15 20" fill="canvas" stroke="var(--ballon-frame-color)">` +
-        `<circle cx="${-10.5 * side}" cy="-3.5" r="4" />` +
-        `<circle cx="${-5.5 * side}" cy="1.5" r="2" />` +
+        `<circle cx="${-10.5 * side}" cy="-3.5" r="4" class="ballon-part" />` +
+        `<circle cx="${-5.5 * side}" cy="1.5" r="2" class="ballon-part" />` +
         `</svg>`;
 }
 function makeItemDisclosureButton(isExpanded) {
@@ -2532,7 +2549,7 @@ function makeItemDisclosureButton(isExpanded) {
     const r = 5.5;
     const s = 3.5;
     $disclosure.innerHTML = makeCenteredSvg(r, `<line x1="${-s}" x2="${s}" />` +
-        `<line y1="${-s}" y2="${s}" class='vertical-stroke' />`, `stroke="currentColor"`);
+        `<line y1="${-s}" y2="${s}" class="vertical-stroke" />`, `stroke="currentColor"`);
     return $disclosure;
 }
 function getItemDisclosureButtonState($disclosure) {
@@ -3743,6 +3760,16 @@ function getItemDescriptorSelector({ type, id, order }) {
         ? `[data-order="${order}"]`
         : `:not([data-order])`);
 }
+function getBroadItemDescriptorSelector({ type, id }) {
+    let typeSelector = `[data-type="${type}"]`;
+    if (type == 'changeset' || type == 'changesetClose' || type == 'changesetComment') {
+        typeSelector = `[data-type^="changeset"]`;
+    }
+    else if (type == 'note' || type == 'noteComment') {
+        typeSelector = `[data-type^="note"]`;
+    }
+    return `.item${typeSelector}[data-id="${id}"]`;
+}
 function isItem($item) {
     return $item instanceof HTMLElement && $item.classList.contains('item');
 }
@@ -4717,6 +4744,28 @@ class GridBody {
                 this.toggleRowStretchWithButton($button);
             }
         });
+        this.$gridBody.addEventListener('mouseenter', ev => {
+            if (!(ev.target instanceof HTMLElement))
+                return;
+            const $item = ev.target;
+            if (!$item.matches('.item'))
+                return;
+            const descriptor = readItemDescriptor($item);
+            if (!descriptor)
+                return;
+            this.activateHoveredItem(descriptor);
+        }, true);
+        this.$gridBody.addEventListener('mouseleave', ev => {
+            if (!(ev.target instanceof HTMLElement))
+                return;
+            const $item = ev.target;
+            if (!$item.matches('.item'))
+                return;
+            const descriptor = readItemDescriptor($item);
+            if (!descriptor)
+                return;
+            this.deactivateHoveredItem(descriptor);
+        }, true);
     }
     get nColumns() {
         return this.columnUids.length;
@@ -5219,6 +5268,16 @@ class GridBody {
             row.stretch(this.withCompactIds);
         }
     }
+    activateHoveredItem(descriptor) {
+        for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
+            $item.classList.add('highlighted');
+        }
+    }
+    deactivateHoveredItem(descriptor) {
+        for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
+            $item.classList.remove('highlighted');
+        }
+    }
 }
 function getSingleRowLeadingItem($row) {
     const row = new EmbeddedItemRow($row);
@@ -5257,6 +5316,16 @@ function union(sets) {
     })());
 }
 
+function makeSingleIcon() {
+    const $icon = makeElement('span')('icon')();
+    const r = 4;
+    const c1 = -10;
+    const c2 = 10 - 2 * r;
+    $icon.innerHTML = makeCenteredSvg(10, `<rect x="${c1}" y="${-r}" width="${2 * r + 1}" height="${2 * r + 1}" fill="currentColor" />` +
+        `<rect x="${c2 + 1.5}" y="${-r + 1.5}" width="${2 * r - 2}" height="${2 * r - 2}" fill="none" stroke="currentColor" />` +
+        `<line x1="${c2 + 3}" x2="8" y1=".5" y2=".5" fill="none" stroke="currentColor" >`);
+    return $icon;
+}
 class Grid {
     constructor(cx, db, worker, more, sendUpdatedUserQueriesReceiver) {
         this.$grid = makeElement('table')('grid')();
@@ -5551,19 +5620,23 @@ class GridSettingsPanel extends Panel {
                 $label.title = labelTitle;
             return makeDiv('input-group')($label);
         };
-        const makeItemOptionsFieldset = (updateTable, itemOptions, legend) => {
-            return makeElement('fieldset')()(makeElement('legend')()(legend), ...itemOptions.list.map(({ get, set, label, name, title }) => makeGridCheckbox(value => {
+        const makeItemOptionsFieldset = (updateTable, itemOptions, fieldsetClass, $icon) => {
+            return makeElement('fieldset')(fieldsetClass)(makeElement('legend')()($icon), ...itemOptions.list.map(({ get, set, label, name, title }) => makeGridCheckbox(value => {
                 set(value);
                 updateTable();
             }, get(), label, title ?? name)));
         };
+        const $expandedIcon = makeSingleIcon();
+        $expandedIcon.title = `expanded items`;
+        const $collapsedIcon = makeCollectionIcon();
+        $collapsedIcon.title = `collapsed items`;
         $section.append(makeElement('h2')()(`Grid settings`), makeGridCheckbox(value => {
             this.grid.withCompactIds = value;
             this.grid.updateTableAccordingToSettings();
         }, false, `compact ids in collections`), makeGridCheckbox(value => {
             this.grid.withClosedChangesets = value;
             this.grid.updateTableAccordingToSettings();
-        }, false, `changeset close events`, `visible only if there's some other event between changeset opening and closing`), makeItemOptionsFieldset(() => this.grid.updateTableAccordingToExpandedItemOptions(), this.grid.expandedItemOptions, `expanded items`), makeItemOptionsFieldset(() => this.grid.updateTableAccordingToCollapsedItemOptions(), this.grid.collapsedItemOptions, `collapsed items`));
+        }, false, `changeset close events`, `visible only if there's some other event between changeset opening and closing`), makeItemOptionsFieldset(() => this.grid.updateTableAccordingToExpandedItemOptions(), this.grid.expandedItemOptions, 'for-expanded-items', $expandedIcon), makeItemOptionsFieldset(() => this.grid.updateTableAccordingToCollapsedItemOptions(), this.grid.collapsedItemOptions, 'for-collapsed-items', $collapsedIcon));
     }
 }
 
