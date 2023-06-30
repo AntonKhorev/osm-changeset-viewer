@@ -2,7 +2,7 @@ import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
 import type {ItemDescriptor, ItemSequencePoint} from './info'
 import {
-	readItemDescriptor, getItemDescriptorSelector, isEqualItemDescriptor,
+	readItemDescriptor, getItemDescriptorSelector, getBroadItemDescriptorSelector, isEqualItemDescriptor,
 	isGreaterElementSequencePoint, writeSeparatorSequencePoint, readElementSequencePoint, writeElementSequencePoint,
 	getBatchItemSequencePoint
 } from './info'
@@ -42,6 +42,22 @@ export default class GridBody {
 				this.toggleRowStretchWithButton($button)
 			}
 		})
+		this.$gridBody.addEventListener('mouseenter',ev=>{
+			if (!(ev.target instanceof HTMLElement)) return
+			const $item=ev.target
+			if (!$item.matches('.item')) return
+			const descriptor=readItemDescriptor($item)
+			if (!descriptor) return
+			this.activateHoveredItem(descriptor)
+		},true)
+		this.$gridBody.addEventListener('mouseleave',ev=>{
+			if (!(ev.target instanceof HTMLElement)) return
+			const $item=ev.target
+			if (!$item.matches('.item')) return
+			const descriptor=readItemDescriptor($item)
+			if (!descriptor) return
+			this.deactivateHoveredItem(descriptor)
+		},true)
 	}
 	get nColumns() {
 		return this.columnUids.length
@@ -535,6 +551,16 @@ export default class GridBody {
 			row.shrink(this.withCompactIds)
 		} else {
 			row.stretch(this.withCompactIds)
+		}
+	}
+	private activateHoveredItem(descriptor: ItemDescriptor): void {
+		for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
+			$item.classList.add('highlighted')
+		}
+	}
+	private deactivateHoveredItem(descriptor: ItemDescriptor): void {
+		for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
+			$item.classList.remove('highlighted')
 		}
 	}
 }

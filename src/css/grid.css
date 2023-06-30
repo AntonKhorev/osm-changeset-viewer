@@ -428,6 +428,9 @@
 .ui .grid tbody .item.comment.mute .ballon {
 	--ballon-border-radius: calc(2 * var(--spacer));
 }
+.ui .grid tbody .item.highlighted .ballon {
+	background: var(--hover-color);
+}
 
 /*** item disclosure button ***/
 .ui .grid tbody .item .ballon button.disclosure {

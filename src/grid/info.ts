@@ -26,6 +26,15 @@ export function getItemDescriptorSelector({type,id,order}: ItemDescriptor): stri
 		: `:not([data-order])`
 	)
 }
+export function getBroadItemDescriptorSelector({type,id}: ItemDescriptor): string {
+	let typeSelector=`[data-type="${type}"]`
+	if (type=='changeset' || type=='changesetClose' || type=='changesetComment') {
+		typeSelector=`[data-type^="changeset"]`
+	} else if (type=='note' || type=='noteComment') {
+		typeSelector=`[data-type^="note"]`
+	}
+	return `.item${typeSelector}[data-id="${id}"]`
+}
 
 export function isItem($item: Element): $item is HTMLElement {
 	return $item instanceof HTMLElement && $item.classList.contains('item')
