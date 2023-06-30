@@ -431,6 +431,9 @@
 .ui .grid tbody .item.highlighted .ballon {
 	background: var(--hover-color);
 }
+.ui .grid tbody .item.highlighted .icon svg.tip .ballon-part {
+	fill: var(--hover-color);
+}
 
 /*** item disclosure button ***/
 .ui .grid tbody .item .ballon button.disclosure {

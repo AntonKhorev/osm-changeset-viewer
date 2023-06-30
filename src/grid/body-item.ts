@@ -412,15 +412,15 @@ function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): str
 }
 
 function getSvgOfCommentTip(side: -1|1): string {
-	return `<svg class="tip" width="7" height="13" viewBox="${side<0?-.5:-5.5} -6.5 7 13">`+
-		`<path d="M0,0L${-7*side},7V-7Z" fill="canvas"></path>`+
+	return `<svg class="tip" width="7" height="13" viewBox="${side<0?-.5:-5.5} -6.5 7 13" fill="canvas">`+
+		`<path d="M0,0L${-7*side},7V-7Z" class="ballon-part"></path>`+
 		`<path d="M${-6*side},-6L0,0L${-6*side},6" fill="none" stroke="var(--ballon-frame-color)"></path>`+
 	`</svg>`
 }
 function getSvgOfMuteCommentTip(side: -1|1): string {
 	return `<svg class="tip" width="15" height="20" viewBox="${side<0?0:-15} -10 15 20" fill="canvas" stroke="var(--ballon-frame-color)">`+
-		`<circle cx="${-10.5*side}" cy="-3.5" r="4" />`+
-		`<circle cx="${-5.5*side}" cy="1.5" r="2" />`+
+		`<circle cx="${-10.5*side}" cy="-3.5" r="4" class="ballon-part" />`+
+		`<circle cx="${-5.5*side}" cy="1.5" r="2" class="ballon-part" />`+
 	`</svg>`
 }
 
@@ -431,7 +431,7 @@ function makeItemDisclosureButton(isExpanded: boolean): HTMLButtonElement {
 	const s=3.5
 	$disclosure.innerHTML=makeCenteredSvg(r,
 		`<line x1="${-s}" x2="${s}" />`+
-		`<line y1="${-s}" y2="${s}" class='vertical-stroke' />`,
+		`<line y1="${-s}" y2="${s}" class="vertical-stroke" />`,
 	`stroke="currentColor"`)
 	return $disclosure
 }
