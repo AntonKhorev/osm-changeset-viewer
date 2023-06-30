@@ -434,6 +434,9 @@
 .ui .grid tbody .item.highlighted .icon svg.tip .ballon-part {
 	fill: var(--hover-color);
 }
+.ui .grid tbody .item.changeset.highlighted .icon {
+	z-index: 1; /* fix for oversized icons clashing with item highlight */
+}
 
 /*** item disclosure button ***/
 .ui .grid tbody .item .ballon button.disclosure {
