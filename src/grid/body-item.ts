@@ -206,11 +206,26 @@ export function writeExpandedItemFlow(
 		return null
 	}
 	const makeCommentsBadge=(commentRefs: {}[])=>{
+		const ballonRefHtml=`<svg width="15" height="13" viewBox="-8.5 -6.5 15 13">`+
+			`<path class="ballon-ref" d="M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z" fill="transparent" stroke="currentColor" />`+
+			`<circle r=".7" fill="currentColor" cx="-3" />`+
+			`<circle r=".7" fill="currentColor" />`+
+			`<circle r=".7" fill="currentColor" cx="3" />`+
+		`</svg>`
 		if (commentRefs.length>0) {
-			const s=`💬`+` 💬`.repeat(commentRefs.length-1)
-			return makeBadge([s],`comments`)
+			const contents:(string|HTMLElement)[]=[]
+			for (const i of commentRefs.keys()) {
+				if (i) contents.push(` `)
+				const $button=makeElement('button')('comment-ref')()
+				$button.title=`comment ${i+1}`
+				$button.innerHTML=ballonRefHtml
+				contents.push($button)
+			}
+			return makeBadge(contents)
 		} else {
-			return makeBadge([`💬`],`no comments`,true)
+			const $noButton=makeElement('span')('comment-ref')()
+			$noButton.innerHTML=ballonRefHtml
+			return makeBadge([$noButton],`no comments`,true)
 		}
 	}
 	const makeSourceBadge=(source: string|undefined)=>{

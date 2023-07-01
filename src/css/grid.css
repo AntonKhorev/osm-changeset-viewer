@@ -547,6 +547,21 @@
 .ui .grid tbody .item .ballon .flow .badge .delimiter {
 	color: var(--passive-color);
 }
+.ui .grid tbody .item .ballon .flow .badge .comment-ref {
+	box-sizing: border-box;
+	width: 15px;
+	height: 13px;
+	border: 0;
+	padding: 0;
+	vertical-align: -2px;
+	background: transparent;
+}
+.ui .grid tbody .item .ballon .flow .badge button.comment-ref .ballon-ref {
+	fill: canvas;
+}
+.ui .grid tbody .item .ballon .flow .badge button.comment-ref:hover .ballon-ref {
+	fill: var(--hover-color);
+}
 .ui .grid tbody .item .ballon .flow .editor {
 	color: unset;
 }
