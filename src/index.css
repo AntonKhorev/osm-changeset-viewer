@@ -3,6 +3,7 @@
 	--frame-color: #AAA;
 	--light-frame-lightness: 87%;
 	--hover-color: #DEF;
+	--click-color: #FC8;
 	--notice-background-color: #FFB;
 
 	--frame-line: solid 1px var(--frame-color);
@@ -16,6 +17,7 @@
 		--frame-color: #666;
 		--light-frame-lightness: 27%;
 		--hover-color: #246;
+		--click-color: #A84;
 		--notice-background-color: #662;
 	}
 }

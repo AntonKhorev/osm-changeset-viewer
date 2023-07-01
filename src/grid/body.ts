@@ -35,12 +35,25 @@ export default class GridBody {
 		this.$gridBody.addEventListener('click',ev=>{
 			if (!(ev.target instanceof Element)) return
 			const $button=ev.target.closest('button')
-			if (!$button) return
-			if ($button.classList.contains('disclosure')) {
-				this.toggleItemDisclosureWithButton($button)
-			} else if ($button.classList.contains('stretch')) {
-				this.toggleRowStretchWithButton($button)
+			if ($button) {
+				if ($button.classList.contains('disclosure')) {
+					this.toggleItemDisclosureWithButton($button)
+				} else if ($button.classList.contains('stretch')) {
+					this.toggleRowStretchWithButton($button)
+				}
+				return
 			}
+			const $item=ev.target.closest('.item')
+			if ($item instanceof HTMLElement) {
+				this.highlightClickedItem($item)
+				return
+			}
+		})
+		this.$gridBody.addEventListener('transitionend',ev=>{
+			if (!(ev.target instanceof HTMLElement)) return
+			const $item=ev.target.closest('.item')
+			if (!($item instanceof HTMLElement)) return
+			this.unhighlightClickedItem($item)
 		})
 		this.$gridBody.addEventListener('mouseenter',ev=>{
 			if (!(ev.target instanceof HTMLElement)) return
@@ -48,7 +61,7 @@ export default class GridBody {
 			if (!$item.matches('.item')) return
 			const descriptor=readItemDescriptor($item)
 			if (!descriptor) return
-			this.activateHoveredItem(descriptor)
+			this.highlightHoveredItemDescriptor(descriptor)
 		},true)
 		this.$gridBody.addEventListener('mouseleave',ev=>{
 			if (!(ev.target instanceof HTMLElement)) return
@@ -56,7 +69,7 @@ export default class GridBody {
 			if (!$item.matches('.item')) return
 			const descriptor=readItemDescriptor($item)
 			if (!descriptor) return
-			this.deactivateHoveredItem(descriptor)
+			this.unhighlightHoveredItemDescriptor(descriptor)
 		},true)
 	}
 	get nColumns() {
@@ -553,15 +566,28 @@ export default class GridBody {
 			row.stretch(this.withCompactIds)
 		}
 	}
-	private activateHoveredItem(descriptor: ItemDescriptor): void {
+	private highlightHoveredItemDescriptor(descriptor: ItemDescriptor): void {
 		for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
-			$item.classList.add('highlighted')
+			$item.classList.add('highlighted-by-hover')
 		}
 	}
-	private deactivateHoveredItem(descriptor: ItemDescriptor): void {
+	private unhighlightHoveredItemDescriptor(descriptor: ItemDescriptor): void {
 		for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
-			$item.classList.remove('highlighted')
+			$item.classList.remove('highlighted-by-hover')
 		}
+	}
+	private highlightClickedItem($item: HTMLElement): void {
+		requestAnimationFrame(()=>{
+			$item.classList.add('highlighted-by-click')
+			requestAnimationFrame(()=>{
+				$item.classList.remove('highlighted-by-click')
+				$item.classList.add('highlighted-by-click-and-fading')
+			})
+		})
+	}
+	private unhighlightClickedItem($item: HTMLElement): void {
+		$item.classList.remove('highlighted-by-click')
+		$item.classList.remove('highlighted-by-click-and-fading')
 	}
 }
 
