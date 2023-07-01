@@ -49,6 +49,14 @@ export default class GridBody {
 				return
 			}
 		})
+		this.$gridBody.addEventListener('mousemove',ev=>{
+			if (!(ev.target instanceof Element)) return
+			const $item=ev.target.closest('.item')
+			if (!($item instanceof HTMLElement)) return
+			if ($item.classList.contains('highlighted-by-click-and-fading')) {
+				this.highlightClickedItem($item)
+			}
+		})
 		this.$gridBody.addEventListener('transitionend',ev=>{
 			if (!(ev.target instanceof HTMLElement)) return
 			const $item=ev.target.closest('.item')
@@ -578,6 +586,7 @@ export default class GridBody {
 	}
 	private highlightClickedItem($item: HTMLElement): void {
 		requestAnimationFrame(()=>{
+			$item.classList.remove('highlighted-by-click-and-fading')
 			$item.classList.add('highlighted-by-click')
 			requestAnimationFrame(()=>{
 				$item.classList.remove('highlighted-by-click')
