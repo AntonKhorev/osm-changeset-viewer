@@ -56,8 +56,10 @@ export type UserItemCommentDbRecord = {
 
 export type ChangesetCommentDbRecord = UserItemCommentDbRecord
 
+type NoteCommentAction = 'opened' | 'closed' | 'reopened' | 'commented' | 'hidden'
+
 export type NoteCommentDbRecord = UserItemCommentDbRecord & {
-	action: 'opened' | 'closed' | 'reopened' | 'commented' | 'hidden'
+	action: NoteCommentAction
 }
 
 export type UserItemCommentDbRecordMap = {
@@ -76,16 +78,25 @@ type UserItemDbRecord = {
 	createdAt: Date
 }
 
+export type ChangesetCommentRef = {
+	uid?: number
+}
 export type ChangesetDbRecord = UserItemDbRecord & {
 	tags: {[key:string]:string}
 	closedAt?: Date // open if undefined
-	comments: Counter
 	changes: Counter
 	bbox?: Bbox
+	commentRefs: ChangesetCommentRef[]
 }
 
+export type NoteCommentRef = {
+	uid?: number
+	mute: boolean
+	action: NoteCommentAction
+}
 export type NoteDbRecord = UserItemDbRecord & {
 	openingComment?: string
+	commentRefs: NoteCommentRef[]
 }
 
 export type UserItemDbRecordMap = {

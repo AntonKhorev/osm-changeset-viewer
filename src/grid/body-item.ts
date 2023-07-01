@@ -205,9 +205,10 @@ export function writeExpandedItemFlow(
 		}
 		return null
 	}
-	const makeCommentsBadge=(commentsCount: number)=>{
-		if (commentsCount) {
-			return makeBadge([`💬 ${commentsCount}`],`number of comments`)
+	const makeCommentsBadge=(commentRefs: {}[])=>{
+		if (commentRefs.length>0) {
+			const s=`💬`+` 💬`.repeat(commentRefs.length-1)
+			return makeBadge([s],`comments`)
 		} else {
 			return makeBadge([`💬`],`no comments`,true)
 		}
@@ -256,7 +257,7 @@ export function writeExpandedItemFlow(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
 			` `,optionalize('changes',makeBadge([`📝 ${item.changes.count}`],`number of changes`)),
-			` `,optionalize('comments',makeCommentsBadge(item.comments.count))
+			` `,optionalize('comments',makeCommentsBadge(item.commentRefs))
 		)
 		if (item.tags?.comment) {
 			$flow.append(
@@ -273,6 +274,11 @@ export function writeExpandedItemFlow(
 					` `,optionalize('editor',$editorBadge)
 				)
 			}
+		}
+		$flow.append(
+			` `,optionalize('comments',makeCommentsBadge(item.commentRefs))
+		)
+		if (item.openingComment) {
 			$flow.append(
 				` `,optionalize('comment',makeElement('span')()(item.openingComment))
 			)

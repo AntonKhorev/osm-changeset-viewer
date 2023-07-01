@@ -1,8 +1,8 @@
 import type {Server} from '../net'
 import type {
 	UserDbRecord, UserItemDbInfo,
-	ChangesetDbRecord, ChangesetCommentDbRecord,
-	NoteDbRecord, NoteCommentDbRecord
+	ChangesetDbRecord, ChangesetCommentDbRecord, ChangesetCommentRef,
+	NoteDbRecord, NoteCommentDbRecord, NoteCommentRef
 } from '../db'
 import {ChangesetViewerDBWriter} from './db-writer'
 import type {ApiProvider} from '../net'
@@ -266,31 +266,15 @@ async function resumeUserItemStream<T extends 'changesets'|'notes'>(
 }
 
 function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): UserItemDbInfo<'changesets'> {
-	const item: ChangesetDbRecord = {
-		id: a.id,
-		uid: a.uid,
-		createdAt: new Date(a.created_at),
-		tags: a.tags ?? {},
-		comments: {count:a.comments_count},
-		changes: {count:a.changes_count}
-	}
-	if (a.closed_at!=null) {
-		item.closedAt=new Date(a.closed_at)
-	}
-	if (hasBbox(a)) {
-		item.bbox={
-			minLat: a.minlat, maxLat: a.maxlat,
-			minLon: a.minlon, maxLon: a.maxlon,
-		}
-	}
 	const usernames=new Map<number,string>()
 	let comments:ChangesetCommentDbRecord[]=[]
+	let commentRefs: ChangesetCommentRef[] = []
 	if (a.discussion) {
 		comments=a.discussion.map((ac,order)=>{
 			const comment:ChangesetCommentDbRecord={
-				itemId: item.id,
+				itemId: a.id,
 				order,
-				itemUid: item.uid,
+				itemUid: a.uid,
 				createdAt: new Date(ac.date),
 				text: ac.text,
 			}
@@ -302,6 +286,31 @@ function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): 
 			}
 			return comment
 		})
+		commentRefs=a.discussion.map((ac,order)=>{
+			const commentRef:ChangesetCommentRef={
+			}
+			if (ac.uid!=null) {
+				commentRef.uid=ac.uid
+			}
+			return commentRef
+		})
+	}
+	const item: ChangesetDbRecord = {
+		id: a.id,
+		uid: a.uid,
+		createdAt: new Date(a.created_at),
+		tags: a.tags ?? {},
+		changes: {count:a.changes_count},
+		commentRefs
+	}
+	if (a.closed_at!=null) {
+		item.closedAt=new Date(a.closed_at)
+	}
+	if (hasBbox(a)) {
+		item.bbox={
+			minLat: a.minlat, maxLat: a.maxlat,
+			minLon: a.minlon, maxLon: a.maxlon,
+		}
 	}
 	return {item,comments,usernames}
 }
@@ -310,33 +319,40 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 	if (a.properties.comments.length==0) throw new RangeError(`unexpected note without comments`)
 	const [ac0]=a.properties.comments
 	if (ac0.uid==null) throw new RangeError(`unexpected note without an author`)
-	const item: NoteDbRecord = {
-		id: a.properties.id,
-		uid: ac0.uid,
-		createdAt: parseNoteDate(a.properties.date_created),
-	}
-	if (ac0.text!=null) {
-		item.openingComment=ac0.text
-	}
 	const usernames=new Map<number,string>()
-	let comments:NoteCommentDbRecord[]=[]
+	const comments:NoteCommentDbRecord[]=[]
+	const commentRefs: NoteCommentRef[] = []
 	for (const [i,ac] of a.properties.comments.entries()) {
 		if (i==0) continue // 0th comment already saved as item.openingComment
 		const comment:NoteCommentDbRecord={
-			itemId: item.id,
+			itemId: a.properties.id,
 			order: i-1,
-			itemUid: item.uid,
+			itemUid: ac0.uid,
 			createdAt: parseNoteDate(ac.date),
 			text: ac.text??'',
 			action: ac.action,
 		}
+		const commentRef:NoteCommentRef={
+			mute: !!ac.text,
+			action: ac.action,
+		}
 		if (ac.uid!=null) {
-			comment.uid=ac.uid
+			comment.uid=commentRef.uid=ac.uid
 			if (ac.user!=null) {
 				usernames.set(ac.uid,ac.user)
 			}
 		}
 		comments.push(comment)
+		commentRefs.push(commentRef)
+	}
+	const item: NoteDbRecord = {
+		id: a.properties.id,
+		uid: ac0.uid,
+		createdAt: parseNoteDate(a.properties.date_created),
+		commentRefs
+	}
+	if (ac0.text!=null) {
+		item.openingComment=ac0.text
 	}
 	return {item,comments,usernames}
 }
