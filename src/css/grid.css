@@ -436,7 +436,6 @@
 }
 .ui .grid tbody .item.highlighted-by-click-and-fading .ballon {
 	transition: background 5s linear;
-	background: canvas;
 }
 .ui .grid tbody .item.highlighted-by-hover .icon svg.tip .ballon-part {
 	fill: var(--hover-color);
@@ -446,7 +445,6 @@
 }
 .ui .grid tbody .item.highlighted-by-click-and-fading .icon svg.tip .ballon-part {
 	transition: fill 5s linear;
-	fill: canvas;
 }
 .ui .grid tbody .item.changeset.highlighted-by-hover .icon,
 .ui .grid tbody .item.changeset.highlighted-by-click .icon {
