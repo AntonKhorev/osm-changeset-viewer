@@ -195,6 +195,10 @@
 	background: var(--accent-color);
 	pointer-events: all;
 }
+.ui .grid thead tr.selectors td .selector .icon input {
+	width: 14px;
+	height: 14px;
+}
 .ui .grid thead tr.selectors td .selector output:not(:empty) {
 	background: canvas;
 }
