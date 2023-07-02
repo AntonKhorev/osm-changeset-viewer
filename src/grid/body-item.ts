@@ -233,6 +233,7 @@ export function writeExpandedItemFlow(
 			for (const [i,commentRef] of commentRefs.entries()) {
 				if (i) contents.push(` `)
 				const $button=makeElement('button')('comment-ref')()
+				$button.dataset.order=String(i)
 				$button.title=`comment ${i+1}`
 				$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute)
 				contents.push($button)
