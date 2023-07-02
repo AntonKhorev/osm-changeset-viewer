@@ -70,7 +70,7 @@ function makeChangesetItem(i,createdAtString,closedAtString) {
 		createdAt,
 		tags: {},
 		closedAt,
-		comments: {count:0},
+		commentRefs: [],
 		changes: {count:1},
 		bbox: {
 			minLat: 60.0,
@@ -551,6 +551,7 @@ describe("GridBody",()=>{
 				uid: 102,
 				createdAt: new Date('2023-03-15'),
 				openingComment: `meh`,
+				commentRefs: [],
 			},
 		},usernames,false)
 		gridBody.addItem(makeChangesetCloseBatchItem(3,'2023-03-04','2023-03-05'),usernames,false)
@@ -601,6 +602,7 @@ describe("GridBody",()=>{
 				uid: 102,
 				createdAt: new Date('2023-03-01'),
 				openingComment: `meh`,
+				commentRefs: [],
 			},
 		},usernames,false)
 		gridBody.updateTableAccordingToSettings()
