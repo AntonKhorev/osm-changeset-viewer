@@ -332,7 +332,7 @@
 .ui .grid tbody .item.changeset .icon[data-size="4"] { --checkbox-size: 20px }
 .ui .grid tbody .item.changeset .icon > * {
 	width: var(--checkbox-size);
-	aspect-ratio: 1;
+	height: var(--checkbox-size);
 }
 .ui .grid tbody .item.changeset.closed .icon > * {
 	background: canvas;
