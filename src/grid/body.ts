@@ -607,6 +607,7 @@ export default class GridBody {
 		if (!commentDescriptor) return
 		const $comment=this.$gridBody.querySelector(getItemDescriptorSelector(commentDescriptor))
 		if (!($comment instanceof HTMLElement)) return
+		$comment.scrollIntoView({block:'nearest'})
 		this.highlightClickedItem($comment)
 	}
 	private highlightHoveredItemDescriptor(descriptor: ItemDescriptor): void {
