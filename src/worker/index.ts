@@ -333,7 +333,7 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 			action: ac.action,
 		}
 		const commentRef:NoteCommentRef={
-			mute: !!ac.text,
+			mute: !ac.text,
 			action: ac.action,
 		}
 		if (ac.uid!=null) {

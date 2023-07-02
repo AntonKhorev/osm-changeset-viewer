@@ -205,20 +205,34 @@ export function writeExpandedItemFlow(
 		}
 		return null
 	}
-	const makeCommentsBadge=(uid: number, commentRefs: {uid?:number}[])=>{
-		const getBallonRefHtml=(incoming=false)=>`<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
-			`<path class="ballon-ref"${incoming?` transform="scale(-1,1)"`:``} d="M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z" fill="transparent" stroke="currentColor" />`+
-			`<circle r=".7" fill="currentColor" cx="-3" />`+
-			`<circle r=".7" fill="currentColor" />`+
-			`<circle r=".7" fill="currentColor" cx="3" />`+
-		`</svg>`
+	const makeCommentsBadge=(uid: number, commentRefs: {uid?:number,mute?:boolean}[])=>{
+		const getBallonRefHtml=(incoming=false,mute=false)=>{
+			const flip=incoming?` transform="scale(-1,1)"`:``
+			const ballonColors=`fill="transparent" stroke="currentColor"`
+			let ballon:string
+			if (mute) {
+				ballon=`<g${flip} ${ballonColors}>`+
+					`<circle class="ballon-ref" r="6" />`+
+					`<circle class="ballon-ref" r="2" cx="-6" cy="4" />`+
+				`</g>`
+			} else {
+				const ballonPathData=`M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`
+				ballon=`<path class="ballon-ref"${flip} d="${ballonPathData}" ${ballonColors} />`
+			}
+			return `<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
+				ballon+
+				`<circle r=".7" fill="currentColor" cx="-3" />`+
+				`<circle r=".7" fill="currentColor" />`+
+				`<circle r=".7" fill="currentColor" cx="3" />`+
+			`</svg>`
+		}
 		if (commentRefs.length>0) {
 			const contents:(string|HTMLElement)[]=[]
 			for (const [i,commentRef] of commentRefs.entries()) {
 				if (i) contents.push(` `)
 				const $button=makeElement('button')('comment-ref')()
 				$button.title=`comment ${i+1}`
-				$button.innerHTML=getBallonRefHtml(commentRef.uid!=uid)
+				$button.innerHTML=getBallonRefHtml(commentRef.uid!=uid,commentRef.mute)
 				contents.push($button)
 			}
 			return makeBadge(contents)
