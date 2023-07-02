@@ -18,7 +18,7 @@
 	padding: 0;
 	vertical-align: top;
 }
-.ui .grid :is(td,th,.item>.icon,.item>.ballon) {
+.ui .grid :is(td,th,.item>.icon,.item>.balloon) {
 	--temp-accent-color: hsl(var(--hue) var(--accent-saturation) 50%);
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
 }
@@ -318,7 +318,7 @@
 	color: var(--accent-color);
 }
 
-/*** item parts outside ballon ***/
+/*** item parts outside balloon ***/
 .ui .grid tbody tr.collection .item {
 	white-space: nowrap;
 }
@@ -390,60 +390,60 @@
 	display: none;
 }
 
-/*** item ballon ***/
-.ui .grid tbody .item > :is(.ballon,.icon) {
-	--ballon-frame-color: hsl(var(--hue) 50% var(--light-frame-lightness));
-	--ballon-frame-line: solid 1px var(--ballon-frame-color);
+/*** item balloon ***/
+.ui .grid tbody .item > :is(.balloon,.icon) {
+	--balloon-frame-color: hsl(var(--hue) 50% var(--light-frame-lightness));
+	--balloon-frame-line: solid 1px var(--balloon-frame-color);
 }
-.ui .grid tbody .item .ballon {
-	--ballon-min-height: 24px;
+.ui .grid tbody .item .balloon {
+	--balloon-min-height: 24px;
 	--disclosure-size: 13px;
 	position: relative;
 	border: solid 1px transparent;
 	padding-block: 3px;
 }
-.ui .grid tbody tr.collection .item .ballon {
+.ui .grid tbody tr.collection .item .balloon {
 	padding-inline: var(--item-spacer);
 	padding-bottom: 4px;
 }
-.ui .grid tbody tr.collection .item.comment.incoming .ballon {
+.ui .grid tbody tr.collection .item.comment.incoming .balloon {
 	margin-left: calc(-.75 * var(--spacer));
 }
-.ui .grid tbody tr.single .item .ballon {
+.ui .grid tbody tr.single .item .balloon {
 	box-sizing: border-box;
 	margin-block: -1px;
 }
-.ui .grid tbody tr.single .item .ballon {
+.ui .grid tbody tr.single .item .balloon {
 	display: block;
 }
-.ui .grid tbody tr.single .item td:not([colspan]) .ballon {
+.ui .grid tbody tr.single .item td:not([colspan]) .balloon {
 	margin-right: -1px;
 }
-.ui .grid tbody .item.comment .ballon {
-	--ballon-border-radius: var(--spacer);
-	border: var(--ballon-frame-line);
-	border-radius: var(--ballon-border-radius);
+.ui .grid tbody .item.comment .balloon {
+	--balloon-border-radius: var(--spacer);
+	border: var(--balloon-frame-line);
+	border-radius: var(--balloon-border-radius);
 	background: canvas;
 }
-.ui .grid tbody .item.comment.mute .ballon {
-	--ballon-border-radius: calc(2 * var(--spacer));
+.ui .grid tbody .item.comment.mute .balloon {
+	--balloon-border-radius: calc(2 * var(--spacer));
 }
-.ui .grid tbody .item.highlighted-by-hover .ballon {
+.ui .grid tbody .item.highlighted-by-hover .balloon {
 	background: var(--hover-color);
 }
-.ui .grid tbody .item.highlighted-by-click .ballon {
+.ui .grid tbody .item.highlighted-by-click .balloon {
 	background: var(--click-color);
 }
-.ui .grid tbody .item.highlighted-by-click-and-fading .ballon {
+.ui .grid tbody .item.highlighted-by-click-and-fading .balloon {
 	transition: background 5s linear;
 }
-.ui .grid tbody .item.highlighted-by-hover .icon svg.tip .ballon-part {
+.ui .grid tbody .item.highlighted-by-hover .icon svg.tip .balloon-part {
 	fill: var(--hover-color);
 }
-.ui .grid tbody .item.highlighted-by-click .icon svg.tip .ballon-part {
+.ui .grid tbody .item.highlighted-by-click .icon svg.tip .balloon-part {
 	fill: var(--click-color);
 }
-.ui .grid tbody .item.highlighted-by-click-and-fading .icon svg.tip .ballon-part {
+.ui .grid tbody .item.highlighted-by-click-and-fading .icon svg.tip .balloon-part {
 	transition: fill 5s linear;
 }
 .ui .grid tbody .item.changeset.highlighted-by-hover .icon,
@@ -452,7 +452,7 @@
 }
 
 /*** item disclosure button ***/
-.ui .grid tbody .item .ballon button.disclosure {
+.ui .grid tbody .item .balloon button.disclosure {
 	box-sizing: border-box;
 	width: var(--disclosure-size);
 	height: var(--disclosure-size);
@@ -461,29 +461,29 @@
 	border: var(--frame-line);
 	background: canvas;
 }
-.ui .grid tbody tr.single .item .ballon button.disclosure {
+.ui .grid tbody tr.single .item .balloon button.disclosure {
 	position: absolute;
-	top: calc(.5 * var(--ballon-min-height) - .5 * var(--disclosure-size));
+	top: calc(.5 * var(--balloon-min-height) - .5 * var(--disclosure-size));
 	left: var(--item-spacer);
 }
-.ui .grid tbody tr.collection .item .ballon button.disclosure {
+.ui .grid tbody tr.collection .item .balloon button.disclosure {
 	vertical-align: -1px; /* has odd height and is right before underlined text, therefore looks better shifted down */
 }
-.ui .grid tbody .item .ballon button.disclosure:hover {
+.ui .grid tbody .item .balloon button.disclosure:hover {
 	background: var(--hover-color);
 }
-.ui .grid tbody .item .ballon button.disclosure[aria-expanded="true"] .vertical-stroke {
+.ui .grid tbody .item .balloon button.disclosure[aria-expanded="true"] .vertical-stroke {
 	visibility: hidden;
 }
 
-/*** item inner ballon flow with sender cutout ***/
-.ui .grid tbody .item .ballon .flow {
+/*** item inner balloon flow with sender cutout ***/
+.ui .grid tbody .item .balloon .flow {
 	white-space: normal;
 }
-.ui .grid tbody .item .ballon .flow > * {
+.ui .grid tbody .item .balloon .flow > * {
 	text-indent: initial;
 }
-.ui .grid tbody tr.single .item .ballon .flow {
+.ui .grid tbody tr.single .item .balloon .flow {
 	min-height: 18px;
 	margin: 0 -1px;
 	padding-inline: calc(var(--item-spacer) + 1px); /* TODO 1 px is for cutout (?), won't need it after tip rewrite */
@@ -495,7 +495,7 @@
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 }
-.ui .grid tbody tr.single .item .ballon .flow .from {
+.ui .grid tbody tr.single .item .balloon .flow .from {
 	--from-border-radius: .25rem;
 	--from-tip-height: calc(1rem - 2 * var(--from-border-radius));
 	--from-tip-width: .5rem;
@@ -505,24 +505,24 @@
 	max-width: calc(100% - var(--disclosure-size) - 2 * var(--item-spacer));
 	padding-right: var(--from-border-radius);
 	margin-left: 1ch;
-	border: var(--ballon-frame-line);
+	border: var(--balloon-frame-line);
 	background: canvas;
 }
-.ui .grid tbody tr.single .item:not(.mute) .ballon .flow .from {
+.ui .grid tbody tr.single .item:not(.mute) .balloon .flow .from {
 	margin-right: calc(0px - var(--item-spacer) - 1px);
 	border-right: none;
 	border-bottom-left-radius: var(--from-border-radius);
 	border-top-left-radius: var(--from-border-radius);
 }
-.ui .grid tbody tr.single .item.mute .ballon .flow .from {
+.ui .grid tbody tr.single .item.mute .balloon .flow .from {
 	border-radius: var(--spacer);
 }
-.ui .grid tbody tr.single .item .ballon .flow .from .icon.sender {
+.ui .grid tbody tr.single .item .balloon .flow .from .icon.sender {
 	display: inline-block;
 	height: 16px;
 	flex-shrink: 0;
 }
-.ui .grid tbody tr.single .item .ballon .flow .from a {
+.ui .grid tbody tr.single .item .balloon .flow .from a {
 	display: block;
 	max-width: 100%;
 	font-size: .9em;
@@ -532,8 +532,8 @@
 	overflow: hidden;
 }
 
-/*** item inner ballon flow elements ***/
-.ui .grid tbody .item .ballon .flow .badge {
+/*** item inner balloon flow elements ***/
+.ui .grid tbody .item .balloon .flow .badge {
 	--passive-color: color-mix(in srgb, currentColor 30%, transparent);
 	border-radius: 4px;
 	padding: 1px 2px;
@@ -543,11 +543,11 @@
 	color: var(--light-text-color);
 	white-space: nowrap;
 }
-.ui .grid tbody .item .ballon .flow .badge.empty,
-.ui .grid tbody .item .ballon .flow .badge .delimiter {
+.ui .grid tbody .item .balloon .flow .badge.empty,
+.ui .grid tbody .item .balloon .flow .badge .delimiter {
 	color: var(--passive-color);
 }
-.ui .grid tbody .item .ballon .flow .badge .comment-ref {
+.ui .grid tbody .item .balloon .flow .badge .comment-ref {
 	box-sizing: border-box;
 	width: 15px;
 	height: 13px;
@@ -556,16 +556,16 @@
 	vertical-align: -2px;
 	background: transparent;
 }
-.ui .grid tbody .item .ballon .flow .badge button.comment-ref .ballon-ref {
+.ui .grid tbody .item .balloon .flow .badge button.comment-ref .balloon-ref {
 	fill: canvas;
 }
-.ui .grid tbody .item .ballon .flow .badge button.comment-ref:hover .ballon-ref {
+.ui .grid tbody .item .balloon .flow .badge button.comment-ref:hover .balloon-ref {
 	fill: var(--hover-color);
 }
-.ui .grid tbody .item .ballon .flow .editor {
+.ui .grid tbody .item .balloon .flow .editor {
 	color: unset;
 }
-.ui .grid tbody .item .ballon .flow a.editor:not([hidden]) {
+.ui .grid tbody .item .balloon .flow a.editor:not([hidden]) {
 	display: inline-block;
 	vertical-align: -3px;
 	height: 16px;
