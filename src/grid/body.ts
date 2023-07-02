@@ -206,6 +206,26 @@ export default class GridBody {
 	}
 	updateTableAccordingToCollapsedItemOptions(): void {
 		this.updateTableAccordingToItemOptions(this.collapsedItemOptions,'collection')
+		const hasSpaceBefore=($e:HTMLElement)=>{
+			const $s=$e.previousSibling
+			return $s?.nodeType==document.TEXT_NODE && $s.textContent==' '
+		}
+		for (const $flow of this.$gridBody.querySelectorAll(`:scope > tr.collection .item .balloon .flow`)) {
+			let metVisiblePiece=false
+			for (const $piece of $flow.children) {
+				if (!($piece instanceof HTMLElement)) continue
+				if (!$piece.hidden && metVisiblePiece) {
+					if (!hasSpaceBefore($piece)) {
+						$piece.before(' ')
+					}
+				} else {
+					if (hasSpaceBefore($piece)) {
+						$piece.previousSibling?.remove()
+					}
+				}
+				metVisiblePiece||=!$piece.hidden
+			}
+		}
 	}
 	private updateTableAccordingToItemOptions(itemOptions: ItemOptions, rowClass: string): void {
 		for (const {get,name} of itemOptions.list) {

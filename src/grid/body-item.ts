@@ -138,8 +138,10 @@ export function trimToCollapsedItemFlow(
 		$pieces.push($piece)
 	}
 	$flow.replaceChildren()
-	for (const [i,$piece] of $pieces.entries()) {
-		if (i) $flow.append(' ')
+	let metVisiblePiece=false
+	for (const $piece of $pieces) {
+		if (!$piece.hidden && metVisiblePiece) $flow.append(' ')
+		metVisiblePiece||=!$piece.hidden
 		$flow.append($piece)
 	}
 }
