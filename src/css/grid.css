@@ -545,7 +545,6 @@
 	font-size: .8em;
 	background: #8882;
 	color: var(--light-text-color);
-	white-space: nowrap;
 }
 .ui .grid tbody .item .balloon .flow .badge.empty,
 .ui .grid tbody .item .balloon .flow .badge .delimiter {
