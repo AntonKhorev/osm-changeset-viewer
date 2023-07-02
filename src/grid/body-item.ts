@@ -205,26 +205,26 @@ export function writeExpandedItemFlow(
 		}
 		return null
 	}
-	const makeCommentsBadge=(commentRefs: {}[])=>{
-		const ballonRefHtml=`<svg width="15" height="13" viewBox="-8.5 -6.5 15 13">`+
-			`<path class="ballon-ref" d="M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z" fill="transparent" stroke="currentColor" />`+
+	const makeCommentsBadge=(uid: number, commentRefs: {uid?:number}[])=>{
+		const getBallonRefHtml=(incoming=false)=>`<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
+			`<path class="ballon-ref"${incoming?` transform="scale(-1,1)"`:``} d="M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z" fill="transparent" stroke="currentColor" />`+
 			`<circle r=".7" fill="currentColor" cx="-3" />`+
 			`<circle r=".7" fill="currentColor" />`+
 			`<circle r=".7" fill="currentColor" cx="3" />`+
 		`</svg>`
 		if (commentRefs.length>0) {
 			const contents:(string|HTMLElement)[]=[]
-			for (const i of commentRefs.keys()) {
+			for (const [i,commentRef] of commentRefs.entries()) {
 				if (i) contents.push(` `)
 				const $button=makeElement('button')('comment-ref')()
 				$button.title=`comment ${i+1}`
-				$button.innerHTML=ballonRefHtml
+				$button.innerHTML=getBallonRefHtml(commentRef.uid!=uid)
 				contents.push($button)
 			}
 			return makeBadge(contents)
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
-			$noButton.innerHTML=ballonRefHtml
+			$noButton.innerHTML=getBallonRefHtml()
 			return makeBadge([$noButton],`no comments`,true)
 		}
 	}
@@ -272,7 +272,7 @@ export function writeExpandedItemFlow(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
 			` `,optionalize('changes',makeBadge([`📝 ${item.changes.count}`],`number of changes`)),
-			` `,optionalize('comments',makeCommentsBadge(item.commentRefs))
+			` `,optionalize('comments',makeCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.tags?.comment) {
 			$flow.append(
@@ -291,7 +291,7 @@ export function writeExpandedItemFlow(
 			}
 		}
 		$flow.append(
-			` `,optionalize('comments',makeCommentsBadge(item.commentRefs))
+			` `,optionalize('comments',makeCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.openingComment) {
 			$flow.append(
