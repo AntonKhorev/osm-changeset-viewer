@@ -573,13 +573,13 @@
 	color: var(--passive-color);
 }
 .ui .grid tbody .item .balloon .flow .badge .comment-ref {
-	box-sizing: border-box;
 	width: 15px;
 	height: 13px;
 	border: 0;
 	padding: 0;
 	vertical-align: -2px;
 	background: transparent;
+	white-space: nowrap; /* FIXME still wraps if it's a button */
 }
 .ui .grid tbody .item .balloon .flow .badge button.comment-ref .balloon-ref {
 	fill: canvas;
