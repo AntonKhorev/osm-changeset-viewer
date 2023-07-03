@@ -78,6 +78,7 @@ export function makeItemShell(
 		$icon.append($button)
 		let commentIconSvg: string
 		if (type=='noteComment') {
+			$item.classList.add('for-note')
 			if (item.action=='commented') {
 				$item.classList.add('passive')
 			} else {
@@ -86,6 +87,7 @@ export function makeItemShell(
 			$button.title=`${item.action} note ${id}`
 			commentIconSvg=getSvgOfCommentIcon('note',item.action)
 		} else {
+			$item.classList.add('for-changeset')
 			$item.classList.add('passive')
 			$button.title=`comment for changeset ${id}`
 			commentIconSvg=getSvgOfCommentIcon('changeset')

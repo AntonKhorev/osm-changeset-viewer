@@ -406,6 +406,9 @@
 .ui .grid tbody tr.collection .item.comment.passive .icon:first-child > button {
 	height: 12px;
 }
+.ui .grid tbody tr.collection .item.comment.passive.for-note .icon:first-child > button {
+	border-radius: 50%;
+}
 .ui .grid tbody tr.single .item.comment.incoming .icon.sender {
 	display: none;
 }
