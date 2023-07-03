@@ -331,8 +331,11 @@
 	border: none;
 	padding: 0;
 }
-.ui .grid tbody .item .icon > button:hover {
+.ui .grid tbody .item:not(.comment:not(.passive)) .icon > button:hover {
 	background: var(--hover-color);
+}
+.ui .grid tbody .item.comment:not(.passive) .icon > button:hover .pin {
+	fill: var(--hover-color);
 }
 .ui .grid tbody .item .icon > button > * {
 	position: absolute;

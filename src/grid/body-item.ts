@@ -444,7 +444,7 @@ function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): str
 		}
 		if (actionGlyph!=null) {
 			return makeCenteredSvg(10,
-				`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" />`+
+				`<path class="pin" d="${computeMarkerOutlinePath(16,6)}" fill="canvas" />`+
 				actionGlyph,
 			`stroke="currentColor" stroke-width="2"`)
 		} else {
