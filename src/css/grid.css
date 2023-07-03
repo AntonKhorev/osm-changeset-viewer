@@ -334,6 +334,11 @@
 .ui .grid tbody .item .icon > button:hover {
 	background: var(--hover-color);
 }
+.ui .grid tbody .item .icon > button > * {
+	position: absolute;
+	inset: 0;
+	margin: auto;
+}
 .ui .grid tbody .item .icon > svg.tip {
 	pointer-events: none;
 }
@@ -395,11 +400,11 @@
 	right: unset;
 	left: var(--tip-overlap);
 }
-.ui .grid tbody tr.collection .item.comment.passive .icon:not(.sender) {
+.ui .grid tbody tr.collection .item.comment.passive .icon:first-child {
 	width: 12px;
 }
-.ui .grid tbody tr.collection .item.comment.passive .icon:not(.sender) > :not(.tip) {
-	margin-left: unset;
+.ui .grid tbody tr.collection .item.comment.passive .icon:first-child > button {
+	height: 12px;
 }
 .ui .grid tbody tr.single .item.comment.incoming .icon.sender {
 	display: none;
@@ -422,7 +427,7 @@
 	padding-bottom: 4px;
 }
 .ui .grid tbody tr.collection .item.comment.incoming .balloon {
-	margin-left: calc(-.75 * var(--spacer));
+	margin-left: calc(-.5 * var(--spacer));
 }
 .ui .grid tbody tr.single .item .balloon {
 	box-sizing: border-box;
