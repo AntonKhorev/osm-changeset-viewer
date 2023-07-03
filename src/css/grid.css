@@ -323,6 +323,20 @@
 }
 
 /*** item parts outside balloon ***/
+.ui .grid tbody .item .icon > button {
+	width: 100%;
+	height: 100%;
+	background: canvas;
+	color: var(--accent-color);
+	border: none;
+	padding: 0;
+}
+.ui .grid tbody .item .icon > button:hover {
+	background: var(--hover-color);
+}
+.ui .grid tbody .item .icon > svg.tip {
+	pointer-events: none;
+}
 .ui .grid tbody tr.collection .item {
 	white-space: nowrap;
 }
@@ -337,15 +351,6 @@
 .ui .grid tbody .item.changeset .icon > * {
 	width: var(--checkbox-size);
 	height: var(--checkbox-size);
-}
-.ui .grid tbody .item.changeset.closed .icon > button {
-	background: canvas;
-	color: var(--accent-color);
-	border: none;
-	padding: 0;
-}
-.ui .grid tbody .item.changeset.closed .icon > button:hover {
-	background: var(--hover-color);
 }
 .ui .grid tbody tr.collection .item.changeset.closed .icon > button > svg {
 	rotate: -90deg;

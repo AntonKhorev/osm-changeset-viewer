@@ -74,6 +74,8 @@ export function makeItemShell(
 		$item.classList.add('comment')
 		if (!item.text) $item.classList.add('mute')
 		id=item.itemId
+		const $button=makeElement('button')('ref')()
+		$icon.append($button)
 		let commentIconSvg: string
 		if (type=='noteComment') {
 			if (item.action=='commented') {
@@ -81,22 +83,23 @@ export function makeItemShell(
 			} else {
 				$item.classList.add(item.action)
 			}
-			$icon.title=`${item.action} note ${id}`
+			$button.title=`${item.action} note ${id}`
 			commentIconSvg=getSvgOfCommentIcon('note',item.action)
 		} else {
 			$item.classList.add('passive')
-			$icon.title=`comment for changeset ${id}`
+			$button.title=`comment for changeset ${id}`
 			commentIconSvg=getSvgOfCommentIcon('changeset')
 		}
 		setColor($icon,item.itemUid)
 		setColor($balloon,item.uid)
 		if (item.uid==item.itemUid) {
-			$icon.innerHTML=commentIconSvg+(item.text
+			$button.innerHTML=commentIconSvg
+			$icon.insertAdjacentHTML('beforeend',(item.text
 				? getSvgOfCommentTip(-1)
 				: getSvgOfMuteCommentTip(-1)
-			)
+			))
 		} else {
-			$icon.innerHTML=commentIconSvg
+			$button.innerHTML=commentIconSvg
 			$item.classList.add('incoming')
 			$senderIcon=makeElement('span')('icon')()
 			$senderIcon.classList.add('sender')
