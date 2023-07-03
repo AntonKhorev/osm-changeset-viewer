@@ -622,7 +622,7 @@ export default class GridBody {
 		const $targetItem=this.$gridBody.querySelector(getItemDescriptorSelector(targetDescriptor))
 		if (!($targetItem instanceof HTMLElement)) return
 		$targetItem.scrollIntoView({block:'nearest'})
-		const $targetFocusable=$targetItem.querySelector(':scope > .icon:first-child :is(input,button)')
+		const $targetFocusable=$targetItem.querySelector(':scope > .icon:first-child :is(input,button,[tabindex])')
 		if ($targetFocusable instanceof HTMLElement) {
 			$targetFocusable.focus()
 		}

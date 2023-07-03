@@ -414,14 +414,17 @@ function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, s
 }
 
 function writeNoteIcon($icon: HTMLElement, id: number): void {
-	$icon.title=`note ${id}`
+	const $anchor=makeElement('a')()()
+	$anchor.tabIndex=0
+	$anchor.title=`note ${id}`
 	const s=3
-	$icon.innerHTML=makeCenteredSvg(10,
+	$anchor.innerHTML=makeCenteredSvg(10,
 		`<path d="${computeNewOutlinePath(9.5,8,10)}" fill="none" stroke-width="1" />`+
 		`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" />`+
 		`<line x1="${-s}" x2="${s}" />`+
 		`<line y1="${-s}" y2="${s}" />`,
 	`stroke="currentColor" stroke-width="2"`)
+	$icon.append($anchor)
 }
 
 function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): string {
