@@ -615,11 +615,15 @@ export default class GridBody {
 	): void {
 		const $sourceItem=$button.closest('.item')
 		if (!($sourceItem instanceof HTMLElement)) return
+		const $sourceCell=$sourceItem.closest('td')
+		if (!$sourceCell || !$sourceCell.parentElement) return
+		const iCell=[...$sourceCell.parentElement.children].indexOf($sourceCell)
+		if (iCell<0) return
 		const sourceDescriptor=readItemDescriptor($sourceItem)
 		if (!sourceDescriptor) return
 		const targetDescriptor=getTargetDescriptor(sourceDescriptor)
 		if (!targetDescriptor) return
-		const $targetItem=this.$gridBody.querySelector(getItemDescriptorSelector(targetDescriptor))
+		const $targetItem=this.$gridBody.querySelector(`td:nth-child(${iCell+1}) `+getItemDescriptorSelector(targetDescriptor))
 		if (!($targetItem instanceof HTMLElement)) return
 		$targetItem.scrollIntoView({block:'nearest'})
 		const $targetFocusable=$targetItem.querySelector(':scope > .icon:first-child :is(input,button,[tabindex])')
