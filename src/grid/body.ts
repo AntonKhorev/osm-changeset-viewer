@@ -687,7 +687,7 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 
 function preferSameColumnSelector($item: HTMLElement, selector: string): string {
 	const $cell=$item.closest('td')
-	if (!$cell || !$cell.parentElement) return selector
+	if (!$cell || !$cell.parentElement || $cell.hasAttribute('colspan')) return selector
 	const iCell=[...$cell.parentElement.children].indexOf($cell)
 	if (iCell<0) return selector
 	return `td:is(:nth-child(${iCell+1}),[colspan]) ${selector}`
