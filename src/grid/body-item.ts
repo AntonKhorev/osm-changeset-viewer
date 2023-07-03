@@ -212,8 +212,8 @@ export function writeExpandedItemFlow(
 		}
 		return null
 	}
-	const makeCommentsBadge=(uid: number, commentRefs: {uid?:number,mute?:boolean}[])=>{
-		const getBalloonRefHtml=(incoming=false,mute=false)=>{
+	const makeCommentsBadge=(uid: number, commentRefs: {uid?:number,mute?:boolean,action?:string}[])=>{
+		const getBalloonRefHtml=(incoming=false,mute=false,action?:string)=>{
 			const flip=incoming?` transform="scale(-1,1)"`:``
 			const balloonColors=`fill="transparent" stroke="currentColor"`
 			let balloon:string
@@ -226,11 +226,17 @@ export function writeExpandedItemFlow(
 				const balloonPathData=`M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`
 				balloon=`<path class="balloon-ref"${flip} d="${balloonPathData}" ${balloonColors} />`
 			}
-			return `<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
-				balloon+
+			let balloonContents=(
 				`<circle r=".7" fill="currentColor" cx="-3" />`+
 				`<circle r=".7" fill="currentColor" />`+
-				`<circle r=".7" fill="currentColor" cx="3" />`+
+				`<circle r=".7" fill="currentColor" cx="3" />`
+			)
+			const actionGlyph=getSvgOfActionGlyph(action)
+			if (actionGlyph!=null) {
+				balloonContents=`<g stroke="currentColor">${actionGlyph}</g>`
+			}
+			return `<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
+				balloon+balloonContents+
 			`</svg>`
 		}
 		if (commentRefs.length>0) {
@@ -240,7 +246,7 @@ export function writeExpandedItemFlow(
 				const $button=makeElement('button')('comment-ref')()
 				$button.dataset.order=String(i)
 				$button.title=`comment ${i+1}`
-				$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute)
+				$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute,commentRef.action)
 				contents.push($button)
 			}
 			return makeBadge(contents)
@@ -431,17 +437,7 @@ function writeNoteIcon($icon: HTMLElement, id: number): void {
 
 function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): string {
 	if (itemType=='note') {
-		const s=2.5
-		let actionGlyph: string|undefined
-		if (action=='closed') {
-			actionGlyph=`<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" />`
-		} else if (action=='reopened') {
-			actionGlyph=
-				`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" />`+
-				`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" />`
-		} else if (action=='hidden') {
-			actionGlyph=``
-		}
+		const actionGlyph=getSvgOfActionGlyph(action)
 		if (actionGlyph!=null) {
 			return makeCenteredSvg(10,
 				`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" />`+
@@ -454,6 +450,20 @@ function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): str
 	} else {
 		const r=4
 		return makeCenteredSvg(r,`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`)
+	}
+}
+
+function getSvgOfActionGlyph(action?: string): string|undefined {
+	const s=2.5
+	if (action=='closed') {
+		return `<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" />`
+	} else if (action=='reopened') {
+		return (
+			`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" />`+
+			`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" />`
+		)
+	} else if (action=='hidden') {
+		return ``
 	}
 }
 
