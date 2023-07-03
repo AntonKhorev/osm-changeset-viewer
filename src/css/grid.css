@@ -326,16 +326,14 @@
 .ui .grid tbody .item .icon > button {
 	width: 100%;
 	height: 100%;
-	background: canvas;
+	background: transparent;
 	color: var(--accent-color);
 	border: none;
 	padding: 0;
 }
-.ui .grid tbody .item:not(.comment:not(.passive)) .icon > button:hover {
+.ui .grid tbody tr.single .item .icon > button:hover,
+.ui .grid tbody .item .icon > button:hover {
 	background: var(--hover-color);
-}
-.ui .grid tbody .item.comment:not(.passive) .icon > button:hover .pin {
-	fill: var(--hover-color);
 }
 .ui .grid tbody .item .icon > button > * {
 	position: absolute;
@@ -409,7 +407,7 @@
 .ui .grid tbody tr.collection .item.comment.passive .icon:first-child > button {
 	height: 12px;
 }
-.ui .grid tbody tr.collection .item.comment.passive.for-note .icon:first-child > button {
+.ui .grid tbody .item.comment.for-note .icon:first-child > button {
 	border-radius: 50%;
 }
 .ui .grid tbody tr.single .item.comment.incoming .icon.sender {
