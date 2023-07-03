@@ -615,15 +615,13 @@ export default class GridBody {
 	): void {
 		const $sourceItem=$button.closest('.item')
 		if (!($sourceItem instanceof HTMLElement)) return
-		const $sourceCell=$sourceItem.closest('td')
-		if (!$sourceCell || !$sourceCell.parentElement) return
-		const iCell=[...$sourceCell.parentElement.children].indexOf($sourceCell)
-		if (iCell<0) return
 		const sourceDescriptor=readItemDescriptor($sourceItem)
 		if (!sourceDescriptor) return
 		const targetDescriptor=getTargetDescriptor(sourceDescriptor)
 		if (!targetDescriptor) return
-		const $targetItem=this.$gridBody.querySelector(`td:nth-child(${iCell+1}) `+getItemDescriptorSelector(targetDescriptor))
+		const $targetItem=this.$gridBody.querySelector(
+			preferSameColumnSelector($sourceItem,getItemDescriptorSelector(targetDescriptor))
+		)
 		if (!($targetItem instanceof HTMLElement)) return
 		$targetItem.scrollIntoView({block:'nearest'})
 		const $targetFocusable=$targetItem.querySelector(':scope > .icon:first-child :is(input,button,[tabindex])')
@@ -685,6 +683,14 @@ function isSameMonthTimestamps(t1: number, t2: number): boolean {
 	const d1=new Date(t1)
 	const d2=new Date(t2)
 	return d1.getUTCFullYear()==d2.getUTCFullYear() && d1.getUTCMonth()==d2.getUTCMonth()
+}
+
+function preferSameColumnSelector($item: HTMLElement, selector: string): string {
+	const $cell=$item.closest('td')
+	if (!$cell || !$cell.parentElement) return selector
+	const iCell=[...$cell.parentElement.children].indexOf($cell)
+	if (iCell<0) return selector
+	return `td:is(:nth-child(${iCell+1}),[colspan]) ${selector}`
 }
 
 function union<T>(sets: Iterable<Set<T>>): Set<T> {
