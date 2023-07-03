@@ -40,9 +40,9 @@ export default class GridBody {
 				if ($button.classList.contains('disclosure')) {
 					this.toggleItemDisclosureWithButton($button)
 				} else if ($button.classList.contains('ref')) {
-					this.pingItemFromRefButton($button)
+					this.pingMainItemFromRefButton($button)
 				} else if ($button.classList.contains('comment-ref')) {
-					this.pingCommentFromRefButton($button)
+					this.pingCommentItemFromRefButton($button)
 				} else if ($button.classList.contains('stretch')) {
 					this.toggleRowStretchWithButton($button)
 				}
@@ -599,31 +599,30 @@ export default class GridBody {
 			row.stretch(this.withCompactIds)
 		}
 	}
-	private pingItemFromRefButton($button: HTMLButtonElement): void {
-		const $item=$button.closest('.item')
-		if (!($item instanceof HTMLElement)) return
-		const descriptor=readItemDescriptor($item)
-		if (!descriptor) return
-		const targetDescriptor=getMainItemDescriptor(descriptor)
+	private pingMainItemFromRefButton($button: HTMLButtonElement): void {
+		this.pingItemFromRefButton($button,getMainItemDescriptor)
+	}
+	private pingCommentItemFromRefButton($button: HTMLButtonElement): void {
+		this.pingItemFromRefButton($button,descriptor=>{
+			const order=Number($button.dataset.order)
+			if (!Number.isInteger(order)) return null
+			return getCommentItemDescriptor(descriptor,order)
+		})
+	}
+	private pingItemFromRefButton(
+		$button: HTMLButtonElement,
+		getTargetDescriptor: (sourceDescriptor:ItemDescriptor)=>ItemDescriptor|null
+	): void {
+		const $sourceItem=$button.closest('.item')
+		if (!($sourceItem instanceof HTMLElement)) return
+		const sourceDescriptor=readItemDescriptor($sourceItem)
+		if (!sourceDescriptor) return
+		const targetDescriptor=getTargetDescriptor(sourceDescriptor)
 		if (!targetDescriptor) return
 		const $targetItem=this.$gridBody.querySelector(getItemDescriptorSelector(targetDescriptor))
 		if (!($targetItem instanceof HTMLElement)) return
 		$targetItem.scrollIntoView({block:'nearest'})
 		this.highlightClickedItem($targetItem)
-	}
-	private pingCommentFromRefButton($button: HTMLButtonElement): void {
-		const $item=$button.closest('.item')
-		if (!($item instanceof HTMLElement)) return
-		const order=Number($button.dataset.order)
-		if (!Number.isInteger(order)) return
-		const descriptor=readItemDescriptor($item)
-		if (!descriptor) return
-		const commentDescriptor=getCommentItemDescriptor(descriptor,order)
-		if (!commentDescriptor) return
-		const $comment=this.$gridBody.querySelector(getItemDescriptorSelector(commentDescriptor))
-		if (!($comment instanceof HTMLElement)) return
-		$comment.scrollIntoView({block:'nearest'})
-		this.highlightClickedItem($comment)
 	}
 	private highlightHoveredItemDescriptor(descriptor: ItemDescriptor): void {
 		for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
