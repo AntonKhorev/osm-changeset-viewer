@@ -43,7 +43,7 @@ export default class ItemOptions {
 			{ get: ()=>this.editor  , set: v=>this.editor  =v, name: 'editor'  , label: '🛠️' },
 			{ get: ()=>this.source  , set: v=>this.source  =v, name: 'source'  , label: '[]' },
 			{ get: ()=>this.changes , set: v=>this.changes =v, name: 'changes' , label: '📝', title: 'changes count' },
-			{ get: ()=>this.comments, set: v=>this.comments=v, name: 'comments', label: '💬', title: 'comments count' },
+			{ get: ()=>this.comments, set: v=>this.comments=v, name: 'comments', label: '💬', title: 'comment references' },
 			{ get: ()=>this.comment , set: v=>this.comment =v, name: 'comment' , label: '📣' },
 		]
 	}
