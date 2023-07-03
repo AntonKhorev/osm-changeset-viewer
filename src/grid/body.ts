@@ -2,7 +2,8 @@ import type {ServerUrlGetter} from './body-item'
 import type {SingleItemDBReader} from '../db'
 import type {ItemDescriptor, ItemSequencePoint} from './info'
 import {
-	readItemDescriptor, getCommentItemDescriptor, getItemDescriptorSelector, getBroadItemDescriptorSelector, isEqualItemDescriptor,
+	readItemDescriptor, getCommentItemDescriptor, getMainItemDescriptor,
+	getItemDescriptorSelector, getBroadItemDescriptorSelector, isEqualItemDescriptor,
 	isGreaterElementSequencePoint, writeSeparatorSequencePoint, readElementSequencePoint, writeElementSequencePoint,
 	getBatchItemSequencePoint
 } from './info'
@@ -38,6 +39,8 @@ export default class GridBody {
 			if ($button) {
 				if ($button.classList.contains('disclosure')) {
 					this.toggleItemDisclosureWithButton($button)
+				} else if ($button.classList.contains('ref')) {
+					this.pingItemFromRefButton($button)
 				} else if ($button.classList.contains('comment-ref')) {
 					this.pingCommentFromRefButton($button)
 				} else if ($button.classList.contains('stretch')) {
@@ -595,6 +598,18 @@ export default class GridBody {
 		} else {
 			row.stretch(this.withCompactIds)
 		}
+	}
+	private pingItemFromRefButton($button: HTMLButtonElement): void {
+		const $item=$button.closest('.item')
+		if (!($item instanceof HTMLElement)) return
+		const descriptor=readItemDescriptor($item)
+		if (!descriptor) return
+		const targetDescriptor=getMainItemDescriptor(descriptor)
+		if (!targetDescriptor) return
+		const $targetItem=this.$gridBody.querySelector(getItemDescriptorSelector(targetDescriptor))
+		if (!($targetItem instanceof HTMLElement)) return
+		$targetItem.scrollIntoView({block:'nearest'})
+		this.highlightClickedItem($targetItem)
 	}
 	private pingCommentFromRefButton($button: HTMLButtonElement): void {
 		const $item=$button.closest('.item')

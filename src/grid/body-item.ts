@@ -395,13 +395,13 @@ function getSvgOfSenderUserIcon(): string {
 
 function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, size: number): void {
 	if (isClosed) {
-		const $noCheckbox=makeCenteredSvg(6+size,
+		const $button=makeElement('button')('ref')()
+		$button.title=`closed changeset ${id}`
+		$button.innerHTML=makeCenteredSvg(6+size,
 			`<line y1="-5" y2="5" />`+
 			`<path d="M-5,0 L0,5 L5,0" fill="none" />`,
 		`stroke="currentColor" stroke-width="2"`)
-		$icon.tabIndex=0
-		$icon.title=`closed changeset ${id}`
-		$icon.innerHTML=$noCheckbox
+		$icon.append($button)
 	} else {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'

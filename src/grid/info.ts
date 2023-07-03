@@ -134,6 +134,18 @@ export function getCommentItemDescriptor(descriptor: ItemDescriptor, order: numb
 		return {type,id}
 	}
 }
+export function getMainItemDescriptor(descriptor: ItemDescriptor): ItemDescriptor|null {
+	const id=descriptor.id
+	let type: string
+	if (descriptor.type=='changesetClose' || descriptor.type=='changesetComment') {
+		type='changeset'
+	} else if (descriptor.type=='noteComment') {
+		type='note'
+	} else {
+		return null
+	}
+	return {type,id}
+}
 
 export function readElementSequencePoint($e: HTMLElement): ElementSequencePoint|null {
 	const timestamp=Number($e.dataset.timestamp)

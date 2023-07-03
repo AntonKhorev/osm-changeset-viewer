@@ -338,10 +338,16 @@
 	width: var(--checkbox-size);
 	height: var(--checkbox-size);
 }
-.ui .grid tbody .item.changeset.closed .icon > * {
+.ui .grid tbody .item.changeset.closed .icon > button {
 	background: canvas;
+	color: var(--accent-color);
+	border: none;
+	padding: 0;
 }
-.ui .grid tbody tr.collection .item.changeset.closed .icon > * {
+.ui .grid tbody .item.changeset.closed .icon > button:hover {
+	background: var(--hover-color);
+}
+.ui .grid tbody tr.collection .item.changeset.closed .icon > button > svg {
 	rotate: -90deg;
 }
 .ui .grid tbody .item.changeset .icon::before {
