@@ -2,7 +2,7 @@
 	--light-text-color: #444;
 	--frame-color: #AAA;
 	--light-frame-lightness: 87%;
-	--icon-frame-lightness: 60%;
+	--icon-frame-lightness: 40%;
 	--hover-color: #DEF;
 	--click-color: #FC8;
 	--notice-background-color: #FFB;
@@ -17,7 +17,7 @@
 		--light-text-color: #CCC;
 		--frame-color: #666;
 		--light-frame-lightness: 27%;
-		--icon-frame-lightness: 40%;
+		--icon-frame-lightness: 60%;
 		--hover-color: #246;
 		--click-color: #A84;
 		--notice-background-color: #662;

@@ -253,7 +253,6 @@ export function writeExpandedItemFlow(
 			return makeBadge(contents)
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
-			setColor($noButton,undefined,'--icon-frame-color','--icon-frame-lightness')
 			$noButton.innerHTML=getBalloonRefHtml()
 			return makeBadge([$noButton],`no comments`,true)
 		}

@@ -585,6 +585,10 @@
 	--icon-frame-color: hsl(var(--hue) 50% var(--icon-frame-lightness));
 	color: var(--accent-color);
 }
+.ui .grid tbody .item .balloon .flow .badge.empty .comment-ref {
+	color: inherit;
+	--icon-frame-color: var(--passive-color);
+}
 .ui .grid tbody .item .balloon .flow .badge button.comment-ref .balloon-ref {
 	fill: canvas;
 }
