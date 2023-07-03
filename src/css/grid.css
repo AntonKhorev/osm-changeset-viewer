@@ -18,7 +18,11 @@
 	padding: 0;
 	vertical-align: top;
 }
-.ui .grid :is(td,th,.item>.icon,.item>.balloon) {
+.ui .grid :is(td,th,
+	.item>.icon,
+	.item>.balloon,
+	.item>.balloon>.flow>.badge>.comment-ref
+) {
 	--temp-accent-color: hsl(var(--hue) var(--accent-saturation) 50%);
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
 }
@@ -576,8 +580,10 @@
 	border: 0;
 	padding: 0;
 	vertical-align: -2px;
-	background: transparent;
 	white-space: nowrap; /* FIXME still wraps if it's a button */
+	background: transparent;
+	--icon-frame-color: hsl(var(--hue) 50% var(--icon-frame-lightness));
+	color: var(--accent-color);
 }
 .ui .grid tbody .item .balloon .flow .badge button.comment-ref .balloon-ref {
 	fill: canvas;

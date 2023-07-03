@@ -215,7 +215,7 @@ export function writeExpandedItemFlow(
 	const makeCommentsBadge=(uid: number, commentRefs: {uid?:number,mute?:boolean,action?:string}[])=>{
 		const getBalloonRefHtml=(incoming=false,mute=false,action?:string)=>{
 			const flip=incoming?` transform="scale(-1,1)"`:``
-			const balloonColors=`fill="transparent" stroke="currentColor"`
+			const balloonColors=`fill="transparent" stroke="var(--icon-frame-color)"`
 			let balloon:string
 			if (mute) {
 				balloon=`<g${flip} ${balloonColors}>`+
@@ -233,7 +233,7 @@ export function writeExpandedItemFlow(
 			)
 			const actionGlyph=getSvgOfActionGlyph(action)
 			if (actionGlyph!=null) {
-				balloonContents=`<g stroke="currentColor">${actionGlyph}</g>`
+				balloonContents=`<g stroke="currentColor" stroke-width="2">${actionGlyph}</g>`
 			}
 			return `<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
 				balloon+balloonContents+
@@ -246,12 +246,14 @@ export function writeExpandedItemFlow(
 				const $button=makeElement('button')('comment-ref')()
 				$button.dataset.order=String(i)
 				$button.title=`comment ${i+1}`
+				setColor($button,commentRef.uid,'--icon-frame-color','--icon-frame-lightness')
 				$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute,commentRef.action)
 				contents.push($button)
 			}
 			return makeBadge(contents)
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
+			setColor($noButton,undefined,'--icon-frame-color','--icon-frame-lightness')
 			$noButton.innerHTML=getBalloonRefHtml()
 			return makeBadge([$noButton],`no comments`,true)
 		}
@@ -533,12 +535,16 @@ export function makeUserSvgElements(): string {
 	)
 }
 
-function setColor($e: HTMLElement, uid: number|undefined) {
+function setColor(
+	$e: HTMLElement, uid: number|undefined, 
+	frameColorPropertyName='--balloon-frame-color', 
+	frameLightnessPropertyName='--light-frame-lightness'
+) {
 	if (uid!=null) {
 		const hue=getHueFromUid(uid)
 		$e.style.setProperty('--hue',String(hue))
 	} else {
-		$e.style.setProperty('--balloon-frame-color','hsl(0 0% var(--light-frame-lightness))')
+		$e.style.setProperty(frameColorPropertyName,`hsl(0 0% var(${frameLightnessPropertyName}))`)
 		$e.style.setProperty('--accent-color','var(--light-text-color)');
 	}
 }
