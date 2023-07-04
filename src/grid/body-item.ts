@@ -301,7 +301,7 @@ export function writeExpandedItemFlow(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
 			` `,optionalize('changes',makeBadge([`📝 ${item.changes.count}`],`number of changes`)),
-			` `,optionalize('comments',makeCommentsBadge(item.uid,item.commentRefs))
+			` `,optionalize('refs',makeCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.tags?.comment) {
 			$flow.append(
@@ -320,7 +320,7 @@ export function writeExpandedItemFlow(
 			}
 		}
 		$flow.append(
-			` `,optionalize('comments',makeCommentsBadge(item.uid,item.commentRefs))
+			` `,optionalize('refs',makeCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.openingComment) {
 			$flow.append(

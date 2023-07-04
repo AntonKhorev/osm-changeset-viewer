@@ -13,38 +13,38 @@ export default class ItemOptions {
 	editor  : boolean
 	source  : boolean
 	changes : boolean
-	comments: boolean
+	refs    : boolean
 	comment : boolean
 	list: ItemOptionsEntry[]
 	constructor(isExpanded: boolean) {
 		if (isExpanded) {
-			this.date    =true
-			this.id      =true
-			this.api     =true
-			this.editor  =true
-			this.source  =true
-			this.changes =true
-			this.comments=true
-			this.comment =true
+			this.date   =true
+			this.id     =true
+			this.api    =true
+			this.editor =true
+			this.source =true
+			this.changes=true
+			this.refs   =true
+			this.comment=true
 		} else {
-			this.date    =false
-			this.id      =true
-			this.api     =false
-			this.editor  =false
-			this.source  =false
-			this.changes =false
-			this.comments=false
-			this.comment =false
+			this.date   =false
+			this.id     =true
+			this.api    =false
+			this.editor =false
+			this.source =false
+			this.changes=false
+			this.refs   =false
+			this.comment=false
 		}
 		this.list=[
-			{ get: ()=>this.date    , set: v=>this.date    =v, name: 'date'    , label: '📅' },
-			{ get: ()=>this.id      , set: v=>this.id      =v, name: 'id'      , label: '#' },
-			{ get: ()=>this.api     , set: v=>this.api     =v, name: 'api'     , label: 'api' },
-			{ get: ()=>this.editor  , set: v=>this.editor  =v, name: 'editor'  , label: '🛠️' },
-			{ get: ()=>this.source  , set: v=>this.source  =v, name: 'source'  , label: '[]' },
-			{ get: ()=>this.changes , set: v=>this.changes =v, name: 'changes' , label: '📝', title: 'changes count' },
-			{ get: ()=>this.comments, set: v=>this.comments=v, name: 'comments', label: '💬', title: 'comment references' },
-			{ get: ()=>this.comment , set: v=>this.comment =v, name: 'comment' , label: '📣' },
+			{ get: ()=>this.date    , set: v=>this.date    =v, name: 'date'   , label: '📅' },
+			{ get: ()=>this.id      , set: v=>this.id      =v, name: 'id'     , label: '#' },
+			{ get: ()=>this.api     , set: v=>this.api     =v, name: 'api'    , label: 'api' },
+			{ get: ()=>this.editor  , set: v=>this.editor  =v, name: 'editor' , label: '🛠️' },
+			{ get: ()=>this.source  , set: v=>this.source  =v, name: 'source' , label: '[]' },
+			{ get: ()=>this.changes , set: v=>this.changes =v, name: 'changes', label: '📝', title: 'changes count' },
+			{ get: ()=>this.refs    , set: v=>this.refs    =v, name: 'refs'   , label: '💬', title: 'comment references' },
+			{ get: ()=>this.comment , set: v=>this.comment =v, name: 'comment', label: '📣' },
 		]
 	}
 }
