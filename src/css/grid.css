@@ -339,6 +339,9 @@
 .ui .grid tbody .item .icon > button:hover {
 	background: var(--hover-color);
 }
+.ui .grid tbody .item.changeset.closed .icon > button:not(:hover) {
+	background: canvas;
+}
 .ui .grid tbody .item .icon > button > * {
 	position: absolute;
 	inset: 0;
