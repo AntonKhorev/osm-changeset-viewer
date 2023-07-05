@@ -293,7 +293,9 @@ export function writeExpandedItemFlow(
 	let date: Date|undefined
 	if (type=='user') {
 		date=item.createdAt
+		const apiHref=server.api.getUrl(e`user/${item.id}.json`)
 		$flow.replaceChildren(
+			optionalize('api',makeBadge([makeLink(`api`,apiHref)])),` `,
 			optionalize('status',makeElement('span')()(`account created`))
 		)
 	} else if (type=='changeset' || type=='changesetClose') {
