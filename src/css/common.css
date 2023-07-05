@@ -1,0 +1,137 @@
+:root {
+	--light-text-color: #444;
+	--frame-color: #AAA;
+	--light-frame-lightness: 87%;
+	--icon-frame-lightness: 40%;
+	--hover-color: #DEF;
+	--click-color: #FC8;
+	--notice-background-color: #FFB;
+
+	--frame-line: solid 1px var(--frame-color);
+	--spacer: .5rem;
+	--major-button-padding: .3rem;
+	--icon-size: 1.25rem;
+	--disclosure-size: 13px;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--light-text-color: #CCC;
+		--frame-color: #666;
+		--light-frame-lightness: 27%;
+		--icon-frame-lightness: 60%;
+		--hover-color: #246;
+		--click-color: #A84;
+		--notice-background-color: #662;
+	}
+}
+
+body {
+	padding: 0;
+	margin: 0;
+}
+body > .symbols {
+	display: none;
+}
+.ui {
+	position: fixed;
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.ui main {
+	flex-basis: 100%;
+	overflow-y: auto;
+}
+.ui main > :where(h1, h2, p, [class$="-input-group"]) {
+	padding-inline: var(--spacer);
+}
+.ui main > .notice {
+	padding: var(--spacer);
+	background: var(--notice-background-color);
+}
+
+.ui [class$="-input-group"] {
+	margin: var(--spacer) 0;
+}
+.ui .major-input-group :is(input[type=text], textarea, button):not([hidden]) {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	margin: .2em 0;
+}
+.ui .major-input-group button {
+	padding: var(--major-button-padding);
+}
+
+.ui .more {
+	position: sticky;
+	left: 0;
+	padding: var(--spacer);
+}
+.ui .more button {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	padding: var(--major-button-padding);
+}
+
+.ui.with-time time[title] {
+	text-decoration: underline dotted 1px;
+}
+.ui:not(.with-time) time[title] .date {
+	text-decoration: underline dotted 1px;
+}
+.ui:not(.with-time) time[title] :is(.gap,.time) {
+	display: none;
+}
+
+.ui button.with-icon,
+.ui dialog button.close {
+	box-sizing: border-box;
+	border: none;
+	padding: 0;
+	background: none;
+	overflow: hidden;
+	border-radius: 50%;
+	cursor: pointer;
+}
+.ui button.with-icon:hover,
+.ui dialog button.close:hover {
+	background: var(--hover-color);
+}
+.ui button.with-icon > svg,
+.ui dialog button.close > svg {
+	width: 100%;
+	height: 100%;
+}
+
+.ui button.disclosure {
+	box-sizing: border-box;
+	width: var(--disclosure-size);
+	height: var(--disclosure-size);
+	line-height: calc(var(--disclosure-size) - 2px);
+	padding: 0;
+	border: var(--frame-line);
+	background: canvas;
+}
+.ui button.disclosure:hover {
+	background: var(--hover-color);
+}
+.ui button.disclosure[aria-expanded="true"] .vertical-stroke {
+	visibility: hidden;
+}
+
+.ui dialog {
+	padding: 1rem;
+}
+.ui dialog button.close {
+	float: right;
+	width: 2rem;
+	height: 2rem;
+	margin: -2px;
+}
+.ui dialog > button.close:first-child + section > h2:first-child {
+	margin-top: 0;
+}
