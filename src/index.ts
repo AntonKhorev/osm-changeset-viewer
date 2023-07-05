@@ -8,7 +8,7 @@ import makeNetDialog from './net-dialog'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
 import {makeElement, makeDiv, makeLink} from './util/html'
-import {p} from './util/html-shortcuts'
+import {p,em} from './util/html-shortcuts'
 import {PrefixedLocalStorage} from './util/storage'
 import {escapeHash} from './util/escape'
 
@@ -82,7 +82,15 @@ async function main() {
 	})
 	$grid=grid.$grid
 	$content.append(
-		makeElement('h2')()(`Select users and changesets`),
+		makeDiv('notice')(
+			`This is a preview v0.2. `,
+			`If you've been using the previous preview, please delete its databases in the browser.`
+		),
+		p(
+			`In Firefox you can do the following to delete old databases: `,
+			em(`Developer tools`),` (F12) > `,em(`Storage`),` > `,em(`Indexed DB`),` > (this website) > `,em(`OsmChangesetViewer[`),`...`,em(`]`),` (there is likely only `,em(`OsmChangesetViewer[www.openstreetmap.org]`),`, multiple databases are possible if you tried using the changeset viewer with different osm servers). `,
+			`Right-click each one and select `,em(`Delete`),`.`
+		),
 		grid.$grid,
 		more.$div
 	)
