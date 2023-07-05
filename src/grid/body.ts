@@ -8,9 +8,10 @@ import {
 	getBatchItemSequencePoint
 } from './info'
 import {
-	getItemCheckbox, getItemDisclosureButton, getItemDisclosureButtonState, setItemDisclosureButtonState,
+	getItemCheckbox, getItemDisclosureButton,
 	makeItemShell, writeExpandedItemFlow, trimToCollapsedItemFlow
 } from './body-item'
+import {getDisclosureButtonState, setDisclosureButtonState} from '../widgets'
 import {getHueFromUid} from './colorizer'
 import EmbeddedItemRow from './embedded-row'
 import {updateTimelineOnInsert} from './timeline'
@@ -274,7 +275,7 @@ export default class GridBody {
 			for (const $item of $items) {
 				const $disclosureButton=getItemDisclosureButton($item)
 				if ($disclosureButton) {
-					setItemDisclosureButtonState($disclosureButton,false)
+					setDisclosureButtonState($disclosureButton,false)
 				}
 			}
 			this.insertItem(iColumns,sequencePoint,{isExpanded:false},$items)
@@ -405,7 +406,7 @@ export default class GridBody {
 		for (const $item of $items) {
 			const $disclosureButton=getItemDisclosureButton($item)
 			if ($disclosureButton) {
-				setItemDisclosureButtonState($disclosureButton,true)
+				setDisclosureButtonState($disclosureButton,true)
 			}
 		}
 		const row=new EmbeddedItemRow($row)
@@ -576,7 +577,7 @@ export default class GridBody {
 		if (!($item instanceof HTMLElement)) return
 		const itemDescriptor=readItemDescriptor($item)
 		if (!itemDescriptor) return
-		if (getItemDisclosureButtonState($button)) {
+		if (getDisclosureButtonState($button)) {
 			this.collapseItem(itemDescriptor)
 		} else {
 			$button.disabled=true

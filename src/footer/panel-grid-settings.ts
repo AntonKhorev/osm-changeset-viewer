@@ -1,6 +1,7 @@
 import Panel from './panel'
 import type Grid from '../grid'
 import {ItemOptions} from '../grid'
+import {makeDisclosureButton} from '../widgets'
 import {makeElement, makeDiv, makeLabel} from '../util/html'
 
 export default class GridSettingsPanel extends Panel {
@@ -34,7 +35,9 @@ export default class GridSettingsPanel extends Panel {
 			{
 				const $row=$table.insertRow()
 				{
-					const $cell=makeElement('th')()()
+					const $cell=makeElement('th')()(
+						makeDisclosureButton(false,`item types`)
+					)
 					$row.append($cell)
 				}
 				for (const itemOption of itemOptions) {

@@ -4,6 +4,7 @@ import editorData from './editors'
 import type ItemOptions from './item-options'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
+import {makeCenteredSvg, makeDisclosureButton} from '../widgets'
 import {makeElement, makeLink} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
 
@@ -41,7 +42,7 @@ export function makeItemShell(
 	const $icon=makeElement('span')('icon')()
 	let $senderIcon: HTMLElement|undefined
 	const $balloon=makeElement('span')('balloon')(
-		makeItemDisclosureButton(isExpanded),` `,
+		makeDisclosureButton(isExpanded,`item info`),` `,
 		makeElement('span')('flow')(),
 	)
 	const $item=makeElement('span')('item')()
@@ -479,30 +480,6 @@ function getSvgOfMuteCommentTip(side: -1|1): string {
 		`<circle cx="${-10.5*side}" cy="-3.5" r="4" class="balloon-part" />`+
 		`<circle cx="${-5.5*side}" cy="1.5" r="2" class="balloon-part" />`+
 	`</svg>`
-}
-
-function makeItemDisclosureButton(isExpanded: boolean): HTMLButtonElement {
-	const $disclosure=makeElement('button')('disclosure')()
-	setItemDisclosureButtonState($disclosure,isExpanded)
-	const r=5.5
-	const s=3.5
-	$disclosure.innerHTML=makeCenteredSvg(r,
-		`<line x1="${-s}" x2="${s}" />`+
-		`<line y1="${-s}" y2="${s}" class="vertical-stroke" />`,
-	`stroke="currentColor"`)
-	return $disclosure
-}
-
-export function getItemDisclosureButtonState($disclosure: HTMLButtonElement): boolean {
-	return $disclosure.getAttribute('aria-expanded')=='true'
-}
-export function setItemDisclosureButtonState($disclosure: HTMLButtonElement, isExpanded: boolean): void {
-	$disclosure.setAttribute('aria-expanded',String(isExpanded))
-	$disclosure.title=(isExpanded?`Collapse`:`Expand`)+` item info`
-}
-
-export function makeCenteredSvg(r: number, content: string, attrs?: string): string {
-	return `<svg width="${2*r}" height="${2*r}" viewBox="${-r} ${-r} ${2*r} ${2*r}"${attrs?' '+attrs:''}>${content}</svg>`
 }
 
 function computeMarkerOutlinePath(h: number, r: number): string {

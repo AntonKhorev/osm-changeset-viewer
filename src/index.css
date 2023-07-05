@@ -11,6 +11,7 @@
 	--spacer: .5rem;
 	--major-button-padding: .3rem;
 	--icon-size: 1.25rem;
+	--disclosure-size: 13px;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
@@ -104,6 +105,22 @@ body > .symbols {
 .ui dialog button.close > svg {
 	width: 100%;
 	height: 100%;
+}
+
+.ui button.disclosure {
+	box-sizing: border-box;
+	width: var(--disclosure-size);
+	height: var(--disclosure-size);
+	line-height: calc(var(--disclosure-size) - 2px);
+	padding: 0;
+	border: var(--frame-line);
+	background: canvas;
+}
+.ui button.disclosure:hover {
+	background: var(--hover-color);
+}
+.ui button.disclosure[aria-expanded="true"] .vertical-stroke {
+	visibility: hidden;
 }
 
 @import 'css/grid.css';

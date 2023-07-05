@@ -1,7 +1,6 @@
 import GridHead from './head'
 import GridBody from './body'
 import ItemOptions from './item-options'
-import {makeCenteredSvg} from './body-item'
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader} from '../db'
 import type More from '../more'

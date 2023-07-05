@@ -425,7 +425,6 @@
 }
 .ui .grid tbody .item .balloon {
 	--balloon-min-height: 24px;
-	--disclosure-size: 13px;
 	position: relative;
 	border: solid 1px transparent;
 	padding-block: 3px;
@@ -480,15 +479,6 @@
 }
 
 /*** item disclosure button ***/
-.ui .grid tbody .item .balloon button.disclosure {
-	box-sizing: border-box;
-	width: var(--disclosure-size);
-	height: var(--disclosure-size);
-	line-height: calc(var(--disclosure-size) - 2px);
-	padding: 0;
-	border: var(--frame-line);
-	background: canvas;
-}
 .ui .grid tbody tr.single .item .balloon button.disclosure {
 	position: absolute;
 	top: calc(.5 * var(--balloon-min-height) - .5 * var(--disclosure-size));
@@ -496,12 +486,6 @@
 }
 .ui .grid tbody tr.collection .item .balloon button.disclosure {
 	vertical-align: -1px; /* has odd height and is right before underlined text, therefore looks better shifted down */
-}
-.ui .grid tbody .item .balloon button.disclosure:hover {
-	background: var(--hover-color);
-}
-.ui .grid tbody .item .balloon button.disclosure[aria-expanded="true"] .vertical-stroke {
-	visibility: hidden;
 }
 
 /*** item inner balloon flow with sender cutout ***/

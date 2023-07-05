@@ -1,6 +1,7 @@
 import type {UserQuery, ValidUserQuery} from '../osm/query-user'
 import type {UserScanDbRecord, UserDbInfo} from '../db'
-import {makeCenteredSvg, makeUserSvgElements} from './body-item'
+import {makeUserSvgElements} from './body-item'
+import {makeCenteredSvg} from '../widgets'
 import {makeDateOutput} from '../date'
 import {makeElement, makeDiv, makeLabel, makeLink} from '../util/html'
 import {ul} from '../util/html-shortcuts'
