@@ -44,12 +44,14 @@ export default class GridSettingsPanel extends Panel {
 				}
 			}{
 				const $row=$table.insertRow()
+				$row.classList.add('for-all')
 				{
 					const $cell=makeElement('th')()()
 					$row.append($cell)
 				}
 				for (const itemOption of itemOptions) {
 					const $cell=$row.insertCell()
+					$cell.dataset.option=itemOption.name
 					const $checkbox=makeElement('input')()()
 					$checkbox.type='checkbox'
 					$checkbox.checked=itemOption.all
@@ -69,12 +71,18 @@ export default class GridSettingsPanel extends Panel {
 				}
 				for (const itemOption of itemOptions) {
 					const $cell=$row.insertCell()
+					$cell.dataset.option=itemOption.name
 					if (!itemOption.hasType(itemType)) continue
 					const $checkbox=makeElement('input')()()
 					$checkbox.type='checkbox'
 					$checkbox.checked=itemOption[itemType]
 					$checkbox.oninput=()=>{
 						itemOption[itemType]=$checkbox.checked
+						const $allCheckbox=$table.querySelector(`tr.for-all td[data-option="${itemOption.name}"] input`)
+						if ($allCheckbox instanceof HTMLInputElement) {
+							$allCheckbox.checked=itemOption.all
+							$allCheckbox.indeterminate=!itemOption.all && itemOption.some
+						}
 						updateItemsGrid()
 					}
 					$cell.append($checkbox)
