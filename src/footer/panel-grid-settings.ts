@@ -57,6 +57,10 @@ export default class GridSettingsPanel extends Panel {
 					$checkbox.checked=itemOption.all
 					$checkbox.oninput=()=>{
 						itemOption.all=$checkbox.checked
+						for (const $typeCheckbox of $table.querySelectorAll(`tr.for-type td[data-option="${itemOption.name}"] input`)) {
+							if (!($typeCheckbox instanceof HTMLInputElement)) continue
+							$typeCheckbox.checked=$checkbox.checked
+						}
 						updateItemsGrid()
 					}
 					$cell.append($checkbox)
