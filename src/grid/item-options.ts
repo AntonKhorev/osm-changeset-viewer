@@ -29,10 +29,10 @@ class ItemOption {
 		return this.types.has(type)
 	}
 	get some(): boolean {
-		return this.changeset || this.changesetComment || this.note || this.noteComment
+		return [...this.types].reduce((value,type)=>value||this[type],false)
 	}
 	get all(): boolean {
-		return this.changeset && this.changesetComment && this.note && this.noteComment
+		return [...this.types].reduce((value,type)=>value&&this[type],true)
 	}
 	set all(value: boolean) {
 		this.changeset=value
