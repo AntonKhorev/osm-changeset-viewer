@@ -33,14 +33,14 @@ export default class GridSettingsPanel extends Panel {
 		)=>{
 			return makeElement('fieldset')(fieldsetClass)(
 				makeElement('legend')()($icon),
-				...itemOptions.list.map(({get,set,label,name,title})=>makeGridCheckbox(
+				...itemOptions.map(option=>makeGridCheckbox(
 					value=>{
-						set(value)
+						option.all=value
 						updateTable()
 					},
-					get(),
-					label,
-					title??name
+					option.all,
+					option.label,
+					option.title??option.name
 				))
 			)
 		}

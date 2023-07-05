@@ -1,50 +1,65 @@
-type ItemOptionsEntry = {
-	get: ()=>boolean
-	set: (v:boolean)=>void
-	name: string
-	label: string
-	title?: string
+type ItemType = 'changeset' | 'changesetComment' | 'note' | 'noteComment'
+function makeItemTypes(spec: `${'C'|' '}${'c'|' '}${'N'|' '}${'n'|' '}`): ItemType[] {
+	const types: ItemType[] = []
+	if (spec[0]!=' ') types.push('changeset')
+	if (spec[1]!=' ') types.push('changesetComment')
+	if (spec[2]!=' ') types.push('note')
+	if (spec[3]!=' ') types.push('noteComment')
+	return types
+}
+
+class ItemOption {
+	changeset: boolean
+	changesetComment: boolean
+	note: boolean
+	noteComment: boolean
+	constructor(
+		value: boolean,
+		public name: string,
+		public types: ItemType[],
+		public label: string,
+		public title?: string
+	) {
+		this.changeset=value
+		this.changesetComment=value
+		this.note=value
+		this.noteComment=value
+	}
+	get some(): boolean {
+		return this.changeset || this.changesetComment || this.note || this.noteComment
+	}
+	get all(): boolean {
+		return this.changeset && this.changesetComment && this.note && this.noteComment
+	}
+	set all(value: boolean) {
+		this.changeset=value
+		this.changesetComment=value
+		this.note=value
+		this.noteComment=value
+	}
 }
 
 export default class ItemOptions {
-	date    : boolean
-	id      : boolean
-	api     : boolean
-	editor  : boolean
-	source  : boolean
-	changes : boolean
-	refs    : boolean
-	comment : boolean
-	list: ItemOptionsEntry[]
+	private options: Map<string,ItemOption>
 	constructor(isExpanded: boolean) {
-		if (isExpanded) {
-			this.date   =true
-			this.id     =true
-			this.api    =true
-			this.editor =true
-			this.source =true
-			this.changes=true
-			this.refs   =true
-			this.comment=true
-		} else {
-			this.date   =false
-			this.id     =true
-			this.api    =false
-			this.editor =false
-			this.source =false
-			this.changes=false
-			this.refs   =false
-			this.comment=false
-		}
-		this.list=[
-			{ get: ()=>this.date    , set: v=>this.date    =v, name: 'date'   , label: '📅' },
-			{ get: ()=>this.id      , set: v=>this.id      =v, name: 'id'     , label: '#' },
-			{ get: ()=>this.api     , set: v=>this.api     =v, name: 'api'    , label: 'api' },
-			{ get: ()=>this.editor  , set: v=>this.editor  =v, name: 'editor' , label: '🛠️' },
-			{ get: ()=>this.source  , set: v=>this.source  =v, name: 'source' , label: '[]' },
-			{ get: ()=>this.changes , set: v=>this.changes =v, name: 'changes', label: '📝', title: 'changes count' },
-			{ get: ()=>this.refs    , set: v=>this.refs    =v, name: 'refs'   , label: '💬', title: 'comment references' },
-			{ get: ()=>this.comment , set: v=>this.comment =v, name: 'comment', label: '📣' },
-		]
+		this.options=new Map([
+			new ItemOption(isExpanded,'date'   ,makeItemTypes('CcNn'),'📅'),
+			new ItemOption(true      ,'id'     ,makeItemTypes('CcNn'),'#'),
+			new ItemOption(isExpanded,'api'    ,makeItemTypes('CcNn'),'api'),
+			new ItemOption(isExpanded,'editor' ,makeItemTypes('C N '),'🛠️'),
+			new ItemOption(isExpanded,'source' ,makeItemTypes('C   '),'[]'),
+			new ItemOption(isExpanded,'changes',makeItemTypes('C   '),'📝','changes count'),
+			new ItemOption(isExpanded,'refs'   ,makeItemTypes('C N '),'💬','comment references'),
+			new ItemOption(isExpanded,'comment',makeItemTypes('CcNn'),'📣'),
+		].map(option=>[option.name,option]))
+	}
+	[Symbol.iterator]() {
+		return this.options.values()
+	}
+	get(name: string): ItemOption|undefined {
+		return this.options.get(name)
+	}
+	map<T>(fn:(option:ItemOption)=>T): T[] {
+		return [...this].map(fn)
 	}
 }

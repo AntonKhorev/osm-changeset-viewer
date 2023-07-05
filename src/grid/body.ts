@@ -233,12 +233,12 @@ export default class GridBody {
 		}
 	}
 	private updateTableAccordingToItemOptions(itemOptions: ItemOptions, rowClass: string): void {
-		for (const {get,name} of itemOptions.list) {
+		for (const itemOption of itemOptions) {
 			for (const $piece of this.$gridBody.querySelectorAll(
-				`:scope > tr.${rowClass} .item .balloon .flow [data-optional="${name}"]`
+				`:scope > tr.${rowClass} .item .balloon .flow [data-optional="${itemOption.name}"]`
 			)) {
 				if (!($piece instanceof HTMLElement)) continue
-				$piece.hidden=!get()
+				$piece.hidden=!itemOption.all
 			}
 		}
 	}
