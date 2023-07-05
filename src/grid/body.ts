@@ -234,12 +234,14 @@ export default class GridBody {
 		}
 	}
 	private updateTableAccordingToItemOptions(itemOptions: ItemOptions, rowClass: string): void {
-		for (const itemOption of itemOptions) {
-			for (const $piece of this.$gridBody.querySelectorAll(
-				`:scope > tr.${rowClass} .item .balloon .flow [data-optional="${itemOption.name}"]`
-			)) {
-				if (!($piece instanceof HTMLElement)) continue
-				$piece.hidden=!itemOption.all
+		for (const $item of this.$gridBody.querySelectorAll(`:scope > tr.${rowClass} .item`)) {
+			if (!($item instanceof HTMLElement)) continue
+			for (const itemOption of itemOptions) {
+				const value=itemOption.get($item.dataset.type)
+				for (const $piece of $item.querySelectorAll(`.flow [data-optional="${itemOption.name}"]`)) {
+					if (!($piece instanceof HTMLElement)) continue
+					$piece.hidden=!value
+				}
 			}
 		}
 	}
@@ -435,7 +437,7 @@ export default class GridBody {
 				$flow.replaceChildren() // TODO don't replaceChildren() in flow writers
 				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames,this.expandedItemOptions)
 			} else {
-				trimToCollapsedItemFlow($flow,this.collapsedItemOptions)
+				trimToCollapsedItemFlow($flow,$item.dataset.type,this.collapsedItemOptions)
 			}
 		}
 		return true

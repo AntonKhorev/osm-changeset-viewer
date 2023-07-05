@@ -40,6 +40,15 @@ class ItemOption {
 		this.note=value
 		this.noteComment=value
 	}
+	get(type: string|undefined): boolean {
+		if (type=='changeset' || type=='changesetComment' || type=='note' || type=='noteComment') {
+			return this[type]
+		} else if (type=='changesetClose') {
+			return this.changeset
+		} else { // TODO add user type
+			return this.all
+		}
+	}
 }
 
 export default class ItemOptions {

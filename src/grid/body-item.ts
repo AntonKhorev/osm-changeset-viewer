@@ -134,13 +134,14 @@ export function makeItemShell(
 
 export function trimToCollapsedItemFlow(
 	$flow: HTMLElement,
+	type: string|undefined,
 	itemOptions: ItemOptions
 ): void {
 	const $pieces: HTMLElement[] = []
 	for (const itemOption of itemOptions) {
 		const $piece=$flow.querySelector(`:scope > [data-optional="${itemOption.name}"]`)
 		if (!($piece instanceof HTMLElement)) continue
-		$piece.hidden=!itemOption.all
+		$piece.hidden=!itemOption.get(type)
 		$pieces.push($piece)
 	}
 	$flow.replaceChildren()
@@ -161,7 +162,7 @@ export function writeExpandedItemFlow(
 ): void {
 	const optionalize=(name:string,$e:HTMLElement)=>{
 		$e.dataset.optional=name
-		$e.hidden=!itemOptions.get(name)?.all
+		$e.hidden=!itemOptions.get(name)?.get(type)
 		return $e
 	}
 	const makeBadge=(contents:(string|HTMLElement)[],title?:string,isEmpty=false)=>{
