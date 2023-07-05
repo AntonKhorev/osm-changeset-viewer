@@ -70,23 +70,11 @@
 }
 .ui footer > .tools > section > fieldset {
 	position: relative;
-	display: inline-flex;
 	margin: 0 var(--spacer) 0 calc(var(--spacer) + 10px);
 	border: solid 1px var(--frame-color);
 	border-width: 1px 2px;
 	padding: .25rem;
-	padding-left: calc(.25rem + .5 * var(--icon-size));
 	gap: .5rem;
-}
-.ui footer > .tools > section > fieldset > legend {
-	position: absolute;
-	left: -13px;
-}
-.ui footer > .tools > section > fieldset.for-expanded-items > legend {
-	left: -14px;
-}
-.ui footer > .tools > section > fieldset > .input-group {
-	padding: 0;
 }
 
 .ui footer > .list > section h2 {

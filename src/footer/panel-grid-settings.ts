@@ -1,6 +1,6 @@
 import Panel from './panel'
 import type Grid from '../grid'
-import {ItemOptions, makeCollectionIcon, makeSingleIcon} from '../grid'
+import {ItemOptions} from '../grid'
 import {makeElement, makeDiv, makeLabel} from '../util/html'
 
 export default class GridSettingsPanel extends Panel {
@@ -28,12 +28,15 @@ export default class GridSettingsPanel extends Panel {
 		const makeItemOptionsTable=(
 			updateItemsGrid: ()=>void,
 			itemOptions: ItemOptions,
-			fieldsetClass: string,
-			$icon: HTMLElement
+			legend: string
 		)=>{
 			const $table=makeElement('table')()()
 			{
 				const $row=$table.insertRow()
+				{
+					const $cell=makeElement('th')()()
+					$row.append($cell)
+				}
 				for (const itemOption of itemOptions) {
 					const $cell=makeElement('th')()(itemOption.label)
 					$cell.title=itemOption.title??itemOption.name
@@ -41,6 +44,10 @@ export default class GridSettingsPanel extends Panel {
 				}
 			}{
 				const $row=$table.insertRow()
+				{
+					const $cell=makeElement('th')()()
+					$row.append($cell)
+				}
 				for (const itemOption of itemOptions) {
 					const $cell=$row.insertCell()
 					const $checkbox=makeElement('input')()()
@@ -53,14 +60,30 @@ export default class GridSettingsPanel extends Panel {
 					$cell.append($checkbox)
 				}
 			}
-			return makeElement('fieldset')(fieldsetClass)(
-				makeElement('legend')()($icon),$table
+			for (const itemType of itemOptions.allTypes) {
+				const $row=$table.insertRow()
+				$row.classList.add('for-type')
+				{
+					const $cell=$row.insertCell()
+					$cell.textContent=itemType
+				}
+				for (const itemOption of itemOptions) {
+					const $cell=$row.insertCell()
+					if (!itemOption.hasType(itemType)) continue
+					const $checkbox=makeElement('input')()()
+					$checkbox.type='checkbox'
+					$checkbox.checked=itemOption[itemType]
+					$checkbox.oninput=()=>{
+						itemOption[itemType]=$checkbox.checked
+						updateItemsGrid()
+					}
+					$cell.append($checkbox)
+				}
+			}
+			return makeElement('fieldset')()(
+				makeElement('legend')()(legend),$table
 			)
 		}
-		const $expandedIcon=makeSingleIcon()
-		$expandedIcon.title=`expanded items`
-		const $collapsedIcon=makeCollectionIcon()
-		$collapsedIcon.title=`collapsed items`
 		$section.append(
 			makeElement('h2')()(`Grid settings`),
 			makeGridCheckbox(
@@ -83,14 +106,12 @@ export default class GridSettingsPanel extends Panel {
 			makeItemOptionsTable(
 				()=>this.grid.updateTableAccordingToExpandedItemOptions(),
 				this.grid.expandedItemOptions,
-				'for-expanded-items',
-				$expandedIcon
+				`expanded items`
 			),
 			makeItemOptionsTable(
 				()=>this.grid.updateTableAccordingToCollapsedItemOptions(),
 				this.grid.collapsedItemOptions,
-				'for-collapsed-items',
-				$collapsedIcon
+				`collapsed items`
 			)
 		)
 	}

@@ -12,20 +12,6 @@ export {ItemOptions}
 
 export {makeCollectionIcon} from './body-item'
 
-export function makeSingleIcon(): HTMLElement {
-	const $icon=makeElement('span')('icon')()
-	const r=4
-	const c1=-10
-	const c2=10-2*r
-
-	$icon.innerHTML=makeCenteredSvg(10,
-		`<rect x="${c1}" y="${-r}" width="${2*r+1}" height="${2*r+1}" fill="currentColor" />`+
-		`<rect x="${c2+1.5}" y="${-r+1.5}" width="${2*r-2}" height="${2*r-2}" fill="none" stroke="currentColor" />`+
-		`<line x1="${c2+3}" x2="8" y1=".5" y2=".5" fill="none" stroke="currentColor" >`
-	)
-	return $icon
-}
-
 export default class Grid {
 	$grid=makeElement('table')('grid')()
 	addExpandedItems=false

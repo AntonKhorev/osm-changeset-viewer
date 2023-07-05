@@ -1,11 +1,11 @@
 type ItemType = 'changeset' | 'changesetComment' | 'note' | 'noteComment'
-function makeItemTypes(spec: `${'C'|' '}${'c'|' '}${'N'|' '}${'n'|' '}`): ItemType[] {
+function makeItemTypes(spec: `${'C'|' '}${'c'|' '}${'N'|' '}${'n'|' '}`): Set<ItemType> {
 	const types: ItemType[] = []
 	if (spec[0]!=' ') types.push('changeset')
 	if (spec[1]!=' ') types.push('changesetComment')
 	if (spec[2]!=' ') types.push('note')
 	if (spec[3]!=' ') types.push('noteComment')
-	return types
+	return new Set(types)
 }
 
 class ItemOption {
@@ -16,7 +16,7 @@ class ItemOption {
 	constructor(
 		value: boolean,
 		public name: string,
-		public types: ItemType[],
+		private types: Set<ItemType>,
 		public label: string,
 		public title?: string
 	) {
@@ -24,6 +24,9 @@ class ItemOption {
 		this.changesetComment=value
 		this.note=value
 		this.noteComment=value
+	}
+	hasType(type: ItemType): boolean {
+		return this.types.has(type)
 	}
 	get some(): boolean {
 		return this.changeset || this.changesetComment || this.note || this.noteComment
@@ -41,6 +44,7 @@ class ItemOption {
 
 export default class ItemOptions {
 	private options: Map<string,ItemOption>
+	allTypes: Set<ItemType>
 	constructor(isExpanded: boolean) {
 		this.options=new Map([
 			new ItemOption(isExpanded,'date'   ,makeItemTypes('CcNn'),'📅'),
@@ -52,6 +56,7 @@ export default class ItemOptions {
 			new ItemOption(isExpanded,'refs'   ,makeItemTypes('C N '),'💬','comment references'),
 			new ItemOption(isExpanded,'comment',makeItemTypes('CcNn'),'📣'),
 		].map(option=>[option.name,option]))
+		this.allTypes=makeItemTypes('CcNn')
 	}
 	[Symbol.iterator]() {
 		return this.options.values()
