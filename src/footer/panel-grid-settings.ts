@@ -25,23 +25,36 @@ export default class GridSettingsPanel extends Panel {
 			if (labelTitle) $label.title=labelTitle
 			return makeDiv('input-group')($label)
 		}
-		const makeItemOptionsFieldset=(
-			updateTable: ()=>void,
+		const makeItemOptionsTable=(
+			updateItemsGrid: ()=>void,
 			itemOptions: ItemOptions,
 			fieldsetClass: string,
 			$icon: HTMLElement
 		)=>{
+			const $table=makeElement('table')()()
+			{
+				const $row=$table.insertRow()
+				for (const itemOption of itemOptions) {
+					const $cell=makeElement('th')()(itemOption.label)
+					$cell.title=itemOption.title??itemOption.name
+					$row.append($cell)
+				}
+			}{
+				const $row=$table.insertRow()
+				for (const itemOption of itemOptions) {
+					const $cell=$row.insertCell()
+					const $checkbox=makeElement('input')()()
+					$checkbox.type='checkbox'
+					$checkbox.checked=itemOption.all
+					$checkbox.oninput=()=>{
+						itemOption.all=$checkbox.checked
+						updateItemsGrid()
+					}
+					$cell.append($checkbox)
+				}
+			}
 			return makeElement('fieldset')(fieldsetClass)(
-				makeElement('legend')()($icon),
-				...itemOptions.map(option=>makeGridCheckbox(
-					value=>{
-						option.all=value
-						updateTable()
-					},
-					option.all,
-					option.label,
-					option.title??option.name
-				))
+				makeElement('legend')()($icon),$table
 			)
 		}
 		const $expandedIcon=makeSingleIcon()
@@ -67,13 +80,13 @@ export default class GridSettingsPanel extends Panel {
 				`changeset close events`,
 				`visible only if there's some other event between changeset opening and closing`
 			),
-			makeItemOptionsFieldset(
+			makeItemOptionsTable(
 				()=>this.grid.updateTableAccordingToExpandedItemOptions(),
 				this.grid.expandedItemOptions,
 				'for-expanded-items',
 				$expandedIcon
 			),
-			makeItemOptionsFieldset(
+			makeItemOptionsTable(
 				()=>this.grid.updateTableAccordingToCollapsedItemOptions(),
 				this.grid.collapsedItemOptions,
 				'for-collapsed-items',
