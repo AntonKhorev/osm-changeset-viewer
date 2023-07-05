@@ -294,7 +294,7 @@ export function writeExpandedItemFlow(
 	if (type=='user') {
 		date=item.createdAt
 		$flow.replaceChildren(
-			optionalize('id',makeElement('span')()(`account created`)) // abuse id slot for this text
+			optionalize('status',makeElement('span')()(`account created`))
 		)
 	} else if (type=='changeset' || type=='changesetClose') {
 		date = type=='changesetClose' ? item.closedAt : item.createdAt

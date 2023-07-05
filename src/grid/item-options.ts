@@ -1,10 +1,11 @@
-type ItemType = 'changeset' | 'changesetComment' | 'note' | 'noteComment'
-function makeItemTypes(spec: `${'C'|' '}${'c'|' '}${'N'|' '}${'n'|' '}`): Set<ItemType> {
+type ItemType = 'changeset' | 'changesetComment' | 'note' | 'noteComment' | 'user'
+function makeItemTypes(spec: `${'C'|' '}${'c'|' '}${'N'|' '}${'n'|' '}${'U'|' '}`): Set<ItemType> {
 	const types: ItemType[] = []
 	if (spec[0]!=' ') types.push('changeset')
 	if (spec[1]!=' ') types.push('changesetComment')
 	if (spec[2]!=' ') types.push('note')
 	if (spec[3]!=' ') types.push('noteComment')
+	if (spec[4]!=' ') types.push('user')
 	return new Set(types)
 }
 
@@ -13,6 +14,7 @@ class ItemOption {
 	changesetComment: boolean
 	note: boolean
 	noteComment: boolean
+	user: boolean
 	constructor(
 		value: boolean,
 		public name: string,
@@ -24,6 +26,7 @@ class ItemOption {
 		this.changesetComment=value
 		this.note=value
 		this.noteComment=value
+		this.user=value
 	}
 	hasType(type: ItemType): boolean {
 		return this.types.has(type)
@@ -39,13 +42,14 @@ class ItemOption {
 		this.changesetComment=value
 		this.note=value
 		this.noteComment=value
+		this.user=value
 	}
 	get(type: string|undefined): boolean {
-		if (type=='changeset' || type=='changesetComment' || type=='note' || type=='noteComment') {
+		if (type=='changeset' || type=='changesetComment' || type=='note' || type=='noteComment' || type=='user') {
 			return this[type]
 		} else if (type=='changesetClose') {
 			return this.changeset
-		} else { // TODO add user type
+		} else {
 			return this.all
 		}
 	}
@@ -56,16 +60,17 @@ export default class ItemOptions {
 	allTypes: Set<ItemType>
 	constructor(isExpanded: boolean) {
 		this.options=new Map([
-			new ItemOption(isExpanded,'date'   ,makeItemTypes('CcNn'),'📅'),
-			new ItemOption(true      ,'id'     ,makeItemTypes('CcNn'),'#'),
-			new ItemOption(isExpanded,'api'    ,makeItemTypes('CcNn'),'api'),
-			new ItemOption(isExpanded,'editor' ,makeItemTypes('C N '),'🛠️'),
-			new ItemOption(isExpanded,'source' ,makeItemTypes('C   '),'[]'),
-			new ItemOption(isExpanded,'changes',makeItemTypes('C   '),'📝','changes count'),
-			new ItemOption(isExpanded,'refs'   ,makeItemTypes('C N '),'💬','comment references'),
-			new ItemOption(isExpanded,'comment',makeItemTypes('CcNn'),'📣'),
+			new ItemOption(isExpanded,'date'   ,makeItemTypes('CcNn '),'📅'),
+			new ItemOption(true      ,'id'     ,makeItemTypes('CcNn '),'#'),
+			new ItemOption(isExpanded,'api'    ,makeItemTypes('CcNn '),'api'),
+			new ItemOption(isExpanded,'editor' ,makeItemTypes('C N  '),'🛠️'),
+			new ItemOption(isExpanded,'source' ,makeItemTypes('C    '),'[]'),
+			new ItemOption(isExpanded,'changes',makeItemTypes('C    '),'📝','changes count'),
+			new ItemOption(isExpanded,'refs'   ,makeItemTypes('C N  '),'💬','comment references'),
+			new ItemOption(isExpanded,'comment',makeItemTypes('CcNn '),'📣'),
+			new ItemOption(true      ,'status' ,makeItemTypes('    U'),'?','status'),
 		].map(option=>[option.name,option]))
-		this.allTypes=makeItemTypes('CcNn')
+		this.allTypes=makeItemTypes('CcNnU')
 	}
 	[Symbol.iterator]() {
 		return this.options.values()
