@@ -1,7 +1,7 @@
 import Panel from './panel'
 import type Grid from '../grid'
 import {ItemOptions} from '../grid'
-import {makeDisclosureButton} from '../widgets'
+import {makeDisclosureButton, getDisclosureButtonState, setDisclosureButtonState} from '../widgets'
 import {makeElement, makeDiv, makeLabel} from '../util/html'
 
 export default class GridSettingsPanel extends Panel {
@@ -35,10 +35,17 @@ export default class GridSettingsPanel extends Panel {
 			{
 				const $row=$table.insertRow()
 				{
-					const $cell=makeElement('th')()(
-						makeDisclosureButton(false,`item types`)
-					)
-					$row.append($cell)
+					const $cell=$row.insertCell()
+					const $button=makeDisclosureButton(false,`item types`)
+					$button.onclick=()=>{
+						const state=!getDisclosureButtonState($button)
+						for (const $typeRow of $table.querySelectorAll(`tr.for-type`)) {
+							if (!($typeRow instanceof HTMLTableRowElement)) continue
+							$typeRow.hidden=!state
+						}
+						setDisclosureButtonState($button,state)
+					}
+					$cell.append($button)
 				}
 				for (const itemOption of itemOptions) {
 					const $cell=makeElement('th')()(itemOption.label)
@@ -72,6 +79,7 @@ export default class GridSettingsPanel extends Panel {
 			for (const itemType of itemOptions.allTypes) {
 				const $row=$table.insertRow()
 				$row.classList.add('for-type')
+				$row.hidden=true
 				{
 					const $cell=$row.insertCell()
 					$cell.textContent=itemType
