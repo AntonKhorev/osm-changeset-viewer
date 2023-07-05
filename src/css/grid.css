@@ -461,6 +461,9 @@
 .ui .grid tbody .item.highlighted-by-hover .balloon {
 	background: var(--hover-color);
 }
+.ui .grid tbody .item.highlighted-by-hover-indirectly .balloon {
+	background: color-mix(in srgb, var(--hover-color), canvas);
+}
 .ui .grid tbody .item.highlighted-by-click .balloon {
 	background: var(--click-color);
 }
@@ -469,6 +472,9 @@
 }
 .ui .grid tbody .item.highlighted-by-hover .icon svg.tip .balloon-part {
 	fill: var(--hover-color);
+}
+.ui .grid tbody .item.highlighted-by-hover-indirectly .icon svg.tip .balloon-part {
+	fill: color-mix(in srgb, var(--hover-color), canvas);
 }
 .ui .grid tbody .item.highlighted-by-click .icon svg.tip .balloon-part {
 	fill: var(--click-color);
