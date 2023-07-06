@@ -66,7 +66,7 @@ export default class ItemOptions {
 			new ItemOption(isExpanded,'editor' ,makeItemTypes('C N  '),'🛠️'),
 			new ItemOption(isExpanded,'source' ,makeItemTypes('C    '),'[]'),
 			new ItemOption(isExpanded,'changes',makeItemTypes('C    '),'📝','changes count'),
-			new ItemOption(isExpanded,'refs'   ,makeItemTypes('C N  '),'💬','comment references'),
+			new ItemOption(isExpanded,'refs'   ,makeItemTypes('CcNn '),'💬','comment references'),
 			new ItemOption(isExpanded,'comment',makeItemTypes('CcNn '),'📣'),
 			new ItemOption(true      ,'status' ,makeItemTypes('    U'),'?','status'),
 		].map(option=>[option.name,option]))

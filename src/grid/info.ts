@@ -121,9 +121,9 @@ export function readItemDescriptor($item: HTMLElement): ItemDescriptor|null {
 export function getCommentItemDescriptor(descriptor: ItemDescriptor, order: number): ItemDescriptor|null {
 	const id=descriptor.id
 	let type: string
-	if (descriptor.type=='changeset') {
+	if (descriptor.type=='changeset' || descriptor.type=='changesetClose' || descriptor.type=='changesetComment') {
 		type='changesetComment'
-	} else if (descriptor.type=='note') {
+	} else if (descriptor.type=='note' || descriptor.type=='noteComment') {
 		type='noteComment'
 	} else {
 		return null

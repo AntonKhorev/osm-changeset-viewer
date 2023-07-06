@@ -160,6 +160,7 @@ export function writeExpandedItemFlow(
 	usernames: Map<number, string>,
 	itemOptions: ItemOptions
 ): void {
+	type CommentRef = {uid?:number,mute?:boolean,action?:string}
 	const optionalize=(name:string,$e:HTMLElement)=>{
 		$e.dataset.optional=name
 		$e.hidden=!itemOptions.get(name)?.get(type)
@@ -214,48 +215,76 @@ export function writeExpandedItemFlow(
 		}
 		return null
 	}
-	const makeCommentsBadge=(uid: number, commentRefs: {uid?:number,mute?:boolean,action?:string}[])=>{
-		const getBalloonRefHtml=(incoming=false,mute=false,action?:string)=>{
-			const flip=incoming?` transform="scale(-1,1)"`:``
-			const balloonColors=`fill="transparent" stroke="var(--icon-frame-color)"`
-			let balloon:string
-			if (mute) {
-				balloon=`<g${flip} ${balloonColors}>`+
-					`<circle class="balloon-ref" r="6" />`+
-					`<circle class="balloon-ref" r="2" cx="-6" cy="4" />`+
-				`</g>`
-			} else {
-				const balloonPathData=`M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`
-				balloon=`<path class="balloon-ref"${flip} d="${balloonPathData}" ${balloonColors} />`
-			}
-			let balloonContents=(
-				`<circle r=".7" fill="currentColor" cx="-3" />`+
-				`<circle r=".7" fill="currentColor" />`+
-				`<circle r=".7" fill="currentColor" cx="3" />`
-			)
-			const actionGlyph=getSvgOfActionGlyph(action)
-			if (actionGlyph!=null) {
-				balloonContents=`<g stroke="currentColor" stroke-width="2">${actionGlyph}</g>`
-			}
-			return `<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
-				balloon+balloonContents+
-			`</svg>`
+	const getBalloonRefHtml=(incoming=false,mute=false,action?:string)=>{
+		const flip=incoming?` transform="scale(-1,1)"`:``
+		const balloonColors=`fill="transparent" stroke="var(--icon-frame-color)"`
+		let balloon:string
+		if (mute) {
+			balloon=`<g${flip} ${balloonColors}>`+
+				`<circle class="balloon-ref" r="6" />`+
+				`<circle class="balloon-ref" r="2" cx="-6" cy="4" />`+
+			`</g>`
+		} else {
+			const balloonPathData=`M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`
+			balloon=`<path class="balloon-ref"${flip} d="${balloonPathData}" ${balloonColors} />`
 		}
+		let balloonContents=(
+			`<circle r=".7" fill="currentColor" cx="-3" />`+
+			`<circle r=".7" fill="currentColor" />`+
+			`<circle r=".7" fill="currentColor" cx="3" />`
+		)
+		const actionGlyph=getSvgOfActionGlyph(action)
+		if (actionGlyph!=null) {
+			balloonContents=`<g stroke="currentColor" stroke-width="2">${actionGlyph}</g>`
+		}
+		return `<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
+			balloon+balloonContents+
+		`</svg>`
+	}
+	const makeCommentRefButton=(uid: number, order: number, commentRef: CommentRef)=>{
+		const $button=makeElement('button')('comment-ref')()
+		$button.dataset.order=String(order)
+		$button.title=`comment ${order+1}`
+		setColor($button,commentRef.uid,'--icon-frame-color','--icon-frame-lightness')
+		$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute,commentRef.action)
+		return $button
+	}
+	const makeAllCommentsBadge=(uid: number, commentRefs: CommentRef[])=>{
 		if (commentRefs.length>0) {
 			const contents:(string|HTMLElement)[]=[]
 			for (const [i,commentRef] of commentRefs.entries()) {
 				if (i) contents.push(` `)
-				const $button=makeElement('button')('comment-ref')()
-				$button.dataset.order=String(i)
-				$button.title=`comment ${i+1}`
-				setColor($button,commentRef.uid,'--icon-frame-color','--icon-frame-lightness')
-				$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute,commentRef.action)
-				contents.push($button)
+				contents.push(makeCommentRefButton(uid,i,commentRef))
 			}
 			const $badge=makeBadge(contents)
 			if (commentRefs.length>1) {
 				$badge.classList.add('with-arrow-ends')
 			}
+			return $badge
+		} else {
+			const $noButton=makeElement('span')('comment-ref')()
+			$noButton.innerHTML=getBalloonRefHtml()
+			return makeBadge([$noButton],`no comments`,true)
+		}
+	}
+	const makeNeighborCommentsBadge=(uid: number, order: number, prevCommentRef: CommentRef|undefined, nextCommentRef: CommentRef|undefined)=>{
+		if (prevCommentRef || nextCommentRef) {
+			const contents:(string|HTMLElement)[]=[]
+			if (nextCommentRef) {
+				contents.push(
+					makeCommentRefButton(uid,order+1,nextCommentRef),
+					` `
+				)
+			}
+			contents.push(`|`) // TODO circle/square icon
+			if (prevCommentRef) {
+				contents.push(
+					` `,
+					makeCommentRefButton(uid,order-1,prevCommentRef)
+				)
+			}
+			const $badge=makeBadge(contents)
+			$badge.classList.add('with-arrow-ends') // TODO reverse
 			return $badge
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
@@ -309,7 +338,7 @@ export function writeExpandedItemFlow(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
 			` `,optionalize('changes',makeBadge([`📝 ${item.changes.count}`],`number of changes`)),
-			` `,optionalize('refs',makeCommentsBadge(item.uid,item.commentRefs))
+			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.tags?.comment) {
 			$flow.append(
@@ -328,7 +357,7 @@ export function writeExpandedItemFlow(
 			}
 		}
 		$flow.append(
-			` `,optionalize('refs',makeCommentsBadge(item.uid,item.commentRefs))
+			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.openingComment) {
 			$flow.append(
@@ -363,6 +392,11 @@ export function writeExpandedItemFlow(
 			} else {
 				from.push(`anonymous`)
 			}
+		}
+		if (item.prevCommentRef || item.nextCommentRef) {
+			$flow.append(
+				` `,optionalize('refs',makeNeighborCommentsBadge(item.itemUid,item.order,item.prevCommentRef,item.nextCommentRef))
+			)
 		}
 		if (item.text) {
 			$flow.append(
