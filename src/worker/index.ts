@@ -267,33 +267,40 @@ async function resumeUserItemStream<T extends 'changesets'|'notes'>(
 
 function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): UserItemDbInfo<'changesets'> {
 	const usernames=new Map<number,string>()
-	let comments:ChangesetCommentDbRecord[]=[]
-	let commentRefs: ChangesetCommentRef[] = []
+	const comments:ChangesetCommentDbRecord[]=[]
+	const commentRefs: ChangesetCommentRef[] = []
 	if (a.discussion) {
-		comments=a.discussion.map((ac,order)=>{
+		const apiComments=a.discussion
+		for (const [i,ac] of apiComments.entries()) {
 			const comment:ChangesetCommentDbRecord={
 				itemId: a.id,
-				order,
+				order: i,
 				itemUid: a.uid,
 				createdAt: new Date(ac.date),
 				text: ac.text,
 			}
+			const commentRef:ChangesetCommentRef={}
 			if (ac.uid!=null) {
-				comment.uid=ac.uid
+				comment.uid=commentRef.uid=ac.uid
 				if (ac.user!=null) {
 					usernames.set(ac.uid,ac.user)
 				}
 			}
-			return comment
-		})
-		commentRefs=a.discussion.map((ac,order)=>{
-			const commentRef:ChangesetCommentRef={
+			if (i>0) {
+				comment.prevCommentRef={}
+				if (apiComments[i-1].uid!=null) {
+					comment.prevCommentRef.uid=apiComments[i-1].uid
+				}
 			}
-			if (ac.uid!=null) {
-				commentRef.uid=ac.uid
+			if (i<apiComments.length-1) {
+				comment.nextCommentRef={}
+				if (apiComments[i+1].uid!=null) {
+					comment.nextCommentRef.uid=apiComments[i+1].uid
+				}
 			}
-			return commentRef
-		})
+			comments.push(comment)
+			commentRefs.push(commentRef)
+		}
 	}
 	const item: ChangesetDbRecord = {
 		id: a.id,
@@ -322,7 +329,8 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 	const usernames=new Map<number,string>()
 	const comments:NoteCommentDbRecord[]=[]
 	const commentRefs: NoteCommentRef[] = []
-	for (const [i,ac] of a.properties.comments.entries()) {
+	const apiComments=a.properties.comments
+	for (const [i,ac] of apiComments.entries()) {
 		if (i==0) continue // 0th comment already saved as item.openingComment
 		const comment:NoteCommentDbRecord={
 			itemId: a.properties.id,
@@ -340,6 +348,26 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 			comment.uid=commentRef.uid=ac.uid
 			if (ac.user!=null) {
 				usernames.set(ac.uid,ac.user)
+			}
+		}
+		if (i>0) {
+			const apc=apiComments[i-1]
+			comment.prevCommentRef={
+				mute: !apc.text,
+				action: apc.action
+			}
+			if (apc.uid!=null) {
+				comment.prevCommentRef.uid=apc.uid
+			}
+		}
+		if (i<apiComments.length-1) {
+			const anc=apiComments[i+1]
+			comment.nextCommentRef={
+				mute: !anc.text,
+				action: anc.action
+			}
+			if (anc.uid!=null) {
+				comment.nextCommentRef.uid=anc.uid
 			}
 		}
 		comments.push(comment)

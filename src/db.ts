@@ -54,11 +54,26 @@ export type UserItemCommentDbRecord = {
 	text: string
 }
 
-export type ChangesetCommentDbRecord = UserItemCommentDbRecord
+export type ChangesetCommentRef = {
+	uid?: number
+}
+
+export type ChangesetCommentDbRecord = UserItemCommentDbRecord & {
+	prevCommentRef?: ChangesetCommentRef
+	nextCommentRef?: ChangesetCommentRef
+}
 
 type NoteCommentAction = 'opened' | 'closed' | 'reopened' | 'commented' | 'hidden'
 
+export type NoteCommentRef = {
+	uid?: number
+	mute: boolean
+	action: NoteCommentAction
+}
+
 export type NoteCommentDbRecord = UserItemCommentDbRecord & {
+	prevCommentRef?: NoteCommentRef
+	nextCommentRef?: NoteCommentRef
 	action: NoteCommentAction
 }
 
@@ -78,9 +93,6 @@ type UserItemDbRecord = {
 	createdAt: Date
 }
 
-export type ChangesetCommentRef = {
-	uid?: number
-}
 export type ChangesetDbRecord = UserItemDbRecord & {
 	tags: {[key:string]:string}
 	closedAt?: Date // open if undefined
@@ -89,11 +101,6 @@ export type ChangesetDbRecord = UserItemDbRecord & {
 	commentRefs: ChangesetCommentRef[]
 }
 
-export type NoteCommentRef = {
-	uid?: number
-	mute: boolean
-	action: NoteCommentAction
-}
 export type NoteDbRecord = UserItemDbRecord & {
 	openingComment?: string
 	commentRefs: NoteCommentRef[]
