@@ -204,12 +204,12 @@ export function writeExpandedItemFlow(
 		return makeBadge([`🛠️ ${createdByLead??'?'}`],createdBy)
 	}
 	const makeEditorBadgeOrIconFromNoteComment=(comment: string)=>{
-		for (const [,url,editorIcon,noteRegExp] of editorData) {
+		for (const [createdByPrefix,url,editorIcon,noteRegExp] of editorData) {
 			if (!noteRegExp) continue
 			let match
 			if (match=comment.match(noteRegExp)) {
 				const [,createdBy]=match
-				return makeKnownEditorBadgeOrIcon(createdBy,editorIcon,url)
+				return makeKnownEditorBadgeOrIcon(createdBy??createdByPrefix,editorIcon,url)
 			}
 		}
 		return null

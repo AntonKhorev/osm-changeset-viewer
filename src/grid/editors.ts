@@ -98,6 +98,7 @@ const editorData: [
 		'Organic Maps',
 		'https://wiki.openstreetmap.org/wiki/Organic_Maps',
 		{type:'svg',id:'organicmaps'},
+		/^\s*#organicmaps\s*$/m
 	],[
 		'osm-bulk-upload/upload.py',
 		'https://wiki.openstreetmap.org/wiki/Upload.py',
