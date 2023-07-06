@@ -90,6 +90,7 @@ const editorData: [
 		'MAPS.ME',
 		'https://wiki.openstreetmap.org/wiki/MAPS.ME',
 		{type:'svg',id:'mapsme'},
+		/^\s*#mapsme\s*$/m
 	],[
 		'Merkaartor',
 		'https://wiki.openstreetmap.org/wiki/Merkaartor',
