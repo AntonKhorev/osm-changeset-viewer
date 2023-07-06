@@ -4914,24 +4914,60 @@ class GridBody {
         this.$gridBody.addEventListener('mouseenter', ev => {
             if (!(ev.target instanceof HTMLElement))
                 return;
-            const $item = ev.target;
-            if (!$item.matches('.item'))
-                return;
-            const descriptor = readItemDescriptor($item);
-            if (!descriptor)
-                return;
-            this.highlightHoveredItemDescriptor(descriptor);
+            if (ev.target.matches('.item')) {
+                const $item = ev.target;
+                const descriptor = readItemDescriptor($item);
+                if (!descriptor)
+                    return;
+                this.highlightHoveredItemDescriptor(descriptor);
+            }
+            else if (ev.target.matches('button.comment-ref')) {
+                const $button = ev.target;
+                const $item = $button.closest('.item');
+                if (!($item instanceof HTMLElement))
+                    return;
+                const descriptor = readItemDescriptor($item);
+                if (!descriptor)
+                    return;
+                const order = Number($button.dataset.order);
+                if (Number.isInteger(order)) {
+                    this.highlightHoveredItemDescriptor(descriptor, getCommentItemDescriptor(descriptor, order));
+                }
+                else {
+                    this.highlightHoveredItemDescriptor(descriptor);
+                }
+            }
+            else if (ev.target.matches('button.ref')) {
+                const $button = ev.target;
+                const $item = $button.closest('.item');
+                if (!($item instanceof HTMLElement))
+                    return;
+                const descriptor = readItemDescriptor($item);
+                if (!descriptor)
+                    return;
+                this.highlightHoveredItemDescriptor(descriptor, getMainItemDescriptor(descriptor));
+            }
         }, true);
         this.$gridBody.addEventListener('mouseleave', ev => {
             if (!(ev.target instanceof HTMLElement))
                 return;
-            const $item = ev.target;
-            if (!$item.matches('.item'))
-                return;
-            const descriptor = readItemDescriptor($item);
-            if (!descriptor)
-                return;
-            this.unhighlightHoveredItemDescriptor(descriptor);
+            if (ev.target.matches('.item')) {
+                const $item = ev.target;
+                const descriptor = readItemDescriptor($item);
+                if (!descriptor)
+                    return;
+                this.unhighlightHoveredItemDescriptor(descriptor);
+            }
+            else if (ev.target.matches('button.ref, button.comment-ref')) {
+                const $button = ev.target;
+                const $item = $button.closest('.item');
+                if (!($item instanceof HTMLElement))
+                    return;
+                const descriptor = readItemDescriptor($item);
+                if (!descriptor)
+                    return;
+                this.highlightHoveredItemDescriptor(descriptor);
+            }
         }, true);
     }
     get nColumns() {
@@ -5493,14 +5529,23 @@ class GridBody {
         }
         this.highlightClickedItem($targetItem);
     }
-    highlightHoveredItemDescriptor(descriptor) {
-        for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
+    highlightHoveredItemDescriptor(descriptor, refDescriptor) {
+        let broadSelector = getBroadItemDescriptorSelector(descriptor);
+        let narrowSelector = getItemDescriptorSelector(descriptor);
+        if (refDescriptor) {
+            narrowSelector += ', ' + getItemDescriptorSelector(refDescriptor);
+        }
+        for (const $item of this.$gridBody.querySelectorAll(broadSelector)) {
+            $item.classList.add('highlighted-by-hover-indirectly');
+        }
+        for (const $item of this.$gridBody.querySelectorAll(narrowSelector)) {
+            $item.classList.remove('highlighted-by-hover-indirectly');
             $item.classList.add('highlighted-by-hover');
         }
     }
     unhighlightHoveredItemDescriptor(descriptor) {
         for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
-            $item.classList.remove('highlighted-by-hover');
+            $item.classList.remove('highlighted-by-hover', 'highlighted-by-hover-indirectly');
         }
     }
     highlightClickedItem($item) {
