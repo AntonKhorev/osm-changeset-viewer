@@ -282,10 +282,12 @@ function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): 
 	}
 	if (a.discussion) {
 		const apiComments=a.discussion
+		const iFirstComment=0
 		for (const [i,ac] of apiComments.entries()) {
+			if (i<iFirstComment) continue
 			const comment:ChangesetCommentDbRecord={
 				itemId: a.id,
-				order: i,
+				order: i-iFirstComment,
 				itemUid: a.uid,
 				createdAt: new Date(ac.date),
 				text: ac.text,
@@ -296,7 +298,7 @@ function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): 
 					usernames.set(ac.uid,ac.user)
 				}
 			}
-			if (i>0) {
+			if (i>iFirstComment) {
 				comment.prevCommentRef=makeCommentRef(apiComments[i-1])
 			}
 			if (i<apiComments.length-1) {
@@ -344,11 +346,12 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 		return commentRef
 	}
 	const apiComments=a.properties.comments
+	const iFirstComment=1 // 0th comment already saved as item.openingComment
 	for (const [i,ac] of apiComments.entries()) {
-		if (i==0) continue // 0th comment already saved as item.openingComment
+		if (i<iFirstComment) continue
 		const comment:NoteCommentDbRecord={
 			itemId: a.properties.id,
-			order: i-1,
+			order: i-iFirstComment,
 			itemUid: ac0.uid,
 			createdAt: parseNoteDate(ac.date),
 			text: ac.text??'',
@@ -360,11 +363,11 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 				usernames.set(ac.uid,ac.user)
 			}
 		}
-		if (i>0) {
+		if (i>iFirstComment) {
 			comment.prevCommentRef=makeCommentRef(apiComments[i-1])
 		}
 		if (i<apiComments.length-1) {
-			comment.prevCommentRef=makeCommentRef(apiComments[i+1])
+			comment.nextCommentRef=makeCommentRef(apiComments[i+1])
 		}
 		comments.push(comment)
 		commentRefs.push(makeCommentRef(ac))
