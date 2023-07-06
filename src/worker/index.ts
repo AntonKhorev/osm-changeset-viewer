@@ -8,7 +8,11 @@ import {ChangesetViewerDBWriter} from './db-writer'
 import type {ApiProvider} from '../net'
 import {WorkerNet} from '../net'
 import {WorkerBroadcastSender} from '../broadcast-channel'
-import {ValidUserQuery, OsmChangesetApiData, getUserFromOsmApiResponse, hasBbox, OsmNoteApiData} from '../osm'
+import {
+	OsmChangesetApiData, OsmChangesetCommentApiData,
+	OsmNoteApiData, OsmNoteCommentApiData,
+	ValidUserQuery, getUserFromOsmApiResponse, hasBbox
+} from '../osm'
 import StreamBoundary from '../stream-boundary'
 import {UserChangesetStream, UserNoteStream, parseNoteDate} from './user-item-stream'
 import {toReadableIsoString} from '../date'
@@ -269,6 +273,13 @@ function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): 
 	const usernames=new Map<number,string>()
 	const comments:ChangesetCommentDbRecord[]=[]
 	const commentRefs: ChangesetCommentRef[] = []
+	const makeCommentRef=(c:OsmChangesetCommentApiData)=>{
+		const commentRef:ChangesetCommentRef={}
+		if (c.uid!=null) {
+			commentRef.uid=c.uid
+		}
+		return commentRef
+	}
 	if (a.discussion) {
 		const apiComments=a.discussion
 		for (const [i,ac] of apiComments.entries()) {
@@ -279,27 +290,20 @@ function convertChangesetApiDataToDbRecordWithComments(a: OsmChangesetApiData): 
 				createdAt: new Date(ac.date),
 				text: ac.text,
 			}
-			const commentRef:ChangesetCommentRef={}
 			if (ac.uid!=null) {
-				comment.uid=commentRef.uid=ac.uid
+				comment.uid=ac.uid
 				if (ac.user!=null) {
 					usernames.set(ac.uid,ac.user)
 				}
 			}
 			if (i>0) {
-				comment.prevCommentRef={}
-				if (apiComments[i-1].uid!=null) {
-					comment.prevCommentRef.uid=apiComments[i-1].uid
-				}
+				comment.prevCommentRef=makeCommentRef(apiComments[i-1])
 			}
 			if (i<apiComments.length-1) {
-				comment.nextCommentRef={}
-				if (apiComments[i+1].uid!=null) {
-					comment.nextCommentRef.uid=apiComments[i+1].uid
-				}
+				comment.nextCommentRef=makeCommentRef(apiComments[i+1])
 			}
 			comments.push(comment)
-			commentRefs.push(commentRef)
+			commentRefs.push(makeCommentRef(ac))
 		}
 	}
 	const item: ChangesetDbRecord = {
@@ -329,6 +333,16 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 	const usernames=new Map<number,string>()
 	const comments:NoteCommentDbRecord[]=[]
 	const commentRefs: NoteCommentRef[] = []
+	const makeCommentRef=(c:OsmNoteCommentApiData)=>{
+		const commentRef:NoteCommentRef={
+			mute: !c.text,
+			action: c.action,
+		}
+		if (c.uid!=null) {
+			commentRef.uid=c.uid
+		}
+		return commentRef
+	}
 	const apiComments=a.properties.comments
 	for (const [i,ac] of apiComments.entries()) {
 		if (i==0) continue // 0th comment already saved as item.openingComment
@@ -340,38 +354,20 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 			text: ac.text??'',
 			action: ac.action,
 		}
-		const commentRef:NoteCommentRef={
-			mute: !ac.text,
-			action: ac.action,
-		}
 		if (ac.uid!=null) {
-			comment.uid=commentRef.uid=ac.uid
+			comment.uid=ac.uid
 			if (ac.user!=null) {
 				usernames.set(ac.uid,ac.user)
 			}
 		}
 		if (i>0) {
-			const apc=apiComments[i-1]
-			comment.prevCommentRef={
-				mute: !apc.text,
-				action: apc.action
-			}
-			if (apc.uid!=null) {
-				comment.prevCommentRef.uid=apc.uid
-			}
+			comment.prevCommentRef=makeCommentRef(apiComments[i-1])
 		}
 		if (i<apiComments.length-1) {
-			const anc=apiComments[i+1]
-			comment.nextCommentRef={
-				mute: !anc.text,
-				action: anc.action
-			}
-			if (anc.uid!=null) {
-				comment.nextCommentRef.uid=anc.uid
-			}
+			comment.prevCommentRef=makeCommentRef(apiComments[i+1])
 		}
 		comments.push(comment)
-		commentRefs.push(commentRef)
+		commentRefs.push(makeCommentRef(ac))
 	}
 	const item: NoteDbRecord = {
 		id: a.properties.id,

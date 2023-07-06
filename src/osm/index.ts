@@ -7,7 +7,7 @@ export {
 	getElementsFromOsmApiResponse
 } from './element'
 export {
-	OsmChangesetApiData, OsmChangesetWithBboxApiData,
+	OsmChangesetCommentApiData, OsmChangesetApiData, OsmChangesetWithBboxApiData,
 	hasBbox, getChangesetFromOsmApiResponse, getChangesetsFromOsmApiResponse
 } from './changeset'
 export {
