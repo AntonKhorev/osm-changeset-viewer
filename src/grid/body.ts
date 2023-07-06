@@ -83,8 +83,18 @@ export default class GridBody {
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
 				const order=Number($button.dataset.order)
-				if (!Number.isInteger(order)) return null
-				this.highlightHoveredItemDescriptor(descriptor,order)
+				if (Number.isInteger(order)) {
+					this.highlightHoveredItemDescriptor(descriptor,getCommentItemDescriptor(descriptor,order))
+				} else {
+					this.highlightHoveredItemDescriptor(descriptor)
+				}
+			} else if (ev.target.matches('button.ref')) {
+				const $button=ev.target
+				const $item=$button.closest('.item')
+				if (!($item instanceof HTMLElement)) return
+				const descriptor=readItemDescriptor($item)
+				if (!descriptor) return
+				this.highlightHoveredItemDescriptor(descriptor,getMainItemDescriptor(descriptor))
 			}
 		},true)
 		this.$gridBody.addEventListener('mouseleave',ev=>{
@@ -94,7 +104,7 @@ export default class GridBody {
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
 				this.unhighlightHoveredItemDescriptor(descriptor)
-			} else if (ev.target.matches('button.comment-ref')) {
+			} else if (ev.target.matches('button.ref, button.comment-ref')) {
 				const $button=ev.target
 				const $item=$button.closest('.item')
 				if (!($item instanceof HTMLElement)) return
@@ -651,14 +661,11 @@ export default class GridBody {
 		}
 		this.highlightClickedItem($targetItem)
 	}
-	private highlightHoveredItemDescriptor(descriptor: ItemDescriptor, order?: number): void {
+	private highlightHoveredItemDescriptor(descriptor: ItemDescriptor, refDescriptor?: ItemDescriptor|null): void {
 		let broadSelector=getBroadItemDescriptorSelector(descriptor)
 		let narrowSelector=getItemDescriptorSelector(descriptor)
-		if (order!=null) {
-			let commentDescriptor=getCommentItemDescriptor(descriptor,order)
-			if (commentDescriptor) {
-				narrowSelector+=', '+getItemDescriptorSelector(commentDescriptor)
-			}
+		if (refDescriptor) {
+			narrowSelector+=', '+getItemDescriptorSelector(refDescriptor)
 		}
 		for (const $item of this.$gridBody.querySelectorAll(broadSelector)) {
 			$item.classList.add('highlighted-by-hover-indirectly')
