@@ -567,6 +567,25 @@
 .ui .grid tbody .item .balloon .flow .badge .delimiter {
 	color: var(--passive-color);
 }
+.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends {
+	border-radius: unset;
+	padding-inline: 0;
+}
+.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::before,
+.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::after {
+	content: '';
+	display: inline-block;
+	width: 10px;
+	height: 17px;
+	vertical-align: -4px;
+	background: canvas;
+}
+.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::before {
+	clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+}
+.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::after {
+	clip-path: polygon(0% 0%, 100% 50%, 0% 100%, 100% 100%, 100% 0%);
+}
 .ui .grid tbody .item .balloon .flow .badge .comment-ref {
 	width: 15px;
 	height: 13px;

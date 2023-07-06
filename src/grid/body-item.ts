@@ -252,7 +252,11 @@ export function writeExpandedItemFlow(
 				$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute,commentRef.action)
 				contents.push($button)
 			}
-			return makeBadge(contents)
+			const $badge=makeBadge(contents)
+			if (commentRefs.length>1) {
+				$badge.classList.add('with-arrow-ends')
+			}
+			return $badge
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
 			$noButton.innerHTML=getBalloonRefHtml()
