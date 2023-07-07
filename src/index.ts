@@ -91,6 +91,11 @@ async function main() {
 			em(`Developer tools`),` (F12) > `,em(`Storage`),` > `,em(`Indexed DB`),` > (this website) > `,em(`OsmChangesetViewer[`),`...`,em(`]`),` (there is likely only `,em(`OsmChangesetViewer[www.openstreetmap.org]`),`, multiple databases are possible if you tried using the changeset viewer with different osm servers). `,
 			`Right-click each one and select `,em(`Delete`),`.`
 		),
+		p(
+			`In Chrome you can do the following: `,
+			em(`DevTools`),` (F12) > `,em(`Application`),` > `,em(`Storage`),` > `,em(`IndexedDB`),` > `,em(`OsmChangesetViewer[`),`...`,em(`]`),`. `,
+			`Press the `,em(`Delete database`),` button.`
+		),
 		grid.$grid,
 		more.$div
 	)
