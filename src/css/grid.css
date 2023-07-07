@@ -643,7 +643,7 @@
 .ui .grid tbody .item .balloon .flow .badge .content button.comment-ref .balloon-ref {
 	fill: canvas;
 }
-.ui .grid tbody .item .balloon .flow .badge .content button.comment-ref:hover .balloon-ref {
+.ui .grid tbody .item .balloon .flow .badge .content button:not([disabled]).comment-ref:hover .balloon-ref {
 	fill: var(--hover-color);
 }
 .ui .grid tbody .item .balloon .flow .editor {
