@@ -44,6 +44,8 @@ export default class GridBody {
 					this.pingMainItemFromRefButton($button)
 				} else if ($button.classList.contains('comment-ref')) {
 					this.pingCommentItemFromRefButton($button)
+				} else if ($button.classList.contains('arrow')) {
+					this.reverseCommentRefsWithButton($button)
 				} else if ($button.classList.contains('stretch')) {
 					this.toggleRowStretchWithButton($button)
 				}
@@ -693,6 +695,22 @@ export default class GridBody {
 	private unhighlightClickedItem($item: HTMLElement): void {
 		$item.classList.remove('highlighted-by-click')
 		$item.classList.remove('highlighted-by-click-and-fading')
+	}
+	private reverseCommentRefsWithButton($button: HTMLButtonElement): void {
+		const reverse=($e:Element)=>$e.replaceChildren(
+			...[...$e.childNodes].reverse()
+		)
+		const $badge=$button.parentElement
+		if (!$badge || !$badge.matches('.badge')) return
+		reverse($badge)
+		for (const $arrow of $badge.querySelectorAll(':scope > .arrow')) {
+			$arrow.classList.toggle('to-left')
+			$arrow.classList.toggle('to-right')
+		}
+		const $content=$badge.querySelector(':scope > .content')
+		if ($content) {
+			reverse($content)
+		}
 	}
 }
 
