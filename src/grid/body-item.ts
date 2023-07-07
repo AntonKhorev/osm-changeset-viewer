@@ -286,7 +286,9 @@ export function writeExpandedItemFlow(
 			{
 				const $currentCommentIcon=makeElement('span')('marker')()
 				setColor($currentCommentIcon,uid)
-				$currentCommentIcon.innerHTML=getSvgOfCommentIcon(itemType)
+				const svg=getSvgOfCommentIcon(itemType)
+				const narrowSvg=svg.replace(`width="8"`,`width="4"`)
+				$currentCommentIcon.innerHTML=narrowSvg
 				content.push($currentCommentIcon)
 			}
 			if (prevCommentRef) {
