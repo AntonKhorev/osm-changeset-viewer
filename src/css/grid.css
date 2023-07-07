@@ -599,16 +599,16 @@
 	background: var(--badge-background-color);
 }
 .ui .grid tbody .item .balloon .flow .badge .arrow.to-left:first-child::before {
-	clip-path: polygon(10px 0px, 8px 1px, 0px 9px, 8px 16px, 10px 17px);
+	clip-path: polygon(11px 0px, 10px 0px, 8px 1px, 0px 9px, 8px 16px, 10px 17px, 11px 17px);
 }
 .ui .grid tbody .item .balloon .flow .badge .arrow.to-right:last-child::before {
-	clip-path: polygon(0px 0px, 2px 1px, 10px 9px, 2px 16px, 0px 17px);
+	clip-path: polygon(-1px 0px, 0px 0px, 2px 1px, 10px 9px, 2px 16px, 0px 17px, -1px 17px);
 }
 .ui .grid tbody .item .balloon .flow .badge .arrow.to-left:last-child::before {
-	clip-path: polygon(10px 0px, 2px 8px, 2px 10px, 10px 17px, 0px 17px, 0px 0px);
+	clip-path: polygon(-1px 0px, 10px 0px, 2px 8px, 2px 10px, 10px 17px, -1px 17px);
 }
 .ui .grid tbody .item .balloon .flow .badge .arrow.to-right:first-child::before {
-	clip-path: polygon(0px 0px, 8px 8px, 8px 10px, 0px 17px, 10px 17px, 10px 0px);
+	clip-path: polygon(11px 0px, 0px 0px, 8px 8px, 8px 10px, 0px 17px, 11px 17px);
 }
 .ui .grid tbody .item .balloon .flow .badge .content .comment-ref {
 	width: 15px;
