@@ -267,7 +267,7 @@ export function writeExpandedItemFlow(
 			return makeBadge([$noButton],`no comments`,true)
 		}
 	}
-	const makeNeighborCommentsBadge=(uid: number, order: number, prevCommentRef: CommentRef|undefined, nextCommentRef: CommentRef|undefined)=>{
+	const makeNeighborCommentsBadge=(itemType: 'note'|'changeset', uid: number, order: number, prevCommentRef: CommentRef|undefined, nextCommentRef: CommentRef|undefined)=>{
 		if (prevCommentRef || nextCommentRef) {
 			const contents:(string|HTMLElement)[]=[]
 			if (nextCommentRef) {
@@ -276,7 +276,12 @@ export function writeExpandedItemFlow(
 					` `
 				)
 			}
-			contents.push(`|`) // TODO circle/square icon
+			{
+				const $currentCommentIcon=makeElement('span')('marker')()
+				setColor($currentCommentIcon,uid)
+				$currentCommentIcon.innerHTML=getSvgOfCommentIcon(itemType)
+				contents.push($currentCommentIcon)
+			}
 			if (prevCommentRef) {
 				contents.push(
 					` `,
@@ -370,9 +375,12 @@ export function writeExpandedItemFlow(
 		if (item.uid) {
 			username=usernames.get(item.uid)
 		}
+		let itemType: 'changeset'|'note'
 		if (type=='changesetComment') {
+			itemType='changeset'
 			rewriteWithChangesetLinks(item.itemId)
 		} else if (type=='noteComment') {
+			itemType='note'
 			rewriteWithNoteLinks(item.itemId)
 		} else {
 			return
@@ -395,7 +403,7 @@ export function writeExpandedItemFlow(
 		}
 		if (item.prevCommentRef || item.nextCommentRef) {
 			$flow.append(
-				` `,optionalize('refs',makeNeighborCommentsBadge(item.itemUid,item.order,item.prevCommentRef,item.nextCommentRef))
+				` `,optionalize('refs',makeNeighborCommentsBadge(itemType,item.itemUid,item.order,item.prevCommentRef,item.nextCommentRef))
 			)
 		}
 		if (item.text) {
@@ -553,8 +561,8 @@ export function makeUserSvgElements(): string {
 }
 
 function setColor(
-	$e: HTMLElement, uid: number|undefined, 
-	frameColorPropertyName='--balloon-frame-color', 
+	$e: HTMLElement, uid: number|undefined,
+	frameColorPropertyName='--balloon-frame-color',
 	frameLightnessPropertyName='--light-frame-lightness'
 ) {
 	if (uid!=null) {

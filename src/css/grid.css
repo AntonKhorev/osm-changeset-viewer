@@ -21,7 +21,8 @@
 .ui .grid :is(td,th,
 	.item>.icon,
 	.item>.balloon,
-	.item>.balloon>.flow>.badge>.comment-ref
+	.item>.balloon>.flow>.badge>.comment-ref,
+	.item>.balloon>.flow>.badge>.marker
 ) {
 	--temp-accent-color: hsl(var(--hue) var(--accent-saturation) 50%);
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
@@ -566,6 +567,9 @@
 .ui .grid tbody .item .balloon .flow .badge.empty,
 .ui .grid tbody .item .balloon .flow .badge .delimiter {
 	color: var(--passive-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .marker {
+	color: var(--accent-color);
 }
 .ui .grid tbody .item .balloon .flow .badge.with-arrow-ends {
 	border-radius: unset;
