@@ -269,9 +269,10 @@ export function writeExpandedItemFlow(
 				return makeBadge()(content)
 			}
 		} else {
-			const $noButton=makeElement('span')('comment-ref')()
-			$noButton.innerHTML=getBalloonRefHtml()
-			return makeBadge(`no comments`)([$noButton],true)
+			const $button=makeElement('button')('comment-ref')()
+			$button.disabled=true
+			$button.innerHTML=getBalloonRefHtml()
+			return makeBadge(`no comments`)([$button],true)
 		}
 	}
 	const makeNeighborCommentsBadge=(itemType: 'note'|'changeset', uid: number, order: number, prevCommentRef: CommentRef|undefined, nextCommentRef: CommentRef|undefined)=>{
@@ -303,9 +304,10 @@ export function writeExpandedItemFlow(
 			$rightButton.title=`earlier comment side`
 			return makeBadge(undefined,$leftButton,$rightButton)(content)
 		} else {
-			const $noButton=makeElement('span')('comment-ref')()
-			$noButton.innerHTML=getBalloonRefHtml()
-			return makeBadge(`no comments`)([$noButton],true)
+			const $button=makeElement('button')('comment-ref')()
+			$button.disabled=true
+			$button.innerHTML=getBalloonRefHtml()
+			return makeBadge(`no comments`)([$button],true)
 		}
 	}
 	const makeSourceBadge=(source: string|undefined)=>{

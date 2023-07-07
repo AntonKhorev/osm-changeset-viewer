@@ -563,7 +563,7 @@
 	color: var(--light-text-color);
 }
 .ui .grid tbody .item .balloon .flow .badge .content {
-	padding: 1px 2px;
+	padding: 2px 2px 0px 2px;
 	background: var(--badge-background-color);
 }
 .ui .grid tbody .item .balloon .flow .badge .content:first-child {
@@ -580,12 +580,14 @@
 }
 .ui .grid tbody .item .balloon .flow .badge .content .marker {
 	color: var(--accent-color);
+	display: inline-block;
+	translate: 0px -2px;
 }
 .ui .grid tbody .item .balloon .flow .badge .arrow {
 	position: relative;
 	width: 10px;
 	height: 17px;
-	vertical-align: 5px;
+	vertical-align: text-bottom;
 	border: none;
 	padding: 0;
 	background: transparent;
@@ -613,7 +615,7 @@
 	height: 13px;
 	border: 0;
 	padding: 0;
-	vertical-align: -2px;
+	translate: 0px 1px;
 	white-space: nowrap; /* FIXME still wraps if it's a button */
 	background: transparent;
 	--icon-frame-color: hsl(var(--hue) 50% var(--icon-frame-lightness));
