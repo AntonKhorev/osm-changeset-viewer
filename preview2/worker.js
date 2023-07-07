@@ -1699,13 +1699,24 @@ async function resumeUserItemStream(itemType, hostDataEntry, api, start, uid) {
 }
 function convertChangesetApiDataToDbRecordWithComments(a) {
     const usernames = new Map();
-    let comments = [];
-    let commentRefs = [];
+    const comments = [];
+    const commentRefs = [];
+    const makeCommentRef = (c) => {
+        const commentRef = {};
+        if (c.uid != null) {
+            commentRef.uid = c.uid;
+        }
+        return commentRef;
+    };
     if (a.discussion) {
-        comments = a.discussion.map((ac, order) => {
+        const apiComments = a.discussion;
+        const iFirstComment = 0;
+        for (const [i, ac] of apiComments.entries()) {
+            if (i < iFirstComment)
+                continue;
             const comment = {
                 itemId: a.id,
-                order,
+                order: i - iFirstComment,
                 itemUid: a.uid,
                 createdAt: new Date(ac.date),
                 text: ac.text,
@@ -1716,15 +1727,15 @@ function convertChangesetApiDataToDbRecordWithComments(a) {
                     usernames.set(ac.uid, ac.user);
                 }
             }
-            return comment;
-        });
-        commentRefs = a.discussion.map((ac, order) => {
-            const commentRef = {};
-            if (ac.uid != null) {
-                commentRef.uid = ac.uid;
+            if (i > iFirstComment) {
+                comment.prevCommentRef = makeCommentRef(apiComments[i - 1]);
             }
-            return commentRef;
-        });
+            if (i < apiComments.length - 1) {
+                comment.nextCommentRef = makeCommentRef(apiComments[i + 1]);
+            }
+            comments.push(comment);
+            commentRefs.push(makeCommentRef(ac));
+        }
     }
     const item = {
         id: a.id,
@@ -1754,29 +1765,43 @@ function convertNoteApiDataToDbRecordWithComments(a) {
     const usernames = new Map();
     const comments = [];
     const commentRefs = [];
-    for (const [i, ac] of a.properties.comments.entries()) {
-        if (i == 0)
-            continue; // 0th comment already saved as item.openingComment
+    const makeCommentRef = (c) => {
+        const commentRef = {
+            mute: !c.text,
+            action: c.action,
+        };
+        if (c.uid != null) {
+            commentRef.uid = c.uid;
+        }
+        return commentRef;
+    };
+    const apiComments = a.properties.comments;
+    const iFirstComment = 1; // 0th comment already saved as item.openingComment
+    for (const [i, ac] of apiComments.entries()) {
+        if (i < iFirstComment)
+            continue;
         const comment = {
             itemId: a.properties.id,
-            order: i - 1,
+            order: i - iFirstComment,
             itemUid: ac0.uid,
             createdAt: parseNoteDate(ac.date),
             text: ac.text ?? '',
             action: ac.action,
         };
-        const commentRef = {
-            mute: !ac.text,
-            action: ac.action,
-        };
         if (ac.uid != null) {
-            comment.uid = commentRef.uid = ac.uid;
+            comment.uid = ac.uid;
             if (ac.user != null) {
                 usernames.set(ac.uid, ac.user);
             }
         }
+        if (i > iFirstComment) {
+            comment.prevCommentRef = makeCommentRef(apiComments[i - 1]);
+        }
+        if (i < apiComments.length - 1) {
+            comment.nextCommentRef = makeCommentRef(apiComments[i + 1]);
+        }
         comments.push(comment);
-        commentRefs.push(commentRef);
+        commentRefs.push(makeCommentRef(ac));
     }
     const item = {
         id: a.properties.id,

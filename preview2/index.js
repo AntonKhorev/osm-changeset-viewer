@@ -2043,6 +2043,7 @@ const editorData = [
         'MAPS.ME',
         'https://wiki.openstreetmap.org/wiki/MAPS.ME',
         { type: 'svg', id: 'mapsme' },
+        /^\s*#mapsme\s*$/m
     ], [
         'Merkaartor',
         'https://wiki.openstreetmap.org/wiki/Merkaartor',
@@ -2051,6 +2052,7 @@ const editorData = [
         'Organic Maps',
         'https://wiki.openstreetmap.org/wiki/Organic_Maps',
         { type: 'svg', id: 'organicmaps' },
+        /^\s*#organicmaps\s*$/m
     ], [
         'osm-bulk-upload/upload.py',
         'https://wiki.openstreetmap.org/wiki/Upload.py',
@@ -2336,12 +2338,17 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
         $e.hidden = !itemOptions.get(name)?.get(type);
         return $e;
     };
-    const makeBadge = (contents, title, isEmpty = false) => {
-        const $badge = makeElement('span')('badge')(...contents);
+    const makeBadge = (title, $leftEdge, $rightEdge) => (content, isEmpty = false) => {
+        const $badgeContent = makeElement('span')('content')(...content);
+        if (isEmpty)
+            $badgeContent.classList.add('empty');
+        const $badge = makeElement('span')('badge')($badgeContent);
+        if ($leftEdge)
+            $badge.prepend($leftEdge);
+        if ($rightEdge)
+            $badge.append($rightEdge);
         if (title)
             $badge.title = title;
-        if (isEmpty)
-            $badge.classList.add('empty');
         return $badge;
     };
     const makeKnownEditorBadgeOrIcon = (createdBy, editorIcon, url) => {
@@ -2354,7 +2361,7 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
         }
         else {
             $a.textContent = `🛠️ ` + editorIcon.name;
-            return makeBadge([$a], createdBy);
+            return makeBadge(createdBy)([$a]);
         }
         $a.title = createdBy;
         $a.classList.add('editor');
@@ -2362,7 +2369,7 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
     };
     const makeEditorBadgeOrIconFromCreatedBy = (createdBy) => {
         if (!createdBy) {
-            return makeBadge([`🛠️ ?`], `unknown editor`);
+            return makeBadge(`unknown editor`)([`🛠️ ?`]);
         }
         for (const [createdByPrefix, url, editorIcon] of editorData) {
             for (const createdByValue of createdBy.split(';')) {
@@ -2376,64 +2383,107 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
         if (match && match[1]) {
             createdByLead = match[1];
         }
-        return makeBadge([`🛠️ ${createdByLead ?? '?'}`], createdBy);
+        return makeBadge(createdBy)([`🛠️ ${createdByLead ?? '?'}`]);
     };
     const makeEditorBadgeOrIconFromNoteComment = (comment) => {
-        for (const [, url, editorIcon, noteRegExp] of editorData) {
+        for (const [createdByPrefix, url, editorIcon, noteRegExp] of editorData) {
             if (!noteRegExp)
                 continue;
             let match;
             if (match = comment.match(noteRegExp)) {
                 const [, createdBy] = match;
-                return makeKnownEditorBadgeOrIcon(createdBy, editorIcon, url);
+                return makeKnownEditorBadgeOrIcon(createdBy ?? createdByPrefix, editorIcon, url);
             }
         }
         return null;
     };
-    const makeCommentsBadge = (uid, commentRefs) => {
-        const getBalloonRefHtml = (incoming = false, mute = false, action) => {
-            const flip = incoming ? ` transform="scale(-1,1)"` : ``;
-            const balloonColors = `fill="transparent" stroke="var(--icon-frame-color)"`;
-            let balloon;
-            if (mute) {
-                balloon = `<g${flip} ${balloonColors}>` +
-                    `<circle class="balloon-ref" r="6" />` +
-                    `<circle class="balloon-ref" r="2" cx="-6" cy="4" />` +
-                    `</g>`;
-            }
-            else {
-                const balloonPathData = `M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`;
-                balloon = `<path class="balloon-ref"${flip} d="${balloonPathData}" ${balloonColors} />`;
-            }
-            let balloonContents = (`<circle r=".7" fill="currentColor" cx="-3" />` +
-                `<circle r=".7" fill="currentColor" />` +
-                `<circle r=".7" fill="currentColor" cx="3" />`);
-            const actionGlyph = getSvgOfActionGlyph(action);
-            if (actionGlyph != null) {
-                balloonContents = `<g stroke="currentColor" stroke-width="2">${actionGlyph}</g>`;
-            }
-            return `<svg width="15" height="13" viewBox="${incoming ? -6.5 : -8.5} -6.5 15 13">` +
-                balloon + balloonContents +
-                `</svg>`;
-        };
-        if (commentRefs.length > 0) {
-            const contents = [];
-            for (const [i, commentRef] of commentRefs.entries()) {
-                if (i)
-                    contents.push(` `);
-                const $button = makeElement('button')('comment-ref')();
-                $button.dataset.order = String(i);
-                $button.title = `comment ${i + 1}`;
-                setColor($button, commentRef.uid, '--icon-frame-color', '--icon-frame-lightness');
-                $button.innerHTML = getBalloonRefHtml(commentRef.uid != uid, commentRef.mute, commentRef.action);
-                contents.push($button);
-            }
-            return makeBadge(contents);
+    const getBalloonRefHtml = (incoming = false, mute = false, action) => {
+        const flip = incoming ? ` transform="scale(-1,1)"` : ``;
+        const balloonColors = `fill="transparent" stroke="var(--icon-frame-color)"`;
+        let balloon;
+        if (mute) {
+            balloon = `<g${flip} ${balloonColors}>` +
+                `<circle class="balloon-ref" r="6" />` +
+                `<circle class="balloon-ref" r="2" cx="-6" cy="4" />` +
+                `</g>`;
         }
         else {
-            const $noButton = makeElement('span')('comment-ref')();
-            $noButton.innerHTML = getBalloonRefHtml();
-            return makeBadge([$noButton], `no comments`, true);
+            const balloonPathData = `M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`;
+            balloon = `<path class="balloon-ref"${flip} d="${balloonPathData}" ${balloonColors} />`;
+        }
+        let balloonContents = (`<circle r=".7" fill="currentColor" cx="-3" />` +
+            `<circle r=".7" fill="currentColor" />` +
+            `<circle r=".7" fill="currentColor" cx="3" />`);
+        const actionGlyph = getSvgOfActionGlyph(action);
+        if (actionGlyph != null) {
+            balloonContents = `<g stroke="currentColor" stroke-width="2">${actionGlyph}</g>`;
+        }
+        return `<svg width="15" height="13" viewBox="${incoming ? -6.5 : -8.5} -6.5 15 13">` +
+            balloon + balloonContents +
+            `</svg>`;
+    };
+    const makeCommentRefButton = (uid, order, commentRef) => {
+        const $button = makeElement('button')('comment-ref')();
+        $button.dataset.order = String(order);
+        $button.title = `comment ${order + 1}`;
+        setColor($button, commentRef.uid, '--icon-frame-color', '--icon-frame-lightness');
+        $button.innerHTML = getBalloonRefHtml(commentRef.uid != uid, commentRef.mute, commentRef.action);
+        return $button;
+    };
+    const makeAllCommentsBadge = (uid, commentRefs) => {
+        if (commentRefs.length > 0) {
+            const content = [];
+            for (const [i, commentRef] of commentRefs.entries()) {
+                if (i)
+                    content.push(` `);
+                content.push(makeCommentRefButton(uid, i, commentRef));
+            }
+            if (commentRefs.length > 1) {
+                const $leftButton = makeElement('button')('arrow', 'to-right')();
+                $leftButton.title = `earlier comment side`;
+                const $rightButton = makeElement('button')('arrow', 'to-right')();
+                $rightButton.title = `later comment side`;
+                return makeBadge(undefined, $leftButton, $rightButton)(content);
+            }
+            else {
+                return makeBadge()(content);
+            }
+        }
+        else {
+            const $button = makeElement('button')('comment-ref')();
+            $button.disabled = true;
+            $button.innerHTML = getBalloonRefHtml();
+            return makeBadge(`no comments`)([$button], true);
+        }
+    };
+    const makeNeighborCommentsBadge = (itemType, uid, order, prevCommentRef, nextCommentRef) => {
+        if (prevCommentRef || nextCommentRef) {
+            const content = [];
+            if (nextCommentRef) {
+                content.push(makeCommentRefButton(uid, order + 1, nextCommentRef), ` `);
+            }
+            {
+                const $currentCommentIcon = makeElement('span')('marker')();
+                setColor($currentCommentIcon, uid);
+                const svg = getSvgOfCommentIcon(itemType);
+                const narrowSvg = svg.replace(`width="8"`, `width="4"`);
+                $currentCommentIcon.innerHTML = narrowSvg;
+                content.push($currentCommentIcon);
+            }
+            if (prevCommentRef) {
+                content.push(` `, makeCommentRefButton(uid, order - 1, prevCommentRef));
+            }
+            const $leftButton = makeElement('button')('arrow', 'to-left')();
+            $leftButton.title = `later comment side`;
+            const $rightButton = makeElement('button')('arrow', 'to-left')();
+            $rightButton.title = `earlier comment side`;
+            return makeBadge(undefined, $leftButton, $rightButton)(content);
+        }
+        else {
+            const $button = makeElement('button')('comment-ref')();
+            $button.disabled = true;
+            $button.innerHTML = getBalloonRefHtml();
+            return makeBadge(`no comments`)([$button], true);
         }
     };
     const makeSourceBadge = (source) => {
@@ -2443,14 +2493,14 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
             makeElement('span')('delimiter')(`]`)
         ];
         if (source) {
-            return makeBadge(bracket(source), `source`);
+            return makeBadge(`source`)(bracket(source));
         }
         else {
-            return makeBadge(bracket(`?`), `unspecified source`, true);
+            return makeBadge(`unspecified source`)(bracket(`?`), true);
         }
     };
     const rewriteWithLinks = (id, href, apiHref) => {
-        $flow.replaceChildren(optionalize('id', makeLink(String(id), href)), ` `, optionalize('api', makeBadge([makeLink(`api`, apiHref)])));
+        $flow.replaceChildren(optionalize('id', makeLink(String(id), href)), ` `, optionalize('api', makeBadge()([makeLink(`api`, apiHref)])));
     };
     const rewriteWithChangesetLinks = (id) => {
         rewriteWithLinks(id, server.web.getUrl(e$2 `changeset/${id}`), server.api.getUrl(e$2 `changeset/${id}.json?include_discussion=true`));
@@ -2463,12 +2513,12 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
     if (type == 'user') {
         date = item.createdAt;
         const apiHref = server.api.getUrl(e$2 `user/${item.id}.json`);
-        $flow.replaceChildren(optionalize('api', makeBadge([makeLink(`api`, apiHref)])), ` `, optionalize('status', makeElement('span')()(`account created`)));
+        $flow.replaceChildren(optionalize('api', makeBadge()([makeLink(`api`, apiHref)])), ` `, optionalize('status', makeElement('span')()(`account created`)));
     }
     else if (type == 'changeset' || type == 'changesetClose') {
         date = type == 'changesetClose' ? item.closedAt : item.createdAt;
         rewriteWithChangesetLinks(item.id);
-        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeBadge([`📝 ${item.changes.count}`], `number of changes`)), ` `, optionalize('refs', makeCommentsBadge(item.uid, item.commentRefs)));
+        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeBadge(`number of changes`)([`📝 ${item.changes.count}`])), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
         if (item.tags?.comment) {
             $flow.append(` `, optionalize('comment', makeElement('span')()(item.tags?.comment ?? '')));
         }
@@ -2482,7 +2532,7 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
                 $flow.append(` `, optionalize('editor', $editorBadge));
             }
         }
-        $flow.append(` `, optionalize('refs', makeCommentsBadge(item.uid, item.commentRefs)));
+        $flow.append(` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
         if (item.openingComment) {
             $flow.append(` `, optionalize('comment', makeElement('span')()(item.openingComment)));
         }
@@ -2493,10 +2543,13 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
         if (item.uid) {
             username = usernames.get(item.uid);
         }
+        let itemType;
         if (type == 'changesetComment') {
+            itemType = 'changeset';
             rewriteWithChangesetLinks(item.itemId);
         }
         else if (type == 'noteComment') {
+            itemType = 'note';
             rewriteWithNoteLinks(item.itemId);
         }
         else {
@@ -2518,6 +2571,9 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
             else {
                 from.push(`anonymous`);
             }
+        }
+        if (item.prevCommentRef || item.nextCommentRef) {
+            $flow.append(` `, optionalize('refs', makeNeighborCommentsBadge(itemType, item.itemUid, item.order, item.prevCommentRef, item.nextCommentRef)));
         }
         if (item.text) {
             $flow.append(` `, optionalize('comment', makeElement('span')()(item.text)));
@@ -3918,10 +3974,10 @@ function readItemDescriptor($item) {
 function getCommentItemDescriptor(descriptor, order) {
     const id = descriptor.id;
     let type;
-    if (descriptor.type == 'changeset') {
+    if (descriptor.type == 'changeset' || descriptor.type == 'changesetClose' || descriptor.type == 'changesetComment') {
         type = 'changesetComment';
     }
-    else if (descriptor.type == 'note') {
+    else if (descriptor.type == 'note' || descriptor.type == 'noteComment') {
         type = 'noteComment';
     }
     else {
@@ -4840,7 +4896,7 @@ class ItemOptions {
             new ItemOption(isExpanded, 'editor', makeItemTypes('C N  '), '🛠️'),
             new ItemOption(isExpanded, 'source', makeItemTypes('C    '), '[]'),
             new ItemOption(isExpanded, 'changes', makeItemTypes('C    '), '📝', 'changes count'),
-            new ItemOption(isExpanded, 'refs', makeItemTypes('C N  '), '💬', 'comment references'),
+            new ItemOption(isExpanded, 'refs', makeItemTypes('CcNn '), '💬', 'comment references'),
             new ItemOption(isExpanded, 'comment', makeItemTypes('CcNn '), '📣'),
             new ItemOption(true, 'status', makeItemTypes('    U'), '?', 'status'),
         ].map(option => [option.name, option]));
@@ -4881,6 +4937,9 @@ class GridBody {
                 }
                 else if ($button.classList.contains('comment-ref')) {
                     this.pingCommentItemFromRefButton($button);
+                }
+                else if ($button.classList.contains('arrow')) {
+                    this.reverseCommentRefsWithButton($button);
                 }
                 else if ($button.classList.contains('stretch')) {
                     this.toggleRowStretchWithButton($button);
@@ -5561,6 +5620,22 @@ class GridBody {
     unhighlightClickedItem($item) {
         $item.classList.remove('highlighted-by-click');
         $item.classList.remove('highlighted-by-click-and-fading');
+    }
+    reverseCommentRefsWithButton($button) {
+        const reverse = ($e) => $e.replaceChildren(...[...$e.childNodes].reverse());
+        const $badge = $button.parentElement;
+        if (!$badge || !$badge.matches('.badge'))
+            return;
+        reverse($badge);
+        for (const $arrow of $badge.querySelectorAll(':scope > .arrow')) {
+            $arrow.classList.toggle('to-left');
+            $arrow.classList.toggle('to-right');
+        }
+        const $content = $badge.querySelector(':scope > .content');
+        if ($content) {
+            reverse($content);
+        }
+        $button.focus();
     }
 }
 function getSingleRowLeadingItem($row) {
@@ -6353,7 +6428,7 @@ async function main() {
         net.serverSelector.pushHostlessHashInHistory(getHashFromUserQueries(userQueries));
     });
     grid.$grid;
-    $content.append(makeDiv('notice')(`This is a preview v0.2. `, `If you've been using the previous preview, please delete its databases in the browser.`), p(`In Firefox you can do the following to delete old databases: `, em(`Developer tools`), ` (F12) > `, em(`Storage`), ` > `, em(`Indexed DB`), ` > (this website) > `, em(`OsmChangesetViewer[`), `...`, em(`]`), ` (there is likely only `, em(`OsmChangesetViewer[www.openstreetmap.org]`), `, multiple databases are possible if you tried using the changeset viewer with different osm servers). `, `Right-click each one and select `, em(`Delete`), `.`), grid.$grid, more.$div);
+    $content.append(makeDiv('notice')(`This is a preview v0.2.1. `, `If you've been using the previous preview, please delete its databases in the browser.`), p(`In Firefox you can do the following to delete old databases: `, em(`Developer tools`), ` (F12) > `, em(`Storage`), ` > `, em(`Indexed DB`), ` > (this website) > `, em(`OsmChangesetViewer[`), `...`, em(`]`), ` (there is likely only `, em(`OsmChangesetViewer[www.openstreetmap.org]`), `, multiple databases are possible if you tried using the changeset viewer with different osm servers). `, `Right-click each one and select `, em(`Delete`), `.`), p(`In Chrome you can do the following: `, em(`DevTools`), ` (F12) > `, em(`Application`), ` > `, em(`Storage`), ` > `, em(`IndexedDB`), ` > `, em(`OsmChangesetViewer[`), `...`, em(`]`), `. `, `Press the `, em(`Delete database`), ` button.`), grid.$grid, more.$div);
     net.serverSelector.installHashChangeListener(net.cx, hostlessHash => {
         grid.receiveUpdatedUserQueries(getUserQueriesFromHash(hostlessHash));
     }, true);
