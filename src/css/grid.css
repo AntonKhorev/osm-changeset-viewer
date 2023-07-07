@@ -640,7 +640,7 @@
 	color: inherit;
 	--icon-frame-color: var(--passive-color);
 }
-.ui .grid tbody .item .balloon .flow .badge .content button.comment-ref .balloon-ref {
+.ui .grid tbody .item .balloon .flow .badge .content:not(.empty) button.comment-ref .balloon-ref {
 	fill: canvas;
 }
 .ui .grid tbody .item .balloon .flow .badge .content button:not([disabled]).comment-ref:hover .balloon-ref {
