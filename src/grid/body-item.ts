@@ -166,10 +166,13 @@ export function writeExpandedItemFlow(
 		$e.hidden=!itemOptions.get(name)?.get(type)
 		return $e
 	}
-	const makeBadge=(contents:(string|HTMLElement)[],title?:string,isEmpty=false)=>{
-		const $badge=makeElement('span')('badge')(...contents)
+	const makeBadge=(title?:string,$leftEdge?:HTMLElement,$rightEdge?:HTMLElement)=>(content:(string|HTMLElement)[],isEmpty=false)=>{
+		const $badgeContent=makeElement('span')('content')(...content)
+		if (isEmpty) $badgeContent.classList.add('empty')
+		const $badge=makeElement('span')('badge')($badgeContent)
+		if ($leftEdge) $badge.prepend($leftEdge,' ')
+		if ($rightEdge) $badge.append(' ',$rightEdge)
 		if (title) $badge.title=title
-		if (isEmpty) $badge.classList.add('empty')
 		return $badge
 	}
 	const makeKnownEditorBadgeOrIcon=(createdBy: string, editorIcon: EditorIcon, url: string)=>{
@@ -180,7 +183,7 @@ export function writeExpandedItemFlow(
 			$a.innerHTML=`<img width="16" height="16" src="${editorIcon.data}">`
 		} else {
 			$a.textContent=`🛠️ `+editorIcon.name
-			return makeBadge([$a],createdBy)
+			return makeBadge(createdBy)([$a])
 		}
 		$a.title=createdBy
 		$a.classList.add('editor')
@@ -188,7 +191,7 @@ export function writeExpandedItemFlow(
 	}
 	const makeEditorBadgeOrIconFromCreatedBy=(createdBy: string)=>{
 		if (!createdBy) {
-			return makeBadge([`🛠️ ?`],`unknown editor`)
+			return makeBadge(`unknown editor`)([`🛠️ ?`])
 		}
 		for (const [createdByPrefix,url,editorIcon] of editorData) {
 			for (const createdByValue of createdBy.split(';')) {
@@ -202,7 +205,7 @@ export function writeExpandedItemFlow(
 		if (match && match[1]) {
 			createdByLead=match[1]
 		}
-		return makeBadge([`🛠️ ${createdByLead??'?'}`],createdBy)
+		return makeBadge(createdBy)([`🛠️ ${createdByLead??'?'}`])
 	}
 	const makeEditorBadgeOrIconFromNoteComment=(comment: string)=>{
 		for (const [createdByPrefix,url,editorIcon,noteRegExp] of editorData) {
@@ -251,12 +254,12 @@ export function writeExpandedItemFlow(
 	}
 	const makeAllCommentsBadge=(uid: number, commentRefs: CommentRef[])=>{
 		if (commentRefs.length>0) {
-			const contents:(string|HTMLElement)[]=[]
+			const content:(string|HTMLElement)[]=[]
 			for (const [i,commentRef] of commentRefs.entries()) {
-				if (i) contents.push(` `)
-				contents.push(makeCommentRefButton(uid,i,commentRef))
+				if (i) content.push(` `)
+				content.push(makeCommentRefButton(uid,i,commentRef))
 			}
-			const $badge=makeBadge(contents)
+			const $badge=makeBadge()(content)
 			if (commentRefs.length>1) {
 				$badge.classList.add('with-arrow-ends')
 			}
@@ -264,14 +267,14 @@ export function writeExpandedItemFlow(
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
 			$noButton.innerHTML=getBalloonRefHtml()
-			return makeBadge([$noButton],`no comments`,true)
+			return makeBadge(`no comments`)([$noButton],true)
 		}
 	}
 	const makeNeighborCommentsBadge=(itemType: 'note'|'changeset', uid: number, order: number, prevCommentRef: CommentRef|undefined, nextCommentRef: CommentRef|undefined)=>{
 		if (prevCommentRef || nextCommentRef) {
-			const contents:(string|HTMLElement)[]=[]
+			const content:(string|HTMLElement)[]=[]
 			if (nextCommentRef) {
-				contents.push(
+				content.push(
 					makeCommentRefButton(uid,order+1,nextCommentRef),
 					` `
 				)
@@ -280,21 +283,21 @@ export function writeExpandedItemFlow(
 				const $currentCommentIcon=makeElement('span')('marker')()
 				setColor($currentCommentIcon,uid)
 				$currentCommentIcon.innerHTML=getSvgOfCommentIcon(itemType)
-				contents.push($currentCommentIcon)
+				content.push($currentCommentIcon)
 			}
 			if (prevCommentRef) {
-				contents.push(
+				content.push(
 					` `,
 					makeCommentRefButton(uid,order-1,prevCommentRef)
 				)
 			}
-			const $badge=makeBadge(contents)
+			const $badge=makeBadge()(content)
 			$badge.classList.add('with-arrow-ends') // TODO reverse
 			return $badge
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
 			$noButton.innerHTML=getBalloonRefHtml()
-			return makeBadge([$noButton],`no comments`,true)
+			return makeBadge(`no comments`)([$noButton],true)
 		}
 	}
 	const makeSourceBadge=(source: string|undefined)=>{
@@ -304,15 +307,15 @@ export function writeExpandedItemFlow(
 			makeElement('span')('delimiter')(`]`)
 		]
 		if (source) {
-			return makeBadge(bracket(source),`source`)
+			return makeBadge(`source`)(bracket(source))
 		} else {
-			return makeBadge(bracket(`?`),`unspecified source`,true)
+			return makeBadge(`unspecified source`)(bracket(`?`),true)
 		}
 	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
 			optionalize('id',makeLink(String(id),href)),` `,
-			optionalize('api',makeBadge([makeLink(`api`,apiHref)]))
+			optionalize('api',makeBadge()([makeLink(`api`,apiHref)]))
 		)
 	}
 	const rewriteWithChangesetLinks=(id: number)=>{
@@ -333,7 +336,7 @@ export function writeExpandedItemFlow(
 		date=item.createdAt
 		const apiHref=server.api.getUrl(e`user/${item.id}.json`)
 		$flow.replaceChildren(
-			optionalize('api',makeBadge([makeLink(`api`,apiHref)])),` `,
+			optionalize('api',makeBadge()([makeLink(`api`,apiHref)])),` `,
 			optionalize('status',makeElement('span')()(`account created`))
 		)
 	} else if (type=='changeset' || type=='changesetClose') {
@@ -342,7 +345,7 @@ export function writeExpandedItemFlow(
 		$flow.append(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
-			` `,optionalize('changes',makeBadge([`📝 ${item.changes.count}`],`number of changes`)),
+			` `,optionalize('changes',makeBadge(`number of changes`)([`📝 ${item.changes.count}`])),
 			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.tags?.comment) {

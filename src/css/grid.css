@@ -21,8 +21,8 @@
 .ui .grid :is(td,th,
 	.item>.icon,
 	.item>.balloon,
-	.item>.balloon>.flow>.badge>.comment-ref,
-	.item>.balloon>.flow>.badge>.marker
+	.item>.balloon>.flow>.badge>.content>.comment-ref,
+	.item>.balloon>.flow>.badge>.content>.marker
 ) {
 	--temp-accent-color: hsl(var(--hue) var(--accent-saturation) 50%);
 	--accent-color: var(--temp-accent-color,var(--light-text-color));
@@ -557,18 +557,20 @@
 /*** item inner balloon flow elements ***/
 .ui .grid tbody .item .balloon .flow .badge {
 	--passive-color: color-mix(in srgb, currentColor 30%, transparent);
-	border-radius: 4px;
-	padding: 1px 2px;
 	font-family: sans-serif;
 	font-size: .8em;
-	background: #8882;
 	color: var(--light-text-color);
 }
-.ui .grid tbody .item .balloon .flow .badge.empty,
-.ui .grid tbody .item .balloon .flow .badge .delimiter {
+.ui .grid tbody .item .balloon .flow .badge .content {
+	border-radius: 4px;
+	padding: 1px 2px;
+	background: #8882;
+}
+.ui .grid tbody .item .balloon .flow .badge .content.empty,
+.ui .grid tbody .item .balloon .flow .badge .content .delimiter {
 	color: var(--passive-color);
 }
-.ui .grid tbody .item .balloon .flow .badge .marker {
+.ui .grid tbody .item .balloon .flow .badge .content .marker {
 	color: var(--accent-color);
 }
 .ui .grid tbody .item .balloon .flow .badge.with-arrow-ends {
@@ -590,7 +592,7 @@
 .ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::after {
 	clip-path: polygon(0% 0%, 100% 50%, 0% 100%, 100% 100%, 100% 0%);
 }
-.ui .grid tbody .item .balloon .flow .badge .comment-ref {
+.ui .grid tbody .item .balloon .flow .badge .content .comment-ref {
 	width: 15px;
 	height: 13px;
 	border: 0;
@@ -601,14 +603,14 @@
 	--icon-frame-color: hsl(var(--hue) 50% var(--icon-frame-lightness));
 	color: var(--accent-color);
 }
-.ui .grid tbody .item .balloon .flow .badge.empty .comment-ref {
+.ui .grid tbody .item .balloon .flow .badge .content.empty .comment-ref {
 	color: inherit;
 	--icon-frame-color: var(--passive-color);
 }
-.ui .grid tbody .item .balloon .flow .badge button.comment-ref .balloon-ref {
+.ui .grid tbody .item .balloon .flow .badge .content button.comment-ref .balloon-ref {
 	fill: canvas;
 }
-.ui .grid tbody .item .balloon .flow .badge button.comment-ref:hover .balloon-ref {
+.ui .grid tbody .item .balloon .flow .badge .content button.comment-ref:hover .balloon-ref {
 	fill: var(--hover-color);
 }
 .ui .grid tbody .item .balloon .flow .editor {
