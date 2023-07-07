@@ -556,7 +556,7 @@
 
 /*** item inner balloon flow elements ***/
 .ui .grid tbody .item .balloon .flow .badge {
-	--passive-color: color-mix(in srgb, currentColor 30%, transparent);
+	--passive-color: color-mix(in srgb, var(--frame-color), transparent);
 	font-family: sans-serif;
 	font-size: .8em;
 	color: var(--light-text-color);
