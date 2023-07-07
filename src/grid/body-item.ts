@@ -170,8 +170,8 @@ export function writeExpandedItemFlow(
 		const $badgeContent=makeElement('span')('content')(...content)
 		if (isEmpty) $badgeContent.classList.add('empty')
 		const $badge=makeElement('span')('badge')($badgeContent)
-		if ($leftEdge) $badge.prepend($leftEdge,' ')
-		if ($rightEdge) $badge.append(' ',$rightEdge)
+		if ($leftEdge) $badge.prepend($leftEdge)
+		if ($rightEdge) $badge.append($rightEdge)
 		if (title) $badge.title=title
 		return $badge
 	}
@@ -259,11 +259,15 @@ export function writeExpandedItemFlow(
 				if (i) content.push(` `)
 				content.push(makeCommentRefButton(uid,i,commentRef))
 			}
-			const $badge=makeBadge()(content)
 			if (commentRefs.length>1) {
-				$badge.classList.add('with-arrow-ends')
+				const $leftButton=makeElement('button')('arrow','to-right')()
+				$leftButton.title=`earlier comment side`
+				const $rightButton=makeElement('button')('arrow','to-right')()
+				$rightButton.title=`later comment side`
+				return makeBadge(undefined,$leftButton,$rightButton)(content)
+			} else {
+				return makeBadge()(content)
 			}
-			return $badge
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
 			$noButton.innerHTML=getBalloonRefHtml()
@@ -291,9 +295,11 @@ export function writeExpandedItemFlow(
 					makeCommentRefButton(uid,order-1,prevCommentRef)
 				)
 			}
-			const $badge=makeBadge()(content)
-			$badge.classList.add('with-arrow-ends') // TODO reverse
-			return $badge
+			const $leftButton=makeElement('button')('arrow','to-left')()
+			$leftButton.title=`later comment side`
+			const $rightButton=makeElement('button')('arrow','to-left')()
+			$rightButton.title=`earlier comment side`
+			return makeBadge(undefined,$leftButton,$rightButton)(content)
 		} else {
 			const $noButton=makeElement('span')('comment-ref')()
 			$noButton.innerHTML=getBalloonRefHtml()

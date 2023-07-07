@@ -557,14 +557,22 @@
 /*** item inner balloon flow elements ***/
 .ui .grid tbody .item .balloon .flow .badge {
 	--passive-color: color-mix(in srgb, currentColor 30%, transparent);
+	--badge-background-color: #8882;
 	font-family: sans-serif;
 	font-size: .8em;
 	color: var(--light-text-color);
 }
 .ui .grid tbody .item .balloon .flow .badge .content {
-	border-radius: 4px;
 	padding: 1px 2px;
-	background: #8882;
+	background: var(--badge-background-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .content:first-child {
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+}
+.ui .grid tbody .item .balloon .flow .badge .content:last-child {
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
 }
 .ui .grid tbody .item .balloon .flow .badge .content.empty,
 .ui .grid tbody .item .balloon .flow .badge .content .delimiter {
@@ -573,24 +581,24 @@
 .ui .grid tbody .item .balloon .flow .badge .content .marker {
 	color: var(--accent-color);
 }
-.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends {
-	border-radius: unset;
-	padding-inline: 0;
-}
-.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::before,
-.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::after {
-	content: '';
-	display: inline-block;
+.ui .grid tbody .item .balloon .flow .badge .arrow {
 	width: 10px;
 	height: 17px;
-	vertical-align: -4px;
-	background: canvas;
+	vertical-align: 5px;
+	border: none;
+	background: var(--badge-background-color);
 }
-.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::before {
-	clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-left:first-child {
+	clip-path: polygon(10px 0px, 8px 1px, 0px 9px, 8px 16px, 10px 17px);
 }
-.ui .grid tbody .item .balloon .flow .badge.with-arrow-ends::after {
-	clip-path: polygon(0% 0%, 100% 50%, 0% 100%, 100% 100%, 100% 0%);
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-right:last-child {
+	clip-path: polygon(0px 0px, 2px 1px, 10px 9px, 2px 16px, 0px 17px);
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-left:last-child {
+	clip-path: polygon(10px 0px, 2px 8px, 2px 10px, 10px 17px, 0px 17px, 0px 0px);
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-right:first-child {
+	clip-path: polygon(0px 0px, 8px 8px, 8px 10px, 0px 17px, 10px 17px, 10px 0px);
 }
 .ui .grid tbody .item .balloon .flow .badge .content .comment-ref {
 	width: 15px;
