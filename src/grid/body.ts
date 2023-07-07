@@ -711,6 +711,7 @@ export default class GridBody {
 		if ($content) {
 			reverse($content)
 		}
+		$button.focus()
 	}
 }
 
