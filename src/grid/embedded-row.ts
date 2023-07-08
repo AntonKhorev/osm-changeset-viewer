@@ -119,7 +119,7 @@ export default class EmbeddedItemRow {
 	updateAbbreviations(withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
 		const startAbbreviator=(
 			withAbbreviation: boolean,
-			getValue:($item:HTMLElement,$piece:HTMLElement)=>string|undefined,
+			getValue:($item:HTMLElement,$piece:HTMLElement)=>string|null,
 			setLongValue:($piece:HTMLElement,value:string)=>void,
 			setShortValue:($piece:HTMLElement,value:string,shortValue:string)=>void,
 		)=>{
@@ -157,7 +157,7 @@ export default class EmbeddedItemRow {
 		for (const $cell of this.row.$row.cells) {
 			const idAbbreviator=startAbbreviator(
 				withAbbreviatedIds,
-				$item=>$item.dataset.id,
+				$item=>$item.dataset.id??null,
 				($piece,value)=>{
 					$piece.textContent=value
 					$piece.removeAttribute('title')
@@ -167,10 +167,23 @@ export default class EmbeddedItemRow {
 					$piece.title=value
 				}
 			)
+			const commentAbbreviator=startAbbreviator(
+				withAbbreviatedComments,
+				(_,$piece)=>$piece.dataset.fullComment??$piece.textContent,
+				($piece,value)=>{
+					$piece.textContent=value
+					delete $piece.dataset.fullComment
+				},
+				($piece,value,shortValue)=>{
+					$piece.textContent='...'+shortValue
+					$piece.dataset.fullComment=value
+				}
+			)
 			for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
 				if (!isItem($item)) continue
 				if ($item.hidden) continue
 				idAbbreviator($item,$item.querySelector(':scope > .balloon > .flow > a[data-optional="id"]'))
+				commentAbbreviator($item,$item.querySelector(':scope > .balloon > .flow > [data-optional="comment"]'))
 			}
 		}
 	}
