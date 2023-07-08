@@ -117,41 +117,60 @@ export default class EmbeddedItemRow {
 		this.addStretchButton()
 	}
 	updateAbbreviations(withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
-		for (const $cell of this.row.$row.cells) {
-			let lastId=''
-			for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
-				if (!isItem($item)) continue
-				if ($item.hidden) continue
-				const $a=$item.querySelector(':scope > .balloon > .flow > a[data-optional="id"]')
-				if (!($a instanceof HTMLAnchorElement)) {
-					lastId=''
-					continue
+		const startAbbreviator=(
+			withAbbreviation: boolean,
+			getValue:($item:HTMLElement,$piece:HTMLElement)=>string|undefined,
+			setLongValue:($piece:HTMLElement,value:string)=>void,
+			setShortValue:($piece:HTMLElement,value:string,shortValue:string)=>void,
+		)=>{
+			let lastValue=''
+			return ($item:HTMLElement,$piece:Element|null)=>{
+				if (!($piece instanceof HTMLElement)) {
+					lastValue=''
+					return
 				}
-				if ($a.hidden) continue
-				const id=$item.dataset.id
-				if (id==null) {
-					lastId=''
-					continue
+				if ($piece.hidden) return
+				const value=getValue($item,$piece)
+				if (value==null) {
+					lastValue=''
+					return
 				}
 				let compacted=false
-				if (withAbbreviatedIds && id.length==lastId.length) {
-					let shortId=''
-					for (let i=0;i<id.length;i++) {
-						if (id[i]==lastId[i]) continue
-						shortId=id.substring(i)
+				if (withAbbreviation && value.length==lastValue.length) {
+					let shortValue=''
+					for (let i=0;i<value.length;i++) {
+						if (value[i]==lastValue[i]) continue
+						shortValue=value.substring(i)
 						break
 					}
-					if (id.length-shortId.length>2) {
-						$a.textContent='...'+shortId
-						$a.title=id
+					if (value.length-shortValue.length>2) {
+						setShortValue($piece,value,shortValue)
 						compacted=true
 					}
 				}
 				if (!compacted) {
-					$a.textContent=id
-					$a.removeAttribute('title')
+					setLongValue($piece,value)
 				}
-				lastId=id
+				lastValue=value
+			}
+		}
+		for (const $cell of this.row.$row.cells) {
+			const idAbbreviator=startAbbreviator(
+				withAbbreviatedIds,
+				$item=>$item.dataset.id,
+				($piece,value)=>{
+					$piece.textContent=value
+					$piece.removeAttribute('title')
+				},
+				($piece,value,shortValue)=>{
+					$piece.textContent='...'+shortValue
+					$piece.title=value
+				}
+			)
+			for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
+				if (!isItem($item)) continue
+				if ($item.hidden) continue
+				idAbbreviator($item,$item.querySelector(':scope > .balloon > .flow > a[data-optional="id"]'))
 			}
 		}
 	}
