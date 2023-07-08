@@ -32,17 +32,17 @@ export default class GridSettingsPanel extends Panel {
 			legend: string
 		)=>{
 			const $table=makeElement('table')()()
+			const $headSection=makeElement('thead')()(); $table.append($headSection)
+			const $allSection=makeElement('tbody')()(); $table.append($allSection)
+			const $typeSection=makeElement('tbody')()(); $table.append($typeSection); $typeSection.hidden=true
 			{
-				const $row=$table.insertRow()
+				const $row=$headSection.insertRow()
 				{
 					const $cell=$row.insertCell()
 					const $button=makeDisclosureButton(false,`item types`)
 					$button.onclick=()=>{
 						const state=!getDisclosureButtonState($button)
-						for (const $typeRow of $table.querySelectorAll(`tr.for-type`)) {
-							if (!($typeRow instanceof HTMLTableRowElement)) continue
-							$typeRow.hidden=!state
-						}
+						$typeSection.hidden=!state
 						setDisclosureButtonState($button,state)
 					}
 					$cell.append($button)
@@ -53,10 +53,10 @@ export default class GridSettingsPanel extends Panel {
 					$row.append($cell)
 				}
 			}{
-				const $row=$table.insertRow()
-				$row.classList.add('for-all')
+				const $row=$allSection.insertRow()
 				{
 					const $cell=makeElement('th')()()
+					$cell.textContent=`all item types`
 					$row.append($cell)
 				}
 				for (const itemOption of itemOptions) {
@@ -67,7 +67,7 @@ export default class GridSettingsPanel extends Panel {
 					$checkbox.checked=itemOption.all
 					$checkbox.oninput=()=>{
 						itemOption.all=$checkbox.checked
-						for (const $typeCheckbox of $table.querySelectorAll(`tr.for-type td[data-option="${itemOption.name}"] input`)) {
+						for (const $typeCheckbox of $typeSection.querySelectorAll(`td[data-option="${itemOption.name}"] input`)) {
 							if (!($typeCheckbox instanceof HTMLInputElement)) continue
 							$typeCheckbox.checked=$checkbox.checked
 						}
@@ -77,12 +77,11 @@ export default class GridSettingsPanel extends Panel {
 				}
 			}
 			for (const itemType of itemOptions.allTypes) {
-				const $row=$table.insertRow()
-				$row.classList.add('for-type')
-				$row.hidden=true
+				const $row=$typeSection.insertRow()
 				{
-					const $cell=$row.insertCell()
+					const $cell=makeElement('th')()()
 					$cell.textContent=itemType
+					$row.append($cell)
 				}
 				for (const itemOption of itemOptions) {
 					const $cell=$row.insertCell()
@@ -93,7 +92,7 @@ export default class GridSettingsPanel extends Panel {
 					$checkbox.checked=itemOption[itemType]
 					$checkbox.oninput=()=>{
 						itemOption[itemType]=$checkbox.checked
-						const $allCheckbox=$table.querySelector(`tr.for-all td[data-option="${itemOption.name}"] input`)
+						const $allCheckbox=$allSection.querySelector(`td[data-option="${itemOption.name}"] input`)
 						if ($allCheckbox instanceof HTMLInputElement) {
 							$allCheckbox.checked=itemOption.all
 							$allCheckbox.indeterminate=!itemOption.all && itemOption.some

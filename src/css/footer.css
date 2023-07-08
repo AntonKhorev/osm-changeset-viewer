@@ -76,6 +76,16 @@
 	padding: .25rem;
 	gap: .5rem;
 }
+.ui footer > .tools > section table {
+	border-collapse: collapse;
+}
+.ui footer > .tools > section table tbody tr:first-child :is(th,td) {
+	border-top: var(--frame-line);
+}
+.ui footer > .tools > section table tbody th:first-child {
+	text-align: right;
+	font-weight: normal;
+}
 
 .ui footer > .list > section h2 {
 	margin: 0;
