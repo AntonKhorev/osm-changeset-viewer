@@ -105,6 +105,10 @@ const editorData: [
 		'https://wiki.openstreetmap.org/wiki/Upload.py',
 		{type:'text',name:'upload.py'},
 	],[
+		'osm-relatify',
+		'https://wiki.openstreetmap.org/wiki/Relatify',
+		{type:'text',name:'Relatify'},
+	],[
 		'OsmAnd',
 		'https://wiki.openstreetmap.org/wiki/OsmAnd',
 		{type:'svg',id:'osmand'},
