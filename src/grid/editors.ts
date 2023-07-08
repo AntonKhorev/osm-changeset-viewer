@@ -87,6 +87,10 @@ const editorData: [
 		'https://wiki.openstreetmap.org/wiki/MapComplete',
 		{type:'svg',id:'mapcomplete'},
 	],[
+		'MapRoulette',
+		'https://wiki.openstreetmap.org/wiki/MapRoulette',
+		{type:'svg',id:'maproulette'},
+	],[
 		'MAPS.ME',
 		'https://wiki.openstreetmap.org/wiki/MAPS.ME',
 		{type:'svg',id:'mapsme'},
