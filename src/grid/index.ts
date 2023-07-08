@@ -66,9 +66,6 @@ export default class Grid {
 		this.$grid.append(this.$colgroup,this.head.$gridHead,this.body.$gridBody)
 		this.setColumns([])
 	}
-	set withCompactIds(value: boolean) {
-		this.body.withCompactIds=value
-	}
 	set withClosedChangesets(value: boolean) {
 		this.body.withClosedChangesets=value
 	}
@@ -115,6 +112,9 @@ export default class Grid {
 	}
 	updateTableAfterCollapsedItemOptionChanges(): void {
 		this.body.updateTableAfterCollapsedItemOptionChanges()
+	}
+	updateTableAfterAbbreviationOptionChanges(): void {
+		this.body.updateTableAfterAbbreviationOptionChanges()
 	}
 	async expandSelectedItems(): Promise<void> {
 		for (const id of this.body.listSelectedChangesetIds()) {

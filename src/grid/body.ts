@@ -24,10 +24,12 @@ import {makeElement, makeDiv} from '../util/html'
 
 export default class GridBody {
 	readonly $gridBody=makeElement('tbody')()()
-	withCompactIds=false
 	withClosedChangesets=false
 	expandedItemOptions=new ItemOptions(true)
 	collapsedItemOptions=new ItemOptions(false)
+	get withCompactIds(): boolean {
+		return !!this.collapsedItemOptions.get('id')?.abbreviate
+	}
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
 	private columnUids: (number|null)[] = []
 	constructor(

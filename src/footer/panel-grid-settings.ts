@@ -27,9 +27,10 @@ export default class GridSettingsPanel extends Panel {
 			return makeDiv('input-group')($label)
 		}
 		const makeItemOptionsTable=(
-			updateItemsGrid: ()=>void,
 			itemOptions: ItemOptions,
-			legend: string
+			legend: string,
+			updateGridAfterOptionChanges: ()=>void,
+			updateGridAfterAbbreviationOptionChanges?: ()=>void
 		)=>{
 			const $table=makeElement('table')()()
 			const $headSection=makeElement('thead')()(); $table.append($headSection)
@@ -71,7 +72,7 @@ export default class GridSettingsPanel extends Panel {
 							if (!($typeCheckbox instanceof HTMLInputElement)) continue
 							$typeCheckbox.checked=$checkbox.checked
 						}
-						updateItemsGrid()
+						updateGridAfterOptionChanges()
 					}
 					$cell.append($checkbox)
 				}
@@ -97,7 +98,30 @@ export default class GridSettingsPanel extends Panel {
 							$allCheckbox.checked=itemOption.all
 							$allCheckbox.indeterminate=!itemOption.all && itemOption.some
 						}
-						updateItemsGrid()
+						updateGridAfterOptionChanges()
+					}
+					$cell.append($checkbox)
+				}
+			}
+			if (updateGridAfterAbbreviationOptionChanges) {
+				const itemType='abbreviate'
+				const $abbrSection=makeElement('tbody')()(); $table.append($abbrSection)
+				const $row=$abbrSection.insertRow()
+				{
+					const $cell=makeElement('th')()()
+					$cell.textContent=itemType
+					$row.append($cell)
+				}
+				for (const itemOption of itemOptions) {
+					const $cell=$row.insertCell()
+					$cell.dataset.option=itemOption.name
+					if (!itemOption.hasType(itemType)) continue
+					const $checkbox=makeElement('input')()()
+					$checkbox.type='checkbox'
+					$checkbox.checked=itemOption[itemType]
+					$checkbox.oninput=()=>{
+						itemOption[itemType]=$checkbox.checked
+						updateGridAfterOptionChanges()
 					}
 					$cell.append($checkbox)
 				}
@@ -110,14 +134,6 @@ export default class GridSettingsPanel extends Panel {
 			makeElement('h2')()(`Grid settings`),
 			makeGridCheckbox(
 				value=>{
-					this.grid.withCompactIds=value
-					this.grid.updateTableAfterOptionChanges()
-				},
-				false,
-				`compact ids in collections`
-			),
-			makeGridCheckbox(
-				value=>{
 					this.grid.withClosedChangesets=value
 					this.grid.updateTableAfterOptionChanges()
 				},
@@ -126,14 +142,15 @@ export default class GridSettingsPanel extends Panel {
 				`visible only if there's some other event between changeset opening and closing`
 			),
 			makeItemOptionsTable(
-				()=>this.grid.updateTableAfterExpandedItemOptionChanges(),
 				this.grid.expandedItemOptions,
-				`expanded items`
+				`expanded items`,
+				()=>this.grid.updateTableAfterExpandedItemOptionChanges()
 			),
 			makeItemOptionsTable(
-				()=>this.grid.updateTableAfterCollapsedItemOptionChanges(),
 				this.grid.collapsedItemOptions,
-				`collapsed items`
+				`collapsed items`,
+				()=>this.grid.updateTableAfterCollapsedItemOptionChanges(),
+				()=>this.grid.updateTableAfterAbbreviationOptionChanges(),
 			)
 		)
 	}
