@@ -127,6 +127,7 @@ export default class EmbeddedItemRow {
 					lastId=''
 					continue
 				}
+				if ($a.hidden) continue
 				const id=$item.dataset.id
 				if (id==null) {
 					lastId=''
