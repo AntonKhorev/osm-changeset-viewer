@@ -875,7 +875,17 @@ body > .symbols {
 	border: solid 1px var(--frame-color);
 	border-width: 1px 2px;
 	padding: .25rem;
-	gap: .5rem;
+	vertical-align: top;
+}
+.ui footer > .tools > section table {
+	border-collapse: collapse;
+}
+.ui footer > .tools > section table tbody tr:first-child :is(th,td) {
+	border-top: var(--frame-line);
+}
+.ui footer > .tools > section table tbody th:first-child {
+	text-align: right;
+	font-weight: normal;
 }
 
 .ui footer > .list > section h2 {

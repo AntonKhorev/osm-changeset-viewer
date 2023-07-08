@@ -2040,6 +2040,10 @@ const editorData = [
         'https://wiki.openstreetmap.org/wiki/MapComplete',
         { type: 'svg', id: 'mapcomplete' },
     ], [
+        'MapRoulette',
+        'https://wiki.openstreetmap.org/wiki/MapRoulette',
+        { type: 'svg', id: 'maproulette' },
+    ], [
         'MAPS.ME',
         'https://wiki.openstreetmap.org/wiki/MAPS.ME',
         { type: 'svg', id: 'mapsme' },
@@ -2057,6 +2061,10 @@ const editorData = [
         'osm-bulk-upload/upload.py',
         'https://wiki.openstreetmap.org/wiki/Upload.py',
         { type: 'text', name: 'upload.py' },
+    ], [
+        'osm-relatify',
+        'https://wiki.openstreetmap.org/wiki/Relatify',
+        { type: 'text', name: 'Relatify' },
     ], [
         'OsmAnd',
         'https://wiki.openstreetmap.org/wiki/OsmAnd',
@@ -4473,7 +4481,7 @@ class EmbeddedItemRow {
     getBoundarySequencePoints() {
         return this.row.getBoundarySequencePoints();
     }
-    paste($row, sequencePoint, withCompactIds) {
+    paste($row, sequencePoint, withAbbreviatedIds, withAbbreviatedComments) {
         this.removeStretchButton();
         this.row.$row.after($row);
         if (!(this.row instanceof ItemCollectionRow))
@@ -4481,11 +4489,11 @@ class EmbeddedItemRow {
         const splitRow = this.row.split(sequencePoint);
         $row.after(splitRow.$row);
         const splitEmbeddedRow = new EmbeddedItemRow(splitRow);
-        splitEmbeddedRow.updateIds(withCompactIds);
+        splitEmbeddedRow.updateAbbreviations(withAbbreviatedIds, withAbbreviatedComments);
         this.addStretchButton();
         splitEmbeddedRow.addStretchButton();
     }
-    cut(withCompactIds) {
+    cut(withAbbreviatedIds, withAbbreviatedComments) {
         const $row = this.row.$row;
         const $prevRow = $row.previousElementSibling;
         const $nextRow = $row.nextElementSibling;
@@ -4500,7 +4508,7 @@ class EmbeddedItemRow {
                 nextEmbeddedRow.removeStretchButton();
                 prevEmbeddedRow.row.merge(nextEmbeddedRow.row);
                 nextEmbeddedRow.row.$row.remove();
-                prevEmbeddedRow.updateIds(withCompactIds);
+                prevEmbeddedRow.updateAbbreviations(withAbbreviatedIds, withAbbreviatedComments);
                 prevEmbeddedRow.addStretchButton();
             }
         }
@@ -4508,15 +4516,15 @@ class EmbeddedItemRow {
     put(iColumns, $items) {
         this.row.put(iColumns, $items);
     }
-    insert(sequencePoint, iColumns, $items, withCompactIds) {
+    insert(sequencePoint, iColumns, $items, withAbbreviatedIds, withAbbreviatedComments) {
         if (!(this.row instanceof ItemCollectionRow))
             throw new TypeError(`attempt to insert into non-collection row`);
         this.removeStretchButton();
         this.row.insert(sequencePoint, iColumns, $items);
-        this.updateIds(withCompactIds);
+        this.updateAbbreviations(withAbbreviatedIds, withAbbreviatedComments);
         this.addStretchButton();
     }
-    remove($items, withCompactIds) {
+    remove($items, withAbbreviatedIds, withAbbreviatedComments) {
         if (!(this.row instanceof ItemCollectionRow))
             throw new TypeError(`attempt to remove from non-collection row`);
         this.removeStretchButton();
@@ -4525,60 +4533,79 @@ class EmbeddedItemRow {
             this.row.$row.remove();
         }
         else {
-            this.updateIds(withCompactIds);
+            this.updateAbbreviations(withAbbreviatedIds, withAbbreviatedComments);
         }
         this.addStretchButton();
     }
-    stretch(withCompactIds) {
+    stretch(withAbbreviatedIds, withAbbreviatedComments) {
         this.removeStretchButton();
         this.row.stretch();
-        this.updateIds(withCompactIds);
+        this.updateAbbreviations(withAbbreviatedIds, withAbbreviatedComments);
         this.addStretchButton();
     }
-    shrink(withCompactIds) {
+    shrink(withAbbreviatedIds, withAbbreviatedComments) {
         this.removeStretchButton();
         this.row.shrink();
-        this.updateIds(withCompactIds);
+        this.updateAbbreviations(withAbbreviatedIds, withAbbreviatedComments);
         this.addStretchButton();
     }
-    updateIds(withCompactIds) {
+    updateAbbreviations(withAbbreviatedIds, withAbbreviatedComments) {
+        const startAbbreviator = (withAbbreviation, getValue, setLongValue, setShortValue) => {
+            let lastValue = '';
+            return ($item, $piece) => {
+                if (!($piece instanceof HTMLElement)) {
+                    lastValue = '';
+                    return;
+                }
+                if ($piece.hidden)
+                    return;
+                const value = getValue($item, $piece);
+                if (value == null) {
+                    lastValue = '';
+                    return;
+                }
+                let compacted = false;
+                if (withAbbreviation && value.length == lastValue.length) {
+                    let shortValue = '';
+                    for (let i = 0; i < value.length; i++) {
+                        if (value[i] == lastValue[i])
+                            continue;
+                        shortValue = value.substring(i);
+                        break;
+                    }
+                    if (value.length - shortValue.length > 2) {
+                        setShortValue($piece, value, shortValue);
+                        compacted = true;
+                    }
+                }
+                if (!compacted) {
+                    setLongValue($piece, value);
+                }
+                lastValue = value;
+            };
+        };
         for (const $cell of this.row.$row.cells) {
-            let lastId = '';
+            const idAbbreviator = startAbbreviator(withAbbreviatedIds, $item => $item.dataset.id ?? null, ($piece, value) => {
+                $piece.textContent = value;
+                $piece.removeAttribute('title');
+            }, ($piece, value, shortValue) => {
+                $piece.textContent = '...' + shortValue;
+                $piece.title = value;
+            });
+            const commentAbbreviator = startAbbreviator(withAbbreviatedComments, (_, $piece) => $piece.dataset.fullComment ?? $piece.textContent, ($piece, value) => {
+                $piece.textContent = value;
+                delete $piece.dataset.fullComment;
+            }, ($piece, value, shortValue) => {
+                $piece.textContent = '...' + shortValue;
+                $piece.dataset.fullComment = value;
+            });
             for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
                 if (!isItem($item))
                     continue;
                 if ($item.hidden)
                     continue;
-                const $a = $item.querySelector(':scope > .balloon > .flow > a[data-optional="id"]');
-                if (!($a instanceof HTMLAnchorElement)) {
-                    lastId = '';
-                    continue;
-                }
-                const id = $item.dataset.id;
-                if (id == null) {
-                    lastId = '';
-                    continue;
-                }
-                let compacted = false;
-                if (withCompactIds && id.length == lastId.length) {
-                    let shortId = '';
-                    for (let i = 0; i < id.length; i++) {
-                        if (id[i] == lastId[i])
-                            continue;
-                        shortId = id.substring(i);
-                        break;
-                    }
-                    if (id.length - shortId.length > 2) {
-                        $a.textContent = '...' + shortId;
-                        $a.title = id;
-                        compacted = true;
-                    }
-                }
-                if (!compacted) {
-                    $a.textContent = id;
-                    $a.removeAttribute('title');
-                }
-                lastId = id;
+                idAbbreviator($item, $item.querySelector(':scope > .balloon > .flow > a[data-optional="id"]'));
+                commentAbbreviator($item, $item.querySelector(':scope > .balloon > .flow > [data-optional="comment"]'));
             }
         }
     }
@@ -4845,6 +4872,8 @@ function makeItemTypes(spec) {
         types.push('noteComment');
     if (spec[4] != ' ')
         types.push('user');
+    if (spec[5] != ' ')
+        types.push('abbreviate');
     return new Set(types);
 }
 class ItemOption {
@@ -4853,6 +4882,7 @@ class ItemOption {
         this.types = types;
         this.label = label;
         this.title = title;
+        this.abbreviate = false;
         this.changeset = value;
         this.changesetComment = value;
         this.note = value;
@@ -4862,11 +4892,14 @@ class ItemOption {
     hasType(type) {
         return this.types.has(type);
     }
+    get itemTypes() {
+        return [...this.types].filter(type => type != 'abbreviate');
+    }
     get some() {
-        return [...this.types].reduce((value, type) => value || this[type], false);
+        return this.itemTypes.reduce((value, type) => value || this[type], false);
     }
     get all() {
-        return [...this.types].reduce((value, type) => value && this[type], true);
+        return this.itemTypes.reduce((value, type) => value && this[type], true);
     }
     set all(value) {
         this.changeset = value;
@@ -4890,17 +4923,17 @@ class ItemOption {
 class ItemOptions {
     constructor(isExpanded) {
         this.options = new Map([
-            new ItemOption(isExpanded, 'date', makeItemTypes('CcNnU'), '📅'),
-            new ItemOption(true, 'id', makeItemTypes('CcNn '), '#'),
-            new ItemOption(isExpanded, 'api', makeItemTypes('CcNnU'), 'api'),
-            new ItemOption(isExpanded, 'editor', makeItemTypes('C N  '), '🛠️'),
-            new ItemOption(isExpanded, 'source', makeItemTypes('C    '), '[]'),
-            new ItemOption(isExpanded, 'changes', makeItemTypes('C    '), '📝', 'changes count'),
-            new ItemOption(isExpanded, 'refs', makeItemTypes('CcNn '), '💬', 'comment references'),
-            new ItemOption(isExpanded, 'comment', makeItemTypes('CcNn '), '📣'),
-            new ItemOption(true, 'status', makeItemTypes('    U'), '?', 'status'),
+            new ItemOption(isExpanded, 'date', makeItemTypes('CcNnU '), '📅'),
+            new ItemOption(true, 'id', makeItemTypes('CcNn a'), '#'),
+            new ItemOption(isExpanded, 'api', makeItemTypes('CcNnU '), 'api'),
+            new ItemOption(isExpanded, 'editor', makeItemTypes('C N   '), '🛠️'),
+            new ItemOption(isExpanded, 'source', makeItemTypes('C     '), '[]'),
+            new ItemOption(isExpanded, 'changes', makeItemTypes('C     '), '📝', 'changes count'),
+            new ItemOption(isExpanded, 'refs', makeItemTypes('CcNn  '), '💬', 'comment references'),
+            new ItemOption(isExpanded, 'comment', makeItemTypes('CcNn a'), '📣'),
+            new ItemOption(true, 'status', makeItemTypes('    U '), '?', 'status'),
         ].map(option => [option.name, option]));
-        this.allTypes = makeItemTypes('CcNnU');
+        this.allTypes = makeItemTypes('CcNnU ');
     }
     [Symbol.iterator]() {
         return this.options.values();
@@ -4914,11 +4947,16 @@ class ItemOptions {
 }
 
 class GridBody {
+    get withAbbreviatedIds() {
+        return !!this.collapsedItemOptions.get('id')?.abbreviate;
+    }
+    get withAbbreviatedComments() {
+        return !!this.collapsedItemOptions.get('comment')?.abbreviate;
+    }
     constructor(server, itemReader) {
         this.server = server;
         this.itemReader = itemReader;
         this.$gridBody = makeElement('tbody')()();
-        this.withCompactIds = false;
         this.withClosedChangesets = false;
         this.expandedItemOptions = new ItemOptions(true);
         this.collapsedItemOptions = new ItemOptions(false);
@@ -5062,7 +5100,7 @@ class GridBody {
             if (!EmbeddedItemRow.isItemRow($row))
                 continue;
             const row = new EmbeddedItemRow($row);
-            row.stretch(this.withCompactIds);
+            row.stretch(this.withAbbreviatedIds, this.withAbbreviatedComments);
         }
     }
     shrinkAllItems() {
@@ -5070,10 +5108,27 @@ class GridBody {
             if (!EmbeddedItemRow.isItemRow($row))
                 continue;
             const row = new EmbeddedItemRow($row);
-            row.shrink(this.withCompactIds);
+            row.shrink(this.withAbbreviatedIds, this.withAbbreviatedComments);
         }
     }
-    updateTableAccordingToSettings() {
+    updateTableAfterItemInsertsOrOptionChanges() {
+        this.combineChangesetsAccordingToSettings();
+        this.updatePieceHiddenStatesAccordingToExpandedItemOptions();
+        this.updatePieceHiddenStatesAccordingToCollapsedItemOptions();
+        this.abbreviateAccordingToSettings();
+    }
+    updateTableAfterExpandedItemOptionChanges() {
+        this.updatePieceHiddenStatesAccordingToExpandedItemOptions();
+        this.abbreviateAccordingToSettings();
+    }
+    updateTableAfterCollapsedItemOptionChanges() {
+        this.updatePieceHiddenStatesAccordingToCollapsedItemOptions();
+        this.abbreviateAccordingToSettings();
+    }
+    updateTableAfterAbbreviationOptionChanges() {
+        this.abbreviateAccordingToSettings();
+    }
+    combineChangesetsAccordingToSettings() {
         const setCheckboxTitle = ($item, title) => {
             const $checkbox = getItemCheckbox($item);
             if ($checkbox)
@@ -5116,8 +5171,6 @@ class GridBody {
                         $laterItem = $item;
                     }
                 }
-                const row = new EmbeddedItemRow($row);
-                row.updateIds(this.withCompactIds);
                 $itemRowAbove = undefined;
             }
             else if ($row.classList.contains('single')) {
@@ -5149,14 +5202,12 @@ class GridBody {
                 continue;
             new EmbeddedItemRow($row).updateStretchButtonHiddenState();
         }
-        this.updateTableAccordingToExpandedItemOptions();
-        this.updateTableAccordingToCollapsedItemOptions();
     }
-    updateTableAccordingToExpandedItemOptions() {
-        this.updateTableAccordingToItemOptions(this.expandedItemOptions, 'single');
+    updatePieceHiddenStatesAccordingToExpandedItemOptions() {
+        this.updatePieceHiddenStatesAccordingToItemOptions(this.expandedItemOptions, 'single');
     }
-    updateTableAccordingToCollapsedItemOptions() {
-        this.updateTableAccordingToItemOptions(this.collapsedItemOptions, 'collection');
+    updatePieceHiddenStatesAccordingToCollapsedItemOptions() {
+        this.updatePieceHiddenStatesAccordingToItemOptions(this.collapsedItemOptions, 'collection');
         const hasSpaceBefore = ($e) => {
             const $s = $e.previousSibling;
             return $s?.nodeType == document.TEXT_NODE && $s.textContent == ' ';
@@ -5180,7 +5231,7 @@ class GridBody {
             }
         }
     }
-    updateTableAccordingToItemOptions(itemOptions, rowClass) {
+    updatePieceHiddenStatesAccordingToItemOptions(itemOptions, rowClass) {
         for (const $item of this.$gridBody.querySelectorAll(`:scope > tr.${rowClass} .item`)) {
             if (!($item instanceof HTMLElement))
                 continue;
@@ -5191,6 +5242,14 @@ class GridBody {
                         continue;
                     $piece.hidden = !value;
                 }
+            }
+        }
+    }
+    abbreviateAccordingToSettings() {
+        for (const $row of this.$gridBody.rows) {
+            if ($row.classList.contains('collection')) {
+                const row = new EmbeddedItemRow($row);
+                row.updateAbbreviations(this.withAbbreviatedIds, this.withAbbreviatedComments);
             }
         }
     }
@@ -5220,7 +5279,7 @@ class GridBody {
             const [[sequencePoint, items]] = itemSequence;
             const iColumns = items.map(([iColumn]) => iColumn);
             const $items = items.map(([, $item]) => $item);
-            row.cut(this.withCompactIds);
+            row.cut(this.withAbbreviatedIds, this.withAbbreviatedComments);
             for (const $item of $items) {
                 const $disclosureButton = getItemDisclosureButton($item);
                 if ($disclosureButton) {
@@ -5374,7 +5433,7 @@ class GridBody {
             }
         }
         const row = new EmbeddedItemRow($row);
-        row.remove($items, this.withCompactIds);
+        row.remove($items, this.withAbbreviatedIds, this.withAbbreviatedComments);
         const iColumns = items.map(([iColumn]) => iColumn);
         this.insertItem(iColumns, point, { isExpanded: true, batchItem, usernames }, $items);
     }
@@ -5413,7 +5472,7 @@ class GridBody {
             }
             else {
                 const insertionRow = new EmbeddedItemRow(insertionRowInfo.$row);
-                insertionRow.paste($row, sequencePoint, this.withCompactIds);
+                insertionRow.paste($row, sequencePoint, this.withAbbreviatedIds, this.withAbbreviatedComments);
                 needStretch = insertionRow.isStretched;
             }
             const row = EmbeddedItemRow.fromEmptyRow($row, 'single', this.columnHues);
@@ -5421,7 +5480,7 @@ class GridBody {
             row.put(iColumns, $items);
             row.updateStretchButtonHiddenState();
             if (needStretch) {
-                row.stretch(this.withCompactIds);
+                row.stretch(this.withAbbreviatedIds, this.withAbbreviatedComments);
             }
         }
         else {
@@ -5444,7 +5503,7 @@ class GridBody {
             }
             updateTimelineOnInsert($row, iColumns);
             const row = new EmbeddedItemRow($row);
-            row.insert(sequencePoint, iColumns, $items, this.withCompactIds);
+            row.insert(sequencePoint, iColumns, $items, this.withAbbreviatedIds, this.withAbbreviatedComments);
         }
     }
     get columnHues() {
@@ -5551,10 +5610,10 @@ class GridBody {
             return;
         const row = new EmbeddedItemRow($row);
         if (row.isStretched) {
-            row.shrink(this.withCompactIds);
+            row.shrink(this.withAbbreviatedIds, this.withAbbreviatedComments);
         }
         else {
-            row.stretch(this.withCompactIds);
+            row.stretch(this.withAbbreviatedIds, this.withAbbreviatedComments);
         }
     }
     pingMainItemFromRefButton($button) {
@@ -5707,7 +5766,7 @@ class Grid {
                 wroteAnyItem || (wroteAnyItem = wroteItem);
             }
             if (wroteAnyItem) {
-                this.updateTableAccordingToSettings();
+                this.updateTableAfterOptionChanges();
                 more.changeToLoadMore();
             }
             else {
@@ -5718,9 +5777,6 @@ class Grid {
         this.body.onItemSelect = () => this.head.updateSelectors();
         this.$grid.append(this.$colgroup, this.head.$gridHead, this.body.$gridBody);
         this.setColumns([]);
-    }
-    set withCompactIds(value) {
-        this.body.withCompactIds = value;
     }
     set withClosedChangesets(value) {
         this.body.withClosedChangesets = value;
@@ -5754,14 +5810,17 @@ class Grid {
     async addUserQueries(userQueries) {
         await this.head.addUserQueries(userQueries);
     }
-    updateTableAccordingToSettings() {
-        this.body.updateTableAccordingToSettings();
+    updateTableAfterOptionChanges() {
+        this.body.updateTableAfterItemInsertsOrOptionChanges();
     }
-    updateTableAccordingToExpandedItemOptions() {
-        this.body.updateTableAccordingToExpandedItemOptions();
+    updateTableAfterExpandedItemOptionChanges() {
+        this.body.updateTableAfterExpandedItemOptionChanges();
     }
-    updateTableAccordingToCollapsedItemOptions() {
-        this.body.updateTableAccordingToCollapsedItemOptions();
+    updateTableAfterCollapsedItemOptionChanges() {
+        this.body.updateTableAfterCollapsedItemOptionChanges();
+    }
+    updateTableAfterAbbreviationOptionChanges() {
+        this.body.updateTableAfterAbbreviationOptionChanges();
     }
     async expandSelectedItems() {
         for (const id of this.body.listSelectedChangesetIds()) {
@@ -5978,20 +6037,23 @@ class GridSettingsPanel extends Panel {
                 $label.title = labelTitle;
             return makeDiv('input-group')($label);
         };
-        const makeItemOptionsTable = (updateItemsGrid, itemOptions, legend) => {
+        const makeItemOptionsTable = (itemOptions, legend, updateGridAfterOptionChanges, updateGridAfterAbbreviationOptionChanges) => {
             const $table = makeElement('table')()();
+            const $headSection = makeElement('thead')()();
+            $table.append($headSection);
+            const $allSection = makeElement('tbody')()();
+            $table.append($allSection);
+            const $typeSection = makeElement('tbody')()();
+            $table.append($typeSection);
+            $typeSection.hidden = true;
             {
-                const $row = $table.insertRow();
+                const $row = $headSection.insertRow();
                 {
                     const $cell = $row.insertCell();
                     const $button = makeDisclosureButton(false, `item types`);
                     $button.onclick = () => {
                         const state = !getDisclosureButtonState($button);
-                        for (const $typeRow of $table.querySelectorAll(`tr.for-type`)) {
-                            if (!($typeRow instanceof HTMLTableRowElement))
-                                continue;
-                            $typeRow.hidden = !state;
-                        }
+                        $typeSection.hidden = !state;
                         setDisclosureButtonState($button, state);
                     };
                     $cell.append($button);
@@ -6003,10 +6065,10 @@ class GridSettingsPanel extends Panel {
                 }
             }
             {
-                const $row = $table.insertRow();
-                $row.classList.add('for-all');
+                const $row = $allSection.insertRow();
                 {
                     const $cell = makeElement('th')()();
+                    $cell.textContent = `all item types`;
                     $row.append($cell);
                 }
                 for (const itemOption of itemOptions) {
@@ -6017,23 +6079,21 @@ class GridSettingsPanel extends Panel {
                     $checkbox.checked = itemOption.all;
                     $checkbox.oninput = () => {
                         itemOption.all = $checkbox.checked;
-                        for (const $typeCheckbox of $table.querySelectorAll(`tr.for-type td[data-option="${itemOption.name}"] input`)) {
+                        for (const $typeCheckbox of $typeSection.querySelectorAll(`td[data-option="${itemOption.name}"] input`)) {
                             if (!($typeCheckbox instanceof HTMLInputElement))
                                 continue;
                             $typeCheckbox.checked = $checkbox.checked;
                         }
-                        updateItemsGrid();
+                        updateGridAfterOptionChanges();
                     };
                     $cell.append($checkbox);
                 }
             }
-            for (const itemType of itemOptions.allTypes) {
-                const $row = $table.insertRow();
-                $row.classList.add('for-type');
-                $row.hidden = true;
+            const writeSingleOptionRow = ($row, itemType, checkboxListener) => {
                 {
-                    const $cell = $row.insertCell();
+                    const $cell = makeElement('th')()();
                     $cell.textContent = itemType;
+                    $row.append($cell);
                 }
                 for (const itemOption of itemOptions) {
                     const $cell = $row.insertCell();
@@ -6045,25 +6105,34 @@ class GridSettingsPanel extends Panel {
                     $checkbox.checked = itemOption[itemType];
                     $checkbox.oninput = () => {
                         itemOption[itemType] = $checkbox.checked;
-                        const $allCheckbox = $table.querySelector(`tr.for-all td[data-option="${itemOption.name}"] input`);
-                        if ($allCheckbox instanceof HTMLInputElement) {
-                            $allCheckbox.checked = itemOption.all;
-                            $allCheckbox.indeterminate = !itemOption.all && itemOption.some;
-                        }
-                        updateItemsGrid();
+                        checkboxListener(itemOption);
                     };
                     $cell.append($checkbox);
                 }
+            };
+            for (const itemType of itemOptions.allTypes) {
+                const $row = $typeSection.insertRow();
+                writeSingleOptionRow($row, itemType, itemOption => {
+                    const $allCheckbox = $allSection.querySelector(`td[data-option="${itemOption.name}"] input`);
+                    if ($allCheckbox instanceof HTMLInputElement) {
+                        $allCheckbox.checked = itemOption.all;
+                        $allCheckbox.indeterminate = !itemOption.all && itemOption.some;
+                    }
+                    updateGridAfterOptionChanges();
+                });
+            }
+            if (updateGridAfterAbbreviationOptionChanges) {
+                const $abbrSection = makeElement('tbody')()();
+                $table.append($abbrSection);
+                const $row = $abbrSection.insertRow();
+                writeSingleOptionRow($row, 'abbreviate', () => updateGridAfterOptionChanges());
             }
             return makeElement('fieldset')()(makeElement('legend')()(legend), $table);
         };
         $section.append(makeElement('h2')()(`Grid settings`), makeGridCheckbox(value => {
-            this.grid.withCompactIds = value;
-            this.grid.updateTableAccordingToSettings();
-        }, false, `compact ids in collections`), makeGridCheckbox(value => {
             this.grid.withClosedChangesets = value;
-            this.grid.updateTableAccordingToSettings();
-        }, false, `changeset close events`, `visible only if there's some other event between changeset opening and closing`), makeItemOptionsTable(() => this.grid.updateTableAccordingToExpandedItemOptions(), this.grid.expandedItemOptions, `expanded items`), makeItemOptionsTable(() => this.grid.updateTableAccordingToCollapsedItemOptions(), this.grid.collapsedItemOptions, `collapsed items`));
+            this.grid.updateTableAfterOptionChanges();
+        }, false, `changeset close events`, `visible only if there's some other event between changeset opening and closing`), makeItemOptionsTable(this.grid.expandedItemOptions, `expanded items`, () => this.grid.updateTableAfterExpandedItemOptionChanges()), makeItemOptionsTable(this.grid.collapsedItemOptions, `collapsed items`, () => this.grid.updateTableAfterCollapsedItemOptionChanges(), () => this.grid.updateTableAfterAbbreviationOptionChanges()));
     }
 }
 
