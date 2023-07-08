@@ -110,7 +110,7 @@ describe("GridBody",()=>{
 	it("adds 1 expanded item",()=>{
 		const gridBody=makeSingleColumnGrid()
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -124,7 +124,7 @@ describe("GridBody",()=>{
 	it("adds 1 collapsed item",()=>{
 		const gridBody=makeSingleColumnGrid()
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -139,7 +139,7 @@ describe("GridBody",()=>{
 		const gridBody=makeSingleColumnGrid()
 		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -157,7 +157,7 @@ describe("GridBody",()=>{
 		const gridBody=makeSingleColumnGrid()
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -176,7 +176,7 @@ describe("GridBody",()=>{
 			getChangeset: async()=>makeChangesetItem(1)
 		})
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -194,7 +194,7 @@ describe("GridBody",()=>{
 		})
 		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:10002})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -217,7 +217,7 @@ describe("GridBody",()=>{
 		})
 		gridBody.addItem(makeChangesetBatchItem(2),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -239,7 +239,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetBatchItem(3),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(2),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		gridBody.collapseItem({type:'changeset',id:10002})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -265,7 +265,7 @@ describe("GridBody",()=>{
 		gridBody.withClosedChangesets=withClosedChangesetsValue
 		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -293,7 +293,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetCloseBatchItem(1,'2023-03-01','2023-03-03'),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(2,'2023-03-02','2023-03-04'),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-03'),usernames,true)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -327,7 +327,7 @@ describe("GridBody",()=>{
 		const gridBody=makeSingleColumnGrid()
 		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		gridBody.collapseItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -350,7 +350,7 @@ describe("GridBody",()=>{
 		})
 		gridBody.addItem(makeChangesetCloseBatchItem(1),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -373,7 +373,7 @@ describe("GridBody",()=>{
 		const gridBody=makeSingleColumnGrid()
 		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		gridBody.collapseItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -398,7 +398,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetBatchItem(3),usernames,true)
 		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		gridBody.collapseItem({type:'changeset',id:10003})
 		gridBody.collapseItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
@@ -429,7 +429,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetBatchItem(3),usernames,true)
 		gridBody.addItem(makeChangesetCloseBatchItem(2),usernames,true)
 		gridBody.addItem(makeChangesetBatchItem(1),usernames,true)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		gridBody.collapseItem({type:'changeset',id:id1})
 		gridBody.collapseItem({type:'changeset',id:id2})
 		assertEach(gridBody.$gridBody.rows,$row=>{
@@ -480,7 +480,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetCloseBatchItem(3,'2023-03-04','2023-03-05'),usernames,false)
 		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-03'),usernames,false)
 		backAction(gridBody)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:expandId})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -510,7 +510,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetBatchItem(3,'2023-03-04','2023-03-05'),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(2,'2023-03-02','2023-03-03'),usernames,false)
 		gridBody.addItem(makeChangesetCloseBatchItem(1,'2023-03-01','2023-03-01'),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:10002})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -557,7 +557,7 @@ describe("GridBody",()=>{
 		gridBody.addItem(makeChangesetCloseBatchItem(3,'2023-03-04','2023-03-05'),usernames,false)
 		gridBody.addItem(makeChangesetCloseBatchItem(2,'2023-03-02','2023-03-03'),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(1,'2023-03-01','2023-03-11'),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:10001})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -605,7 +605,7 @@ describe("GridBody",()=>{
 				commentRefs: [],
 			},
 		},usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:10004})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -640,7 +640,7 @@ describe("GridBody",()=>{
 			type: 'user',
 			item: user1,
 		},usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'user',id:101})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -664,7 +664,7 @@ describe("GridBody",()=>{
 			type: 'user',
 			item: user1,
 		},usernames,isExpanded)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody[actionMethod]({type:'user',id:101})
 		const $cell=gridBody.$gridBody.rows[1].cells[1]
 		assertElementClasses($cell,['with-timeline-above','with-timeline-below'],['with-timeline-above'],`Cell`)
@@ -686,7 +686,7 @@ describe("GridBody",()=>{
 			type: 'changesetComment',
 			item: comment0,
 		},usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changesetComment',id:10001,order:1})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -716,7 +716,7 @@ describe("GridBody",()=>{
 			type: 'changeset',
 			item: makeChangesetItem(1),
 		},usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2023,3)
@@ -767,7 +767,7 @@ describe("GridBody",()=>{
 			type: 'changeset',
 			item: makeChangesetItem(1),
 		},usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		await gridBody.expandItem({type:'changeset',id:10002})
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
@@ -818,7 +818,7 @@ describe("GridBody",()=>{
 		const gridBody=makeSingleColumnGrid()
 		gridBody.addItem(makeChangesetBatchItem(2,'2022-12-31T23:32:00Z','2022-12-31T23:32:10Z'),usernames,false)
 		gridBody.addItem(makeChangesetBatchItem(1,'2022-12-31T23:31:00Z','2022-12-31T23:31:10Z'),usernames,false)
-		gridBody.updateTableAccordingToSettings()
+		gridBody.updateTableAfterItemInsertsOrOptionChanges()
 		assertEach(gridBody.$gridBody.rows,$row=>{
 			assertRowIsSeparator($row)
 			assertSeparatorData($row,2022,12)

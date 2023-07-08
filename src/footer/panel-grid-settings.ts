@@ -112,7 +112,7 @@ export default class GridSettingsPanel extends Panel {
 			makeGridCheckbox(
 				value=>{
 					this.grid.withCompactIds=value
-					this.grid.updateTableAccordingToSettings()
+					this.grid.updateTableAfterOptionChanges()
 				},
 				false,
 				`compact ids in collections`
@@ -120,19 +120,19 @@ export default class GridSettingsPanel extends Panel {
 			makeGridCheckbox(
 				value=>{
 					this.grid.withClosedChangesets=value
-					this.grid.updateTableAccordingToSettings()
+					this.grid.updateTableAfterOptionChanges()
 				},
 				false,
 				`changeset close events`,
 				`visible only if there's some other event between changeset opening and closing`
 			),
 			makeItemOptionsTable(
-				()=>this.grid.updateTableAccordingToExpandedItemOptions(),
+				()=>this.grid.updateTableAfterExpandedItemOptionChanges(),
 				this.grid.expandedItemOptions,
 				`expanded items`
 			),
 			makeItemOptionsTable(
-				()=>this.grid.updateTableAccordingToCollapsedItemOptions(),
+				()=>this.grid.updateTableAfterCollapsedItemOptionChanges(),
 				this.grid.collapsedItemOptions,
 				`collapsed items`
 			)

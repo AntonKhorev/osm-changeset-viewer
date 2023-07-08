@@ -54,7 +54,7 @@ export default class Grid {
 					wroteAnyItem||=wroteItem
 				}
 				if (wroteAnyItem) {
-					this.updateTableAccordingToSettings()
+					this.updateTableAfterOptionChanges()
 					more.changeToLoadMore()
 				} else {
 					more.changeToLoadedAll()
@@ -107,14 +107,14 @@ export default class Grid {
 	async addUserQueries(userQueries: ValidUserQuery[]): Promise<void> {
 		await this.head.addUserQueries(userQueries)
 	}
-	updateTableAccordingToSettings(): void {
-		this.body.updateTableAccordingToSettings()
+	updateTableAfterOptionChanges(): void {
+		this.body.updateTableAfterItemInsertsOrOptionChanges()
 	}
-	updateTableAccordingToExpandedItemOptions(): void {
-		this.body.updateTableAccordingToExpandedItemOptions()
+	updateTableAfterExpandedItemOptionChanges(): void {
+		this.body.updateTableAfterExpandedItemOptionChanges()
 	}
-	updateTableAccordingToCollapsedItemOptions(): void {
-		this.body.updateTableAccordingToCollapsedItemOptions()
+	updateTableAfterCollapsedItemOptionChanges(): void {
+		this.body.updateTableAfterCollapsedItemOptionChanges()
 	}
 	async expandSelectedItems(): Promise<void> {
 		for (const id of this.body.listSelectedChangesetIds()) {

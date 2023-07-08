@@ -164,7 +164,24 @@ export default class GridBody {
 			row.shrink(this.withCompactIds)
 		}
 	}
-	updateTableAccordingToSettings(): void {
+	updateTableAfterItemInsertsOrOptionChanges(): void {
+		this.combineChangesetsAccordingToSettings()
+		this.updatePieceHiddenStatesAccordingToExpandedItemOptions()
+		this.updatePieceHiddenStatesAccordingToCollapsedItemOptions()
+		this.abbreviateAccordingToSettings()
+	}
+	updateTableAfterExpandedItemOptionChanges(): void {
+		this.updatePieceHiddenStatesAccordingToExpandedItemOptions()
+		this.abbreviateAccordingToSettings()
+	}
+	updateTableAfterCollapsedItemOptionChanges(): void {
+		this.updatePieceHiddenStatesAccordingToCollapsedItemOptions()
+		this.abbreviateAccordingToSettings()
+	}
+	updateTableAfterAbbreviationOptionChanges(): void {
+		this.abbreviateAccordingToSettings()
+	}
+	private combineChangesetsAccordingToSettings(): void {
 		const setCheckboxTitle=($item: HTMLElement, title: string)=>{
 			const $checkbox=getItemCheckbox($item)
 			if ($checkbox) $checkbox.title=title
@@ -205,8 +222,6 @@ export default class GridBody {
 						$laterItem=$item
 					}
 				}
-				const row=new EmbeddedItemRow($row)
-				row.updateIds(this.withCompactIds)
 				$itemRowAbove=undefined
 			} else if ($row.classList.contains('single')) {
 				for (let i=0;i<$row.cells.length;i++) {
@@ -234,14 +249,12 @@ export default class GridBody {
 			if (!EmbeddedItemRow.isItemRow($row)) continue
 			new EmbeddedItemRow($row).updateStretchButtonHiddenState()
 		}
-		this.updateTableAccordingToExpandedItemOptions()
-		this.updateTableAccordingToCollapsedItemOptions()
 	}
-	updateTableAccordingToExpandedItemOptions(): void {
-		this.updateTableAccordingToItemOptions(this.expandedItemOptions,'single')
+	private updatePieceHiddenStatesAccordingToExpandedItemOptions(): void {
+		this.updatePieceHiddenStatesAccordingToItemOptions(this.expandedItemOptions,'single')
 	}
-	updateTableAccordingToCollapsedItemOptions(): void {
-		this.updateTableAccordingToItemOptions(this.collapsedItemOptions,'collection')
+	private updatePieceHiddenStatesAccordingToCollapsedItemOptions(): void {
+		this.updatePieceHiddenStatesAccordingToItemOptions(this.collapsedItemOptions,'collection')
 		const hasSpaceBefore=($e:HTMLElement)=>{
 			const $s=$e.previousSibling
 			return $s?.nodeType==document.TEXT_NODE && $s.textContent==' '
@@ -263,7 +276,7 @@ export default class GridBody {
 			}
 		}
 	}
-	private updateTableAccordingToItemOptions(itemOptions: ItemOptions, rowClass: string): void {
+	private updatePieceHiddenStatesAccordingToItemOptions(itemOptions: ItemOptions, rowClass: string): void {
 		for (const $item of this.$gridBody.querySelectorAll(`:scope > tr.${rowClass} .item`)) {
 			if (!($item instanceof HTMLElement)) continue
 			for (const itemOption of itemOptions) {
@@ -272,6 +285,14 @@ export default class GridBody {
 					if (!($piece instanceof HTMLElement)) continue
 					$piece.hidden=!value
 				}
+			}
+		}
+	}
+	private abbreviateAccordingToSettings(): void {
+		for (const $row of this.$gridBody.rows) {
+			if ($row.classList.contains('collection')) {
+				const row=new EmbeddedItemRow($row)
+				row.updateIds(this.withCompactIds)
 			}
 		}
 	}
