@@ -77,8 +77,13 @@ export default class GridSettingsPanel extends Panel {
 					$cell.append($checkbox)
 				}
 			}
-			for (const itemType of itemOptions.allTypes) {
-				const $row=$typeSection.insertRow()
+			type ItemType = typeof itemOptions.allTypes extends Set<infer T> ? T : never
+			type ItemOption = typeof itemOptions extends Iterable<infer T> ? T : never
+			const writeSingleOptionRow=(
+				$row: HTMLTableRowElement,
+				itemType: ItemType,
+				checkboxListener: (itemOption:ItemOption)=>void
+			)=>{
 				{
 					const $cell=makeElement('th')()()
 					$cell.textContent=itemType
@@ -93,38 +98,26 @@ export default class GridSettingsPanel extends Panel {
 					$checkbox.checked=itemOption[itemType]
 					$checkbox.oninput=()=>{
 						itemOption[itemType]=$checkbox.checked
-						const $allCheckbox=$allSection.querySelector(`td[data-option="${itemOption.name}"] input`)
-						if ($allCheckbox instanceof HTMLInputElement) {
-							$allCheckbox.checked=itemOption.all
-							$allCheckbox.indeterminate=!itemOption.all && itemOption.some
-						}
-						updateGridAfterOptionChanges()
+						checkboxListener(itemOption)
 					}
 					$cell.append($checkbox)
 				}
 			}
+			for (const itemType of itemOptions.allTypes) {
+				const $row=$typeSection.insertRow()
+				writeSingleOptionRow($row,itemType,itemOption=>{
+					const $allCheckbox=$allSection.querySelector(`td[data-option="${itemOption.name}"] input`)
+					if ($allCheckbox instanceof HTMLInputElement) {
+						$allCheckbox.checked=itemOption.all
+						$allCheckbox.indeterminate=!itemOption.all && itemOption.some
+					}
+					updateGridAfterOptionChanges()
+				})
+			}
 			if (updateGridAfterAbbreviationOptionChanges) {
-				const itemType='abbreviate'
 				const $abbrSection=makeElement('tbody')()(); $table.append($abbrSection)
 				const $row=$abbrSection.insertRow()
-				{
-					const $cell=makeElement('th')()()
-					$cell.textContent=itemType
-					$row.append($cell)
-				}
-				for (const itemOption of itemOptions) {
-					const $cell=$row.insertCell()
-					$cell.dataset.option=itemOption.name
-					if (!itemOption.hasType(itemType)) continue
-					const $checkbox=makeElement('input')()()
-					$checkbox.type='checkbox'
-					$checkbox.checked=itemOption[itemType]
-					$checkbox.oninput=()=>{
-						itemOption[itemType]=$checkbox.checked
-						updateGridAfterOptionChanges()
-					}
-					$cell.append($checkbox)
-				}
+				writeSingleOptionRow($row,'abbreviate',()=>updateGridAfterOptionChanges())
 			}
 			return makeElement('fieldset')()(
 				makeElement('legend')()(legend),$table
