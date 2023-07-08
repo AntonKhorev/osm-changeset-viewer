@@ -48,18 +48,18 @@ export default class EmbeddedItemRow {
 	] {
 		return this.row.getBoundarySequencePoints()
 	}
-	paste($row: HTMLTableRowElement, sequencePoint: ItemSequencePoint, withCompactIds: boolean): void {
+	paste($row: HTMLTableRowElement, sequencePoint: ItemSequencePoint, withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
 		this.removeStretchButton()
 		this.row.$row.after($row)
 		if (!(this.row instanceof ItemCollectionRow)) return
 		const splitRow=this.row.split(sequencePoint)
 		$row.after(splitRow.$row)
 		const splitEmbeddedRow=new EmbeddedItemRow(splitRow)
-		splitEmbeddedRow.updateIds(withCompactIds)
+		splitEmbeddedRow.updateAbbreviations(withAbbreviatedIds,withAbbreviatedComments)
 		this.addStretchButton()
 		splitEmbeddedRow.addStretchButton()
 	}
-	cut(withCompactIds: boolean): void {
+	cut(withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
 		const $row=this.row.$row
 		const $prevRow=$row.previousElementSibling
 		const $nextRow=$row.nextElementSibling
@@ -78,7 +78,7 @@ export default class EmbeddedItemRow {
 				nextEmbeddedRow.removeStretchButton()
 				prevEmbeddedRow.row.merge(nextEmbeddedRow.row)
 				nextEmbeddedRow.row.$row.remove()
-				prevEmbeddedRow.updateIds(withCompactIds)
+				prevEmbeddedRow.updateAbbreviations(withAbbreviatedIds,withAbbreviatedComments)
 				prevEmbeddedRow.addStretchButton()
 			}
 		}
@@ -86,37 +86,37 @@ export default class EmbeddedItemRow {
 	put(iColumns: number[], $items: HTMLElement[]): void {
 		this.row.put(iColumns,$items)
 	}
-	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[], withCompactIds: boolean): void {
+	insert(sequencePoint: ItemSequencePoint, iColumns: number[], $items: HTMLElement[], withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
 		if (!(this.row instanceof ItemCollectionRow)) throw new TypeError(`attempt to insert into non-collection row`)
 		this.removeStretchButton()
 		this.row.insert(sequencePoint,iColumns,$items)
-		this.updateIds(withCompactIds)
+		this.updateAbbreviations(withAbbreviatedIds,withAbbreviatedComments)
 		this.addStretchButton()
 	}
-	remove($items: Iterable<HTMLElement>, withCompactIds: boolean): void {
+	remove($items: Iterable<HTMLElement>, withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
 		if (!(this.row instanceof ItemCollectionRow)) throw new TypeError(`attempt to remove from non-collection row`)
 		this.removeStretchButton()
 		this.row.remove($items)
 		if (this.row.isEmpty()) {
 			this.row.$row.remove()
 		} else {
-			this.updateIds(withCompactIds)
+			this.updateAbbreviations(withAbbreviatedIds,withAbbreviatedComments)
 		}
 		this.addStretchButton()
 	}
-	stretch(withCompactIds: boolean): void {
+	stretch(withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
 		this.removeStretchButton()
 		this.row.stretch()
-		this.updateIds(withCompactIds)
+		this.updateAbbreviations(withAbbreviatedIds,withAbbreviatedComments)
 		this.addStretchButton()
 	}
-	shrink(withCompactIds: boolean): void {
+	shrink(withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
 		this.removeStretchButton()
 		this.row.shrink()
-		this.updateIds(withCompactIds)
+		this.updateAbbreviations(withAbbreviatedIds,withAbbreviatedComments)
 		this.addStretchButton()
 	}
-	updateIds(withCompactIds: boolean): void {
+	updateAbbreviations(withAbbreviatedIds: boolean, withAbbreviatedComments: boolean): void {
 		for (const $cell of this.row.$row.cells) {
 			let lastId=''
 			for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
@@ -134,7 +134,7 @@ export default class EmbeddedItemRow {
 					continue
 				}
 				let compacted=false
-				if (withCompactIds && id.length==lastId.length) {
+				if (withAbbreviatedIds && id.length==lastId.length) {
 					let shortId=''
 					for (let i=0;i<id.length;i++) {
 						if (id[i]==lastId[i]) continue

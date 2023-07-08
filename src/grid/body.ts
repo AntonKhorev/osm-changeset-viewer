@@ -27,8 +27,11 @@ export default class GridBody {
 	withClosedChangesets=false
 	expandedItemOptions=new ItemOptions(true)
 	collapsedItemOptions=new ItemOptions(false)
-	get withCompactIds(): boolean {
+	get withAbbreviatedIds(): boolean {
 		return !!this.collapsedItemOptions.get('id')?.abbreviate
+	}
+	get withAbbreviatedComments(): boolean {
+		return !!this.collapsedItemOptions.get('comment')?.abbreviate
 	}
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
 	private columnUids: (number|null)[] = []
@@ -156,14 +159,14 @@ export default class GridBody {
 		for (const $row of this.$gridBody.rows) {
 			if (!EmbeddedItemRow.isItemRow($row)) continue
 			const row=new EmbeddedItemRow($row)
-			row.stretch(this.withCompactIds)
+			row.stretch(this.withAbbreviatedIds,this.withAbbreviatedComments)
 		}
 	}
 	shrinkAllItems(): void {
 		for (const $row of this.$gridBody.rows) {
 			if (!EmbeddedItemRow.isItemRow($row)) continue
 			const row=new EmbeddedItemRow($row)
-			row.shrink(this.withCompactIds)
+			row.shrink(this.withAbbreviatedIds,this.withAbbreviatedComments)
 		}
 	}
 	updateTableAfterItemInsertsOrOptionChanges(): void {
@@ -294,7 +297,7 @@ export default class GridBody {
 		for (const $row of this.$gridBody.rows) {
 			if ($row.classList.contains('collection')) {
 				const row=new EmbeddedItemRow($row)
-				row.updateIds(this.withCompactIds)
+				row.updateAbbreviations(this.withAbbreviatedIds,this.withAbbreviatedComments)
 			}
 		}
 	}
@@ -326,7 +329,7 @@ export default class GridBody {
 			const [[sequencePoint,items]]=itemSequence
 			const iColumns=items.map(([iColumn])=>iColumn)
 			const $items=items.map(([,$item])=>$item)
-			row.cut(this.withCompactIds)
+			row.cut(this.withAbbreviatedIds,this.withAbbreviatedComments)
 			for (const $item of $items) {
 				const $disclosureButton=getItemDisclosureButton($item)
 				if ($disclosureButton) {
@@ -465,7 +468,7 @@ export default class GridBody {
 			}
 		}
 		const row=new EmbeddedItemRow($row)
-		row.remove($items,this.withCompactIds)
+		row.remove($items,this.withAbbreviatedIds,this.withAbbreviatedComments)
 		const iColumns=items.map(([iColumn])=>iColumn)
 		this.insertItem(iColumns,point,{isExpanded:true,batchItem,usernames},$items)
 	}
@@ -520,7 +523,7 @@ export default class GridBody {
 				}
 			} else {
 				const insertionRow=new EmbeddedItemRow(insertionRowInfo.$row)
-				insertionRow.paste($row,sequencePoint,this.withCompactIds)
+				insertionRow.paste($row,sequencePoint,this.withAbbreviatedIds,this.withAbbreviatedComments)
 				needStretch=insertionRow.isStretched
 			}
 			const row=EmbeddedItemRow.fromEmptyRow($row,'single',this.columnHues)
@@ -528,7 +531,7 @@ export default class GridBody {
 			row.put(iColumns,$items)
 			row.updateStretchButtonHiddenState()
 			if (needStretch) {
-				row.stretch(this.withCompactIds)
+				row.stretch(this.withAbbreviatedIds,this.withAbbreviatedComments)
 			}
 		} else {
 			let $row: HTMLTableRowElement
@@ -547,7 +550,7 @@ export default class GridBody {
 			}
 			updateTimelineOnInsert($row,iColumns)
 			const row=new EmbeddedItemRow($row)
-			row.insert(sequencePoint,iColumns,$items,this.withCompactIds)
+			row.insert(sequencePoint,iColumns,$items,this.withAbbreviatedIds,this.withAbbreviatedComments)
 		}
 	}
 	private get columnHues(): (number|null)[] {
@@ -650,9 +653,9 @@ export default class GridBody {
 		if (!$row) return
 		const row=new EmbeddedItemRow($row)
 		if (row.isStretched) {
-			row.shrink(this.withCompactIds)
+			row.shrink(this.withAbbreviatedIds,this.withAbbreviatedComments)
 		} else {
-			row.stretch(this.withCompactIds)
+			row.stretch(this.withAbbreviatedIds,this.withAbbreviatedComments)
 		}
 	}
 	private pingMainItemFromRefButton($button: HTMLButtonElement): void {
