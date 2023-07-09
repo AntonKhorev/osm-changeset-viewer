@@ -102,6 +102,8 @@ export type ChangesetDbRecord = UserItemDbRecord & {
 }
 
 export type NoteDbRecord = UserItemDbRecord & {
+	lat: number
+	lon: number
 	openingComment?: string
 	commentRefs: NoteCommentRef[]
 }

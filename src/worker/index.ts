@@ -376,6 +376,8 @@ function convertNoteApiDataToDbRecordWithComments(a: OsmNoteApiData): UserItemDb
 		id: a.properties.id,
 		uid: ac0.uid,
 		createdAt: parseNoteDate(a.properties.date_created),
+		lat: a.geometry.coordinates[1],
+		lon: a.geometry.coordinates[0],
 		commentRefs
 	}
 	if (ac0.text!=null) {

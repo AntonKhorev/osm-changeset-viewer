@@ -83,7 +83,7 @@ async function main() {
 	$grid=grid.$grid
 	$content.append(
 		makeDiv('notice')(
-			`This is a preview v0.2.1. `,
+			`This is a preview v0.3.0. `,
 			`If you've been using the previous preview, please delete its databases in the browser.`
 		),
 		p(

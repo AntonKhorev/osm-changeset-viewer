@@ -380,6 +380,7 @@ export function writeExpandedItemFlow(
 			}
 		}
 		$flow.append(
+			` `,optionalize('position',makeBadge()([`${item.lat}, ${item.lon}`])),
 			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.openingComment) {
