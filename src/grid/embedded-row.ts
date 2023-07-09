@@ -1,6 +1,7 @@
 import ItemRow, {getCellContainer} from './row'
 import ItemCollectionRow from './collection-row'
 import type {ItemSequencePoint} from './info'
+import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText} from './info'
 import {isItem} from './info'
 import {makeElement, removeInlineElement} from '../util/html'
 
@@ -169,15 +170,9 @@ export default class EmbeddedItemRow {
 			)
 			const commentAbbreviator=startAbbreviator(
 				withAbbreviatedComments,
-				(_,$piece)=>$piece.dataset.fullComment??$piece.textContent,
-				($piece,value)=>{
-					$piece.textContent=value
-					delete $piece.dataset.fullComment
-				},
-				($piece,value,shortValue)=>{
-					$piece.textContent='...'+shortValue
-					$piece.dataset.fullComment=value
-				}
+				(_,$piece)=>readCollapsedItemCommentPieceText($piece),
+				($piece,value)=>writeCollapsedItemCommentPieceText($piece,value),
+				($piece,value,shortValue)=>writeCollapsedItemCommentPieceText($piece,value,shortValue)
 			)
 			for (const $item of $cell.querySelectorAll(':scope > * > .item')) {
 				if (!isItem($item)) continue

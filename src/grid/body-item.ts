@@ -2,6 +2,7 @@ import {getHueFromUid} from './colorizer'
 import type {EditorIcon} from './editors'
 import editorData from './editors'
 import type ItemOptions from './item-options'
+import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText} from './info'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {makeCenteredSvg, makeDisclosureButton} from '../widgets'
@@ -142,6 +143,10 @@ export function trimToCollapsedItemFlow(
 		const $piece=$flow.querySelector(`:scope > [data-optional="${itemOption.name}"]`)
 		if (!($piece instanceof HTMLElement)) continue
 		$piece.hidden=!itemOption.get(type)
+		if (itemOption.name=='comment') {
+			const comment=readCollapsedItemCommentPieceText($piece)
+			if (comment) writeCollapsedItemCommentPieceText($piece,comment)
+		}
 		$pieces.push($piece)
 	}
 	$flow.replaceChildren()

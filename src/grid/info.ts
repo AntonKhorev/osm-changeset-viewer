@@ -202,3 +202,27 @@ function getLastTimestampOfMonth(date: Date): number {
 	}
 	return Date.UTC(year,monthIndex)-1
 }
+
+export function readCollapsedItemCommentPieceText($piece: HTMLElement): string|null {
+	return $piece.dataset.fullComment??$piece.textContent
+}
+export function writeCollapsedItemCommentPieceText($piece: HTMLElement, text: string, shortText?: string): void {
+	const maxLength=200
+	const maxLengthThreshold=maxLength+3
+	if (shortText!=null) {
+		$piece.dataset.fullComment=text
+		if (shortText.length>maxLengthThreshold) {
+			$piece.textContent='...'+shortText.substring(0,maxLength)+'...'
+		} else {
+			$piece.textContent='...'+shortText
+		}
+	} else {
+		if (text.length>maxLengthThreshold) {
+			$piece.dataset.fullComment=text
+			$piece.textContent=text.substring(0,maxLength)+'...'
+		} else {
+			delete $piece.dataset.fullComment
+			$piece.textContent=text
+		}
+	}
+}
