@@ -14,7 +14,7 @@ import {toUserQuery} from '../osm'
 import MuxUserItemDbStream from '../mux-user-item-db-stream'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import MuxUserItemDbStreamMessenger from '../mux-user-item-db-stream-messenger'
-import {makeElement} from '../util/html'
+import {makeElement, makeDiv} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
 import {moveInArray} from '../util/types'
 
@@ -81,8 +81,8 @@ export default class GridHead {
 		this.$cardRow=this.$gridHead.insertRow()
 		this.$selectorRow=this.$gridHead.insertRow()
 		this.$selectorRow.classList.add('selectors')
-		this.$adderCell=this.$cardRow.insertCell()
-		this.$adderCell.classList.add('adder')
+		this.$adderCell=makeElement('th')('all')()
+		this.$tabRow.append(this.$adderCell)
 		const $adderButton=makeElement('button')()(`+`)
 		$adderButton.onclick=()=>{
 			const formEntry=this.makeFormUserEntry()
@@ -91,7 +91,7 @@ export default class GridHead {
 			this.rewriteUserEntriesInHead()
 			this.restartStream()
 		}
-		this.$adderCell.append($adderButton)
+		this.$adderCell.append(makeDiv('tab')($adderButton))
 		const broadcastReceiver=new WorkerBroadcastReceiver(cx.server.host)
 		broadcastReceiver.onmessage=async({data:message})=>{
 			if (message.type!='operation') return
@@ -439,7 +439,7 @@ export default class GridHead {
 				this.streamMessenger?.reorderColumns(iActive,iShiftTo)
 			})
 		}
-		this.$cardRow.append(this.$adderCell)
+		this.$tabRow.append(this.$adderCell)
 	}
 }
 

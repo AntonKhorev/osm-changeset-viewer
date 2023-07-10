@@ -1,13 +1,12 @@
 .ui .grid {
 	--all-width: calc(var(--icon-size) + 2 * var(--spacer));
-	--adder-width: 10ch;
 	--column-min-width: 25ch;
 	--tab-height: calc(1rem + 2 * var(--spacer));
 	--accent-saturation: 50%;
 	table-layout: fixed;
 	border-collapse: collapse;
 	width: 100%;
-	min-width: calc(var(--all-width) + var(--column-min-width) * var(--columns) + var(--adder-width));
+	min-width: calc(var(--all-width) + var(--column-min-width) * var(--columns) + var(--all-width));
 }
 @media (prefers-color-scheme: dark) {
 	.ui .grid {
@@ -29,9 +28,6 @@
 }
 .ui .grid col.all {
 	width: var(--all-width);
-}
-.ui .grid col.adder {
-	width: var(--adder-width);
 }
 .ui .grid .icon {
 	position: relative;
@@ -83,15 +79,6 @@
 	position: relative;
 	z-index: var(--base-z-index);
 }
-.ui .grid thead td.adder {
-	position: relative;
-	padding: var(--spacer);
-	text-align: right;
-}
-.ui .grid thead td.adder button {
-	width: calc(var(--adder-width) - var(--spacer));
-	aspect-ratio: 1;
-}
 .ui .grid thead th .tab {
 	position: relative;
 	height: var(--tab-height);
@@ -110,13 +97,25 @@
 	border-color: transparent;
 	cursor: unset;
 }
+.ui .grid thead th.all:last-child .tab {
+	margin-right: 0px;
+	margin-left: 1px;
+}
 .ui .grid thead th .tab > * {
 	position: absolute;
 }
-.ui .grid thead th .tab .icon {
+.ui .grid thead th .tab .icon,
+.ui .grid thead th.all .tab .icon {
 	position: absolute;
 	top: calc(var(--spacer) - 1px);
 	left: calc(var(--spacer) - 1px);
+}
+.ui .grid thead th.all .tab button {
+	width: var(--icon-size);
+	height: var(--icon-size);
+	padding: 0;
+}
+.ui .grid thead th .tab .icon {
 	background: var(--accent-color);
 }
 .ui .grid thead th .tab .icon > * {
@@ -128,7 +127,7 @@
 }
 .ui .grid thead th .tab button {
 	top: var(--spacer);
-	right: var(--spacer);
+	right: calc(var(--spacer) - 1px);
 	width: 1rem;
 	height: 1rem;
 }

@@ -94,7 +94,7 @@ export default class Grid {
 			)
 		}
 		this.$colgroup.append(
-			makeElement('col')('adder')()
+			makeElement('col')('all')()
 		)
 		this.onExternalControlsStateUpdate()
 	}
