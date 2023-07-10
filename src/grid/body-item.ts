@@ -5,6 +5,7 @@ import type ItemOptions from './item-options'
 import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText} from './info'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
+import type {ChangesetDbRecord} from '../db'
 import {makeCenteredSvg, makeDisclosureButton} from '../widgets'
 import {makeElement, makeLink} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
@@ -330,6 +331,13 @@ export function writeExpandedItemFlow(
 			return makeBadge(`unspecified source`)(bracket(`?`),true)
 		}
 	}
+	const makeBboxBadge=(bbox: ChangesetDbRecord['bbox'])=>{
+		if (bbox) {
+			return makeBadge(`bounding box`)([`⌖ `,makeGeoUri(bbox.minLat,bbox.minLon),` .. `,makeGeoUri(bbox.maxLat,bbox.maxLon)])
+		} else {
+			return makeBadge(`no bounding box`)([`⌖ none`],true)
+		}
+	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
 		$flow.replaceChildren(
 			optionalize('id',makeLink(String(id),href)),` `,
@@ -360,10 +368,12 @@ export function writeExpandedItemFlow(
 	} else if (type=='changeset' || type=='changesetClose') {
 		date = type=='changesetClose' ? item.closedAt : item.createdAt
 		rewriteWithChangesetLinks(item.id)
+		item.bbox
 		$flow.append(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
 			` `,optionalize('changes',makeBadge(`number of changes`)([`📝 ${item.changes.count}`])),
+			` `,optionalize('position',makeBboxBadge(item.bbox)),
 			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.tags?.comment) {
@@ -383,7 +393,7 @@ export function writeExpandedItemFlow(
 			}
 		}
 		$flow.append(
-			` `,optionalize('position',makeBadge()([makeGeoUri(item.lat,item.lon)])),
+			` `,optionalize('position',makeBadge(`position`)([`⌖ `,makeGeoUri(item.lat,item.lon)])),
 			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.openingComment) {

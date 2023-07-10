@@ -70,7 +70,7 @@ export default class ItemOptions {
 			new ItemOption(isExpanded,'api'     ,makeItemTypes('CcNnU '),'api'),
 			new ItemOption(isExpanded,'editor'  ,makeItemTypes('C N   '),'🛠️'),
 			new ItemOption(isExpanded,'source'  ,makeItemTypes('C     '),'[]'),
-			new ItemOption(isExpanded,'position',makeItemTypes('  N   '),'⌖'),
+			new ItemOption(isExpanded,'position',makeItemTypes('C N   '),'⌖'),
 			new ItemOption(isExpanded,'changes' ,makeItemTypes('C     '),'📝','changes count'),
 			new ItemOption(isExpanded,'refs'    ,makeItemTypes('CcNn  '),'💬','comment references'),
 			new ItemOption(isExpanded,'comment' ,makeItemTypes('CcNn a'),'📣'),
