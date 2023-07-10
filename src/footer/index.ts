@@ -15,7 +15,8 @@ export default function writeFooter(
 	$netDialog: HTMLDialogElement,
 	server?: Server,
 	grid?: Grid,
-	more?: More
+	more?: More,
+	toggleMap?: ()=>void
 ): void {
 	const $panelButtons:HTMLButtonElement[]=[]	
 	const addPanel=([$panel,$button]:[HTMLElement,HTMLButtonElement])=>{
@@ -108,6 +109,11 @@ export default function writeFooter(
 		$button.onclick=()=>{
 			$netDialog.showModal()
 		}
+		$toolbar.append($button)
+	}
+	if (toggleMap) {
+		const $button=makeElement('button')()(`Map`)
+		$button.onclick=toggleMap
 		$toolbar.append($button)
 	}
 }

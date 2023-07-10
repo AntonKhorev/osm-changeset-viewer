@@ -1,6 +1,5 @@
 .ui footer {
-	flex-shrink: 0;
-	flex-grow: 1;
+	grid-area: footer;
 	box-shadow: 0 0px 6px #AAA;
 }
 .ui footer > .panel {

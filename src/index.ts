@@ -11,6 +11,7 @@ import {makeElement, makeDiv, makeLink} from './util/html'
 import {p,em} from './util/html-shortcuts'
 import {PrefixedLocalStorage} from './util/storage'
 import {escapeHash} from './util/escape'
+import MapView from './map'
 
 const appName='osm-changeset-viewer'
 
@@ -25,14 +26,17 @@ async function main() {
 	document.body.append($root)
 	installRelativeTimeListeners($root)
 
-	const $content=makeElement('main')()(
+	const $main=makeElement('main')()(
 		makeElement('h1')()(`Changeset viewer`)
 	)
 	const contentResizeObserver=new ResizeObserver(entries=>{
 		const mainWidth=entries[0].target.clientWidth
-		$content.style.setProperty('--main-width',`${mainWidth}px`)
+		$main.style.setProperty('--main-width',`${mainWidth}px`)
 	})
-	contentResizeObserver.observe($content)
+	contentResizeObserver.observe($main)
+
+	const $aside=makeElement('aside')()()
+	$aside.hidden=true
 
 	const storage=new PrefixedLocalStorage(appName+'-')
 	const net=new Net(
@@ -46,11 +50,10 @@ async function main() {
 
 	const $footer=makeElement('footer')()()
 	const $netDialog=makeNetDialog(net)
-	$root.append($content,$footer,$netDialog)
-	let $grid: HTMLElement|undefined
+	$root.append($main,$aside,$footer,$netDialog)
 
 	if (!net.cx) {
-		$content.append(
+		$main.append(
 			makeDiv('notice')(`Please select a valid server`)
 		)
 		net.serverSelector.installHashChangeListener(net.cx,()=>{})
@@ -63,7 +66,7 @@ async function main() {
 	try {
 		db=await ChangesetViewerDBReader.open(cx.server.host)
 	} catch (ex) {
-		$content.append(
+		$main.append(
 			makeDiv('notice')(`Cannot open the database`),
 			p(
 				`This app uses `,makeLink(`IndexedDB`,`https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API`),` to store downloaded request results. `,
@@ -80,8 +83,7 @@ async function main() {
 			getHashFromUserQueries(userQueries)
 		)
 	})
-	$grid=grid.$grid
-	$content.append(
+	$main.append(
 		makeDiv('notice')(
 			`This is a preview v0.3.0. `,
 			`If you've been using the previous preview, please delete its databases in the browser.`
@@ -99,12 +101,23 @@ async function main() {
 		grid.$grid,
 		more.$div
 	)
+	$aside.append(
+		new MapView().$mapView
+	)
 	net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
 		grid.receiveUpdatedUserQueries(
 			getUserQueriesFromHash(hostlessHash)
 		)
 	},true)
-	writeFooter($root,$footer,$netDialog,net.cx.server,grid,more)
+	writeFooter($root,$footer,$netDialog,net.cx.server,grid,more,()=>{
+		if ($aside.hidden) {
+			$aside.hidden=false
+			$root.style.gridTemplateColumns='1fr 1fr'
+		} else {
+			$aside.hidden=true
+			$root.style.gridTemplateColumns='1fr 0fr'
+		}
+	})
 }
 
 function getUserQueriesFromHash(hash: string): ValidUserQuery[] {

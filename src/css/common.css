@@ -38,12 +38,15 @@ body > .symbols {
 	position: fixed;
 	height: 100%;
 	width: 100%;
-	display: flex;
-	flex-direction: column;
+	display: grid;
+	grid-template-columns: 1fr 0fr;
+	grid-template-areas:
+		"main aside"
+		"footer footer";
 }
 
 .ui main {
-	flex-basis: 100%;
+	grid-area: main;
 	overflow-y: auto;
 }
 .ui main > :where(h1, h2, p, [class$="-input-group"]) {
@@ -52,6 +55,10 @@ body > .symbols {
 .ui main > .notice {
 	padding: var(--spacer);
 	background: var(--notice-background-color);
+}
+
+.ui aside {
+	grid-area: aside;
 }
 
 .ui [class$="-input-group"] {
