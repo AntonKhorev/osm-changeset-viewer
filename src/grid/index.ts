@@ -1,6 +1,7 @@
 import GridHead from './head'
 import GridBody from './body'
 import ItemOptions from './item-options'
+import type {ItemMapViewInfo} from './info'
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader} from '../db'
 import type More from '../more'
@@ -25,7 +26,13 @@ export default class Grid {
 		more: More,
 		sendUpdatedUserQueriesReceiver: (
 			userQueries: ValidUserQuery[]
-		)=>void
+		)=>void,
+		resetMapViewReceiver: ()=>void,
+		addItemsToMapViewReceiver: (items: Iterable<ItemMapViewInfo>)=>void,
+		intersectItemsOnMapViewReceiver: (items: Iterable<ItemMapViewInfo>)=>void,
+		highlightItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void,
+		unhighlightItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void,
+		pingItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void
 	) {
 		this.body=new GridBody(
 			cx.server,

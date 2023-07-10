@@ -78,11 +78,32 @@ async function main() {
 	}
 	const worker=new SharedWorker('worker.js')
 	const more=new More()
-	const grid=new Grid(cx,db,worker,more,userQueries=>{
-		net.serverSelector.pushHostlessHashInHistory(
-			getHashFromUserQueries(userQueries)
-		)
-	})
+	const grid=new Grid(cx,db,worker,more,
+		userQueries=>{
+			net.serverSelector.pushHostlessHashInHistory(
+				getHashFromUserQueries(userQueries)
+			)
+		},
+		()=>{
+			console.log('resetMapViewReceiver')
+		},
+		(items)=>{
+			console.log('addItemsToMapViewReceiver',items)
+		},
+		(items)=>{
+			console.log('intersectItemsOnMapViewReceiver',items)
+		},
+		(item)=>{
+			console.log('highlightItemOnMapViewReceiver',item)
+		},
+		(item)=>{
+			console.log('unhighlightItemOnMapViewReceiver',item)
+		},
+		(item)=>{
+			console.log('pingItemOnMapViewReceiver',item)
+		}
+	)
+	const mapView=new MapView()
 	$main.append(
 		makeDiv('notice')(
 			`This is a preview v0.3.0. `,
@@ -102,7 +123,7 @@ async function main() {
 		more.$div
 	)
 	$aside.append(
-		new MapView().$mapView
+		mapView.$mapView
 	)
 	net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
 		grid.receiveUpdatedUserQueries(

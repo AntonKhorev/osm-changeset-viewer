@@ -20,6 +20,23 @@ export type ItemSequencePoint = {
 	order?: number
 }
 
+export type ItemMapViewInfo = {
+	descriptor: ItemDescriptor
+	uid: number|null
+} & (
+	{
+		type: 'marker'
+		lat: number
+		lon: number
+	} | {
+		type: 'bbox'
+		minLat: number
+		minLon: number
+		maxLat: number
+		maxLon: number
+	}
+)
+
 export function getItemDescriptorSelector({type,id,order}: ItemDescriptor): string {
 	return `.item[data-type="${type}"][data-id="${id}"]`+(order
 		? `[data-order="${order}"]`
