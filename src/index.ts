@@ -87,8 +87,8 @@ async function main() {
 		()=>{
 			console.log('resetMapViewReceiver')
 		},
-		(items)=>{
-			console.log('addItemsToMapViewReceiver',items)
+		(item)=>{
+			console.log('addItemToMapViewReceiver',item)
 		},
 		(items)=>{
 			console.log('intersectItemsOnMapViewReceiver',items)

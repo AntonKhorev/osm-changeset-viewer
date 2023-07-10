@@ -22,6 +22,23 @@ import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
 
+export type ItemMapViewInfo = {
+	id: number
+	uid: number
+} & (
+	{
+		type: 'note'
+		lat: number
+		lon: number
+	} | {
+		type: 'changeset'
+		minLat: number
+		minLon: number
+		maxLat: number
+		maxLon: number
+	}
+)
+
 export default class GridBody {
 	readonly $gridBody=makeElement('tbody')()()
 	withClosedChangesets=false
@@ -37,7 +54,13 @@ export default class GridBody {
 	private columnUids: (number|null)[] = []
 	constructor(
 		private readonly server: ServerUrlGetter,
-		private readonly itemReader: SingleItemDBReader
+		private readonly itemReader: SingleItemDBReader,
+		private resetMapViewReceiver: ()=>void,
+		private addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void,
+		intersectItemsOnMapViewReceiver: (items: Iterable<ItemMapViewInfo>)=>void,
+		highlightItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void,
+		unhighlightItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void,
+		pingItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void
 	) {
 		this.$gridBody.addEventListener('click',ev=>{
 			if (!(ev.target instanceof Element)) return
@@ -131,6 +154,7 @@ export default class GridBody {
 		this.checkboxHandler.onItemSelect=callback
 	}
 	setColumns(columnUids: (number|null)[]): void {
+		this.resetMapViewReceiver()
 		this.columnUids=columnUids
 		this.$gridBody.replaceChildren()
 		this.checkboxHandler.resetLastClickedCheckbox()
@@ -148,6 +172,22 @@ export default class GridBody {
 		const $flow=$item.querySelector('.flow')
 		if (!($flow instanceof HTMLElement)) return false
 		writeExpandedItemFlow($flow,this.server,batchItem,usernames,this.expandedItemOptions)
+		if (batchItem.type=='changeset' || batchItem.type=='note') {
+			const id=batchItem.item.id
+			const uid=batchItem.item.uid
+			if (batchItem.type=='changeset' && batchItem.item.bbox) {
+				this.addItemToMapViewReceiver(
+					{type:'changeset',id,uid,...batchItem.item.bbox}
+				)
+			} else if (batchItem.type=='note') {
+				this.addItemToMapViewReceiver(
+					{type:'note',id,uid,
+						lat: batchItem.item.lat,
+						lon: batchItem.item.lon
+					}
+				)
+			}
+		}
 		const $items=batchItem.iColumns.map(()=>$item.cloneNode(true) as HTMLElement)
 		return this.insertItem(
 			batchItem.iColumns,sequencePoint,
