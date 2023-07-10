@@ -171,6 +171,9 @@ export function writeExpandedItemFlow(
 		$e.hidden=!itemOptions.get(name)?.get(type)
 		return $e
 	}
+	const makeGeoUri=(lat: number, lon: number): HTMLAnchorElement=>{
+		return makeLink(`${lat}, ${lon}`,`geo:${lat},${lon}`)
+	}
 	const makeBadge=(title?:string,$leftEdge?:HTMLElement,$rightEdge?:HTMLElement)=>(content:(string|HTMLElement)[],isEmpty=false)=>{
 		const $badgeContent=makeElement('span')('content')(...content)
 		if (isEmpty) $badgeContent.classList.add('empty')
@@ -380,7 +383,7 @@ export function writeExpandedItemFlow(
 			}
 		}
 		$flow.append(
-			` `,optionalize('position',makeBadge()([`${item.lat}, ${item.lon}`])),
+			` `,optionalize('position',makeBadge()([makeGeoUri(item.lat,item.lon)])),
 			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
 		)
 		if (item.openingComment) {
