@@ -59,6 +59,11 @@ body > .symbols {
 
 .ui aside {
 	grid-area: aside;
+	position: relative;
+}
+.ui aside > .map {
+	position: absolute;
+	inset: 0;
 }
 
 .ui [class$="-input-group"] {

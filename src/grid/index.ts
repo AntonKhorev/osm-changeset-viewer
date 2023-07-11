@@ -8,7 +8,7 @@ import type More from '../more'
 import type {ValidUserQuery} from '../osm'
 import {makeElement} from '../util/html'
 
-export {ItemOptions}
+export {ItemOptions, ItemMapViewInfo}
 
 export {makeCollectionIcon} from './body-item'
 
