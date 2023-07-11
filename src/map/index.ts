@@ -30,10 +30,10 @@ export default class MapView {
 					minLat=maxLat=item.lat
 					minLon=maxLon=item.lon
 				}
-				const cx1=clamp(0,cs*calculateX(minLon),cs-1)
-				const cx2=clamp(0,cs*calculateX(maxLon),cs-1)
-				const cy1=clamp(0,cs*calculateY(minLat),cs-1)
-				const cy2=clamp(0,cs*calculateY(maxLat),cs-1)
+				const cx1=clamp(0,Math.floor(cs*calculateX(minLon)),cs-1)
+				const cx2=clamp(0,Math.floor(cs*calculateX(maxLon)),cs-1)
+				const cy1=clamp(0,Math.floor(cs*calculateY(minLat)),cs-1)
+				const cy2=clamp(0,Math.floor(cs*calculateY(maxLat)),cs-1)
 				for (let cy=cy1;cy<=cy2;cy++) {
 					for (let cx=cx1;cx<=cx2;cx++) {
 						const v=cells[cx+cy*cs]+=1
@@ -41,9 +41,18 @@ export default class MapView {
 					}
 				}
 			}
-			const $svg=makeSvgElement('svg')
-			$svg.setAttributeNS(null,'width',String(cs*cellSize))
-			$svg.setAttributeNS(null,'height',String(cs*cellSize))
+			const $svg=makeSvgElement('svg',{width:String(cs*cellSize),height:String(cs*cellSize)})
+			for (let cy=0;cy<cs;cy++) {
+				for (let cx=0;cx<cs;cx++) {
+					const v=cells[cx+cy*cs]
+					if (v<=0) continue
+					$svg.append(makeSvgElement('rect',{
+						width: String(cellSize), height: String(cellSize),
+						x: String(cx*cellSize), y: String(cy*cellSize),
+						opacity: String(v/maxV)
+					}))
+				}
+			}
 			this.$mapView.append($svg)
 		}
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
@@ -78,6 +87,10 @@ function clamp(v1: number, v: number, v2: number): number {
 	return Math.min(Math.max(v1,v),v2)
 }
 
-function makeSvgElement<K extends keyof SVGElementTagNameMap>(tag: K): SVGElementTagNameMap[K] {
-	return document.createElementNS("http://www.w3.org/2000/svg",tag)
+function makeSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, attrs: {[name:string]:string}): SVGElementTagNameMap[K] {
+	const $e=document.createElementNS("http://www.w3.org/2000/svg",tag)
+	for (const name in attrs) {
+		$e.setAttributeNS(null,name,attrs[name])
+	}
+	return $e
 }

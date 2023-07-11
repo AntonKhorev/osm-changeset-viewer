@@ -78,6 +78,7 @@ async function main() {
 	}
 	const worker=new SharedWorker('worker.js')
 	const more=new More()
+	const mapView=new MapView()
 	const grid=new Grid(cx,db,worker,more,
 		userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
@@ -85,10 +86,10 @@ async function main() {
 			)
 		},
 		()=>{
-			console.log('resetMapViewReceiver')
+			mapView.reset()
 		},
 		(item)=>{
-			console.log('addItemToMapViewReceiver',item)
+			mapView.addItem(item)
 		},
 		(items)=>{
 			console.log('intersectItemsOnMapViewReceiver',items)
@@ -103,7 +104,6 @@ async function main() {
 			console.log('pingItemOnMapViewReceiver',item)
 		}
 	)
-	const mapView=new MapView()
 	$main.append(
 		makeDiv('notice')(
 			`This is a preview v0.3.0. `,
