@@ -1,25 +1,38 @@
 import type {ItemMapViewInfo} from '../grid'
+import {getHueFromUid} from '../colorizer'
 import {makeDiv} from "../util/html"
 
 export default class MapView {
-	items=new Map<string,ItemMapViewInfo>()
-	requestId: number|undefined
 	$mapView=makeDiv('map')()
+	private items=new Map<string,ItemMapViewInfo>()
+	private subcells=new Map<number,[number,number]>
+	private subcellSizeX=1
+	private subcellSizeY=0
+	private subcellFillIndex=0
+	private requestId: number|undefined
 	private readonly animateFrame:(time:number)=>void
 	constructor() {
 		this.animateFrame=(time:number)=>{
 			this.$mapView.replaceChildren()
 			this.requestId=undefined
-			const xs=this.$mapView.clientWidth
-			const ys=this.$mapView.clientHeight
-			if (xs<=0 || ys<=0) return
-			const s=Math.min(xs,ys)
-			const cellSize=4
-			const cs=Math.floor(s/cellSize)
-			if (cs<=0) return
-			const cells=new Uint16Array(cs**2)
+			const mapViewPxSizeX=this.$mapView.clientWidth
+			const mapViewPxSizeY=this.$mapView.clientHeight
+			if (mapViewPxSizeX<=0 || mapViewPxSizeY<=0) return
+			const mapViewMaxPxSize=Math.min(mapViewPxSizeX,mapViewPxSizeY)
+			if (this.items.size<=0 || this.subcells.size<=0) return
+			const subcellPxSize=3
+			const cellPxSizeX=this.subcellSizeX*subcellPxSize+1
+			const cellPxSizeY=this.subcellSizeY*subcellPxSize+1
+			const nCellsX=Math.floor(mapViewMaxPxSize/cellPxSizeX)
+			const nCellsY=Math.floor(mapViewMaxPxSize/cellPxSizeY)
+			if (nCellsX<=0 || nCellsY<=0) return
+			const cells=new Map<number,Uint16Array>(
+				[...this.subcells.keys()].map(uid=>[uid,new Uint16Array(nCellsX*nCellsY)])
+			)
 			let maxV=0
 			for (const item of this.items.values()) {
+				const userCells=cells.get(item.uid)
+				if (!userCells) continue
 				let minLat: number
 				let minLon: number
 				let maxLat: number
@@ -30,27 +43,34 @@ export default class MapView {
 					minLat=maxLat=item.lat
 					minLon=maxLon=item.lon
 				}
-				const cx1=clamp(0,Math.floor(cs*calculateX(minLon)),cs-1)
-				const cx2=clamp(0,Math.floor(cs*calculateX(maxLon)),cs-1)
-				const cy1=clamp(0,Math.floor(cs*calculateY(minLat)),cs-1)
-				const cy2=clamp(0,Math.floor(cs*calculateY(maxLat)),cs-1)
+				const cx1=clamp(0,Math.floor(nCellsX*calculateX(minLon)),nCellsX-1)
+				const cx2=clamp(0,Math.floor(nCellsX*calculateX(maxLon)),nCellsX-1)
+				const cy1=clamp(0,Math.floor(nCellsY*calculateY(minLat)),nCellsY-1)
+				const cy2=clamp(0,Math.floor(nCellsY*calculateY(maxLat)),nCellsY-1)
 				for (let cy=cy1;cy<=cy2;cy++) {
 					for (let cx=cx1;cx<=cx2;cx++) {
-						const v=cells[cx+cy*cs]+=1
+						const v=userCells[cx+cy*nCellsX]+=1
 						if (maxV<v) maxV=v
 					}
 				}
 			}
-			const $svg=makeSvgElement('svg',{width:String(cs*cellSize),height:String(cs*cellSize)})
-			for (let cy=0;cy<cs;cy++) {
-				for (let cx=0;cx<cs;cx++) {
-					const v=cells[cx+cy*cs]
-					if (v<=0) continue
-					$svg.append(makeSvgElement('rect',{
-						width: String(cellSize), height: String(cellSize),
-						x: String(cx*cellSize), y: String(cy*cellSize),
-						opacity: String(v/maxV)
-					}))
+			const $svg=makeSvgElement('svg',{width:String(nCellsX*cellPxSizeX),height:String(nCellsY*cellPxSizeY)})
+			for (let cy=0;cy<nCellsY;cy++) {
+				for (let cx=0;cx<nCellsX;cx++) {
+					for (const [uid,[scx,scy]] of this.subcells) {
+						const userCells=cells.get(uid)
+						if (!userCells) continue
+						const v=userCells[cx+cy*nCellsX]
+						if (v<=0) continue
+						$svg.append(makeSvgElement('rect',{
+							width: String(subcellPxSize),
+							height: String(subcellPxSize),
+							x: String(cx*cellPxSizeX+scx*subcellPxSize),
+							y: String(cy*cellPxSizeY+scy*subcellPxSize),
+							fill: `hsl(${getHueFromUid(uid)} 80% 50%)`,
+							opacity: String(v/maxV)
+						}))
+					}
 				}
 			}
 			this.$mapView.append($svg)
@@ -60,11 +80,33 @@ export default class MapView {
 	}
 	reset(): void {
 		this.items.clear()
+		this.subcells.clear()
+		this.subcellSizeX=1
+		this.subcellSizeY=0
+		this.subcellFillIndex=0
 		this.scheduleFrame()
 	}
 	addItem(item: ItemMapViewInfo): void {
 		const key=item.type+':'+item.id
 		this.items.set(key,item)
+		if (!this.subcells.has(item.uid)) {
+			if (this.subcellSizeY<this.subcellSizeX) {
+				if (this.subcellFillIndex>=this.subcellSizeY) {
+					this.subcellSizeY++
+					this.subcellFillIndex=0
+				}
+			} else {
+				if (this.subcellFillIndex>=this.subcellSizeX) {
+					this.subcellSizeX++
+					this.subcellFillIndex=0
+				}
+			}
+			if (this.subcellSizeY<this.subcellSizeX) {
+				this.subcells.set(item.uid,[this.subcellSizeX-1,this.subcellFillIndex++])
+			} else {
+				this.subcells.set(item.uid,[this.subcellFillIndex++,this.subcellSizeY-1])
+			}
+		}
 		this.scheduleFrame()
 	}
 	private scheduleFrame(): void {

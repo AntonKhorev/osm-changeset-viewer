@@ -8,7 +8,7 @@ import {
 	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
 	makeFormTab, makeFormCard, makeFormSelector
 } from './head-item'
-import {getHueFromUid} from './colorizer'
+import {getHueFromUid} from '../colorizer'
 import type {ValidUserQuery} from '../osm'
 import {toUserQuery} from '../osm'
 import MuxUserItemDbStream from '../mux-user-item-db-stream'

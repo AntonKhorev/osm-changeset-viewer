@@ -12,11 +12,11 @@ import {
 	makeItemShell, writeExpandedItemFlow, trimToCollapsedItemFlow
 } from './body-item'
 import {getDisclosureButtonState, setDisclosureButtonState} from '../widgets'
-import {getHueFromUid} from './colorizer'
 import EmbeddedItemRow from './embedded-row'
 import {updateTimelineOnInsert} from './timeline'
 import GridBodyCheckboxHandler from './body-checkbox'
 import ItemOptions from './item-options'
+import {getHueFromUid} from '../colorizer'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
