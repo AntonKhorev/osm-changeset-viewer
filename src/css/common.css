@@ -64,6 +64,11 @@ body > .symbols {
 .ui aside > .map {
 	position: absolute;
 	inset: 0;
+	overflow: hidden;
+	background: #888;
+}
+.ui aside > .map > * {
+	position: absolute;
 }
 
 .ui [class$="-input-group"] {
