@@ -71,40 +71,29 @@ export default class MapView {
 			const viewPxSizeX=this.$mapView.clientWidth
 			const viewPxSizeY=this.$mapView.clientHeight
 			if (viewPxSizeX<=0 || viewPxSizeY<=0) return
-			// const renderView=this.makeRenderView()
-			// if (!renderView) return
-			const dz=-Math.sign(ev.deltaY)
-			const finishZ=clamp(0,this.viewZ+dz,maxZoom)
-			if (finishZ==this.viewZ) return
+			let dz=-Math.sign(ev.deltaY)
+			const startZ=this.viewZ
+			const finishZ=clamp(0,startZ+dz,maxZoom)
+			dz=finishZ-startZ
+			if (dz==0) return
+			const startX=this.viewX
+			const startY=this.viewY
 			const dx=getViewCenterPxOffset(viewPxSizeX,ev.offsetX)
 			const dy=getViewCenterPxOffset(viewPxSizeY,ev.offsetY)
-			console.log('> zoom deltas',dz,dx,dy) ///
-			// TODO correct finish coords
 			const pxSize=calculatePxSize(this.viewZ)
-			// const f=2**dz
-			const f=2**(finishZ-this.viewZ)
-			// const finishX=f*this.viewX+(f-1)*dx*pxSize
-			// const finishY=f*this.viewY+(f-1)*dy*pxSize // TODO clamp
-			// ---
-			// const finishX=this.viewX+(f-1)*dx*pxSize
-			// const finishY=this.viewY+(f-1)*dy*pxSize // TODO clamp
-			// ---
-			const finishX=(this.viewX/pxSize*f+(f-1)*dx)*calculatePxSize(finishZ)
-			const finishY=(this.viewY/pxSize*f+(f-1)*dy)*calculatePxSize(finishZ) // TODO clamp
-			// const [finishX,finishY]=this.getPositionFromRenderViewPxPosition(renderView,ev.offsetX,ev.offsetY)
+			let finishX=startX+(1-.5**dz)*dx*pxSize
+			let finishY=startY+(1-.5**dz)*dy*pxSize
+			finishY=clamp(0,finishY,1)
 			const time=performance.now()
 			this.animation={
 				type: 'zooming',
 				startTime: time,
-				startX: this.viewX,
-				startY: this.viewY,
-				startZ: this.viewZ,
+				startX,startY,startZ,
 				finishTime: time+300,
 				finishX,finishY,finishZ,
 				transformOriginPxX: ev.offsetX,
 				transformOriginPxY: ev.offsetY
 			}
-			console.log('> start zoom anim',this.animation) ///
 			this.scheduleFrame()
 		}
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
@@ -128,13 +117,9 @@ export default class MapView {
 		if (viewPxSizeX<=0 || viewPxSizeY<=0) {
 			return null
 		}
-		// const viewCenterPxOffsetX1=-viewPxSizeX/2-(viewPxSizeX&1)*.5
 		const viewCenterPxOffsetX1=getViewCenterPxOffset(viewPxSizeX,0)
-		// const viewCenterPxOffsetX2=+viewPxSizeX/2-(viewPxSizeX&1)*.5
 		const viewCenterPxOffsetX2=getViewCenterPxOffset(viewPxSizeX,viewPxSizeX)
-		// const viewCenterPxOffsetY1=-viewPxSizeY/2-(viewPxSizeY&1)*.5
 		const viewCenterPxOffsetY1=getViewCenterPxOffset(viewPxSizeY,0)
-		// const viewCenterPxOffsetY2=+viewPxSizeY/2-(viewPxSizeY&1)*.5
 		const viewCenterPxOffsetY2=getViewCenterPxOffset(viewPxSizeY,viewPxSizeY)
 		const pxSize=calculatePxSize(this.viewZ)
 		const renderView:RenderView={
@@ -146,12 +131,6 @@ export default class MapView {
 		}
 		return renderView
 	}
-	// private getPositionFromRenderViewPxPosition(renderView: RenderView, pxX: number, pxY: number): [x: number, y: number] {
-	// 	const pxSize=calculatePxSize(renderView.z)
-	// 	const x=(renderView.pxX1+pxX)*pxSize
-	// 	const y=(renderView.pxY1+pxY)*pxSize
-	// 	return [x,clamp(0,y,1)]
-	// }
 }
 
 function getViewCenterPxOffset(viewPxSize: number, viewCornerPxOffset: number): number {
