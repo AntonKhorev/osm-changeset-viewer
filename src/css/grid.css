@@ -89,7 +89,6 @@
 	border-top-right-radius: var(--spacer);
 	margin-right: -1px;
 	cursor: grab;
-	touch-action: none;
 	background: canvas;
 	box-shadow: 0 4px 4px -4px #AAA;
 }

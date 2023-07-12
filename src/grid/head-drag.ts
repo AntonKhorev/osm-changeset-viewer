@@ -48,6 +48,7 @@ export default function installTabDragListeners(
 	$activeSelectorCell.ontransitionend=()=>{
 		$activeSelectorCell.classList.remove('settling')
 	}
+	$tab.style.touchAction='none'
 	$tab.onpointerdown=ev=>{
 		if (grab) return
 		if (ev.target instanceof Element && ev.target.closest('button')) return

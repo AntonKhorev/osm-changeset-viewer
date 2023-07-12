@@ -66,6 +66,10 @@ body > .symbols {
 	inset: 0;
 	overflow: hidden;
 	background: #888;
+	cursor: grab;
+}
+.ui aside > .map.grabbed {
+	cursor: grabbing;
 }
 .ui aside > .map > * {
 	position: absolute;

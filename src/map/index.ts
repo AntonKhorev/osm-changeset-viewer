@@ -1,5 +1,6 @@
 import type {RenderView} from './layer'
 import ItemLayer from './item-layer'
+import installDragListeners from './drag'
 import {calculatePxSize, clamp} from './geo'
 import type {ItemMapViewInfo} from '../grid'
 import {makeDiv} from "../util/html"
@@ -96,6 +97,19 @@ export default class MapView {
 			}
 			this.scheduleFrame()
 		}
+		installDragListeners(this.$mapView,()=>{
+			if (this.animation.type!='stopped') return null
+			const pxSize=calculatePxSize(this.viewZ)
+			return [
+				this.viewX/pxSize,
+				this.viewY/pxSize
+			]
+		},(pxX:number,pxY:number)=>{
+			const pxSize=calculatePxSize(this.viewZ)
+			this.viewX=pxX*pxSize
+			this.viewY=clamp(0,pxY*pxSize,1)
+			this.scheduleFrame()
+		})
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
 		resizeObserver.observe(this.$mapView)
 	}
