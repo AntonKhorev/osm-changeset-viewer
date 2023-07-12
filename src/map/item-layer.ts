@@ -101,7 +101,32 @@ export default class ItemLayer extends Layer {
 			for (let icx=0;icx<nCellsX;icx++) {
 				const cellPxX=(icx+viewCellX1)*cellPxSizeX-view.pxX1
 				const cellPxY=(icy+viewCellY1)*cellPxSizeY-view.pxY1
+				let cellMaxValueUid:number|undefined
+				let cellMaxValue=0
+				for (const [uid] of this.subcells) {
+					const userCells=cells.get(uid)
+					if (!userCells) continue
+					const v=userCells[icx+icy*nCellsX]
+					if (v>cellMaxValue) {
+						cellMaxValue=v
+						cellMaxValueUid=uid
+					}
+				}
+				if (cellMaxValueUid==null) continue
+				{
+					const userCells=cells.get(cellMaxValueUid)
+					if (!userCells) continue
+					$svg.append(makeSvgElement('rect',{
+						width: String(cellPxSizeX),
+						height: String(cellPxSizeY),
+						x: String(cellPxX),
+						y: String(cellPxY),
+						fill: getCellFill(cellMaxValueUid),
+						opacity: getCellOpacity(maxV,cellMaxValue),
+					}))
+				}
 				for (const [uid,[scx,scy]] of this.subcells) {
+					if (uid==cellMaxValueUid) continue
 					const userCells=cells.get(uid)
 					if (!userCells) continue
 					const v=userCells[icx+icy*nCellsX]
@@ -111,8 +136,8 @@ export default class ItemLayer extends Layer {
 						height: String(subcellPxSize),
 						x: String(cellPxX+scx*subcellPxSize+subcellPxSize/2),
 						y: String(cellPxY+scy*subcellPxSize+subcellPxSize/2),
-						fill: `hsl(${getHueFromUid(uid)} 80% 50%)`,
-						opacity: String(.5+.5*v/maxV)
+						fill: getCellFill(uid),
+						opacity: getCellOpacity(maxV,v),
 					}))
 				}
 			}
@@ -127,4 +152,11 @@ function makeSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, attrs: {[n
 		$e.setAttributeNS(null,name,attrs[name])
 	}
 	return $e
+}
+
+function getCellFill(uid: number): string {
+	return `hsl(${getHueFromUid(uid)} 80% 50%)`
+}
+function getCellOpacity(maxV: number, v: number): string {
+	return String(.5+.5*v/maxV)
 }
