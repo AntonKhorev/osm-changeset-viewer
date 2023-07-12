@@ -18,6 +18,8 @@ type Animation = {
 	finishX: number
 	finishY: number
 	finishZ: number
+	transformOriginPxX: number
+	transformOriginPxY: number
 }
 
 export default class MapView {
@@ -45,9 +47,15 @@ export default class MapView {
 					this.viewX=this.animation.startX*startWeight+this.animation.finishX*finishWeight
 					this.viewY=this.animation.startY*startWeight+this.animation.finishY*finishWeight
 					this.viewZ=this.animation.startZ*startWeight+this.animation.finishZ*finishWeight
+					this.itemLayer.$layer.style.transformOrigin=`${this.animation.transformOriginPxX}px ${this.animation.transformOriginPxY}px`
+					this.itemLayer.$layer.style.scale=String(
+						1*startWeight+
+						2**(this.animation.finishZ-this.animation.startZ)*finishWeight
+					)
 				}
 			}
 			if (this.animation.type=='stopped') {
+				this.itemLayer.$layer.removeAttribute('style')
 				const renderView=this.makeRenderView()
 				if (!renderView) {
 					this.itemLayer.clear()
@@ -60,13 +68,30 @@ export default class MapView {
 		}
 		this.$mapView.onwheel=ev=>{
 			if (this.animation.type=='zooming') return
-			const renderView=this.makeRenderView()
-			if (!renderView) return
+			const viewPxSizeX=this.$mapView.clientWidth
+			const viewPxSizeY=this.$mapView.clientHeight
+			if (viewPxSizeX<=0 || viewPxSizeY<=0) return
+			// const renderView=this.makeRenderView()
+			// if (!renderView) return
 			const dz=-Math.sign(ev.deltaY)
 			const finishZ=clamp(0,this.viewZ+dz,maxZoom)
 			if (finishZ==this.viewZ) return
+			const dx=getViewCenterPxOffset(viewPxSizeX,ev.offsetX)
+			const dy=getViewCenterPxOffset(viewPxSizeY,ev.offsetY)
+			console.log('> zoom deltas',dz,dx,dy) ///
 			// TODO correct finish coords
-			const [finishX,finishY]=this.getPositionFromRenderViewPxPosition(renderView,ev.offsetX,ev.offsetY)
+			const pxSize=calculatePxSize(this.viewZ)
+			// const f=2**dz
+			const f=2**(finishZ-this.viewZ)
+			// const finishX=f*this.viewX+(f-1)*dx*pxSize
+			// const finishY=f*this.viewY+(f-1)*dy*pxSize // TODO clamp
+			// ---
+			// const finishX=this.viewX+(f-1)*dx*pxSize
+			// const finishY=this.viewY+(f-1)*dy*pxSize // TODO clamp
+			// ---
+			const finishX=(this.viewX/pxSize*f+(f-1)*dx)*calculatePxSize(finishZ)
+			const finishY=(this.viewY/pxSize*f+(f-1)*dy)*calculatePxSize(finishZ) // TODO clamp
+			// const [finishX,finishY]=this.getPositionFromRenderViewPxPosition(renderView,ev.offsetX,ev.offsetY)
 			const time=performance.now()
 			this.animation={
 				type: 'zooming',
@@ -75,8 +100,11 @@ export default class MapView {
 				startY: this.viewY,
 				startZ: this.viewZ,
 				finishTime: time+300,
-				finishX,finishY,finishZ
+				finishX,finishY,finishZ,
+				transformOriginPxX: ev.offsetX,
+				transformOriginPxY: ev.offsetY
 			}
+			console.log('> start zoom anim',this.animation) ///
 			this.scheduleFrame()
 		}
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
@@ -100,24 +128,32 @@ export default class MapView {
 		if (viewPxSizeX<=0 || viewPxSizeY<=0) {
 			return null
 		}
-		let viewPxOffsetX1=-viewPxSizeX/2-(viewPxSizeX&1)*.5
-		let viewPxOffsetX2=+viewPxSizeX/2-(viewPxSizeX&1)*.5
-		let viewPxOffsetY1=-viewPxSizeY/2-(viewPxSizeY&1)*.5
-		let viewPxOffsetY2=+viewPxSizeY/2-(viewPxSizeY&1)*.5
+		// const viewCenterPxOffsetX1=-viewPxSizeX/2-(viewPxSizeX&1)*.5
+		const viewCenterPxOffsetX1=getViewCenterPxOffset(viewPxSizeX,0)
+		// const viewCenterPxOffsetX2=+viewPxSizeX/2-(viewPxSizeX&1)*.5
+		const viewCenterPxOffsetX2=getViewCenterPxOffset(viewPxSizeX,viewPxSizeX)
+		// const viewCenterPxOffsetY1=-viewPxSizeY/2-(viewPxSizeY&1)*.5
+		const viewCenterPxOffsetY1=getViewCenterPxOffset(viewPxSizeY,0)
+		// const viewCenterPxOffsetY2=+viewPxSizeY/2-(viewPxSizeY&1)*.5
+		const viewCenterPxOffsetY2=getViewCenterPxOffset(viewPxSizeY,viewPxSizeY)
 		const pxSize=calculatePxSize(this.viewZ)
 		const renderView:RenderView={
-			pxX1: this.viewX/pxSize+viewPxOffsetX1,
-			pxX2: this.viewX/pxSize+viewPxOffsetX2,
-			pxY1: this.viewY/pxSize+viewPxOffsetY1,
-			pxY2: this.viewY/pxSize+viewPxOffsetY2,
+			pxX1: this.viewX/pxSize+viewCenterPxOffsetX1,
+			pxX2: this.viewX/pxSize+viewCenterPxOffsetX2,
+			pxY1: this.viewY/pxSize+viewCenterPxOffsetY1,
+			pxY2: this.viewY/pxSize+viewCenterPxOffsetY2,
 			z: this.viewZ
 		}
 		return renderView
 	}
-	private getPositionFromRenderViewPxPosition(renderView: RenderView, pxX: number, pxY: number): [x: number, y: number] {
-		const pxSize=calculatePxSize(renderView.z)
-		const x=(renderView.pxX1+pxX)*pxSize
-		const y=(renderView.pxY1+pxY)*pxSize
-		return [x,clamp(0,y,1)]
-	}
+	// private getPositionFromRenderViewPxPosition(renderView: RenderView, pxX: number, pxY: number): [x: number, y: number] {
+	// 	const pxSize=calculatePxSize(renderView.z)
+	// 	const x=(renderView.pxX1+pxX)*pxSize
+	// 	const y=(renderView.pxY1+pxY)*pxSize
+	// 	return [x,clamp(0,y,1)]
+	// }
+}
+
+function getViewCenterPxOffset(viewPxSize: number, viewCornerPxOffset: number): number {
+	return viewCornerPxOffset-viewPxSize/2-(viewPxSize&1)*.5
 }
