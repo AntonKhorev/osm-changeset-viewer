@@ -1,3 +1,5 @@
+import type {Animation} from './animation'
+import {makeFlingAnimation} from './animation'
 import type {RenderView} from './layer'
 import ItemLayer from './item-layer'
 import installDragListeners from './drag'
@@ -6,22 +8,6 @@ import type {ItemMapViewInfo} from '../grid'
 import {makeDiv} from "../util/html"
 
 const maxZoom=19
-
-type Animation = {
-	type: 'stopped'
-} | {
-	type: 'zooming'
-	startTime: number
-	startX: number
-	startY: number
-	startZ: number
-	finishTime: number
-	finishX: number
-	finishY: number
-	finishZ: number
-	transformOriginPxX: number
-	transformOriginPxY: number
-}
 
 export default class MapView {
 	$mapView=makeDiv('map')()
@@ -54,8 +40,22 @@ export default class MapView {
 						2**(this.animation.finishZ-this.animation.startZ)*finishWeight
 					)
 				}
+			} else if (this.animation.type=='panning') {
+				const pxSize=calculatePxSize(this.viewZ)
+				const pxX=this.animation.xAxis.getPosition(time)
+				const pxY=this.animation.yAxis.getPosition(time)
+				this.viewX=pxX*pxSize
+				this.viewY=pxY*pxSize
+				if (this.animation.xAxis.isEnded(time) && this.animation.yAxis.isEnded(time)) {
+					this.animation={type:'stopped'}
+				} else {
+					const pxX0=this.animation.xAxis.startPosition
+					const pxY0=this.animation.yAxis.startPosition
+					this.itemLayer.$layer.style.translate=`${pxX0-pxX}px ${pxY0-pxY}px`
+				}
 			}
 			if (this.animation.type=='stopped') {
+				// TODO fix view position to integer coords
 				this.itemLayer.$layer.removeAttribute('style')
 				const renderView=this.makeRenderView()
 				if (!renderView) {
@@ -108,6 +108,15 @@ export default class MapView {
 			const pxSize=calculatePxSize(this.viewZ)
 			this.viewX=pxX*pxSize
 			this.viewY=clamp(0,pxY*pxSize,1)
+			this.scheduleFrame()
+		},(speedPxX:number,speedPxY:number)=>{
+			if (this.animation.type!='stopped') return
+			const pxSize=calculatePxSize(this.viewZ)
+			this.animation=makeFlingAnimation(
+				performance.now(),
+				this.viewX/pxSize,this.viewY/pxSize,
+				speedPxX,speedPxY
+			)
 			this.scheduleFrame()
 		})
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())

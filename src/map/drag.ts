@@ -16,7 +16,8 @@ type Grab = {
 export default function installDragListeners(
 	$mapView: HTMLElement,
 	start: ()=>[startPxX:number,startPxY:number]|null,
-	pan: (pxX:number,pxY:number)=>void
+	pan: (pxX:number,pxY:number)=>void,
+	fling: (speedPxX:number,speedPxY:number)=>void
 ): void {
 	let grab: Grab | undefined
 	$mapView.style.touchAction='none'
@@ -41,7 +42,7 @@ export default function installDragListeners(
 	}
 	$mapView.onpointerup=$mapView.onpointercancel=ev=>{
 		if (!grab || grab.pointerId!=ev.pointerId) return
-		console.log('> fling speed',grab.currentSpeedPxX,grab.currentSpeedPxY) ///
+		fling(grab.currentSpeedPxX,grab.currentSpeedPxY)
 		grab=undefined
 		$mapView.classList.remove('grabbed')
 	}
