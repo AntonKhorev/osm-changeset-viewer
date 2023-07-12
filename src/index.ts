@@ -138,6 +138,7 @@ async function main() {
 			$aside.hidden=true
 			$root.style.gridTemplateColumns='1fr 0fr'
 		}
+		return !$aside.hidden
 	})
 }
 

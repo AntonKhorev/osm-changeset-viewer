@@ -16,7 +16,7 @@ export default function writeFooter(
 	server?: Server,
 	grid?: Grid,
 	more?: More,
-	toggleMap?: ()=>void
+	toggleMap?: ()=>boolean
 ): void {
 	const $panelButtons:HTMLButtonElement[]=[]	
 	const addPanel=([$panel,$button]:[HTMLElement,HTMLButtonElement])=>{
@@ -113,7 +113,10 @@ export default function writeFooter(
 	}
 	if (toggleMap) {
 		const $button=makeElement('button')()(`Map`)
-		$button.onclick=toggleMap
+		$button.setAttribute('aria-expanded','false')
+		$button.onclick=()=>{
+			$button.setAttribute('aria-expanded',String(toggleMap()))
+		}
 		$toolbar.append($button)
 	}
 }
