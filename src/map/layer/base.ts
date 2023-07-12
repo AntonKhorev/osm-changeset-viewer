@@ -1,4 +1,4 @@
-import {makeDiv} from '../util/html'
+import {makeDiv} from '../../util/html'
 
 export type RenderView = {
 	pxX1: number

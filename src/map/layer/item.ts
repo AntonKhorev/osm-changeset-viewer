@@ -1,8 +1,8 @@
-import type {RenderView} from './layer'
-import Layer from './layer'
-import {calculatePxSize, calculateX, calculateY} from './geo'
-import type {ItemMapViewInfo} from '../grid'
-import {getHueFromUid} from '../colorizer'
+import type {RenderView} from './base'
+import Layer from './base'
+import {calculatePxSize, calculateX, calculateY} from '../geo'
+import type {ItemMapViewInfo} from '../../grid'
+import {getHueFromUid} from '../../colorizer'
 
 export default class ItemLayer extends Layer {
 	private items=new Map<string,ItemMapViewInfo>()

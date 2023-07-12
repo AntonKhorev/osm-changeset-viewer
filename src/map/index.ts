@@ -1,7 +1,7 @@
 import type {Animation} from './animation'
 import {makeFlingAnimation} from './animation'
 import type {RenderView} from './layer'
-import ItemLayer from './item-layer'
+import {ItemLayer} from './layer'
 import installDragListeners from './drag'
 import {calculatePxSize, clamp} from './geo'
 import type {ItemMapViewInfo} from '../grid'
