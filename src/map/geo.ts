@@ -15,6 +15,6 @@ export function calculateY(lat: number): number {
 	return (1-Math.log(Math.tan(validLatRadians) + 1/Math.cos(validLatRadians))/Math.PI)/2
 }
 
-function clamp(v1: number, v: number, v2: number): number {
+export function clamp(v1: number, v: number, v2: number): number {
 	return Math.min(Math.max(v1,v),v2)
 }

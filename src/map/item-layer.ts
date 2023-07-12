@@ -1,15 +1,17 @@
+import type {RenderView} from './layer'
+import Layer from './layer'
 import {calculatePxSize, calculateX, calculateY} from './geo'
 import type {ItemMapViewInfo} from '../grid'
 import {getHueFromUid} from '../colorizer'
 
-export default class ItemsLayer {
+export default class ItemLayer extends Layer {
 	private items=new Map<string,ItemMapViewInfo>()
 	private subcells=new Map<number,[number,number]>
 	private nSubcellsX=2
 	private nSubcellsY=1
 	private iSubcellX=1
 	private iSubcellY=1
-	reset(): void {
+	removeAllItems(): void {
 		this.items.clear()
 		this.subcells.clear()
 		this.nSubcellsX=2
@@ -45,24 +47,19 @@ export default class ItemsLayer {
 			}
 		}
 	}
-	render(
-		viewPxX1: number,
-		viewPxX2: number,
-		viewPxY1: number,
-		viewPxY2: number,
-		viewZoom: number
-	): Element|undefined {
-		const pxSize=calculatePxSize(viewZoom)
-		const repeatX1=Math.floor(viewPxX1*pxSize)
-		const repeatX2=Math.floor(viewPxX2*pxSize)
+	render(view: RenderView): void {
+		this.$layer.replaceChildren()
+		const pxSize=calculatePxSize(view.z)
+		const repeatX1=Math.floor(view.pxX1*pxSize)
+		const repeatX2=Math.floor(view.pxX2*pxSize)
 		if (this.items.size<=0 || this.subcells.size<=0) return
 		const subcellPxSize=2
 		const cellPxSizeX=this.nSubcellsX*subcellPxSize
 		const cellPxSizeY=this.nSubcellsY*subcellPxSize
-		const viewCellX1=Math.floor(viewPxX1/cellPxSizeX)
-		const viewCellX2=Math.ceil(viewPxX2/cellPxSizeX)
-		const viewCellY1=Math.floor(viewPxY1/cellPxSizeY)
-		const viewCellY2=Math.ceil(viewPxY2/cellPxSizeY)
+		const viewCellX1=Math.floor(view.pxX1/cellPxSizeX)
+		const viewCellX2=Math.ceil(view.pxX2/cellPxSizeX)
+		const viewCellY1=Math.floor(view.pxY1/cellPxSizeY)
+		const viewCellY2=Math.ceil(view.pxY2/cellPxSizeY)
 		const nCellsX=viewCellX2-viewCellX1+1
 		const nCellsY=viewCellY2-viewCellY1+1
 		if (nCellsX<=0 || nCellsY<=0) return
@@ -96,11 +93,14 @@ export default class ItemsLayer {
 				}
 			}
 		}
-		const $svg=makeSvgElement('svg',{width:String(viewPxX2-viewPxX1),height:String(viewPxY2-viewPxY1)})
+		const $svg=makeSvgElement('svg',{
+			width: String(view.pxX2-view.pxX1),
+			height: String(view.pxY2-view.pxY1)
+		})
 		for (let icy=0;icy<nCellsY;icy++) {
 			for (let icx=0;icx<nCellsX;icx++) {
-				const cellPxX=(icx+viewCellX1)*cellPxSizeX-viewPxX1
-				const cellPxY=(icy+viewCellY1)*cellPxSizeY-viewPxY1
+				const cellPxX=(icx+viewCellX1)*cellPxSizeX-view.pxX1
+				const cellPxY=(icy+viewCellY1)*cellPxSizeY-view.pxY1
 				for (const [uid,[scx,scy]] of this.subcells) {
 					const userCells=cells.get(uid)
 					if (!userCells) continue
@@ -117,7 +117,7 @@ export default class ItemsLayer {
 				}
 			}
 		}
-		return $svg
+		this.$layer.append($svg)
 	}
 }
 
