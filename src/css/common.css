@@ -74,11 +74,11 @@ body > .symbols {
 .ui aside > .map  * {
 	pointer-events: none;
 }
-.ui aside > .map > * {
+.ui aside > .map > *,
+.ui aside > .map > * > * {
 	position: absolute;
 }
 .ui aside > .map > * > img {
-	position: absolute;
 	filter: contrast(.5);
 }
 

@@ -1,6 +1,6 @@
 import type {RenderView} from './base'
 import Layer from './base'
-import {calculatePxSize, calculateX, calculateY} from '../geo'
+import {calculatePxSize, calculateX, calculateY, clamp} from '../geo'
 import type {ItemMapViewInfo} from '../../grid'
 import {getHueFromUid} from '../../colorizer'
 import {makeElement} from '../../util/html'
@@ -9,6 +9,9 @@ const TOP=1
 const RIGHT=2
 const BOTTOM=4
 const LEFT=8
+
+const bboxPxThreshold=16
+const bboxPxThickness=2
 
 export default class ItemLayer extends Layer {
 	private items=new Map<string,ItemMapViewInfo>()
@@ -19,6 +22,7 @@ export default class ItemLayer extends Layer {
 	private iSubcellX=1
 	private iSubcellY=1
 	private $canvas=makeElement('canvas')()()
+	private $svg=makeSvgElement('svg')
 	private ctx=this.$canvas.getContext('2d')
 	constructor() {
 		super()
@@ -72,6 +76,7 @@ export default class ItemLayer extends Layer {
 	clear(): void {
 		if (!this.ctx) return
 		this.ctx.clearRect(0,0,this.$canvas.width,this.$canvas.height)
+		this.$svg.replaceChildren()
 	}
 	render(view: RenderView): void {
 		if (!this.ctx) return
@@ -113,25 +118,46 @@ export default class ItemLayer extends Layer {
 				minLon=maxLon=item.lon
 			}
 			for (let repeatX=repeatX1;repeatX<=repeatX2;repeatX++) {
-				const cx1=Math.floor((calculateX(minLon)+repeatX)/(cellPxSizeX*pxSize))
-				const cx2=Math.floor((calculateX(maxLon)+repeatX)/(cellPxSizeX*pxSize))
-				const cy1=Math.floor(calculateY(maxLat)/(cellPxSizeY*pxSize))
-				const cy2=Math.floor(calculateY(minLat)/(cellPxSizeY*pxSize))
-				const weightPerCell=item.weight/((cx2-cx1+1)*(cy2-cy1+1))
-				for (let cy=Math.max(cy1,viewCellY1);cy<=Math.min(cy2,viewCellY2);cy++) {
-					for (let cx=Math.max(cx1,viewCellX1);cx<=Math.min(cx2,viewCellX2);cx++) {
-						const idx=(cx-viewCellX1)+(cy-viewCellY1)*nCellsX
-						const value=userCells[idx]+=weightPerCell
-						if (maxValue<value) maxValue=value
-						if (highlighted) {
-							if (cy==cy1) cellBorders[idx]|=TOP
-							if (cy==cy2) cellBorders[idx]|=BOTTOM
-							if (cx==cx1) cellBorders[idx]|=LEFT
-							if (cx==cx2) cellBorders[idx]|=RIGHT
+				const itemPxX1=(calculateX(minLon)+repeatX)/pxSize
+				const itemPxX2=(calculateX(maxLon)+repeatX)/pxSize
+				const itemPxY1=calculateY(maxLat)/pxSize
+				const itemPxY2=calculateY(minLat)/pxSize
+				if (itemPxX2-itemPxX1>bboxPxThreshold && itemPxY2-itemPxY1>bboxPxThreshold) {
+					this.renderBbox(view,item.uid,
+						Math.round(itemPxX1),Math.round(itemPxX2),
+						Math.round(itemPxY1),Math.round(itemPxY2)
+					)
+				} else {
+					const itemCellX1=Math.floor(itemPxX1/cellPxSizeX)
+					const itemCellX2=Math.floor(itemPxX2/cellPxSizeX)
+					const itemCellY1=Math.floor(itemPxY1/cellPxSizeY)
+					const itemCellY2=Math.floor(itemPxY2/cellPxSizeY)
+					const weightPerCell=item.weight/((itemCellX2-itemCellX1+1)*(itemCellY2-itemCellY1+1))
+					for (let cy=Math.max(itemCellY1,viewCellY1);cy<=Math.min(itemCellY2,viewCellY2);cy++) {
+						for (let cx=Math.max(itemCellX1,viewCellX1);cx<=Math.min(itemCellX2,viewCellX2);cx++) {
+							const idx=(cx-viewCellX1)+(cy-viewCellY1)*nCellsX
+							const value=userCells[idx]+=weightPerCell
+							if (maxValue<value) maxValue=value
+							if (highlighted) {
+								if (cy==itemCellY1) cellBorders[idx]|=TOP
+								if (cy==itemCellY2) cellBorders[idx]|=BOTTOM
+								if (cx==itemCellX1) cellBorders[idx]|=LEFT
+								if (cx==itemCellX2) cellBorders[idx]|=RIGHT
+							}
 						}
 					}
 				}
 			}
+		}
+		if (this.$svg.hasChildNodes()) {
+			this.$layer.append(this.$svg)
+			setSvgAttributes(this.$svg,{
+				width: String(view.pxX2-view.pxX1),
+				height: String(view.pxY2-view.pxY1)
+			})
+		} else {
+			this.$svg.remove()
+			removeSvgAttributes(this.$svg,['width','height'])
 		}
 		for (let icy=0;icy<nCellsY;icy++) {
 			for (let icx=0;icx<nCellsX;icx++) {
@@ -195,6 +221,77 @@ export default class ItemLayer extends Layer {
 				if (borders) this.ctx.stroke()
 			}
 		}
+	}
+	private renderBbox(
+		view: RenderView, uid: number,
+		itemPxX1: number, itemPxX2: number,
+		itemPxY1: number, itemPxY2: number
+	): void {
+		const edgePxX1=view.pxX1-bboxPxThickness
+		const edgePxY1=view.pxY1-bboxPxThickness
+		const edgePxX2=view.pxX2-1+bboxPxThickness
+		const edgePxY2=view.pxY2-1+bboxPxThickness
+		const bboxPxX1=clamp(edgePxX1,itemPxX1,edgePxX2)
+		const bboxPxX2=clamp(edgePxX1,itemPxX2,edgePxX2)
+		const bboxPxY1=clamp(edgePxY1,itemPxY1,edgePxY2)
+		const bboxPxY2=clamp(edgePxY1,itemPxY2,edgePxY2)
+		const stroke=getCellFillStyle(1,0.7,uid) // TODO use weight
+		if (itemPxX1>=view.pxX1-bboxPxThickness && itemPxX1<view.pxX2 && bboxPxY1<bboxPxY2) {
+			this.$svg.append(makeSvgElement('line',{
+				x1: String(itemPxX1+bboxPxThickness/2-view.pxX1),
+				x2: String(itemPxX1+bboxPxThickness/2-view.pxX1),
+				y1: String(bboxPxY1-view.pxY1),
+				y2: String(bboxPxY2-view.pxY1),
+				stroke,
+				'stroke-width': String(bboxPxThickness),
+			}))
+		}
+		if (itemPxX2>=view.pxX1 && itemPxX2<view.pxX2+bboxPxThickness && bboxPxY1<bboxPxY2) {
+			this.$svg.append(makeSvgElement('line',{
+				x1: String(itemPxX2-bboxPxThickness/2-view.pxX1),
+				x2: String(itemPxX2-bboxPxThickness/2-view.pxX1),
+				y1: String(bboxPxY1-view.pxY1),
+				y2: String(bboxPxY2-view.pxY1),
+				stroke,
+				'stroke-width': String(bboxPxThickness)
+			}))
+		}
+		if (itemPxY1>=view.pxY1-bboxPxThickness && itemPxY1<view.pxY2 && bboxPxX1<bboxPxX2) {
+			this.$svg.append(makeSvgElement('line',{
+				y1: String(itemPxY1+bboxPxThickness/2-view.pxY1),
+				y2: String(itemPxY1+bboxPxThickness/2-view.pxY1),
+				x1: String(bboxPxX1-view.pxX1),
+				x2: String(bboxPxX2-view.pxX1),
+				stroke,
+				'stroke-width': String(bboxPxThickness),
+			}))
+		}
+		if (itemPxY2>=view.pxY1 && itemPxY2<view.pxY2+bboxPxThickness && bboxPxX1<bboxPxX2) {
+			this.$svg.append(makeSvgElement('line',{
+				y1: String(itemPxY2-bboxPxThickness/2-view.pxY1),
+				y2: String(itemPxY2-bboxPxThickness/2-view.pxY1),
+				x1: String(bboxPxX1-view.pxX1),
+				x2: String(bboxPxX2-view.pxX1),
+				stroke,
+				'stroke-width': String(bboxPxThickness)
+			}))
+		}
+	}
+}
+
+function makeSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, attrs: {[name:string]:string}={}): SVGElementTagNameMap[K] {
+	const $e=document.createElementNS("http://www.w3.org/2000/svg",tag)
+	setSvgAttributes($e,attrs)
+	return $e
+}
+function setSvgAttributes($e: SVGElement, attrs: {[name:string]:string}): void {
+	for (const name in attrs) {
+		$e.setAttributeNS(null,name,attrs[name])
+	}
+}
+function removeSvgAttributes($e: SVGElement, attrs: Iterable<string>): void {
+	for (const name of attrs) {
+		$e.removeAttributeNS(null,name)
 	}
 }
 
