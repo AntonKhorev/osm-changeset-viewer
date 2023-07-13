@@ -123,7 +123,7 @@ export default class ItemLayer extends Layer {
 				const itemPxY1=calculateY(maxLat)/pxSize
 				const itemPxY2=calculateY(minLat)/pxSize
 				if (itemPxX2-itemPxX1>bboxPxThreshold && itemPxY2-itemPxY1>bboxPxThreshold) {
-					this.renderBbox(view,item.uid,
+					this.renderBbox(view,item.uid,highlighted,
 						Math.round(itemPxX1),Math.round(itemPxX2),
 						Math.round(itemPxY1),Math.round(itemPxY2)
 					)
@@ -223,7 +223,7 @@ export default class ItemLayer extends Layer {
 		}
 	}
 	private renderBbox(
-		view: RenderView, uid: number,
+		view: RenderView, uid: number, highlighted: boolean,
 		itemPxX1: number, itemPxX2: number,
 		itemPxY1: number, itemPxY2: number
 	): void {
@@ -236,46 +236,40 @@ export default class ItemLayer extends Layer {
 		const bboxPxY1=clamp(edgePxY1,itemPxY1,edgePxY2)
 		const bboxPxY2=clamp(edgePxY1,itemPxY2,edgePxY2)
 		const stroke=getCellFillStyle(1,0.7,uid) // TODO use weight
-		if (itemPxX1>=view.pxX1-bboxPxThickness && itemPxX1<view.pxX2 && bboxPxY1<bboxPxY2) {
+		const drawLineX=(linePxX: number)=>{
+			if (!(
+				linePxX>=view.pxX1-bboxPxThickness/2 &&
+				linePxX<view.pxX2+bboxPxThickness/2 &&
+				bboxPxY1<bboxPxY2)
+			) return
 			this.$svg.append(makeSvgElement('line',{
-				x1: String(itemPxX1+bboxPxThickness/2-view.pxX1),
-				x2: String(itemPxX1+bboxPxThickness/2-view.pxX1),
+				x1: String(linePxX-view.pxX1),
+				x2: String(linePxX-view.pxX1),
 				y1: String(bboxPxY1-view.pxY1),
 				y2: String(bboxPxY2-view.pxY1),
 				stroke,
 				'stroke-width': String(bboxPxThickness),
 			}))
 		}
-		if (itemPxX2>=view.pxX1 && itemPxX2<view.pxX2+bboxPxThickness && bboxPxY1<bboxPxY2) {
+		const drawLineY=(linePxY: number)=>{
+			if (!(
+				linePxY>=view.pxY1-bboxPxThickness/2 &&
+				linePxY<view.pxY2+bboxPxThickness/2 &&
+				bboxPxX1<bboxPxX2
+			)) return
 			this.$svg.append(makeSvgElement('line',{
-				x1: String(itemPxX2-bboxPxThickness/2-view.pxX1),
-				x2: String(itemPxX2-bboxPxThickness/2-view.pxX1),
-				y1: String(bboxPxY1-view.pxY1),
-				y2: String(bboxPxY2-view.pxY1),
-				stroke,
-				'stroke-width': String(bboxPxThickness)
-			}))
-		}
-		if (itemPxY1>=view.pxY1-bboxPxThickness && itemPxY1<view.pxY2 && bboxPxX1<bboxPxX2) {
-			this.$svg.append(makeSvgElement('line',{
-				y1: String(itemPxY1+bboxPxThickness/2-view.pxY1),
-				y2: String(itemPxY1+bboxPxThickness/2-view.pxY1),
+				y1: String(linePxY-view.pxY1),
+				y2: String(linePxY-view.pxY1),
 				x1: String(bboxPxX1-view.pxX1),
 				x2: String(bboxPxX2-view.pxX1),
 				stroke,
 				'stroke-width': String(bboxPxThickness),
 			}))
 		}
-		if (itemPxY2>=view.pxY1 && itemPxY2<view.pxY2+bboxPxThickness && bboxPxX1<bboxPxX2) {
-			this.$svg.append(makeSvgElement('line',{
-				y1: String(itemPxY2-bboxPxThickness/2-view.pxY1),
-				y2: String(itemPxY2-bboxPxThickness/2-view.pxY1),
-				x1: String(bboxPxX1-view.pxX1),
-				x2: String(bboxPxX2-view.pxX1),
-				stroke,
-				'stroke-width': String(bboxPxThickness)
-			}))
-		}
+		drawLineX(itemPxX1+bboxPxThickness/2)
+		drawLineX(itemPxX2-bboxPxThickness/2)
+		drawLineY(itemPxY1+bboxPxThickness/2)
+		drawLineY(itemPxY2-bboxPxThickness/2)
 	}
 }
 
