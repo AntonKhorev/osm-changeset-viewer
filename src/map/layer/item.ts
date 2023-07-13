@@ -92,8 +92,8 @@ export default class ItemLayer extends Layer {
 		const nCellsX=viewCellX2-viewCellX1+1
 		const nCellsY=viewCellY2-viewCellY1+1
 		if (nCellsX<=0 || nCellsY<=0) return
-		const cells=new Map<number,Uint16Array>(
-			[...this.subcells.keys()].map(uid=>[uid,new Uint16Array(nCellsX*nCellsY)])
+		const cells=new Map<number,Float32Array>(
+			[...this.subcells.keys()].map(uid=>[uid,new Float32Array(nCellsX*nCellsY)])
 		)
 		const cellBorders=new Uint8Array(nCellsX*nCellsY)
 		let maxValue=0
@@ -117,10 +117,11 @@ export default class ItemLayer extends Layer {
 				const cx2=Math.floor((calculateX(maxLon)+repeatX)/(cellPxSizeX*pxSize))
 				const cy1=Math.floor(calculateY(maxLat)/(cellPxSizeY*pxSize))
 				const cy2=Math.floor(calculateY(minLat)/(cellPxSizeY*pxSize))
+				const weightPerCell=item.weight/((cx2-cx1+1)*(cy2-cy1+1))
 				for (let cy=Math.max(cy1,viewCellY1);cy<=Math.min(cy2,viewCellY2);cy++) {
 					for (let cx=Math.max(cx1,viewCellX1);cx<=Math.min(cx2,viewCellX2);cx++) {
 						const idx=(cx-viewCellX1)+(cy-viewCellY1)*nCellsX
-						const value=userCells[idx]+=1
+						const value=userCells[idx]+=weightPerCell
 						if (maxValue<value) maxValue=value
 						if (highlighted) {
 							if (cy==cy1) cellBorders[idx]|=TOP

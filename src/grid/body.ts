@@ -25,6 +25,7 @@ import {makeElement, makeDiv} from '../util/html'
 export type ItemMapViewInfo = {
 	id: number
 	uid: number
+	weight: number
 } & (
 	{
 		type: 'note'
@@ -177,11 +178,15 @@ export default class GridBody {
 			const uid=batchItem.item.uid
 			if (batchItem.type=='changeset' && batchItem.item.bbox) {
 				this.addItemToMapViewReceiver(
-					{type:'changeset',id,uid,...batchItem.item.bbox}
+					{type:'changeset',id,uid,
+						weight: batchItem.item.changes.count,
+						...batchItem.item.bbox
+					}
 				)
 			} else if (batchItem.type=='note') {
 				this.addItemToMapViewReceiver(
 					{type:'note',id,uid,
+						weight: 5,
 						lat: batchItem.item.lat,
 						lon: batchItem.item.lon
 					}
