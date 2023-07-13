@@ -71,6 +71,9 @@ body > .symbols {
 .ui aside > .map.grabbed {
 	cursor: grabbing;
 }
+.ui aside > .map  * {
+	pointer-events: none;
+}
 .ui aside > .map > * {
 	position: absolute;
 }
