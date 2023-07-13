@@ -144,6 +144,14 @@ export default class MapView {
 		this.itemLayer.addItem(item)
 		this.scheduleFrame()
 	}
+	highlightItem(type: string, id: number): void {
+		this.itemLayer.highlightItem(type,id)
+		this.scheduleFrame()
+	}
+	unhighlightItem(type: string, id: number): void {
+		this.itemLayer.unhighlightItem(type,id)
+		this.scheduleFrame()
+	}
 	private scheduleFrame(): void {
 		if (this.requestId!=null) return
 		this.requestId=requestAnimationFrame(this.animateFrame)

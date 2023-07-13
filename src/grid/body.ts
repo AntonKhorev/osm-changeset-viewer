@@ -58,8 +58,8 @@ export default class GridBody {
 		private resetMapViewReceiver: ()=>void,
 		private addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void,
 		intersectItemsOnMapViewReceiver: (items: Iterable<ItemMapViewInfo>)=>void,
-		highlightItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void,
-		unhighlightItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void,
+		private highlightItemOnMapViewReceiver: (type:string,id:number)=>void,
+		private unhighlightItemOnMapViewReceiver: (type:string,id:number)=>void,
 		pingItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void
 	) {
 		this.$gridBody.addEventListener('click',ev=>{
@@ -742,11 +742,13 @@ export default class GridBody {
 			$item.classList.remove('highlighted-by-hover-indirectly')
 			$item.classList.add('highlighted-by-hover')
 		}
+		this.highlightItemOnMapViewReceiver(descriptor.type,descriptor.id)
 	}
 	private unhighlightHoveredItemDescriptor(descriptor: ItemDescriptor): void {
 		for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
 			$item.classList.remove('highlighted-by-hover','highlighted-by-hover-indirectly')
 		}
+		this.unhighlightItemOnMapViewReceiver(descriptor.type,descriptor.id)
 	}
 	private highlightClickedItem($item: HTMLElement): void {
 		requestAnimationFrame(()=>{

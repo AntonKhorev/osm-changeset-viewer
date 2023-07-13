@@ -30,8 +30,8 @@ export default class Grid {
 		resetMapViewReceiver: ()=>void,
 		addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void,
 		intersectItemsOnMapViewReceiver: (items: Iterable<ItemMapViewInfo>)=>void,
-		highlightItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void,
-		unhighlightItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void,
+		highlightItemOnMapViewReceiver: (type:string,id:number)=>void,
+		unhighlightItemOnMapViewReceiver: (type:string,id:number)=>void,
 		pingItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void
 	) {
 		this.body=new GridBody(

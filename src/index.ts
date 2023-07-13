@@ -94,11 +94,11 @@ async function main() {
 		(items)=>{
 			console.log('intersectItemsOnMapViewReceiver',items)
 		},
-		(item)=>{
-			console.log('highlightItemOnMapViewReceiver',item)
+		(type,id)=>{
+			mapView.highlightItem(type,id)
 		},
-		(item)=>{
-			console.log('unhighlightItemOnMapViewReceiver',item)
+		(type,id)=>{
+			mapView.unhighlightItem(type,id)
 		},
 		(item)=>{
 			console.log('pingItemOnMapViewReceiver',item)

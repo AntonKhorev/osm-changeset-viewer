@@ -5,8 +5,14 @@ import type {ItemMapViewInfo} from '../../grid'
 import {getHueFromUid} from '../../colorizer'
 import {makeElement} from '../../util/html'
 
+const TOP=1
+const RIGHT=2
+const BOTTOM=4
+const LEFT=8
+
 export default class ItemLayer extends Layer {
 	private items=new Map<string,ItemMapViewInfo>()
+	private highlightedItems=new Set<string>()
 	private subcells=new Map<number,[number,number]>
 	private nSubcellsX=2
 	private nSubcellsY=1
@@ -20,6 +26,7 @@ export default class ItemLayer extends Layer {
 	}
 	removeAllItems(): void {
 		this.items.clear()
+		this.highlightedItems.clear()
 		this.subcells.clear()
 		this.nSubcellsX=2
 		this.nSubcellsY=1
@@ -54,6 +61,14 @@ export default class ItemLayer extends Layer {
 			}
 		}
 	}
+	highlightItem(type: string, id: number): void {
+		const key=type+':'+id
+		this.highlightedItems.add(key)
+	}
+	unhighlightItem(type: string, id: number): void {
+		const key=type+':'+id
+		this.highlightedItems.delete(key)
+	}
 	clear(): void {
 		if (!this.ctx) return
 		this.ctx.clearRect(0,0,this.$canvas.width,this.$canvas.height)
@@ -80,8 +95,11 @@ export default class ItemLayer extends Layer {
 		const cells=new Map<number,Uint16Array>(
 			[...this.subcells.keys()].map(uid=>[uid,new Uint16Array(nCellsX*nCellsY)])
 		)
+		const cellBorders=new Uint8Array(nCellsX*nCellsY)
 		let maxValue=0
 		for (const item of this.items.values()) {
+			const key=item.type+':'+item.id
+			const highlighted=this.highlightedItems.has(key)
 			const userCells=cells.get(item.uid)
 			if (!userCells) continue
 			let minLat: number
@@ -101,8 +119,15 @@ export default class ItemLayer extends Layer {
 				const cy2=Math.floor(calculateY(minLat)/(cellPxSizeY*pxSize))
 				for (let cy=Math.max(cy1,viewCellY1);cy<=Math.min(cy2,viewCellY2);cy++) {
 					for (let cx=Math.max(cx1,viewCellX1);cx<=Math.min(cx2,viewCellX2);cx++) {
-						const value=userCells[(cx-viewCellX1)+(cy-viewCellY1)*nCellsX]+=1
+						const idx=(cx-viewCellX1)+(cy-viewCellY1)*nCellsX
+						const value=userCells[idx]+=1
 						if (maxValue<value) maxValue=value
+						if (highlighted) {
+							if (cy==cy1) cellBorders[idx]|=TOP
+							if (cy==cy2) cellBorders[idx]|=BOTTOM
+							if (cx==cx1) cellBorders[idx]|=LEFT
+							if (cx==cx2) cellBorders[idx]|=RIGHT
+						}
 					}
 				}
 			}
@@ -141,6 +166,32 @@ export default class ItemLayer extends Layer {
 					this.ctx.clearRect(subcellPxX,subcellPxY,subcellPxSize,subcellPxSize)
 					this.ctx.fillRect(subcellPxX,subcellPxY,subcellPxSize,subcellPxSize)
 				}
+			}
+		}
+		this.ctx.strokeStyle='blue'
+		for (let icy=0;icy<nCellsY;icy++) {
+			for (let icx=0;icx<nCellsX;icx++) {
+				const cellPxX=(icx+viewCellX1)*cellPxSizeX-view.pxX1
+				const cellPxY=(icy+viewCellY1)*cellPxSizeY-view.pxY1
+				const borders=cellBorders[icx+icy*nCellsX]
+				if (borders) this.ctx.beginPath()
+				if (borders&TOP) {
+					this.ctx.moveTo(cellPxX,cellPxY+.5)
+					this.ctx.lineTo(cellPxX+cellPxSizeX,cellPxY+.5)
+				}
+				if (borders&BOTTOM) {
+					this.ctx.moveTo(cellPxX,cellPxY+cellPxSizeY-.5)
+					this.ctx.lineTo(cellPxX+cellPxSizeX,cellPxY+cellPxSizeY-.5)
+				}
+				if (borders&LEFT) {
+					this.ctx.moveTo(cellPxX+.5,cellPxY)
+					this.ctx.lineTo(cellPxX+.5,cellPxY+cellPxSizeY)
+				}
+				if (borders&RIGHT) {
+					this.ctx.moveTo(cellPxX+cellPxSizeX-.5,cellPxY)
+					this.ctx.lineTo(cellPxX+cellPxSizeX-.5,cellPxY+cellPxSizeY)
+				}
+				if (borders) this.ctx.stroke()
 			}
 		}
 	}
