@@ -1,0 +1,966 @@
+/*** css/common.css ***/
+:root {
+	--light-text-color: #444;
+	--frame-color: #AAA;
+	--light-frame-lightness: 87%;
+	--icon-frame-lightness: 40%;
+	--hover-color: #DEF;
+	--click-color: #FC8;
+	--notice-background-color: #FFB;
+	--badge-background-color: #EFEFEF;
+
+	--frame-line: solid 1px var(--frame-color);
+	--spacer: .5rem;
+	--major-button-padding: .3rem;
+	--icon-size: 1.25rem;
+	--disclosure-size: 13px;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--light-text-color: #CCC;
+		--frame-color: #666;
+		--light-frame-lightness: 27%;
+		--icon-frame-lightness: 60%;
+		--hover-color: #246;
+		--click-color: #A84;
+		--notice-background-color: #662;
+		--badge-background-color: #2A292F;
+	}
+}
+
+body {
+	padding: 0;
+	margin: 0;
+}
+body > .symbols {
+	display: none;
+}
+.ui {
+	position: fixed;
+	height: 100%;
+	width: 100%;
+	display: grid;
+	grid-template-columns: 1fr 0fr;
+	grid-template-areas:
+		"main aside"
+		"footer footer";
+}
+
+.ui main {
+	grid-area: main;
+	overflow-y: auto;
+}
+.ui main > :where(h1, h2, p, [class$="-input-group"]) {
+	padding-inline: var(--spacer);
+}
+.ui main > .notice {
+	padding: var(--spacer);
+	background: var(--notice-background-color);
+}
+
+.ui aside {
+	grid-area: aside;
+	position: relative;
+}
+.ui aside > .map {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	background: #888;
+	cursor: grab;
+}
+.ui aside > .map.grabbed {
+	cursor: grabbing;
+}
+.ui aside > .map  * {
+	pointer-events: none;
+}
+.ui aside > .map > *,
+.ui aside > .map > * > * {
+	position: absolute;
+}
+.ui aside > .map > * > img {
+	filter: contrast(.5);
+}
+
+.ui [class$="-input-group"] {
+	margin: var(--spacer) 0;
+}
+.ui .major-input-group :is(input[type=text], textarea, button):not([hidden]) {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	margin: .2em 0;
+}
+.ui .major-input-group button {
+	padding: var(--major-button-padding);
+}
+
+.ui .more {
+	position: sticky;
+	left: 0;
+	padding: var(--spacer);
+}
+.ui .more button {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	padding: var(--major-button-padding);
+}
+
+.ui.with-time time[title] {
+	text-decoration: underline dotted 1px;
+}
+.ui:not(.with-time) time[title] .date {
+	text-decoration: underline dotted 1px;
+}
+.ui:not(.with-time) time[title] :is(.gap,.time) {
+	display: none;
+}
+
+.ui button.with-icon,
+.ui dialog button.close {
+	box-sizing: border-box;
+	border: none;
+	padding: 0;
+	background: none;
+	overflow: hidden;
+	border-radius: 50%;
+	cursor: pointer;
+}
+.ui button.with-icon:hover,
+.ui dialog button.close:hover {
+	background: var(--hover-color);
+}
+.ui button.with-icon > svg,
+.ui dialog button.close > svg {
+	width: 100%;
+	height: 100%;
+}
+
+.ui button.disclosure {
+	box-sizing: border-box;
+	width: var(--disclosure-size);
+	height: var(--disclosure-size);
+	line-height: calc(var(--disclosure-size) - 2px);
+	padding: 0;
+	border: var(--frame-line);
+	background: canvas;
+}
+.ui button.disclosure:hover {
+	background: var(--hover-color);
+}
+.ui button.disclosure[aria-expanded="true"] .vertical-stroke {
+	visibility: hidden;
+}
+
+.ui dialog {
+	padding: 1rem;
+}
+.ui dialog button.close {
+	float: right;
+	width: 2rem;
+	height: 2rem;
+	margin: -2px;
+}
+.ui dialog > button.close:first-child + section > h2:first-child {
+	margin-top: 0;
+}
+
+/*** css/grid.css ***/
+.ui .grid {
+	--all-width: calc(var(--icon-size) + 2 * var(--spacer));
+	--column-min-width: 25ch;
+	--tab-height: calc(1rem + 2 * var(--spacer));
+	--accent-saturation: 50%;
+	table-layout: fixed;
+	border-collapse: collapse;
+	width: 100%;
+	min-width: calc(var(--all-width) + var(--column-min-width) * var(--columns) + var(--all-width));
+}
+@media (prefers-color-scheme: dark) {
+	.ui .grid {
+		--accent-saturation: 70%;
+	}
+}
+.ui .grid :is(td,th) {
+	padding: 0;
+	vertical-align: top;
+}
+.ui .grid :is(td,th,
+	.item>.icon,
+	.item>.balloon,
+	.item>.balloon>.flow>.badge>.content>.comment-ref,
+	.item>.balloon>.flow>.badge>.content>.marker
+) {
+	--temp-accent-color: hsl(var(--hue) var(--accent-saturation) 50%);
+	--accent-color: var(--temp-accent-color,var(--light-text-color));
+}
+.ui .grid col.all {
+	width: var(--all-width);
+}
+.ui .grid .icon {
+	position: relative;
+	display: inline-block;
+	width: var(--icon-size);
+	height: var(--icon-size);
+	color: var(--accent-color);
+}
+.ui .grid .icon > * {
+	position: absolute;
+	inset: 0;
+	margin: auto;
+	max-width: 100%;
+	max-height: 100%;
+}
+.ui .grid thead .column-label {
+	display: block;
+	overflow: hidden;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: calc(var(--icon-size) + 2 * var(--spacer));
+	right: calc(1rem + 2 * var(--spacer));
+	text-align: left;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.ui .grid .api {
+	color: var(--light-text-color);
+	font-size: .8em;
+}
+.ui .grid tbody {
+	isolation: isolate;
+}
+.ui .grid tbody * {
+	scroll-margin-top: var(--tab-height);
+}
+
+.ui .grid thead {
+	--base-z-index: 0;
+}
+.ui .grid thead th {
+	--base-z-index: 1;
+	position: sticky;
+	top: 0;
+	z-index: var(--base-z-index);
+}
+.ui .grid thead td {
+	position: relative;
+	z-index: var(--base-z-index);
+}
+.ui .grid thead th .tab {
+	position: relative;
+	height: var(--tab-height);
+	border-left: var(--frame-line);
+	border-right: var(--frame-line);
+	border-top: var(--frame-line);
+	border-top-left-radius: var(--spacer);
+	border-top-right-radius: var(--spacer);
+	margin-right: -1px;
+	cursor: grab;
+	background: canvas;
+	box-shadow: 0 4px 4px -4px #AAA;
+}
+.ui .grid thead th.all .tab {
+	border-color: transparent;
+	cursor: unset;
+}
+.ui .grid thead th.all:last-child .tab {
+	margin-right: 0px;
+	margin-left: 1px;
+}
+.ui .grid thead th .tab > * {
+	position: absolute;
+}
+.ui .grid thead th .tab .icon,
+.ui .grid thead th.all .tab .icon {
+	position: absolute;
+	top: calc(var(--spacer) - 1px);
+	left: calc(var(--spacer) - 1px);
+}
+.ui .grid thead th.all .tab button {
+	width: var(--icon-size);
+	height: var(--icon-size);
+	padding: 0;
+}
+.ui .grid thead th .tab .icon {
+	background: var(--accent-color);
+}
+.ui .grid thead th .tab .icon > * {
+	background: canvas;
+	color: var(--accent-color);
+}
+.ui .grid thead th .tab .column-label {
+	line-height: 2;
+}
+.ui .grid thead th .tab button {
+	top: var(--spacer);
+	right: calc(var(--spacer) - 1px);
+	width: 1rem;
+	height: 1rem;
+}
+.ui .grid thead td .card {
+	padding: var(--spacer);
+	margin-right: -1px;
+	background: canvas;
+}
+.ui .grid thead td .card .avatar {
+	float: right;
+	width: 20%;
+	min-width: 2rem;
+	max-width: 100px;
+	margin-left: var(--spacer);
+	margin-bottom: var(--spacer);
+	border: var(--frame-line);
+}
+.ui .grid thead td .card .avatar img {
+	display: block;
+	width: 100%;
+	max-height: 100px;
+	max-width: 100px;
+}
+.ui .grid thead td .card .field:nth-last-child(2n) {
+	background: #8881;
+}
+.ui .grid thead td .card .updates ul {
+	margin: 0;
+	padding: 0 0 0 1em;
+}
+.ui .grid thead td .card .updates button {
+	vertical-align: bottom;
+	height: 1rem;
+	width: 1rem;
+}
+.ui .grid thead td .card form > [class$="-input-group"]:first-child {
+	margin-top: 0;
+}
+.ui .grid thead td .card form > [class$="-input-group"]:last-child {
+	margin-bottom: 0;
+}
+.ui .grid thead td .card::before,
+.ui .grid thead td .card::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	height: 100%;
+	width: 1px;
+	background: linear-gradient(var(--frame-color), canvas);
+}
+.ui .grid thead td .card::before {
+	left: 0;
+}
+.ui .grid thead td .card::after {
+	right: -1px;
+}
+.ui .grid thead tr.selectors td {
+	--base-z-index: 2;
+	position: sticky;
+	top: var(--spacer);
+	pointer-events: none;
+}
+.ui .grid thead tr.selectors td .selector {
+	height: var(--icon-size);
+}
+.ui .grid thead tr.selectors td .selector .icon {
+	position: absolute;
+	left: var(--spacer);
+	background: var(--accent-color);
+	pointer-events: all;
+}
+.ui .grid thead tr.selectors td .selector .icon input {
+	width: 14px;
+	height: 14px;
+}
+.ui .grid thead tr.selectors td .selector output:not(:empty) {
+	background: canvas;
+}
+
+.ui .grid thead :is(th,td).settling,
+.ui .grid thead.with-grabbed-tab :is(th,td).grabbed {
+	z-index: calc(var(--base-z-index) + 10);
+}
+.ui .grid thead :is(th,td).settling {
+	transition: translate 50ms;
+}
+.ui .grid thead.with-grabbed-tab :is(th,td):not(.grabbed) {
+	transition: translate 100ms;
+}
+.ui .grid thead.with-grabbed-tab th:not(.grabbed) .tab > *,
+.ui .grid thead.with-grabbed-tab td:not(.grabbed) .card > * { /* keep selector opaque */
+	opacity: .5;
+}
+.ui .grid thead.with-grabbed-tab th.grabbed .tab,
+.ui .grid thead.with-grabbed-tab td.grabbed :is(.card,.selector) {
+	cursor: grabbing;
+	user-select: none;
+}
+
+/*** stretched column ***/
+.ui .grid.without-total-column :is(thead,tbody) tr > :first-child {
+	display: none;
+}
+.ui .grid tbody tr td[colspan] > * {
+	position: sticky;
+	left: 0;
+	width: var(--main-width);
+}
+.ui .grid tbody tr td:first-child > * > button.stretch {
+	position: absolute;
+	box-sizing: border-box;
+	width: var(--icon-size);
+	top: 2px;
+	bottom: 2px;
+	right: var(--spacer);
+	padding: 0;
+	border: var(--frame-line);
+	background: transparent;
+}
+.ui .grid tbody tr td:first-child > * > button.stretch:hover {
+	background: var(--hover-color);
+}
+
+/*** separator ***/
+.ui .grid tbody tr.separator td > * {
+	height: 1rem;
+	padding: var(--spacer) 0;
+	text-align: center;
+}
+.ui .grid tbody tr.separator td > * time {
+	background: canvas;
+	padding: 0 .5em;
+	color: var(--light-text-color);
+}
+.ui .grid tbody tr.separator td > *::before {
+	content: '';
+	position: absolute;
+	z-index: -1;
+	left: 0;
+	top: 50%;
+	height: 1px;
+	width: 100%;
+	background: linear-gradient(to right, transparent, var(--frame-color) 50%, transparent);
+}
+
+/*** timeline ***/
+.ui .grid tbody tr:is(.single,.collection) td {
+	--icon-vertical-margin: 2px;
+	--timeline-width: 2px;
+	--timeline-above-height: calc(var(--icon-vertical-margin) + .5 * var(--icon-size));
+	--timeline-previous-row-covering-height: 0px;
+	--item-spacer: 4px;
+	position: relative;
+}
+.ui .grid tbody tr.single td > * {
+	padding-left: calc(var(--spacer) + var(--icon-size));
+}
+.ui .grid tbody tr.collection td > * {
+	padding-left: calc(var(--spacer) + var(--icon-size) + var(--item-spacer));
+}
+.ui .grid tbody tr:is(.single,.collection) td[colspan] > * {
+	padding-right: calc(var(--item-spacer) + var(--icon-size) + var(--item-spacer));
+	box-sizing: border-box;
+}
+.ui .grid tbody tr:is(.single,.collection) td.with-timeline-above::before,
+.ui .grid tbody tr:is(.single,.collection) td.with-timeline-below::after {
+	content: '';
+	display: block;
+	position: absolute;
+	width: var(--timeline-width);
+	left: calc(var(--spacer) + .5 * var(--icon-size) - .5 * var(--timeline-width));
+	background: var(--accent-color);
+	z-index: -1;
+}
+.ui .grid tbody tr:is(.single,.collection) td.with-timeline-above::before {
+	top: calc(0px - var(--timeline-previous-row-covering-height));
+	height: calc(var(--timeline-above-height) + var(--timeline-previous-row-covering-height));
+}
+.ui .grid tbody tr:is(.single,.collection) td.with-timeline-below::after {
+	top: var(--timeline-above-height);
+	height: calc(100% - var(--timeline-above-height));
+}
+.ui .grid tbody tr.separator + tr:is(.single,.collection) td.with-timeline-above::before {
+	--timeline-previous-row-covering-height: calc(1rem + 2 * var(--spacer));
+}
+
+/*** item rows ***/
+.ui .grid tbody tr.collection {
+	line-height: 24px;
+}
+.ui .grid tbody tr.single td > * > .item > .icon:first-child,
+.ui .grid tbody tr.collection td > * > .icon:first-child {
+	position: absolute;
+	left: var(--spacer);
+	top: var(--icon-vertical-margin);
+	color: var(--accent-color);
+}
+
+/*** item parts outside balloon ***/
+.ui .grid tbody .item .icon > button {
+	width: 100%;
+	height: 100%;
+	background: transparent;
+	color: var(--accent-color);
+	border: none;
+	padding: 0;
+}
+.ui .grid tbody tr.single .item .icon > button:hover,
+.ui .grid tbody .item .icon > button:hover {
+	background: var(--hover-color);
+}
+.ui .grid tbody .item.changeset.closed .icon > button:not(:hover) {
+	background: canvas;
+}
+.ui .grid tbody .item .icon > button > * {
+	position: absolute;
+	inset: 0;
+	margin: auto;
+}
+.ui .grid tbody .item .icon > svg.tip {
+	pointer-events: none;
+}
+.ui .grid tbody tr.collection .item {
+	white-space: nowrap;
+}
+.ui .grid tbody tr.collection .item .icon {
+	vertical-align: -5px;
+}
+.ui .grid tbody .item.changeset .icon[data-size="0"] { --checkbox-size: 12px }
+.ui .grid tbody .item.changeset .icon[data-size="1"] { --checkbox-size: 14px }
+.ui .grid tbody .item.changeset .icon[data-size="2"] { --checkbox-size: 16px }
+.ui .grid tbody .item.changeset .icon[data-size="3"] { --checkbox-size: 18px }
+.ui .grid tbody .item.changeset .icon[data-size="4"] { --checkbox-size: 20px }
+.ui .grid tbody .item.changeset .icon > * {
+	width: var(--checkbox-size);
+	height: var(--checkbox-size);
+}
+.ui .grid tbody tr.collection .item.changeset.closed .icon > button > svg {
+	rotate: -90deg;
+}
+.ui .grid tbody .item.changeset .icon::before {
+	content: '';
+	display: block;
+	position: absolute;
+	background: var(--accent-color);
+	--backdrop-size: calc(var(--checkbox-size) + 4px);
+	height: var(--backdrop-size);
+	width: var(--backdrop-size);
+	top: calc(.5 * var(--icon-size) - .5 * var(--backdrop-size));
+	left: calc(.5 * var(--icon-size) - .5 * var(--backdrop-size));
+}
+.ui .grid tbody tr.single .item.changeset:not(.combined) .icon::before {
+	height: calc(.5 * var(--backdrop-size));
+}
+.ui .grid tbody tr.single .item.changeset:not(.closed):not(.combined) .icon::before {
+	top: 50%;
+}
+.ui .grid tbody tr.collection .item.changeset:not(.combined) .icon::before {
+	width: calc(.5 * var(--backdrop-size));
+}
+.ui .grid tbody tr.collection .item.changeset:not(.closed):not(.combined) .icon::before {
+	left: 50%;
+}
+.ui .grid tbody .item .icon > .tip {
+	--tip-overlap: -1px;
+	margin-inline: unset;
+	left: unset;
+	right: var(--tip-overlap);
+	z-index: 1;
+}
+.ui .grid tbody .item.mute .icon > .tip {
+	--tip-overlap: -4px;
+}
+.ui .grid tbody .item .icon.sender {
+	width: 16px;
+}
+.ui .grid tbody .item .icon.sender > .tip {
+	right: unset;
+	left: var(--tip-overlap);
+}
+.ui .grid tbody tr.collection .item.comment.passive .icon:first-child {
+	width: 12px;
+}
+.ui .grid tbody tr.collection .item.comment.passive .icon:first-child > button {
+	height: 12px;
+}
+.ui .grid tbody .item.comment.for-note .icon:first-child > button {
+	border-radius: 50%;
+}
+.ui .grid tbody tr.single .item.comment.incoming .icon.sender {
+	display: none;
+}
+
+/*** item balloon ***/
+.ui .grid tbody .item > :is(.balloon,.icon) {
+	--balloon-frame-color: hsl(var(--hue) 50% var(--light-frame-lightness));
+	--balloon-frame-line: solid 1px var(--balloon-frame-color);
+}
+.ui .grid tbody .item .balloon {
+	--balloon-min-height: 24px;
+	position: relative;
+	border: solid 1px transparent;
+	padding-block: 3px;
+}
+.ui .grid tbody tr.collection .item .balloon {
+	padding-inline: var(--item-spacer);
+	padding-bottom: 4px;
+}
+.ui .grid tbody tr.collection .item.comment.incoming .balloon {
+	margin-left: calc(-.5 * var(--spacer));
+}
+.ui .grid tbody tr.single .item .balloon {
+	box-sizing: border-box;
+	margin-block: -1px;
+}
+.ui .grid tbody tr.single .item .balloon {
+	display: block;
+}
+.ui .grid tbody tr.single .item td:not([colspan]) .balloon {
+	margin-right: -1px;
+}
+.ui .grid tbody .item.comment .balloon {
+	--balloon-border-radius: var(--spacer);
+	border: var(--balloon-frame-line);
+	border-radius: var(--balloon-border-radius);
+	background: canvas;
+}
+.ui .grid tbody .item.comment.mute .balloon {
+	--balloon-border-radius: calc(2 * var(--spacer));
+}
+.ui .grid tbody .item.highlighted-by-hover .balloon {
+	background: var(--hover-color);
+}
+.ui .grid tbody .item.highlighted-by-hover-indirectly .balloon {
+	background: color-mix(in srgb, var(--hover-color), canvas);
+}
+.ui .grid tbody .item.highlighted-by-click .balloon {
+	background: var(--click-color);
+}
+.ui .grid tbody .item.highlighted-by-click-and-fading .balloon {
+	transition: background 5s linear;
+}
+.ui .grid tbody .item.highlighted-by-hover .icon svg.tip .balloon-part {
+	fill: var(--hover-color);
+}
+.ui .grid tbody .item.highlighted-by-hover-indirectly .icon svg.tip .balloon-part {
+	fill: color-mix(in srgb, var(--hover-color), canvas);
+}
+.ui .grid tbody .item.highlighted-by-click .icon svg.tip .balloon-part {
+	fill: var(--click-color);
+}
+.ui .grid tbody .item.highlighted-by-click-and-fading .icon svg.tip .balloon-part {
+	transition: fill 5s linear;
+}
+.ui .grid tbody .item.changeset.highlighted-by-hover .icon,
+.ui .grid tbody .item.changeset.highlighted-by-click .icon {
+	z-index: 1; /* fix for oversized icons clashing with item highlight */
+}
+
+/*** item disclosure button ***/
+.ui .grid tbody tr.single .item .balloon button.disclosure {
+	position: absolute;
+	top: calc(.5 * var(--balloon-min-height) - .5 * var(--disclosure-size));
+	left: var(--item-spacer);
+}
+.ui .grid tbody tr.collection .item .balloon button.disclosure {
+	vertical-align: -1px; /* has odd height and is right before underlined text, therefore looks better shifted down */
+}
+
+/*** item inner balloon flow with sender cutout ***/
+.ui .grid tbody .item .balloon .flow {
+	white-space: normal;
+}
+.ui .grid tbody .item .balloon .flow > * {
+	text-indent: initial;
+}
+.ui .grid tbody tr.single .item .balloon .flow {
+	min-height: 18px;
+	margin: 0 -1px;
+	padding-inline: calc(var(--item-spacer) + 1px); /* TODO 1 px is for cutout (?), won't need it after tip rewrite */
+	text-indent: calc(var(--disclosure-size) + var(--item-spacer));
+	display: inline-block;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	-webkit-line-clamp: 5;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+}
+.ui .grid tbody tr.single .item .balloon .flow .from {
+	--from-border-radius: .25rem;
+	--from-tip-height: calc(1rem - 2 * var(--from-border-radius));
+	--from-tip-width: .5rem;
+	display: flex;
+	position: relative;
+	float: right;
+	max-width: calc(100% - var(--disclosure-size) - 2 * var(--item-spacer));
+	padding-right: var(--from-border-radius);
+	margin-left: 1ch;
+	border: var(--balloon-frame-line);
+	background: canvas;
+}
+.ui .grid tbody tr.single .item:not(.mute) .balloon .flow .from {
+	margin-right: calc(0px - var(--item-spacer) - 1px);
+	border-right: none;
+	border-bottom-left-radius: var(--from-border-radius);
+	border-top-left-radius: var(--from-border-radius);
+}
+.ui .grid tbody tr.single .item.mute .balloon .flow .from {
+	border-radius: var(--spacer);
+}
+.ui .grid tbody tr.single .item .balloon .flow .from .icon.sender {
+	display: inline-block;
+	height: 16px;
+	flex-shrink: 0;
+}
+.ui .grid tbody tr.single .item .balloon .flow .from a {
+	display: block;
+	max-width: 100%;
+	font-size: .9em;
+	line-height: 1rem;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+/*** item inner balloon flow elements ***/
+.ui .grid tbody .item .balloon .flow .badge {
+	--passive-color: color-mix(in srgb, var(--frame-color), transparent);
+	font-family: sans-serif;
+	font-size: .8em;
+	color: var(--light-text-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .content {
+	padding: 2px 2px 0px 2px;
+	background: var(--badge-background-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .content:first-child {
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+}
+.ui .grid tbody .item .balloon .flow .badge .content:last-child {
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+}
+.ui .grid tbody .item .balloon .flow .badge .content.empty,
+.ui .grid tbody .item .balloon .flow .badge .content .delimiter {
+	color: var(--passive-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .content .marker {
+	color: var(--accent-color);
+	display: inline-block;
+	translate: 0px -2px;
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow {
+	position: relative;
+	width: 10px;
+	height: 17px;
+	vertical-align: text-bottom;
+	border: none;
+	padding: 0;
+	background: transparent;
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: var(--badge-background-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow:hover::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: var(--frame-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow:first-child:hover::before {
+	translate: -1px;
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow:last-child:hover::before {
+	translate: 1px;
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-left:first-child::before,
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-left:first-child::after {
+	clip-path: polygon(11px 0px, 10px 0px, 8px 1px, 0px 9px, 8px 16px, 10px 17px, 11px 17px);
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-right:last-child::before,
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-right:last-child::after {
+	clip-path: polygon(-1px 0px, 0px 0px, 2px 1px, 10px 9px, 2px 16px, 0px 17px, -1px 17px);
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-left:last-child::after,
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-left:last-child::before {
+	clip-path: polygon(-1px 0px, 10px 0px, 2px 8px, 2px 10px, 10px 17px, -1px 17px);
+}
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-right:first-child::after,
+.ui .grid tbody .item .balloon .flow .badge .arrow.to-right:first-child::before {
+	clip-path: polygon(11px 0px, 0px 0px, 8px 8px, 8px 10px, 0px 17px, 11px 17px);
+}
+.ui .grid tbody .item .balloon .flow .badge .content .comment-ref {
+	width: 15px;
+	height: 13px;
+	border: 0;
+	padding: 0;
+	translate: 0px 1px;
+	white-space: nowrap; /* FIXME still wraps if it's a button */
+	background: transparent;
+	--icon-frame-color: hsl(var(--hue) 50% var(--icon-frame-lightness));
+	color: var(--accent-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .content.empty .comment-ref {
+	color: inherit;
+	--icon-frame-color: var(--passive-color);
+}
+.ui .grid tbody .item .balloon .flow .badge .content:not(.empty) button.comment-ref .balloon-ref {
+	fill: canvas;
+}
+.ui .grid tbody .item .balloon .flow .badge .content button:not([disabled]).comment-ref:hover .balloon-ref {
+	fill: var(--hover-color);
+}
+.ui .grid tbody .item .balloon .flow .editor {
+	color: unset;
+}
+.ui .grid tbody .item .balloon .flow a.editor:not([hidden]) {
+	display: inline-block;
+	vertical-align: -3px;
+	height: 16px;
+	width: 16px;
+}
+
+/*** css/footer.css ***/
+.ui footer {
+	grid-area: footer;
+	box-shadow: 0 0px 6px #AAA;
+}
+.ui footer > .panel {
+	--resizer-thickness: .5rem;
+	position: relative;
+	box-sizing: border-box;
+	padding-top: var(--resizer-thickness);
+}
+.ui footer > .panel > button.resizer {
+	position: absolute;
+	box-sizing: border-box;
+	width: 100%;
+	height: var(--resizer-thickness);
+	top: 0;
+	left: 0;
+	border: none;
+	border-top: var(--frame-line);
+	background: canvas;
+	background-image: radial-gradient(var(--frame-color) 25%, #0000 0%);
+	background-size: .5rem .5rem;
+	background-position: center;
+	cursor: row-resize;
+	touch-action: none;
+}
+.ui footer > .panel > button.resizer:hover {
+	background-color: var(--hover-color);
+}
+.ui footer > .panel > section {
+	box-sizing: border-box;
+	height: 100%;
+	padding: 0 var(--spacer) var(--spacer);
+	overflow-y: auto;
+}
+
+.ui footer > .log {
+	height: 6rem;
+}
+.ui footer > .log > section > :first-child {
+	margin-top: 0;
+}
+.ui footer > .log > section > :last-child {
+	margin-bottom: 0;
+}
+.ui footer > .log > section h2 {
+	display: inline-block;
+	margin: 0;
+}
+.ui footer > .log > section .controls {
+	display: inline-block;
+	margin-left: var(--spacer);
+	vertical-align: text-bottom;
+}
+.ui footer > .log > section ul {
+	font-family: monospace;
+	padding-left: 1rem;
+}
+
+.ui footer > .tools > section > * {
+	display: inline-block;
+}
+.ui footer > .tools > section h2 {
+	margin: 0;
+	padding-right: var(--spacer);
+}
+.ui footer > .tools > section .input-group {
+	padding: 0 var(--spacer);
+}
+.ui footer > .tools > section > fieldset {
+	position: relative;
+	margin: 0 var(--spacer) 0 calc(var(--spacer) + 10px);
+	border: solid 1px var(--frame-color);
+	border-width: 1px 2px;
+	padding: .25rem;
+	vertical-align: top;
+}
+.ui footer > .tools > section table {
+	border-collapse: collapse;
+}
+.ui footer > .tools > section table tbody tr:first-child :is(th,td) {
+	border-top: var(--frame-line);
+}
+.ui footer > .tools > section table tbody th:first-child {
+	text-align: right;
+	font-weight: normal;
+}
+
+.ui footer > .list > section h2 {
+	margin: 0;
+}
+.ui footer > .list > section > .io {
+	display: flex;
+	flex-direction: column;
+	gap: .5rem;
+}
+@media (min-width: 50em) {
+	.ui footer > .list > section > .io {
+		flex-direction: row;
+	}
+}
+.ui footer > .list > section > .io > * {
+	width: 100%;
+}
+
+.ui footer > .toolbar {
+	border-top: var(--frame-line);
+	padding: var(--spacer);
+	height: 3rem;
+	display: flex;
+	gap: var(--spacer);
+	align-items: center;
+}
+.ui footer > .toolbar > .message {
+	flex-grow: 1;
+}
+.ui footer > .toolbar > button {
+	position: relative;
+	align-self: stretch;
+	box-sizing: border-box;
+}
+.ui footer > .toolbar > button[aria-expanded=true]::before,
+.ui footer > .toolbar > button[aria-expanded=true]::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+}
+.ui footer > .toolbar > button[aria-expanded=true]::before {
+	background: #0001;
+	box-shadow: 0 0 2px 1px #0006;
+	height: unset;
+}
+.ui footer > .toolbar > button[aria-expanded=true]::after {
+	top: unset;
+	height: 1px;
+	background: #FFF8;
+	box-shadow: 0 0 2px 1px #FFF8;
+}
+
