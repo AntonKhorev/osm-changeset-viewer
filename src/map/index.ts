@@ -63,7 +63,7 @@ export default class MapView {
 				}
 			}
 			if (this.animation.type=='stopped') {
-				// TODO fix view position to integer coords
+				this.roundViewPosition(tileProvider.maxZoom)
 				for (const layer of this.layers) {
 					layer.$layer.removeAttribute('style')
 				}
@@ -167,6 +167,12 @@ export default class MapView {
 			z: this.viewZ
 		}
 		return renderView
+	}
+	private roundViewPosition(maxZoom: number): void {
+		this.viewZ=Math.round(clamp(0,this.viewZ,maxZoom))
+		const pxSize=calculatePxSize(this.viewZ)
+		this.viewX=Math.round(this.viewX/pxSize)*pxSize
+		this.viewY=Math.round(this.viewY/pxSize)*pxSize
 	}
 }
 
