@@ -12,6 +12,8 @@ const LEFT=8
 
 const bboxPxThreshold=16
 const bboxPxThickness=2
+const highlightStroke='blue'
+const highlightBoxThickness=1
 
 export default class ItemLayer extends Layer {
 	private items=new Map<string,ItemMapViewInfo>()
@@ -195,7 +197,7 @@ export default class ItemLayer extends Layer {
 				}
 			}
 		}
-		this.ctx.strokeStyle='blue'
+		this.ctx.strokeStyle=highlightStroke
 		for (let icy=0;icy<nCellsY;icy++) {
 			for (let icx=0;icx<nCellsX;icx++) {
 				const cellPxX=(icx+viewCellX1)*cellPxSizeX-view.pxX1
@@ -268,6 +270,12 @@ export default class ItemLayer extends Layer {
 		drawLineX(itemPxX2-bboxPxThickness/2,mainStroke,bboxPxThickness)
 		drawLineY(itemPxY1+bboxPxThickness/2,mainStroke,bboxPxThickness)
 		drawLineY(itemPxY2-bboxPxThickness/2,mainStroke,bboxPxThickness)
+		if (highlighted) {
+			drawLineX(itemPxX1+highlightBoxThickness/2,highlightStroke,highlightBoxThickness)
+			drawLineX(itemPxX2-highlightBoxThickness/2,highlightStroke,highlightBoxThickness)
+			drawLineY(itemPxY1+highlightBoxThickness/2,highlightStroke,highlightBoxThickness)
+			drawLineY(itemPxY2-highlightBoxThickness/2,highlightStroke,highlightBoxThickness)
+		}
 	}
 }
 
