@@ -158,5 +158,5 @@ function getCellFill(uid: number): string {
 	return `hsl(${getHueFromUid(uid)} 80% 50%)`
 }
 function getCellOpacity(maxV: number, v: number): string {
-	return String(.5+.5*v/maxV)
+	return String(.5+.4*v/maxV)
 }
