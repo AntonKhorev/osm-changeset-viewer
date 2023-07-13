@@ -135,12 +135,11 @@ export default class ItemLayer extends Layer {
 					if (!userCells) continue
 					const value=userCells[icx+icy*nCellsX]
 					if (value<=0) continue
-					this.ctx.fillStyle=getCellFillStyle(maxValue,cellMaxValue,cellMaxValueUid)
-					this.ctx.fillRect(
-						cellPxX+scx*subcellPxSize+subcellPxSize/2,
-						cellPxY+scy*subcellPxSize+subcellPxSize/2,
-						subcellPxSize,subcellPxSize
-					)
+					const subcellPxX=cellPxX+scx*subcellPxSize+subcellPxSize/2
+					const subcellPxY=cellPxY+scy*subcellPxSize+subcellPxSize/2
+					this.ctx.fillStyle=getCellFillStyle(maxValue,value,uid)
+					this.ctx.clearRect(subcellPxX,subcellPxY,subcellPxSize,subcellPxSize)
+					this.ctx.fillRect(subcellPxX,subcellPxY,subcellPxSize,subcellPxSize)
 				}
 			}
 		}
