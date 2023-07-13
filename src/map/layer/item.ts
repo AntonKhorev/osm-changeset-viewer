@@ -24,7 +24,8 @@ export default class ItemLayer extends Layer {
 	private iSubcellX=1
 	private iSubcellY=1
 	private $canvas=makeElement('canvas')()()
-	private $svg=makeSvgElement('svg')
+	private $bboxSvg=makeSvgElement('svg')
+	private $highlightBboxSvg=makeSvgElement('svg')
 	private ctx=this.$canvas.getContext('2d')
 	constructor() {
 		super()
@@ -78,7 +79,8 @@ export default class ItemLayer extends Layer {
 	clear(): void {
 		if (!this.ctx) return
 		this.ctx.clearRect(0,0,this.$canvas.width,this.$canvas.height)
-		this.$svg.replaceChildren()
+		this.$bboxSvg.replaceChildren()
+		this.$highlightBboxSvg.replaceChildren()
 	}
 	render(view: RenderView): void {
 		if (!this.ctx) return
@@ -125,7 +127,15 @@ export default class ItemLayer extends Layer {
 				const itemPxY1=calculateY(maxLat)/pxSize
 				const itemPxY2=calculateY(minLat)/pxSize
 				if (itemPxX2-itemPxX1>bboxPxThreshold && itemPxY2-itemPxY1>bboxPxThreshold) {
-					this.renderBbox(view,item.uid,highlighted,
+					this.renderBbox(
+						view,this.$bboxSvg,
+						getCellFillStyle(1,0.7,item.uid),bboxPxThickness, // TODO use weight in stroke
+						Math.round(itemPxX1),Math.round(itemPxX2),
+						Math.round(itemPxY1),Math.round(itemPxY2)
+					)
+					if (highlighted) this.renderBbox(
+						view,this.$highlightBboxSvg,
+						highlightStroke,highlightBoxThickness,
 						Math.round(itemPxX1),Math.round(itemPxX2),
 						Math.round(itemPxY1),Math.round(itemPxY2)
 					)
@@ -151,16 +161,8 @@ export default class ItemLayer extends Layer {
 				}
 			}
 		}
-		if (this.$svg.hasChildNodes()) {
-			this.$layer.append(this.$svg)
-			setSvgAttributes(this.$svg,{
-				width: String(view.pxX2-view.pxX1),
-				height: String(view.pxY2-view.pxY1)
-			})
-		} else {
-			this.$svg.remove()
-			removeSvgAttributes(this.$svg,['width','height'])
-		}
+		this.addOrRemoveSvg(view,this.$bboxSvg)
+		this.addOrRemoveSvg(view,this.$highlightBboxSvg)
 		for (let icy=0;icy<nCellsY;icy++) {
 			for (let icx=0;icx<nCellsX;icx++) {
 				const cellPxX=(icx+viewCellX1)*cellPxSizeX-view.pxX1
@@ -225,7 +227,8 @@ export default class ItemLayer extends Layer {
 		}
 	}
 	private renderBbox(
-		view: RenderView, uid: number, highlighted: boolean,
+		view: RenderView, $svg: SVGSVGElement,
+		stroke: string, strokeWidth: number,
 		itemPxX1: number, itemPxX2: number,
 		itemPxY1: number, itemPxY2: number
 	): void {
@@ -239,10 +242,9 @@ export default class ItemLayer extends Layer {
 		const bboxPxY2=clamp(edgePxY1,itemPxY2,edgePxY2)
 		const drawLineXY=(
 			x1: number, x2: number,
-			y1: number, y2: number,
-			stroke: string, strokeWidth: number
+			y1: number, y2: number
 		)=>{
-			this.$svg.append(makeSvgElement('line',{
+			$svg.append(makeSvgElement('line',{
 				x1: String(x1-view.pxX1),
 				x2: String(x2-view.pxX1),
 				y1: String(y1-view.pxY1),
@@ -251,30 +253,35 @@ export default class ItemLayer extends Layer {
 				'stroke-width': String(strokeWidth),
 			}))
 		}
-		const drawLineX=(linePxX: number, stroke: string, strokeWidth: number)=>{
+		const drawLineX=(linePxX: number)=>{
 			if (
 				linePxX>=view.pxX1-bboxPxThickness/2 &&
 				linePxX<view.pxX2+bboxPxThickness/2 &&
 				bboxPxY1<bboxPxY2
-			) drawLineXY(linePxX,linePxX,bboxPxY1,bboxPxY2,stroke,strokeWidth)
+			) drawLineXY(linePxX,linePxX,bboxPxY1,bboxPxY2)
 		}
-		const drawLineY=(linePxY: number, stroke: string, strokeWidth: number)=>{
+		const drawLineY=(linePxY: number)=>{
 			if (
 				linePxY>=view.pxY1-bboxPxThickness/2 &&
 				linePxY<view.pxY2+bboxPxThickness/2 &&
 				bboxPxX1<bboxPxX2
-			) drawLineXY(bboxPxX1,bboxPxX2,linePxY,linePxY,stroke,strokeWidth)
+			) drawLineXY(bboxPxX1,bboxPxX2,linePxY,linePxY)
 		}
-		const mainStroke=getCellFillStyle(1,0.7,uid) // TODO use weight
-		drawLineX(itemPxX1+bboxPxThickness/2,mainStroke,bboxPxThickness)
-		drawLineX(itemPxX2-bboxPxThickness/2,mainStroke,bboxPxThickness)
-		drawLineY(itemPxY1+bboxPxThickness/2,mainStroke,bboxPxThickness)
-		drawLineY(itemPxY2-bboxPxThickness/2,mainStroke,bboxPxThickness)
-		if (highlighted) {
-			drawLineX(itemPxX1+highlightBoxThickness/2,highlightStroke,highlightBoxThickness)
-			drawLineX(itemPxX2-highlightBoxThickness/2,highlightStroke,highlightBoxThickness)
-			drawLineY(itemPxY1+highlightBoxThickness/2,highlightStroke,highlightBoxThickness)
-			drawLineY(itemPxY2-highlightBoxThickness/2,highlightStroke,highlightBoxThickness)
+		drawLineX(itemPxX1+strokeWidth/2)
+		drawLineX(itemPxX2-strokeWidth/2)
+		drawLineY(itemPxY1+strokeWidth/2)
+		drawLineY(itemPxY2-strokeWidth/2)
+	}
+	private addOrRemoveSvg(view: RenderView, $svg: SVGSVGElement): void {
+		if ($svg.hasChildNodes()) {
+			this.$layer.append($svg)
+			setSvgAttributes($svg,{
+				width: String(view.pxX2-view.pxX1),
+				height: String(view.pxY2-view.pxY1)
+			})
+		} else {
+			$svg.remove()
+			removeSvgAttributes($svg,['width','height'])
 		}
 	}
 }
