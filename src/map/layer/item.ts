@@ -83,8 +83,8 @@ export default class ItemLayer extends Layer {
 			for (let repeatX=repeatX1;repeatX<=repeatX2;repeatX++) {
 				const cx1=Math.floor((calculateX(minLon)+repeatX)/(cellPxSizeX*pxSize))
 				const cx2=Math.floor((calculateX(maxLon)+repeatX)/(cellPxSizeX*pxSize))
-				const cy1=Math.floor(calculateY(minLat)/(cellPxSizeY*pxSize))
-				const cy2=Math.floor(calculateY(maxLat)/(cellPxSizeY*pxSize))
+				const cy1=Math.floor(calculateY(maxLat)/(cellPxSizeY*pxSize))
+				const cy2=Math.floor(calculateY(minLat)/(cellPxSizeY*pxSize))
 				for (let cy=Math.max(cy1,viewCellY1);cy<=Math.min(cy2,viewCellY2);cy++) {
 					for (let cx=Math.max(cx1,viewCellX1);cx<=Math.min(cx2,viewCellX2);cx++) {
 						const v=userCells[(cx-viewCellX1)+(cy-viewCellY1)*nCellsX]+=1
