@@ -3,6 +3,7 @@ import Layer from './base'
 import {calculatePxSize, calculateX, calculateY} from '../geo'
 import type {ItemMapViewInfo} from '../../grid'
 import {getHueFromUid} from '../../colorizer'
+import {makeElement} from '../../util/html'
 
 export default class ItemLayer extends Layer {
 	private items=new Map<string,ItemMapViewInfo>()
@@ -11,6 +12,12 @@ export default class ItemLayer extends Layer {
 	private nSubcellsY=1
 	private iSubcellX=1
 	private iSubcellY=1
+	private $canvas=makeElement('canvas')()()
+	private ctx=this.$canvas.getContext('2d')
+	constructor() {
+		super()
+		this.$layer.append(this.$canvas)
+	}
 	removeAllItems(): void {
 		this.items.clear()
 		this.subcells.clear()
@@ -47,8 +54,15 @@ export default class ItemLayer extends Layer {
 			}
 		}
 	}
+	clear(): void {
+		if (!this.ctx) return
+		this.ctx.clearRect(0,0,this.$canvas.width,this.$canvas.height)
+	}
 	render(view: RenderView): void {
-		this.$layer.replaceChildren()
+		if (!this.ctx) return
+		this.$canvas.width=view.pxX2-view.pxX1
+		this.$canvas.height=view.pxY2-view.pxY1
+		this.clear()
 		const pxSize=calculatePxSize(view.z)
 		const repeatX1=Math.floor(view.pxX1*pxSize)
 		const repeatX2=Math.floor(view.pxX2*pxSize)
@@ -66,7 +80,7 @@ export default class ItemLayer extends Layer {
 		const cells=new Map<number,Uint16Array>(
 			[...this.subcells.keys()].map(uid=>[uid,new Uint16Array(nCellsX*nCellsY)])
 		)
-		let maxV=0
+		let maxValue=0
 		for (const item of this.items.values()) {
 			const userCells=cells.get(item.uid)
 			if (!userCells) continue
@@ -87,16 +101,12 @@ export default class ItemLayer extends Layer {
 				const cy2=Math.floor(calculateY(minLat)/(cellPxSizeY*pxSize))
 				for (let cy=Math.max(cy1,viewCellY1);cy<=Math.min(cy2,viewCellY2);cy++) {
 					for (let cx=Math.max(cx1,viewCellX1);cx<=Math.min(cx2,viewCellX2);cx++) {
-						const v=userCells[(cx-viewCellX1)+(cy-viewCellY1)*nCellsX]+=1
-						if (maxV<v) maxV=v
+						const value=userCells[(cx-viewCellX1)+(cy-viewCellY1)*nCellsX]+=1
+						if (maxValue<value) maxValue=value
 					}
 				}
 			}
 		}
-		const $svg=makeSvgElement('svg',{
-			width: String(view.pxX2-view.pxX1),
-			height: String(view.pxY2-view.pxY1)
-		})
 		for (let icy=0;icy<nCellsY;icy++) {
 			for (let icx=0;icx<nCellsX;icx++) {
 				const cellPxX=(icx+viewCellX1)*cellPxSizeX-view.pxX1
@@ -106,9 +116,9 @@ export default class ItemLayer extends Layer {
 				for (const [uid] of this.subcells) {
 					const userCells=cells.get(uid)
 					if (!userCells) continue
-					const v=userCells[icx+icy*nCellsX]
-					if (v>cellMaxValue) {
-						cellMaxValue=v
+					const value=userCells[icx+icy*nCellsX]
+					if (value>cellMaxValue) {
+						cellMaxValue=value
 						cellMaxValueUid=uid
 					}
 				}
@@ -116,47 +126,27 @@ export default class ItemLayer extends Layer {
 				{
 					const userCells=cells.get(cellMaxValueUid)
 					if (!userCells) continue
-					$svg.append(makeSvgElement('rect',{
-						width: String(cellPxSizeX),
-						height: String(cellPxSizeY),
-						x: String(cellPxX),
-						y: String(cellPxY),
-						fill: getCellFill(cellMaxValueUid),
-						opacity: getCellOpacity(maxV,cellMaxValue),
-					}))
+					this.ctx.fillStyle=getCellFillStyle(maxValue,cellMaxValue,cellMaxValueUid)
+					this.ctx.fillRect(cellPxX,cellPxY,cellPxSizeX,cellPxSizeY)
 				}
 				for (const [uid,[scx,scy]] of this.subcells) {
 					if (uid==cellMaxValueUid) continue
 					const userCells=cells.get(uid)
 					if (!userCells) continue
-					const v=userCells[icx+icy*nCellsX]
-					if (v<=0) continue
-					$svg.append(makeSvgElement('rect',{
-						width: String(subcellPxSize),
-						height: String(subcellPxSize),
-						x: String(cellPxX+scx*subcellPxSize+subcellPxSize/2),
-						y: String(cellPxY+scy*subcellPxSize+subcellPxSize/2),
-						fill: getCellFill(uid),
-						opacity: getCellOpacity(maxV,v),
-					}))
+					const value=userCells[icx+icy*nCellsX]
+					if (value<=0) continue
+					this.ctx.fillStyle=getCellFillStyle(maxValue,cellMaxValue,cellMaxValueUid)
+					this.ctx.fillRect(
+						cellPxX+scx*subcellPxSize+subcellPxSize/2,
+						cellPxY+scy*subcellPxSize+subcellPxSize/2,
+						subcellPxSize,subcellPxSize
+					)
 				}
 			}
 		}
-		this.$layer.append($svg)
 	}
 }
 
-function makeSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, attrs: {[name:string]:string}): SVGElementTagNameMap[K] {
-	const $e=document.createElementNS("http://www.w3.org/2000/svg",tag)
-	for (const name in attrs) {
-		$e.setAttributeNS(null,name,attrs[name])
-	}
-	return $e
-}
-
-function getCellFill(uid: number): string {
-	return `hsl(${getHueFromUid(uid)} 80% 50%)`
-}
-function getCellOpacity(maxV: number, v: number): string {
-	return String(.5+.4*v/maxV)
+function getCellFillStyle(maxV: number, v: number, uid: number): string {
+	return `hsl(${getHueFromUid(uid)} 80% 50% / ${.5+.4*v/maxV})`
 }

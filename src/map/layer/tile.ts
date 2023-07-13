@@ -10,8 +10,11 @@ export default class TileLayer extends Layer {
 	) {
 		super()
 	}
-	render(view: RenderView): void {
+	clear(): void {
 		this.$layer.replaceChildren()
+	}
+	render(view: RenderView): void {
+		this.clear()
 		const viewTileX1=Math.floor(view.pxX1/tilePxSize)
 		const viewTileX2=Math.ceil(view.pxX2/tilePxSize)
 		const viewTileY1=Math.floor(view.pxY1/tilePxSize)

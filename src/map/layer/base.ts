@@ -10,8 +10,6 @@ export type RenderView = {
 
 export default abstract class Layer {
 	$layer=makeDiv()()
-	clear(): void {
-		this.$layer.replaceChildren()
-	}
+	abstract clear(): void
 	abstract render(view: RenderView): void
 }
