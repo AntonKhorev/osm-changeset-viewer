@@ -74,6 +74,10 @@ body > .symbols {
 .ui aside > .map > * {
 	position: absolute;
 }
+.ui aside > .map > * > img {
+	position: absolute;
+	filter: contrast(.5);
+}
 
 .ui [class$="-input-group"] {
 	margin: var(--spacer) 0;

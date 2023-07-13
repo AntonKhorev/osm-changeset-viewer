@@ -1,5 +1,5 @@
 const tilePowSize=8
-const tilePxSize=2**tilePowSize
+export const tilePxSize=2**tilePowSize
 
 export function calculatePxSize(zoom: number): number {
 	return .5**(tilePowSize+zoom)

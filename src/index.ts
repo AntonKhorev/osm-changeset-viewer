@@ -78,7 +78,7 @@ async function main() {
 	}
 	const worker=new SharedWorker('worker.js')
 	const more=new More()
-	const mapView=new MapView()
+	const mapView=new MapView(cx.server.tile)
 	const grid=new Grid(cx,db,worker,more,
 		userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(

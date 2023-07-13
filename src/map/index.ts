@@ -1,25 +1,29 @@
 import type {Animation} from './animation'
 import {makeFlingAnimation} from './animation'
-import type {RenderView} from './layer'
-import {ItemLayer} from './layer'
+import type {RenderView, Layer} from './layer'
+import {ItemLayer, TileLayer} from './layer'
 import installDragListeners from './drag'
 import {calculatePxSize, clamp} from './geo'
+import {TileProvider} from '../net'
 import type {ItemMapViewInfo} from '../grid'
 import {makeDiv} from "../util/html"
-
-const maxZoom=19
 
 export default class MapView {
 	$mapView=makeDiv('map')()
 	private requestId: number|undefined
 	private readonly animateFrame:(time:number)=>void
 	private animation: Animation = {type:'stopped'}
+	private tileLayer: TileLayer
 	private itemLayer=new ItemLayer()
 	private viewX=0.5
 	private viewY=0.5
 	private viewZ=0
-	constructor() {
-		this.$mapView.append(this.itemLayer.$layer)
+	get layers(): Layer[] {
+		return [this.tileLayer,this.itemLayer]
+	}
+	constructor(tileProvider: TileProvider) {
+		this.tileLayer=new TileLayer(tileProvider)
+		this.$mapView.append(...this.layers.map(layer=>layer.$layer))
 		this.animateFrame=(time:number)=>{
 			this.requestId=undefined
 			if (this.animation.type=='zooming') {
@@ -34,11 +38,13 @@ export default class MapView {
 					this.viewX=this.animation.startX*startWeight+this.animation.finishX*finishWeight
 					this.viewY=this.animation.startY*startWeight+this.animation.finishY*finishWeight
 					this.viewZ=this.animation.startZ*startWeight+this.animation.finishZ*finishWeight
-					this.itemLayer.$layer.style.transformOrigin=`${this.animation.transformOriginPxX}px ${this.animation.transformOriginPxY}px`
-					this.itemLayer.$layer.style.scale=String(
-						1*startWeight+
-						2**(this.animation.finishZ-this.animation.startZ)*finishWeight
-					)
+					for (const layer of this.layers) {
+						layer.$layer.style.transformOrigin=`${this.animation.transformOriginPxX}px ${this.animation.transformOriginPxY}px`
+						layer.$layer.style.scale=String(
+							1*startWeight+
+							2**(this.animation.finishZ-this.animation.startZ)*finishWeight
+						)
+					}
 				}
 			} else if (this.animation.type=='panning') {
 				const pxSize=calculatePxSize(this.viewZ)
@@ -51,18 +57,26 @@ export default class MapView {
 				} else {
 					const pxX0=this.animation.xAxis.startPosition
 					const pxY0=this.animation.yAxis.startPosition
-					this.itemLayer.$layer.style.translate=`${pxX0-pxX}px ${pxY0-pxY}px`
+					for (const layer of this.layers) {
+						layer.$layer.style.translate=`${pxX0-pxX}px ${pxY0-pxY}px`
+					}
 				}
 			}
 			if (this.animation.type=='stopped') {
 				// TODO fix view position to integer coords
-				this.itemLayer.$layer.removeAttribute('style')
+				for (const layer of this.layers) {
+					layer.$layer.removeAttribute('style')
+				}
 				const renderView=this.makeRenderView()
 				if (!renderView) {
-					this.itemLayer.clear()
-					return
+					for (const layer of this.layers) {
+						layer.clear()
+					}
+				} else {
+					for (const layer of this.layers) {
+						layer.render(renderView)
+					}
 				}
-				this.itemLayer.render(renderView)
 			} else {
 				this.scheduleFrame()
 			}
@@ -74,7 +88,7 @@ export default class MapView {
 			if (viewPxSizeX<=0 || viewPxSizeY<=0) return
 			let dz=-Math.sign(ev.deltaY)
 			const startZ=this.viewZ
-			const finishZ=clamp(0,startZ+dz,maxZoom)
+			const finishZ=clamp(0,startZ+dz,tileProvider.maxZoom)
 			dz=finishZ-startZ
 			if (dz==0) return
 			const startX=this.viewX
