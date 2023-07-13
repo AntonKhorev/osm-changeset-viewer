@@ -235,41 +235,39 @@ export default class ItemLayer extends Layer {
 		const bboxPxX2=clamp(edgePxX1,itemPxX2,edgePxX2)
 		const bboxPxY1=clamp(edgePxY1,itemPxY1,edgePxY2)
 		const bboxPxY2=clamp(edgePxY1,itemPxY2,edgePxY2)
-		const stroke=getCellFillStyle(1,0.7,uid) // TODO use weight
-		const drawLineX=(linePxX: number)=>{
-			if (!(
-				linePxX>=view.pxX1-bboxPxThickness/2 &&
-				linePxX<view.pxX2+bboxPxThickness/2 &&
-				bboxPxY1<bboxPxY2)
-			) return
+		const drawLineXY=(
+			x1: number, x2: number,
+			y1: number, y2: number,
+			stroke: string, strokeWidth: number
+		)=>{
 			this.$svg.append(makeSvgElement('line',{
-				x1: String(linePxX-view.pxX1),
-				x2: String(linePxX-view.pxX1),
-				y1: String(bboxPxY1-view.pxY1),
-				y2: String(bboxPxY2-view.pxY1),
+				x1: String(x1-view.pxX1),
+				x2: String(x2-view.pxX1),
+				y1: String(y1-view.pxY1),
+				y2: String(y2-view.pxY1),
 				stroke,
-				'stroke-width': String(bboxPxThickness),
+				'stroke-width': String(strokeWidth),
 			}))
 		}
-		const drawLineY=(linePxY: number)=>{
-			if (!(
+		const drawLineX=(linePxX: number, stroke: string, strokeWidth: number)=>{
+			if (
+				linePxX>=view.pxX1-bboxPxThickness/2 &&
+				linePxX<view.pxX2+bboxPxThickness/2 &&
+				bboxPxY1<bboxPxY2
+			) drawLineXY(linePxX,linePxX,bboxPxY1,bboxPxY2,stroke,strokeWidth)
+		}
+		const drawLineY=(linePxY: number, stroke: string, strokeWidth: number)=>{
+			if (
 				linePxY>=view.pxY1-bboxPxThickness/2 &&
 				linePxY<view.pxY2+bboxPxThickness/2 &&
 				bboxPxX1<bboxPxX2
-			)) return
-			this.$svg.append(makeSvgElement('line',{
-				y1: String(linePxY-view.pxY1),
-				y2: String(linePxY-view.pxY1),
-				x1: String(bboxPxX1-view.pxX1),
-				x2: String(bboxPxX2-view.pxX1),
-				stroke,
-				'stroke-width': String(bboxPxThickness),
-			}))
+			) drawLineXY(bboxPxX1,bboxPxX2,linePxY,linePxY,stroke,strokeWidth)
 		}
-		drawLineX(itemPxX1+bboxPxThickness/2)
-		drawLineX(itemPxX2-bboxPxThickness/2)
-		drawLineY(itemPxY1+bboxPxThickness/2)
-		drawLineY(itemPxY2-bboxPxThickness/2)
+		const mainStroke=getCellFillStyle(1,0.7,uid) // TODO use weight
+		drawLineX(itemPxX1+bboxPxThickness/2,mainStroke,bboxPxThickness)
+		drawLineX(itemPxX2-bboxPxThickness/2,mainStroke,bboxPxThickness)
+		drawLineY(itemPxY1+bboxPxThickness/2,mainStroke,bboxPxThickness)
+		drawLineY(itemPxY2-bboxPxThickness/2,mainStroke,bboxPxThickness)
 	}
 }
 
