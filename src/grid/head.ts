@@ -62,6 +62,7 @@ export default class GridHead {
 			selectedChangesetIds: Set<number>[]
 		],
 		private triggerColumnCheckboxes: (iColumn: number, isChecked: boolean)=>void,
+		private changeUidHue: (uid: number)=>void,
 		// former main callbacks:
 		private sendUpdatedUserQueriesReceiver: (userQueries: ValidUserQuery[])=>void,
 		private restartStreamCallback: ()=>void,
@@ -226,7 +227,10 @@ export default class GridHead {
 			$displayedChangesetsCount,$displayedNotesCount,
 			()=>this.sendUserQueryToWorker(query),
 			(type,uid)=>this.sendRescanRequestToWorker(type,uid),
-			(uid)=>this.changeUidHue(uid)
+			(uid)=>{
+				this.changeUidHuePickerValue(uid)
+				this.changeUidHue(uid)
+			}
 		)
 		this.updateUserCard($card,info)
 		const $selector=makeUserSelector($checkbox=>{
@@ -439,14 +443,13 @@ export default class GridHead {
 		}
 		this.$tabRow.append(this.$adderCell)
 	}
-	private changeUidHue(uid: number): void {
+	private changeUidHuePickerValue(uid: number): void {
 		for (const userEntry of this.userEntries) {
 			if (userEntry.type!='query') continue
 			if (userEntry.info.status!='ready' && userEntry.info.status!='rerunning') continue
 			if (userEntry.info.user.id!=uid) continue
 			this.updateUserCard(userEntry.$card,userEntry.info)
 		}
-		// TODO update hues
 	}
 }
 

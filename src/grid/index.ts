@@ -2,6 +2,7 @@ import GridHead from './head'
 import type {ItemMapViewInfo} from './body'
 import GridBody from './body'
 import ItemOptions from './item-options'
+import {writeHueAttributes} from './info'
 import type Colorizer from '../colorizer'
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader} from '../db'
@@ -53,6 +54,13 @@ export default class Grid {
 			(iShiftFrom,iShiftTo)=>this.body.reorderColumns(iShiftFrom,iShiftTo),
 			()=>this.body.getColumnCheckboxStatuses(),
 			(iColumn,isChecked)=>this.body.triggerColumnCheckboxes(iColumn,isChecked),
+			(uid)=>{
+				for (const $e of this.$grid.querySelectorAll(`[data-hue-uid="${uid}"]`)) {
+					if (!($e instanceof HTMLElement)) continue
+					writeHueAttributes(colorizer,$e,uid)
+				}
+				// TODO update map
+			},
 			sendUpdatedUserQueriesReceiver,
 			()=>{
 				more.changeToNothingToLoad()
