@@ -1,32 +1,18 @@
+import installDragListeners from '../drag'
+
 const speedDecayRate=0.003
 
-type Grab = {
-	pointerId: number
-	startViewPxOffsetX: number
-	startViewPxOffsetY: number
-	startPxX: number
-	startPxY: number
-	currentTime: number
-	currentPxX: number
-	currentPxY: number
-	currentSpeedPxX: number
-	currentSpeedPxY: number
-}
-
-export default function installDragListeners(
+export default function installMapDragListeners(
 	$mapView: HTMLElement,
 	start: ()=>[startPxX:number,startPxY:number]|null,
 	pan: (pxX:number,pxY:number)=>void,
 	fling: (speedPxX:number,speedPxY:number)=>void
 ): void {
-	let grab: Grab | undefined
-	$mapView.style.touchAction='none'
-	$mapView.onpointerdown=ev=>{
-		if (grab) return
+	installDragListeners($mapView,ev=>{
 		const startPxXY=start()
 		if (!startPxXY) return
 		const [startPxX,startPxY]=startPxXY
-		grab={
+		const grab={
 			pointerId: ev.pointerId,
 			startViewPxOffsetX: ev.clientX,
 			startViewPxOffsetY: ev.clientY,
@@ -37,17 +23,8 @@ export default function installDragListeners(
 			currentSpeedPxX: 0,
 			currentSpeedPxY: 0,
 		}
-		$mapView.setPointerCapture(ev.pointerId)
-		$mapView.classList.add('grabbed')
-	}
-	$mapView.onpointerup=$mapView.onpointercancel=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
-		fling(grab.currentSpeedPxX,grab.currentSpeedPxY)
-		grab=undefined
-		$mapView.classList.remove('grabbed')
-	}
-	$mapView.onpointermove=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
+		return grab
+	},(ev,grab)=>{
 		const newPxX=grab.startPxX-(ev.clientX-grab.startViewPxOffsetX)
 		const newPxY=grab.startPxY-(ev.clientY-grab.startViewPxOffsetY)
 		const newTime=performance.now()
@@ -61,5 +38,7 @@ export default function installDragListeners(
 		grab.currentPxY=newPxY
 		grab.currentTime=newTime
 		pan(newPxX,newPxY)
-	}
+	},(ev,grab)=>{
+		fling(grab.currentSpeedPxX,grab.currentSpeedPxY)
+	})
 }

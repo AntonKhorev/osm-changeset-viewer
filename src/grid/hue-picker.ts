@@ -1,3 +1,4 @@
+import installDragListeners from '../drag'
 import {makeElement, makeDiv} from '../util/html'
 
 type Grab = {
@@ -32,33 +33,20 @@ export function makeHuePicker(changeListener: (value:number)=>void) {
 			changeListener(newValue)
 		}
 	}
-	let grab: Grab | undefined
 	const getNewValue=(grab:Grab,pointerX:number)=>limitValue(grab.startValue+(grab.startX-pointerX)*360/$picker.clientWidth)
-	$picker.style.touchAction='none'
-	$picker.onpointerdown=ev=>{
-		if (grab) return
-		grab={
-			pointerId: ev.pointerId,
-			startX: ev.clientX,
-			startValue: readValueFromString($picker.dataset.value??'')
-		}
-		$picker.setPointerCapture(ev.pointerId)
-		$picker.classList.add('grabbed')
-	}
-	$picker.onpointerup=$picker.onpointercancel=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
+	installDragListeners($picker,ev=>({
+		pointerId: ev.pointerId,
+		startX: ev.clientX,
+		startValue: readValueFromString($picker.dataset.value??'')
+	}),(ev,grab)=>{
+		const newValue=getNewValue(grab,ev.clientX)
+		slideStripe($stripe,newValue)
+	},(ev,grab)=>{
 		const newValue=getNewValue(grab,ev.clientX)
 		$picker.dataset.value=String(newValue)
 		slideStripe($stripe,newValue)
-		grab=undefined
-		$picker.classList.remove('grabbed')
 		changeListener(newValue)
-	}
-	$picker.onpointermove=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
-		const newValue=getNewValue(grab,ev.clientX)
-		slideStripe($stripe,newValue)
-	}
+	})
 	return $picker
 }
 
