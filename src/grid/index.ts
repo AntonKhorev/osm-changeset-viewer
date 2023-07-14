@@ -2,6 +2,7 @@ import GridHead from './head'
 import type {ItemMapViewInfo} from './body'
 import GridBody from './body'
 import ItemOptions from './item-options'
+import type Colorizer from '../colorizer'
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader} from '../db'
 import type More from '../more'
@@ -20,6 +21,7 @@ export default class Grid {
 	private head: GridHead
 	private body: GridBody
 	constructor(
+		colorizer: Colorizer,
 		cx: Connection,
 		db: ChangesetViewerDBReader,
 		worker: SharedWorker,
@@ -35,6 +37,7 @@ export default class Grid {
 		pingItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void
 	) {
 		this.body=new GridBody(
+			colorizer,
 			cx.server,
 			db.getSingleItemReader(),
 			resetMapViewReceiver,
@@ -45,7 +48,7 @@ export default class Grid {
 			pingItemOnMapViewReceiver
 		)
 		this.head=new GridHead(
-			cx,db,worker,
+			colorizer,cx,db,worker,
 			columnUids=>this.setColumns(columnUids),
 			(iShiftFrom,iShiftTo)=>this.body.reorderColumns(iShiftFrom,iShiftTo),
 			()=>this.body.getColumnCheckboxStatuses(),
@@ -91,7 +94,7 @@ export default class Grid {
 	get collapsedItemOptions(): ItemOptions {
 		return this.body.collapsedItemOptions
 	}
-	private setColumns(columnUids: (number|null)[]) {
+	private setColumns(columnUids: (number|undefined)[]) {
 		this.body.setColumns(columnUids)
 		this.$grid.classList.toggle('without-total-column',!this.withTotalColumn)
 		this.$grid.style.setProperty('--columns',String(this.body.nColumns))

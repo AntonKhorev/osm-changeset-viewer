@@ -8,7 +8,7 @@ import {
 	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
 	makeFormTab, makeFormCard, makeFormSelector
 } from './head-item'
-import {getHueFromUid} from '../colorizer'
+import type Colorizer from '../colorizer'
 import type {ValidUserQuery} from '../osm'
 import {toUserQuery} from '../osm'
 import MuxUserItemDbStream from '../mux-user-item-db-stream'
@@ -48,11 +48,12 @@ export default class GridHead {
 	private $selectorRow: HTMLTableRowElement
 	private $adderCell: HTMLTableCellElement
 	constructor(
+		private colorizer: Colorizer,
 		private cx: Connection,
 		private db: ChangesetViewerDBReader,
 		private worker: SharedWorker,
 		// former direct grid method calls:
-		private setColumns: (columnUids:(number|null)[])=>void,
+		private setColumns: (columnUids:(number|undefined)[])=>void,
 		private reorderColumns: (iShiftFrom:number,iShiftTo:number)=>void,
 		private getColumnCheckboxStatuses: ()=>[
 			hasChecked: boolean[],
@@ -98,12 +99,9 @@ export default class GridHead {
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
 				const {$tab,$card,$selector}=userEntry
 				const uid=getUserEntryUid(userEntry)
-				if (uid!=null) {
-					const hue=getHueFromUid(uid)
-					$tab.parentElement?.style.setProperty('--hue',String(hue))
-					$card.parentElement?.style.setProperty('--hue',String(hue))
-					$selector.parentElement?.style.setProperty('--hue',String(hue))
-				}
+				if ($tab.parentElement) colorizer.writeHueAttributes($tab.parentElement,uid)
+				if ($card.parentElement) colorizer.writeHueAttributes($card.parentElement,uid)
+				if ($selector.parentElement) colorizer.writeHueAttributes($selector.parentElement,uid)
 				this.updateUserCard($card,userEntry.info)
 			}
 			if (message.part.type=='getUserInfo') {
@@ -243,7 +241,9 @@ export default class GridHead {
 		}
 	}
 	private updateUserCard($card: HTMLElement, info: UserInfo): void {
-		updateUserCard($card,info,
+		updateUserCard(
+			this.colorizer,
+			$card,info,
 			name=>this.cx.server.web.getUrl(e`user/${name}`),
 			id=>this.cx.server.api.getUrl(e`user/${id}.json`)
 		)
@@ -307,10 +307,10 @@ export default class GridHead {
 	private startStreamIfNotStartedAndGotAllUids() {
 		if (this.streamMessenger) return
 		const users=new Map<number,UserDbRecord>()
-		const columnUids: (number|null)[] = []
+		const columnUids: (number|undefined)[] = []
 		for (const entry of this.userEntries) {
 			if (entry.type!='query' || entry.info.status=='failed') {
-				columnUids.push(null)
+				columnUids.push(undefined)
 			} else if (entry.info.status=='ready') {
 				users.set(entry.info.user.id,entry.info.user)
 				columnUids.push(entry.info.user.id)
@@ -390,24 +390,22 @@ export default class GridHead {
 	// 	this.$adderCell.before(userEntry.$card)
 	// }
 	private rewriteUserEntriesInHead(): void {
-		this.$tabRow.replaceChildren(
-			makeElement('th')('all')(
-				makeAllTab()
-			)
+		const $allTabCell=makeElement('th')('all')(makeAllTab())
+		this.colorizer.writeHueAttributes($allTabCell,undefined)
+		this.$tabRow.replaceChildren($allTabCell)
+		const $allCardCell=makeElement('td')('all')()
+		this.colorizer.writeHueAttributes($allCardCell,undefined)
+		this.$cardRow.replaceChildren($allCardCell)
+		const $allSelectorCell=makeElement('td')('all')(
+			makeUserSelector($checkbox=>{
+				const checked=$checkbox.checked
+				for (const iColumn of this.userEntries.keys()) {
+					this.triggerColumnCheckboxes(iColumn,checked)
+				}
+			})
 		)
-		this.$cardRow.replaceChildren(
-			makeElement('td')('all')()
-		)
-		this.$selectorRow.replaceChildren(
-			makeElement('td')('all')(
-				makeUserSelector($checkbox=>{
-					const checked=$checkbox.checked
-					for (const iColumn of this.userEntries.keys()) {
-						this.triggerColumnCheckboxes(iColumn,checked)
-					}
-				})
-			)
-		)
+		this.colorizer.writeHueAttributes($allSelectorCell,undefined)
+		this.$selectorRow.replaceChildren($allSelectorCell)
 		const gridHeadCells: {
 			$tabCell: HTMLTableCellElement
 			$cardCell: HTMLTableCellElement
@@ -419,12 +417,9 @@ export default class GridHead {
 			const $cardCell=makeElement('td')()($card)
 			const $selectorCell=makeElement('td')()($selector)
 			const uid=getUserEntryUid(userEntry)
-			if (uid!=null) {
-				const hue=getHueFromUid(uid)
-				$tabCell.style.setProperty('--hue',String(hue))
-				$cardCell.style.setProperty('--hue',String(hue))
-				$selectorCell.style.setProperty('--hue',String(hue))
-			}
+			this.colorizer.writeHueAttributes($tabCell,uid)
+			this.colorizer.writeHueAttributes($cardCell,uid)
+			this.colorizer.writeHueAttributes($selectorCell,uid)
 			this.$tabRow.append($tabCell)
 			this.$cardRow.append($cardCell)
 			this.$selectorRow.append($selectorCell)
@@ -455,9 +450,9 @@ function isSameQuery(query1: ValidUserQuery, query2: ValidUserQuery): boolean {
 	}
 }
 
-function getUserEntryUid(userEntry: GridUserEntry): number|null {
+function getUserEntryUid(userEntry: GridUserEntry): number|undefined {
 	return (userEntry.type=='query'&&(userEntry.info.status=='ready'||userEntry.info.status=='rerunning')
 		? userEntry.info.user.id
-		: null
+		: undefined
 	)
 }

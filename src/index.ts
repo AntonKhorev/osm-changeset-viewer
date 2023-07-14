@@ -1,3 +1,4 @@
+import Colorizer from './colorizer'
 import Net, {checkAuthRedirect, HashServerSelector} from './net'
 import {ChangesetViewerDBReader} from './db'
 import type {ValidUserQuery} from './osm'
@@ -78,8 +79,9 @@ async function main() {
 	}
 	const worker=new SharedWorker('worker.js')
 	const more=new More()
-	const mapView=new MapView(cx.server.tile)
-	const grid=new Grid(cx,db,worker,more,
+	const colorizer=new Colorizer()
+	const mapView=new MapView(colorizer,cx.server.tile)
+	const grid=new Grid(colorizer,cx,db,worker,more,
 		userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)

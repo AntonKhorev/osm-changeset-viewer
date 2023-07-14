@@ -3,6 +3,7 @@ import ItemCollectionRow from './collection-row'
 import type {ItemSequencePoint} from './info'
 import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText} from './info'
 import {isItem} from './info'
+import type Colorizer from '../colorizer'
 import {makeElement, removeInlineElement} from '../util/html'
 
 export default class EmbeddedItemRow {
@@ -20,15 +21,16 @@ export default class EmbeddedItemRow {
 	}
 	static fromEmptyRow(
 		$row: HTMLTableRowElement,
-		className: string, columnHues: (number|null)[]
+		className: string,
+		colorizer: Colorizer,
+		columnUids: (number|undefined)[]
 	): EmbeddedItemRow {
-		$row.insertCell()
 		$row.classList.add(className)
-		for (const hue of columnHues) {
+		const $allCell=$row.insertCell()
+		colorizer.writeHueAttributes($allCell,undefined)
+		for (const uid of columnUids) {
 			const $cell=$row.insertCell()
-			if (hue!=null) {
-				$cell.style.setProperty('--hue',String(hue))
-			}
+			colorizer.writeHueAttributes($cell,uid)
 		}
 		const embeddedRow=new EmbeddedItemRow($row)
 		embeddedRow.addStretchButton()

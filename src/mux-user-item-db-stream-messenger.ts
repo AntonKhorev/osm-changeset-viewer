@@ -14,7 +14,7 @@ export default class MuxUserItemDbStreamMessenger {
 		private host: string,
 		private worker: SharedWorker,
 		private stream: MuxUserItemDbStream,
-		private columnUids: (number|null)[],
+		private columnUids: (number|undefined)[],
 		private receiveBatch: (
 			batch: GridBatchItem[],
 			usernames: Map<number,string>

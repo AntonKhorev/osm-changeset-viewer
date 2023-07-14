@@ -13,18 +13,12 @@
 		--accent-saturation: 70%;
 	}
 }
+.ui .grid [data-hue-uid] {
+	--accent-color: hsl(var(--hue) calc(var(--saturation-factor) * var(--accent-saturation)) 50%);
+}
 .ui .grid :is(td,th) {
 	padding: 0;
 	vertical-align: top;
-}
-.ui .grid :is(td,th,
-	.item>.icon,
-	.item>.balloon,
-	.item>.balloon>.flow>.badge>.content>.comment-ref,
-	.item>.balloon>.flow>.badge>.content>.marker
-) {
-	--temp-accent-color: hsl(var(--hue) var(--accent-saturation) 50%);
-	--accent-color: var(--temp-accent-color,var(--light-text-color));
 }
 .ui .grid col.all {
 	width: var(--all-width);
@@ -453,7 +447,7 @@
 
 /*** item balloon ***/
 .ui .grid tbody .item > :is(.balloon,.icon) {
-	--balloon-frame-color: hsl(var(--hue) 50% var(--light-frame-lightness));
+	--balloon-frame-color: hsl(var(--hue) calc(var(--saturation-factor) * 50%) var(--light-frame-lightness));
 	--balloon-frame-line: solid 1px var(--balloon-frame-color);
 }
 .ui .grid tbody .item .balloon {
@@ -662,7 +656,7 @@
 	translate: 0px 1px;
 	white-space: nowrap; /* FIXME still wraps if it's a button */
 	background: transparent;
-	--icon-frame-color: hsl(var(--hue) 50% var(--icon-frame-lightness));
+	--icon-frame-color: hsl(var(--hue) calc(var(--saturation-factor) * 50%) var(--icon-frame-lightness));
 	color: var(--accent-color);
 }
 .ui .grid tbody .item .balloon .flow .badge .content.empty .comment-ref {

@@ -1,5 +1,6 @@
 import type {UserQuery, ValidUserQuery} from '../osm/query-user'
 import type {UserScanDbRecord, UserDbInfo} from '../db'
+import type Colorizer from '../colorizer'
 import {makeUserSvgElements} from './body-item'
 import {makeCenteredSvg} from '../widgets'
 import {makeDateOutput} from '../date'
@@ -136,6 +137,7 @@ export function makeUserCard(
 }
 
 export function updateUserCard(
+	colorizer: Colorizer,
 	$card: HTMLElement, info: UserInfo,
 	getUserNameHref: (name:string)=>string,
 	getUserIdHref: (id:number)=>string
@@ -338,7 +340,7 @@ export function updateUserCard(
 	if ($huePicker instanceof HTMLElement) {
 		if (info.status=='rerunning' || info.status=='ready') {
 			$huePicker.hidden=false
-			const hue=info.user.id%360 // TODO use colorizer
+			const hue=colorizer.getHueForUid(info.user.id)
 			const $stripe=$huePicker.querySelector(':scope > .hue-picker-stripe')
 			if ($stripe instanceof HTMLElement) {
 				$stripe.style.left=`${-hue*100/360}%`

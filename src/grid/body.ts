@@ -16,7 +16,7 @@ import EmbeddedItemRow from './embedded-row'
 import {updateTimelineOnInsert} from './timeline'
 import GridBodyCheckboxHandler from './body-checkbox'
 import ItemOptions from './item-options'
-import {getHueFromUid} from '../colorizer'
+import type Colorizer from '../colorizer'
 import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
@@ -52,8 +52,9 @@ export default class GridBody {
 		return !!this.collapsedItemOptions.get('comment')?.abbreviate
 	}
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
-	private columnUids: (number|null)[] = []
+	private columnUids: (number|undefined)[] = []
 	constructor(
+		private readonly colorizer: Colorizer,
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader,
 		private resetMapViewReceiver: ()=>void,
@@ -154,7 +155,7 @@ export default class GridBody {
 	set onItemSelect(callback: ()=>void) {
 		this.checkboxHandler.onItemSelect=callback
 	}
-	setColumns(columnUids: (number|null)[]): void {
+	setColumns(columnUids: (number|undefined)[]): void {
 		this.resetMapViewReceiver()
 		this.columnUids=columnUids
 		this.$gridBody.replaceChildren()
@@ -168,11 +169,11 @@ export default class GridBody {
 	): boolean {
 		const sequencePoint=getBatchItemSequencePoint(batchItem)
 		if (!sequencePoint) return false
-		const $item=makeItemShell(batchItem,isExpanded,usernames)
+		const $item=makeItemShell(this.colorizer,batchItem,isExpanded,usernames)
 		writeElementSequencePoint($item,sequencePoint)
 		const $flow=$item.querySelector('.flow')
 		if (!($flow instanceof HTMLElement)) return false
-		writeExpandedItemFlow($flow,this.server,batchItem,usernames,this.expandedItemOptions)
+		writeExpandedItemFlow(this.colorizer,this.server,$flow,batchItem,usernames,this.expandedItemOptions)
 		if (batchItem.type=='changeset' || batchItem.type=='note') {
 			const id=batchItem.item.id
 			const uid=batchItem.item.uid
@@ -536,7 +537,7 @@ export default class GridBody {
 			if (!($flow instanceof HTMLElement)) continue
 			if (insertItemInfo.isExpanded) {
 				$flow.replaceChildren() // TODO don't replaceChildren() in flow writers
-				writeExpandedItemFlow($flow,this.server,insertItemInfo.batchItem,insertItemInfo.usernames,this.expandedItemOptions)
+				writeExpandedItemFlow(this.colorizer,this.server,$flow,insertItemInfo.batchItem,insertItemInfo.usernames,this.expandedItemOptions)
 			} else {
 				trimToCollapsedItemFlow($flow,$item.dataset.type,this.collapsedItemOptions)
 			}
@@ -571,7 +572,7 @@ export default class GridBody {
 				insertionRow.paste($row,sequencePoint,this.withAbbreviatedIds,this.withAbbreviatedComments)
 				needStretch=insertionRow.isStretched
 			}
-			const row=EmbeddedItemRow.fromEmptyRow($row,'single',this.columnHues)
+			const row=EmbeddedItemRow.fromEmptyRow($row,'single',this.colorizer,this.columnUids)
 			updateTimelineOnInsert($row,iColumns)
 			row.put(iColumns,$items)
 			row.updateStretchButtonHiddenState()
@@ -588,7 +589,7 @@ export default class GridBody {
 				} else {
 					$row=makeElement('tr')()()
 					insertionRowInfo.$rowBefore.after($row)
-					EmbeddedItemRow.fromEmptyRow($row,'collection',this.columnHues)
+					EmbeddedItemRow.fromEmptyRow($row,'collection',this.colorizer,this.columnUids)
 				}
 			} else {
 				$row=insertionRowInfo.$row
@@ -597,9 +598,6 @@ export default class GridBody {
 			const row=new EmbeddedItemRow($row)
 			row.insert(sequencePoint,iColumns,$items,this.withAbbreviatedIds,this.withAbbreviatedComments)
 		}
-	}
-	private get columnHues(): (number|null)[] {
-		return this.columnUids.map(uid=>uid==null?null:getHueFromUid(uid))
 	}
 	private findInsertionRow(sequencePoint: ItemSequencePoint): {
 		type: 'betweenRows'

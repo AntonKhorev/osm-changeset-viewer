@@ -2,7 +2,7 @@ import type {RenderView} from './base'
 import Layer from './base'
 import {calculatePxSize, calculateX, calculateY, clamp} from '../geo'
 import type {ItemMapViewInfo} from '../../grid'
-import {getHueFromUid} from '../../colorizer'
+import type Colorizer from '../../colorizer'
 import {makeElement} from '../../util/html'
 
 const TOP=1
@@ -82,8 +82,10 @@ export default class ItemLayer extends Layer {
 		this.$bboxSvg.replaceChildren()
 		this.$highlightBboxSvg.replaceChildren()
 	}
-	render(view: RenderView): void {
+	render(view: RenderView, colorizer: Colorizer): void {
 		if (!this.ctx) return
+		const getCellFillStyle=(maxV:number,v:number,uid:number)=>`hsl(${colorizer.getHueForUid(uid)} 80% 50% / ${.5+.4*v/maxV})`
+
 		this.$canvas.width=view.pxX2-view.pxX1
 		this.$canvas.height=view.pxY2-view.pxY1
 		this.clear()
@@ -300,8 +302,4 @@ function removeSvgAttributes($e: SVGElement, attrs: Iterable<string>): void {
 	for (const name of attrs) {
 		$e.removeAttributeNS(null,name)
 	}
-}
-
-function getCellFillStyle(maxV: number, v: number, uid: number): string {
-	return `hsl(${getHueFromUid(uid)} 80% 50% / ${.5+.4*v/maxV})`
 }

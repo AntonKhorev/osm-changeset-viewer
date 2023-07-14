@@ -2,7 +2,7 @@ import type {EditorIcon} from './editors'
 import editorData from './editors'
 import type ItemOptions from './item-options'
 import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText} from './info'
-import {getHueFromUid} from '../colorizer'
+import type Colorizer from '../colorizer'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import type {ChangesetDbRecord} from '../db'
@@ -36,6 +36,7 @@ export function getItemDisclosureButton($item: HTMLElement): HTMLButtonElement|u
 }
 
 export function makeItemShell(
+	colorizer: Colorizer,
 	{type,item}: MuxBatchItem,
 	isExpanded: boolean,
 	usernames: Map<number, string>
@@ -52,8 +53,8 @@ export function makeItemShell(
 		$item.classList.add('user')
 		id=item.id
 		writeNewUserIcon($icon,id)
-		setColor($icon,item.id)
-		setColor($balloon,item.id)
+		colorizer.writeHueAttributes($icon,item.id)
+		colorizer.writeHueAttributes($balloon,item.id)
 	} else if (type=='changeset' || type=='changesetClose') {
 		$item.classList.add('changeset')
 		if (type=='changesetClose') $item.classList.add('closed')
@@ -65,14 +66,14 @@ export function makeItemShell(
 		}
 		$icon.dataset.size=String(size)
 		writeChangesetIcon($icon,id,type=='changesetClose',size)
-		setColor($icon,item.uid)
-		setColor($balloon,item.uid)
+		colorizer.writeHueAttributes($icon,item.uid)
+		colorizer.writeHueAttributes($balloon,item.uid)
 	} else if (type=='note') {
 		$item.classList.add('note')
 		id=item.id
 		writeNoteIcon($icon,id)
-		setColor($icon,item.uid)
-		setColor($balloon,item.uid)
+		colorizer.writeHueAttributes($icon,item.uid)
+		colorizer.writeHueAttributes($balloon,item.uid)
 	} else if (type=='changesetComment' || type=='noteComment') {
 		$item.classList.add('comment')
 		if (!item.text) $item.classList.add('mute')
@@ -95,8 +96,8 @@ export function makeItemShell(
 			$button.title=`comment for changeset ${id}`
 			commentIconSvg=getSvgOfCommentIcon('changeset')
 		}
-		setColor($icon,item.itemUid)
-		setColor($balloon,item.uid)
+		colorizer.writeHueAttributes($icon,item.itemUid)
+		colorizer.writeHueAttributes($balloon,item.uid)
 		if (item.uid==item.itemUid) {
 			$button.innerHTML=commentIconSvg
 			$icon.insertAdjacentHTML('beforeend',(item.text
@@ -108,7 +109,7 @@ export function makeItemShell(
 			$item.classList.add('incoming')
 			$senderIcon=makeElement('span')('icon')()
 			$senderIcon.classList.add('sender')
-			setColor($senderIcon,item.uid)
+			colorizer.writeHueAttributes($senderIcon,item.uid)
 			const username=item.uid?usernames.get(item.uid):undefined
 			if (username!=null) {
 				$senderIcon.title=username
@@ -116,10 +117,6 @@ export function makeItemShell(
 				$senderIcon.title=`#`+item.uid
 			} else {
 				$senderIcon.title=`anonymous`
-			}
-			if (item.uid!=null) {
-				const hue=getHueFromUid(item.uid)
-				$senderIcon.style.setProperty('--hue',String(hue))
 			}
 			$senderIcon.innerHTML=getSvgOfSenderUserIcon()+(item.text
 				? getSvgOfCommentTip(1)
@@ -160,8 +157,9 @@ export function trimToCollapsedItemFlow(
 }
 
 export function writeExpandedItemFlow(
-	$flow: HTMLElement,
+	colorizer: Colorizer,
 	server: ServerUrlGetter,
+	$flow: HTMLElement,
 	{type,item}: MuxBatchItem,
 	usernames: Map<number, string>,
 	itemOptions: ItemOptions
@@ -257,7 +255,7 @@ export function writeExpandedItemFlow(
 		const $button=makeElement('button')('comment-ref')()
 		$button.dataset.order=String(order)
 		$button.title=`comment ${order+1}`
-		setColor($button,commentRef.uid,'--icon-frame-color','--icon-frame-lightness')
+		colorizer.writeHueAttributes($button,commentRef.uid)
 		$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute,commentRef.action)
 		return $button
 	}
@@ -295,7 +293,7 @@ export function writeExpandedItemFlow(
 			}
 			{
 				const $currentCommentIcon=makeElement('span')('marker')()
-				setColor($currentCommentIcon,uid)
+				colorizer.writeHueAttributes($currentCommentIcon,uid)
 				const svg=getSvgOfCommentIcon(itemType)
 				const narrowSvg=svg.replace(`width="8"`,`width="4"`)
 				$currentCommentIcon.innerHTML=narrowSvg
@@ -590,18 +588,4 @@ export function makeUserSvgElements(): string {
 		`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />`+
 		`<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`
 	)
-}
-
-function setColor(
-	$e: HTMLElement, uid: number|undefined,
-	frameColorPropertyName='--balloon-frame-color',
-	frameLightnessPropertyName='--light-frame-lightness'
-) {
-	if (uid!=null) {
-		const hue=getHueFromUid(uid)
-		$e.style.setProperty('--hue',String(hue))
-	} else {
-		$e.style.setProperty(frameColorPropertyName,`hsl(0 0% var(${frameLightnessPropertyName}))`)
-		$e.style.setProperty('--accent-color','var(--light-text-color)');
-	}
 }

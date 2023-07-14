@@ -1,3 +1,4 @@
+import type Colorizer from '../../colorizer'
 import {makeDiv} from '../../util/html'
 
 export type RenderView = {
@@ -11,5 +12,5 @@ export type RenderView = {
 export default abstract class Layer {
 	$layer=makeDiv()()
 	abstract clear(): void
-	abstract render(view: RenderView): void
+	abstract render(view: RenderView, colorizer: Colorizer): void
 }

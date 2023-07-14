@@ -4,7 +4,8 @@ import type {RenderView, Layer} from './layer'
 import {ItemLayer, TileLayer} from './layer'
 import installDragListeners from './drag'
 import {calculatePxSize, clamp} from './geo'
-import {TileProvider} from '../net'
+import type Colorizer from '../colorizer'
+import type {TileProvider} from '../net'
 import type {ItemMapViewInfo} from '../grid'
 import {makeDiv} from "../util/html"
 
@@ -21,7 +22,7 @@ export default class MapView {
 	get layers(): Layer[] {
 		return [this.tileLayer,this.itemLayer]
 	}
-	constructor(tileProvider: TileProvider) {
+	constructor(colorizer: Colorizer, tileProvider: TileProvider) {
 		this.tileLayer=new TileLayer(tileProvider)
 		this.$mapView.append(...this.layers.map(layer=>layer.$layer))
 		this.animateFrame=(time:number)=>{
@@ -74,7 +75,7 @@ export default class MapView {
 					}
 				} else {
 					for (const layer of this.layers) {
-						layer.render(renderView)
+						layer.render(renderView,colorizer)
 					}
 				}
 			} else {
