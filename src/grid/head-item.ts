@@ -1,6 +1,7 @@
 import type {UserQuery, ValidUserQuery} from '../osm/query-user'
 import type {UserScanDbRecord, UserDbInfo} from '../db'
 import type Colorizer from '../colorizer'
+import {makeHuePicker, updateHuePicker} from './hue-picker'
 import {makeUserSvgElements} from './body-item'
 import {makeCenteredSvg} from '../widgets'
 import {makeDateOutput} from '../date'
@@ -100,17 +101,6 @@ export function makeUserCard(
 			}
 		)
 	)
-	const makeHuePicker=()=>{
-		const $stripe=makeElement('span')('hue-picker-stripe')()
-		const stripeStops:string[]=[]
-		for (let hue=0;hue<=720;hue+=30) {
-			stripeStops.push(`hsl(${hue-180} 100% 50%) ${100*hue/720}%`)
-		}
-		$stripe.style.background=`linear-gradient(to right, ${stripeStops.join(', ')})`
-		const $picker=makeDiv('hue-picker')($stripe)
-		$picker.tabIndex=0
-		return $picker
-	}
 	const $card=makeDiv('card')(
 		hide(makeDiv('notice')()),
 		hide(makeDiv('avatar')()),
@@ -341,10 +331,7 @@ export function updateUserCard(
 		if (info.status=='rerunning' || info.status=='ready') {
 			$huePicker.hidden=false
 			const hue=colorizer.getHueForUid(info.user.id)
-			const $stripe=$huePicker.querySelector(':scope > .hue-picker-stripe')
-			if ($stripe instanceof HTMLElement) {
-				$stripe.style.left=`${-hue*100/360}%`
-			}
+			updateHuePicker($huePicker,hue)
 		} else {
 			$huePicker.hidden=true
 		}
