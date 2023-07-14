@@ -1,3 +1,16 @@
+class Colorizer {
+    constructor() {
+        this.huesForUids = new Map();
+    }
+    getHueForUid(uid) {
+        const storedHue = this.huesForUids.get(uid);
+        return storedHue ?? uid % 360;
+    }
+    setHueForUid(uid, hue) {
+        this.huesForUids.set(uid, hue);
+    }
+}
+
 class Connection {
     constructor(server, authStorage) {
         this.server = server;
@@ -1856,8 +1869,47 @@ class WorkerBroadcastReceiver extends WorkerBroadcastChannel {
     }
 }
 
-function installTabDragListeners($gridHead, gridHeadCells, $tab, iActive, shiftTabCallback) {
+function installDragListeners($e, startDrag, doDrag, endDrag, cancelDrag) {
     let grab;
+    $e.style.touchAction = 'none';
+    $e.style.cursor = 'grab';
+    $e.onpointerdown = ev => {
+        if (grab)
+            return;
+        grab = startDrag(ev);
+        if (!grab)
+            return;
+        $e.setPointerCapture(ev.pointerId);
+        $e.style.cursor = 'grabbing';
+        $e.focus();
+        ev.preventDefault();
+    };
+    $e.onpointermove = ev => {
+        if (!grab || grab.pointerId != ev.pointerId)
+            return;
+        doDrag(ev, grab);
+        ev.preventDefault();
+    };
+    $e.onpointerup = $e.onpointercancel = ev => {
+        if (!grab || grab.pointerId != ev.pointerId)
+            return;
+        endDrag(ev, grab);
+        grab = undefined;
+        $e.style.cursor = 'grab';
+        ev.preventDefault();
+    };
+    if (cancelDrag)
+        $e.onpointercancel = ev => {
+            if (!grab || grab.pointerId != ev.pointerId)
+                return;
+            cancelDrag(ev, grab);
+            grab = undefined;
+            $e.style.cursor = 'grab';
+            ev.preventDefault();
+        };
+}
+
+function installTabDragListeners($gridHead, gridHeadCells, $tab, iActive, shiftTabCallback) {
     const { $tabCell: $activeTabCell, $cardCell: $activeCardCell, $selectorCell: $activeSelectorCell } = gridHeadCells[iActive];
     const toggleCellClass = (className, on) => {
         $activeTabCell.classList.toggle(className, on);
@@ -1887,21 +1939,6 @@ function installTabDragListeners($gridHead, gridHeadCells, $tab, iActive, shiftT
         $activeSelectorCell.classList.remove('settling');
     };
     $tab.style.touchAction = 'none';
-    $tab.onpointerdown = ev => {
-        if (grab)
-            return;
-        if (ev.target instanceof Element && ev.target.closest('button'))
-            return;
-        grab = {
-            pointerId: ev.pointerId,
-            startX: ev.clientX,
-            iShiftTo: iActive,
-            relativeShiftX: 0
-        };
-        $tab.setPointerCapture(ev.pointerId);
-        toggleCellClass('grabbed', true);
-        $gridHead.classList.add('with-grabbed-tab');
-    };
     const cleanup = (grab) => {
         for (const i of gridHeadCells.keys()) {
             translate(0, i);
@@ -1918,24 +1955,18 @@ function installTabDragListeners($gridHead, gridHeadCells, $tab, iActive, shiftT
             });
         });
     };
-    $tab.onpointerup = ev => {
-        if (!grab || grab.pointerId != ev.pointerId)
+    installDragListeners($tab, ev => {
+        if (ev.target instanceof Element && ev.target.closest('button'))
             return;
-        const iShiftTo = grab.iShiftTo;
-        cleanup(grab);
-        grab = undefined;
-        if (iShiftTo != iActive)
-            shiftTabCallback(iShiftTo);
-    };
-    $tab.onpointercancel = ev => {
-        if (!grab || grab.pointerId != ev.pointerId)
-            return;
-        cleanup(grab);
-        grab = undefined;
-    };
-    $tab.onpointermove = ev => {
-        if (!grab || grab.pointerId != ev.pointerId)
-            return;
+        toggleCellClass('grabbed', true);
+        $gridHead.classList.add('with-grabbed-tab');
+        return {
+            pointerId: ev.pointerId,
+            startX: ev.clientX,
+            iShiftTo: iActive,
+            relativeShiftX: 0
+        };
+    }, (ev, grab) => {
         const cellStartX = gridHeadCells[iActive].$tabCell.offsetLeft;
         const minOffsetX = gridHeadCells[0].$tabCell.offsetLeft - cellStartX;
         const maxOffsetX = gridHeadCells[gridHeadCells.length - 1].$tabCell.offsetLeft - cellStartX;
@@ -1963,7 +1994,80 @@ function installTabDragListeners($gridHead, gridHeadCells, $tab, iActive, shiftT
             translate(shuffleX, iShuffle);
         }
         grab.iShiftTo = iShiftTo;
+    }, (ev, grab) => {
+        const iShiftTo = grab.iShiftTo;
+        cleanup(grab);
+        if (iShiftTo != iActive)
+            shiftTabCallback(iShiftTo);
+    }, (ev, grab) => {
+        cleanup(grab);
+    });
+}
+
+function makeHuePicker(changeListener) {
+    const $stripe = makeElement('span')('hue-picker-stripe')();
+    const stripeStops = [];
+    for (let hue = 0; hue <= 720; hue += 30) {
+        stripeStops.push(`hsl(${hue - 180} 100% 50%) ${100 * hue / 720}%`);
+    }
+    $stripe.style.background = `linear-gradient(to right, ${stripeStops.join(', ')})`;
+    const $picker = makeDiv('hue-picker')($stripe);
+    $picker.tabIndex = 0;
+    $picker.dataset.value = String(0);
+    $picker.onkeydown = ev => {
+        const value = readValueFromString($picker.dataset.value ?? '');
+        let newValue;
+        if (ev.key == 'ArrowLeft') {
+            newValue = mod(value - 10, 360);
+        }
+        else if (ev.key == 'ArrowRight') {
+            newValue = mod(value + 10, 360);
+        }
+        if (newValue != null) {
+            $picker.dataset.value = String(newValue);
+            slideStripe($stripe, newValue);
+            ev.stopPropagation();
+            ev.preventDefault();
+            changeListener(newValue);
+        }
     };
+    const getNewValue = (grab, pointerX) => limitValue(grab.startValue + (grab.startX - pointerX) * 360 / $picker.clientWidth);
+    installDragListeners($picker, ev => ({
+        pointerId: ev.pointerId,
+        startX: ev.clientX,
+        startValue: readValueFromString($picker.dataset.value ?? '')
+    }), (ev, grab) => {
+        const newValue = getNewValue(grab, ev.clientX);
+        slideStripe($stripe, newValue);
+    }, (ev, grab) => {
+        const newValue = getNewValue(grab, ev.clientX);
+        $picker.dataset.value = String(newValue);
+        slideStripe($stripe, newValue);
+        changeListener(newValue);
+    });
+    return $picker;
+}
+function updateHuePicker($picker, value) {
+    $picker.dataset.value = String(value);
+    const $stripe = $picker.querySelector(':scope > .hue-picker-stripe');
+    if ($stripe instanceof HTMLElement) {
+        slideStripe($stripe, value);
+    }
+}
+function slideStripe($stripe, value) {
+    $stripe.style.left = `${-value * 100 / 360}%`;
+}
+function readValueFromString(s) {
+    const v = Number(s);
+    if (!Number.isFinite(v))
+        return 0;
+    return limitValue(v);
+}
+function limitValue(v) {
+    return mod(Math.round(v), 360);
+}
+function mod(n, d) {
+    return (n % d + d) % d;
 }
 
 const merkaartorIcon = "data:image/png;base64," +
@@ -2331,9 +2435,17 @@ function writeCollapsedItemCommentPieceText($piece, text, shortText) {
         }
     }
 }
-
-function getHueFromUid(uid) {
-    return uid % 360;
+function writeHueAttributes(colorizer, $e, uid) {
+    if (uid != null) {
+        $e.dataset.hueUid = String(uid);
+        $e.style.setProperty('--hue', String(colorizer.getHueForUid(uid)));
+        $e.style.setProperty('--saturation-factor', '1');
+    }
+    else {
+        $e.dataset.hueUid = '';
+        $e.style.setProperty('--hue', '0');
+        $e.style.setProperty('--saturation-factor', '0');
+    }
 }
 
 const pad = (n) => ('0' + n).slice(-2);
@@ -2446,7 +2558,7 @@ function getItemDisclosureButton($item) {
         return $button;
     }
 }
-function makeItemShell({ type, item }, isExpanded, usernames) {
+function makeItemShell(colorizer, { type, item }, isExpanded, usernames) {
     let id;
     const $icon = makeElement('span')('icon')();
     let $senderIcon;
@@ -2456,8 +2568,8 @@ function makeItemShell({ type, item }, isExpanded, usernames) {
         $item.classList.add('user');
         id = item.id;
         writeNewUserIcon($icon, id);
-        setColor($icon, item.id);
-        setColor($balloon, item.id);
+        writeHueAttributes(colorizer, $icon, item.id);
+        writeHueAttributes(colorizer, $balloon, item.id);
     }
     else if (type == 'changeset' || type == 'changesetClose') {
         $item.classList.add('changeset');
@@ -2471,15 +2583,15 @@ function makeItemShell({ type, item }, isExpanded, usernames) {
         }
         $icon.dataset.size = String(size);
         writeChangesetIcon($icon, id, type == 'changesetClose', size);
-        setColor($icon, item.uid);
-        setColor($balloon, item.uid);
+        writeHueAttributes(colorizer, $icon, item.uid);
+        writeHueAttributes(colorizer, $balloon, item.uid);
     }
     else if (type == 'note') {
         $item.classList.add('note');
         id = item.id;
         writeNoteIcon($icon, id);
-        setColor($icon, item.uid);
-        setColor($balloon, item.uid);
+        writeHueAttributes(colorizer, $icon, item.uid);
+        writeHueAttributes(colorizer, $balloon, item.uid);
     }
     else if (type == 'changesetComment' || type == 'noteComment') {
         $item.classList.add('comment');
@@ -2506,8 +2618,8 @@ function makeItemShell({ type, item }, isExpanded, usernames) {
             $button.title = `comment for changeset ${id}`;
             commentIconSvg = getSvgOfCommentIcon('changeset');
         }
-        setColor($icon, item.itemUid);
-        setColor($balloon, item.uid);
+        writeHueAttributes(colorizer, $icon, item.itemUid);
+        writeHueAttributes(colorizer, $balloon, item.uid);
         if (item.uid == item.itemUid) {
             $button.innerHTML = commentIconSvg;
             $icon.insertAdjacentHTML('beforeend', (item.text
@@ -2519,7 +2631,7 @@ function makeItemShell({ type, item }, isExpanded, usernames) {
             $item.classList.add('incoming');
             $senderIcon = makeElement('span')('icon')();
             $senderIcon.classList.add('sender');
-            setColor($senderIcon, item.uid);
+            writeHueAttributes(colorizer, $senderIcon, item.uid);
             const username = item.uid ? usernames.get(item.uid) : undefined;
             if (username != null) {
                 $senderIcon.title = username;
@@ -2529,10 +2641,6 @@ function makeItemShell({ type, item }, isExpanded, usernames) {
             }
             else {
                 $senderIcon.title = `anonymous`;
-            }
-            if (item.uid != null) {
-                const hue = getHueFromUid(item.uid);
-                $senderIcon.style.setProperty('--hue', String(hue));
             }
             $senderIcon.innerHTML = getSvgOfSenderUserIcon() + (item.text
                 ? getSvgOfCommentTip(1)
@@ -2568,7 +2676,7 @@ function trimToCollapsedItemFlow($flow, type, itemOptions) {
         $flow.append($piece);
     }
 }
-function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOptions) {
+function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernames, itemOptions) {
     const optionalize = (name, $e) => {
         $e.dataset.optional = name;
         $e.hidden = !itemOptions.get(name)?.get(type);
@@ -2665,7 +2773,7 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
         const $button = makeElement('button')('comment-ref')();
         $button.dataset.order = String(order);
         $button.title = `comment ${order + 1}`;
-        setColor($button, commentRef.uid, '--icon-frame-color', '--icon-frame-lightness');
+        writeHueAttributes(colorizer, $button, commentRef.uid);
         $button.innerHTML = getBalloonRefHtml(commentRef.uid != uid, commentRef.mute, commentRef.action);
         return $button;
     };
@@ -2703,7 +2811,7 @@ function writeExpandedItemFlow($flow, server, { type, item }, usernames, itemOpt
             }
             {
                 const $currentCommentIcon = makeElement('span')('marker')();
-                setColor($currentCommentIcon, uid);
+                writeHueAttributes(colorizer, $currentCommentIcon, uid);
                 const svg = getSvgOfCommentIcon(itemType);
                 const narrowSvg = svg.replace(`width="8"`, `width="4"`);
                 $currentCommentIcon.innerHTML = narrowSvg;
@@ -2949,16 +3057,6 @@ function makeUserSvgElements() {
     return (`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />` +
         `<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`);
 }
-function setColor($e, uid, frameColorPropertyName = '--balloon-frame-color', frameLightnessPropertyName = '--light-frame-lightness') {
-    if (uid != null) {
-        const hue = getHueFromUid(uid);
-        $e.style.setProperty('--hue', String(hue));
-    }
-    else {
-        $e.style.setProperty(frameColorPropertyName, `hsl(0 0% var(${frameLightnessPropertyName}))`);
-        $e.style.setProperty('--accent-color', 'var(--light-text-color)');
-    }
-}
 
 function makeAllTab() {
     const $icon = makeElement('span')('icon')();
@@ -2995,7 +3093,7 @@ function makeCloseButton(removeColumnClickListener) {
     $closeButton.addEventListener('click', removeColumnClickListener);
     return $closeButton;
 }
-function makeUserCard($displayedChangesetsCount, $displayedNotesCount, update, rescan) {
+function makeUserCard(colorizer, $displayedChangesetsCount, $displayedNotesCount, update, rescan, changeUidHue) {
     const hide = ($e) => {
         $e.hidden = true;
         return $e;
@@ -3018,15 +3116,22 @@ function makeUserCard($displayedChangesetsCount, $displayedNotesCount, update, r
         return $button;
     };
     const makeUpdatesLi = (type) => makeElement('li')(type)(`${type}: `, at(), ` `, makeUpdateButton(`rescan`, () => {
-        const uid = $card.dataset.uid;
-        if (uid != null) {
-            rescan(type, Number(uid));
-        }
+        const uidString = $card.dataset.uid;
+        if (uidString == null)
+            return;
+        rescan(type, Number(uidString));
     }));
-    const $card = makeDiv('card')(hide(makeDiv('notice')()), hide(makeDiv('avatar')()), hide(makeDiv('field', 'name')()), hide(makeDiv('field', 'created-at')(`account created at `, at())), hide(makeCountsField('changesets', `changesets`, $displayedChangesetsCount)), hide(makeCountsField('notes', `notes`, $displayedNotesCount)), hide(makeDiv('field', 'updates')(`info updated at:`, ul(makeElement('li')('name')(`username: `, at()), makeElement('li')('details')(`user details: `, at(), ` `, makeUpdateButton(`update`, update)), makeUpdatesLi('changesets'), makeUpdatesLi('notes')))));
+    const $card = makeDiv('card')(hide(makeDiv('notice')()), hide(makeDiv('avatar')()), hide(makeDiv('field', 'name')()), hide(makeDiv('field', 'created-at')(`account created at `, at())), hide(makeCountsField('changesets', `changesets`, $displayedChangesetsCount)), hide(makeCountsField('notes', `notes`, $displayedNotesCount)), hide(makeDiv('field', 'updates')(`info updated at:`, ul(makeElement('li')('name')(`username: `, at()), makeElement('li')('details')(`user details: `, at(), ` `, makeUpdateButton(`update`, update)), makeUpdatesLi('changesets'), makeUpdatesLi('notes')))), hide(makeHuePicker(hue => {
+        const uidString = $card.dataset.uid;
+        if (uidString == null)
+            return;
+        const uid = Number(uidString);
+        colorizer.setHueForUid(uid, hue);
+        changeUidHue(uid);
+    })));
     return $card;
 }
-function updateUserCard($card, info, getUserNameHref, getUserIdHref) {
+function updateUserCard(colorizer, $card, info, getUserNameHref, getUserIdHref) {
     if (info.status == 'rerunning' || info.status == 'ready') {
         $card.dataset.uid = String(info.user.id);
     }
@@ -3040,6 +3145,7 @@ function updateUserCard($card, info, getUserNameHref, getUserIdHref) {
     const $changesetsField = $card.querySelector(':scope > .field.changesets');
     const $notesField = $card.querySelector(':scope > .field.notes');
     const $updatesField = $card.querySelector(':scope > .field.updates');
+    const $huePicker = $card.querySelector(':scope > .hue-picker');
     if ($notice instanceof HTMLElement) {
         if (info.status == 'pending' || info.status == 'running') {
             $notice.hidden = false;
@@ -3207,6 +3313,16 @@ function updateUserCard($card, info, getUserNameHref, getUserIdHref) {
         }
         else {
             $updatesField.hidden = true;
+        }
+    }
+    if ($huePicker instanceof HTMLElement) {
+        if (info.status == 'rerunning' || info.status == 'ready') {
+            $huePicker.hidden = false;
+            const hue = colorizer.getHueForUid(info.user.id);
+            updateHuePicker($huePicker, hue);
+        }
+        else {
+            $huePicker.hidden = true;
         }
     }
 }
@@ -3723,11 +3839,12 @@ function getMuxBatchItemUid(batchItem) {
 
 const e$1 = makeEscapeTag(encodeURIComponent);
 class GridHead {
-    constructor(cx, db, worker, 
+    constructor(colorizer, cx, db, worker, 
     // former direct grid method calls:
-    setColumns, reorderColumns, getColumnCheckboxStatuses, triggerColumnCheckboxes, 
+    setColumns, reorderColumns, getColumnCheckboxStatuses, triggerColumnCheckboxes, changeUidHue, 
     // former main callbacks:
     sendUpdatedUserQueriesReceiver, restartStreamCallback, readyStreamCallback, receiveBatchCallback) {
+        this.colorizer = colorizer;
         this.cx = cx;
         this.db = db;
         this.worker = worker;
@@ -3735,6 +3852,7 @@ class GridHead {
         this.reorderColumns = reorderColumns;
         this.getColumnCheckboxStatuses = getColumnCheckboxStatuses;
         this.triggerColumnCheckboxes = triggerColumnCheckboxes;
+        this.changeUidHue = changeUidHue;
         this.sendUpdatedUserQueriesReceiver = sendUpdatedUserQueriesReceiver;
         this.restartStreamCallback = restartStreamCallback;
         this.readyStreamCallback = readyStreamCallback;
@@ -3769,12 +3887,12 @@ class GridHead {
             const replaceUserCard = (userEntry) => {
                 const { $tab, $card, $selector } = userEntry;
                 const uid = getUserEntryUid(userEntry);
-                if (uid != null) {
-                    const hue = getHueFromUid(uid);
-                    $tab.parentElement?.style.setProperty('--hue', String(hue));
-                    $card.parentElement?.style.setProperty('--hue', String(hue));
-                    $selector.parentElement?.style.setProperty('--hue', String(hue));
-                }
+                if ($tab.parentElement)
+                    writeHueAttributes(colorizer, $tab.parentElement, uid);
+                if ($card.parentElement)
+                    writeHueAttributes(colorizer, $card.parentElement, uid);
+                if ($selector.parentElement)
+                    writeHueAttributes(colorizer, $selector.parentElement, uid);
                 this.updateUserCard($card, userEntry.info);
             };
             if (message.part.type == 'getUserInfo') {
@@ -3900,7 +4018,10 @@ class GridHead {
         const $tab = makeUserTab(this.wrappedRemoveColumnClickListener, query);
         const $displayedChangesetsCount = this.makeUserDisplayedItemsCount();
         const $displayedNotesCount = this.makeUserDisplayedItemsCount();
-        const $card = makeUserCard($displayedChangesetsCount, $displayedNotesCount, () => this.sendUserQueryToWorker(query), (type, uid) => this.sendRescanRequestToWorker(type, uid));
+        const $card = makeUserCard(this.colorizer, $displayedChangesetsCount, $displayedNotesCount, () => this.sendUserQueryToWorker(query), (type, uid) => this.sendRescanRequestToWorker(type, uid), (uid) => {
+            this.changeUidHuePickerValue(uid);
+            this.changeUidHue(uid);
+        });
         this.updateUserCard($card, info);
         const $selector = makeUserSelector($checkbox => {
             for (const [iColumn, userEntry] of this.userEntries.entries()) {
@@ -3918,7 +4039,7 @@ class GridHead {
         };
     }
     updateUserCard($card, info) {
-        updateUserCard($card, info, name => this.cx.server.web.getUrl(e$1 `user/${name}`), id => this.cx.server.api.getUrl(e$1 `user/${id}.json`));
+        updateUserCard(this.colorizer, $card, info, name => this.cx.server.web.getUrl(e$1 `user/${name}`), id => this.cx.server.api.getUrl(e$1 `user/${id}.json`));
     }
     makeFormUserEntry() {
         const userEntry = {
@@ -3982,7 +4103,7 @@ class GridHead {
         const columnUids = [];
         for (const entry of this.userEntries) {
             if (entry.type != 'query' || entry.info.status == 'failed') {
-                columnUids.push(null);
+                columnUids.push(undefined);
             }
             else if (entry.info.status == 'ready') {
                 users.set(entry.info.user.id, entry.info.user);
@@ -4059,14 +4180,20 @@ class GridHead {
     // 	this.$adderCell.before(userEntry.$card)
     // }
     rewriteUserEntriesInHead() {
-        this.$tabRow.replaceChildren(makeElement('th')('all')(makeAllTab()));
-        this.$cardRow.replaceChildren(makeElement('td')('all')());
-        this.$selectorRow.replaceChildren(makeElement('td')('all')(makeUserSelector($checkbox => {
+        const $allTabCell = makeElement('th')('all')(makeAllTab());
+        writeHueAttributes(this.colorizer, $allTabCell, undefined);
+        this.$tabRow.replaceChildren($allTabCell);
+        const $allCardCell = makeElement('td')('all')();
+        writeHueAttributes(this.colorizer, $allCardCell, undefined);
+        this.$cardRow.replaceChildren($allCardCell);
+        const $allSelectorCell = makeElement('td')('all')(makeUserSelector($checkbox => {
             const checked = $checkbox.checked;
             for (const iColumn of this.userEntries.keys()) {
                 this.triggerColumnCheckboxes(iColumn, checked);
             }
-        })));
+        }));
+        writeHueAttributes(this.colorizer, $allSelectorCell, undefined);
+        this.$selectorRow.replaceChildren($allSelectorCell);
         const gridHeadCells = [];
         for (const userEntry of this.userEntries) {
             const { $tab, $card, $selector } = userEntry;
@@ -4074,12 +4201,9 @@ class GridHead {
             const $cardCell = makeElement('td')()($card);
             const $selectorCell = makeElement('td')()($selector);
             const uid = getUserEntryUid(userEntry);
-            if (uid != null) {
-                const hue = getHueFromUid(uid);
-                $tabCell.style.setProperty('--hue', String(hue));
-                $cardCell.style.setProperty('--hue', String(hue));
-                $selectorCell.style.setProperty('--hue', String(hue));
-            }
+            writeHueAttributes(this.colorizer, $tabCell, uid);
+            writeHueAttributes(this.colorizer, $cardCell, uid);
+            writeHueAttributes(this.colorizer, $selectorCell, uid);
             this.$tabRow.append($tabCell);
             this.$cardRow.append($cardCell);
             this.$selectorRow.append($selectorCell);
@@ -4095,6 +4219,17 @@ class GridHead {
             });
         }
         this.$tabRow.append(this.$adderCell);
+    }
+    changeUidHuePickerValue(uid) {
+        for (const userEntry of this.userEntries) {
+            if (userEntry.type != 'query')
+                continue;
+            if (userEntry.info.status != 'ready' && userEntry.info.status != 'rerunning')
+                continue;
+            if (userEntry.info.user.id != uid)
+                continue;
+            this.updateUserCard(userEntry.$card, userEntry.info);
+        }
     }
 }
 function isSameQuery(query1, query2) {
@@ -4115,7 +4250,7 @@ function isSameQuery(query1, query2) {
 function getUserEntryUid(userEntry) {
     return (userEntry.type == 'query' && (userEntry.info.status == 'ready' || userEntry.info.status == 'rerunning')
         ? userEntry.info.user.id
-        : null);
+        : undefined);
 }
 
 class ItemRow {
@@ -4502,14 +4637,13 @@ class EmbeddedItemRow {
             this.row = new ItemRow(row);
         }
     }
-    static fromEmptyRow($row, className, columnHues) {
-        $row.insertCell();
+    static fromEmptyRow($row, className, colorizer, columnUids) {
         $row.classList.add(className);
-        for (const hue of columnHues) {
+        const $allCell = $row.insertCell();
+        writeHueAttributes(colorizer, $allCell, undefined);
+        for (const uid of columnUids) {
             const $cell = $row.insertCell();
-            if (hue != null) {
-                $cell.style.setProperty('--hue', String(hue));
-            }
+            writeHueAttributes(colorizer, $cell, uid);
         }
         const embeddedRow = new EmbeddedItemRow($row);
         embeddedRow.addStretchButton();
@@ -4992,7 +5126,8 @@ class GridBody {
     get withAbbreviatedComments() {
         return !!this.collapsedItemOptions.get('comment')?.abbreviate;
     }
-    constructor(server, itemReader, resetMapViewReceiver, addItemToMapViewReceiver, intersectItemsOnMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver, pingItemOnMapViewReceiver) {
+    constructor(colorizer, server, itemReader, resetMapViewReceiver, addItemToMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver) {
+        this.colorizer = colorizer;
         this.server = server;
         this.itemReader = itemReader;
         this.resetMapViewReceiver = resetMapViewReceiver;
@@ -5130,12 +5265,12 @@ class GridBody {
         const sequencePoint = getBatchItemSequencePoint(batchItem);
         if (!sequencePoint)
             return false;
-        const $item = makeItemShell(batchItem, isExpanded, usernames);
+        const $item = makeItemShell(this.colorizer, batchItem, isExpanded, usernames);
         writeElementSequencePoint($item, sequencePoint);
         const $flow = $item.querySelector('.flow');
         if (!($flow instanceof HTMLElement))
             return false;
-        writeExpandedItemFlow($flow, this.server, batchItem, usernames, this.expandedItemOptions);
+        writeExpandedItemFlow(this.colorizer, this.server, $flow, batchItem, usernames, this.expandedItemOptions);
         if (batchItem.type == 'changeset' || batchItem.type == 'note') {
             const id = batchItem.item.id;
             const uid = batchItem.item.uid;
@@ -5508,7 +5643,7 @@ class GridBody {
                 continue;
             if (insertItemInfo.isExpanded) {
                 $flow.replaceChildren(); // TODO don't replaceChildren() in flow writers
-                writeExpandedItemFlow($flow, this.server, insertItemInfo.batchItem, insertItemInfo.usernames, this.expandedItemOptions);
+                writeExpandedItemFlow(this.colorizer, this.server, $flow, insertItemInfo.batchItem, insertItemInfo.usernames, this.expandedItemOptions);
             }
             else {
                 trimToCollapsedItemFlow($flow, $item.dataset.type, this.collapsedItemOptions);
@@ -5536,7 +5671,7 @@ class GridBody {
                 insertionRow.paste($row, sequencePoint, this.withAbbreviatedIds, this.withAbbreviatedComments);
                 needStretch = insertionRow.isStretched;
             }
-            const row = EmbeddedItemRow.fromEmptyRow($row, 'single', this.columnHues);
+            const row = EmbeddedItemRow.fromEmptyRow($row, 'single', this.colorizer, this.columnUids);
             updateTimelineOnInsert($row, iColumns);
             row.put(iColumns, $items);
             row.updateStretchButtonHiddenState();
@@ -5556,7 +5691,7 @@ class GridBody {
                 else {
                     $row = makeElement('tr')()();
                     insertionRowInfo.$rowBefore.after($row);
-                    EmbeddedItemRow.fromEmptyRow($row, 'collection', this.columnHues);
+                    EmbeddedItemRow.fromEmptyRow($row, 'collection', this.colorizer, this.columnUids);
                 }
             }
             else {
@@ -5566,9 +5701,6 @@ class GridBody {
             const row = new EmbeddedItemRow($row);
             row.insert(sequencePoint, iColumns, $items, this.withAbbreviatedIds, this.withAbbreviatedComments);
         }
-    }
-    get columnHues() {
-        return this.columnUids.map(uid => uid == null ? null : getHueFromUid(uid));
     }
     findInsertionRow(sequencePoint) {
         for (let i = this.$gridBody.rows.length - 1; i >= 0; i--) {
@@ -5807,13 +5939,20 @@ function union(sets) {
 }
 
 class Grid {
-    constructor(cx, db, worker, more, sendUpdatedUserQueriesReceiver, resetMapViewReceiver, addItemToMapViewReceiver, intersectItemsOnMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver, pingItemOnMapViewReceiver) {
+    constructor(colorizer, cx, db, worker, more, sendUpdatedUserQueriesReceiver, resetMapViewReceiver, redrawMapViewReceiver, addItemToMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver) {
         this.$grid = makeElement('table')('grid')();
         this.addExpandedItems = false;
         this.onExternalControlsStateUpdate = () => { };
         this.$colgroup = makeElement('colgroup')()();
-        this.body = new GridBody(cx.server, db.getSingleItemReader(), resetMapViewReceiver, addItemToMapViewReceiver, intersectItemsOnMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver, pingItemOnMapViewReceiver);
-        this.head = new GridHead(cx, db, worker, columnUids => this.setColumns(columnUids), (iShiftFrom, iShiftTo) => this.body.reorderColumns(iShiftFrom, iShiftTo), () => this.body.getColumnCheckboxStatuses(), (iColumn, isChecked) => this.body.triggerColumnCheckboxes(iColumn, isChecked), sendUpdatedUserQueriesReceiver, () => {
+        this.body = new GridBody(colorizer, cx.server, db.getSingleItemReader(), resetMapViewReceiver, addItemToMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver);
+        this.head = new GridHead(colorizer, cx, db, worker, columnUids => this.setColumns(columnUids), (iShiftFrom, iShiftTo) => this.body.reorderColumns(iShiftFrom, iShiftTo), () => this.body.getColumnCheckboxStatuses(), (iColumn, isChecked) => this.body.triggerColumnCheckboxes(iColumn, isChecked), (uid) => {
+            for (const $e of this.$grid.querySelectorAll(`[data-hue-uid="${uid}"]`)) {
+                if (!($e instanceof HTMLElement))
+                    continue;
+                writeHueAttributes(colorizer, $e, uid);
+            }
+            redrawMapViewReceiver();
+        }, sendUpdatedUserQueriesReceiver, () => {
             more.changeToNothingToLoad();
             more.$button.onclick = null;
         }, (requestNextBatch) => {
@@ -6686,9 +6825,10 @@ class ItemLayer extends Layer {
         this.$bboxSvg.replaceChildren();
         this.$highlightBboxSvg.replaceChildren();
     }
-    render(view) {
+    render(view, colorizer) {
         if (!this.ctx)
             return;
+        const getCellFillStyle = (maxV, v, uid) => `hsl(${colorizer.getHueForUid(uid)} 80% 50% / ${.5 + .4 * v / maxV})`;
         this.$canvas.width = view.pxX2 - view.pxX1;
         this.$canvas.height = view.pxY2 - view.pxY1;
         this.clear();
@@ -6802,8 +6942,8 @@ class ItemLayer extends Layer {
                     const value = userCells[icx + icy * nCellsX];
                     if (value <= 0)
                         continue;
-                    const subcellPxX = cellPxX + scx * subcellPxSize + subcellPxSize / 2;
-                    const subcellPxY = cellPxY + scy * subcellPxSize + subcellPxSize / 2;
+                    const subcellPxX = cellPxX + scx * subcellPxSize - subcellPxSize / 2;
+                    const subcellPxY = cellPxY + scy * subcellPxSize - subcellPxSize / 2;
                     this.ctx.fillStyle = getCellFillStyle(maxValue, value, uid);
                     this.ctx.clearRect(subcellPxX, subcellPxY, subcellPxSize, subcellPxSize);
                     this.ctx.fillRect(subcellPxX, subcellPxY, subcellPxSize, subcellPxSize);
@@ -6904,9 +7044,6 @@ function removeSvgAttributes($e, attrs) {
         $e.removeAttributeNS(null, name);
     }
 }
-function getCellFillStyle(maxV, v, uid) {
-    return `hsl(${getHueFromUid(uid)} 80% 50% / ${.5 + .4 * v / maxV})`;
-}
 
 class TileLayer extends Layer {
     constructor(tileProvider) {
@@ -6942,17 +7079,13 @@ class TileLayer extends Layer {
 }
 
 const speedDecayRate = 0.003;
-function installDragListeners($mapView, start, pan, fling) {
-    let grab;
-    $mapView.style.touchAction = 'none';
-    $mapView.onpointerdown = ev => {
-        if (grab)
-            return;
+function installMapDragListeners($mapView, start, pan, fling) {
+    installDragListeners($mapView, ev => {
         const startPxXY = start();
         if (!startPxXY)
             return;
         const [startPxX, startPxY] = startPxXY;
-        grab = {
+        const grab = {
             pointerId: ev.pointerId,
             startViewPxOffsetX: ev.clientX,
             startViewPxOffsetY: ev.clientY,
@@ -6963,19 +7096,8 @@ function installDragListeners($mapView, start, pan, fling) {
             currentSpeedPxX: 0,
             currentSpeedPxY: 0,
         };
-        $mapView.setPointerCapture(ev.pointerId);
-        $mapView.classList.add('grabbed');
-    };
-    $mapView.onpointerup = $mapView.onpointercancel = ev => {
-        if (!grab || grab.pointerId != ev.pointerId)
-            return;
-        fling(grab.currentSpeedPxX, grab.currentSpeedPxY);
-        grab = undefined;
-        $mapView.classList.remove('grabbed');
-    };
-    $mapView.onpointermove = ev => {
-        if (!grab || grab.pointerId != ev.pointerId)
-            return;
+        return grab;
+    }, (ev, grab) => {
         const newPxX = grab.startPxX - (ev.clientX - grab.startViewPxOffsetX);
         const newPxY = grab.startPxY - (ev.clientY - grab.startViewPxOffsetY);
         const newTime = performance.now();
@@ -6989,14 +7111,16 @@ function installDragListeners($mapView, start, pan, fling) {
         grab.currentPxY = newPxY;
         grab.currentTime = newTime;
         pan(newPxX, newPxY);
-    };
+    }, (ev, grab) => {
+        fling(grab.currentSpeedPxX, grab.currentSpeedPxY);
+    });
 }
 
 class MapView {
     get layers() {
         return [this.tileLayer, this.itemLayer];
     }
-    constructor(tileProvider) {
+    constructor(colorizer, tileProvider) {
         this.$mapView = makeDiv('map')();
         this.animation = { type: 'stopped' };
         this.itemLayer = new ItemLayer();
@@ -7057,7 +7181,7 @@ class MapView {
                 }
                 else {
                     for (const layer of this.layers) {
-                        layer.render(renderView);
+                        layer.render(renderView, colorizer);
                     }
                 }
             }
@@ -7098,7 +7222,7 @@ class MapView {
             };
             this.scheduleFrame();
         };
-        installDragListeners(this.$mapView, () => {
+        installMapDragListeners(this.$mapView, () => {
             if (this.animation.type != 'stopped')
                 return null;
             const pxSize = calculatePxSize(this.viewZ);
@@ -7123,6 +7247,9 @@ class MapView {
     }
     reset() {
         this.itemLayer.removeAllItems();
+        this.scheduleFrame();
+    }
+    redraw() {
         this.scheduleFrame();
     }
     addItem(item) {
@@ -7213,21 +7340,20 @@ async function main() {
     }
     const worker = new SharedWorker('worker.js');
     const more = new More();
-    const mapView = new MapView(cx.server.tile);
-    const grid = new Grid(cx, db, worker, more, userQueries => {
+    const colorizer = new Colorizer();
+    const mapView = new MapView(colorizer, cx.server.tile);
+    const grid = new Grid(colorizer, cx, db, worker, more, userQueries => {
         net.serverSelector.pushHostlessHashInHistory(getHashFromUserQueries(userQueries));
     }, () => {
         mapView.reset();
+    }, () => {
+        mapView.redraw();
     }, (item) => {
         mapView.addItem(item);
-    }, (items) => {
-        console.log('intersectItemsOnMapViewReceiver', items);
     }, (type, id) => {
         mapView.highlightItem(type, id);
     }, (type, id) => {
         mapView.unhighlightItem(type, id);
-    }, (item) => {
-        console.log('pingItemOnMapViewReceiver', item);
     });
     $main.append(makeDiv('notice')(`This is a preview v0.3.0. `, `If you've been using the previous preview, please delete its databases in the browser.`), p(`In Firefox you can do the following to delete old databases: `, em(`Developer tools`), ` (F12) > `, em(`Storage`), ` > `, em(`Indexed DB`), ` > (this website) > `, em(`OsmChangesetViewer[`), `...`, em(`]`), ` (there is likely only `, em(`OsmChangesetViewer[www.openstreetmap.org]`), `, multiple databases are possible if you tried using the changeset viewer with different osm servers). `, `Right-click each one and select `, em(`Delete`), `.`), p(`In Chrome you can do the following: `, em(`DevTools`), ` (F12) > `, em(`Application`), ` > `, em(`Storage`), ` > `, em(`IndexedDB`), ` > `, em(`OsmChangesetViewer[`), `...`, em(`]`), `. `, `Press the `, em(`Delete database`), ` button.`), grid.$grid, more.$div);
     $aside.append(mapView.$mapView);
