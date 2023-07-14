@@ -2,6 +2,11 @@ import {strict as assert} from 'assert'
 import {setupTestHooks} from '../../grid.js'
 import GridBody from '../../../test-build/grid/body.js'
 
+const colorizer={
+	getHueForUid: ()=>180,
+	setHueForUid: ()=>{}
+}
+
 const server={
 	web: {
 		getUrl: path=>`https://www.openstreetmap.org/`+path
@@ -96,7 +101,10 @@ function makeChangesetCloseBatchItem(i,createdAtString,closedAtString) {
 }
 
 function makeSingleColumnGrid(itemReader) {
-	const gridBody=new GridBody(server,itemReader)
+	const gridBody=new GridBody(
+		colorizer,server,itemReader,
+		()=>{},()=>{},()=>{},()=>{},()=>{},()=>{}
+	)
 	gridBody.setColumns([101])
 	return gridBody
 }
@@ -704,7 +712,10 @@ describe("GridBody",()=>{
 		))
 	})
 	it("adds items to two-column collection",()=>{
-		const gridBody=new GridBody(server,null)
+		const gridBody=new GridBody(
+			colorizer,server,null,
+			()=>{},()=>{},()=>{},()=>{},()=>{},()=>{}
+		)
 		gridBody.setColumns([101,102])
 		gridBody.addItem({
 			iColumns: [0],
@@ -744,13 +755,17 @@ describe("GridBody",()=>{
 		})
 	})
 	it("splits collection when items are in different columns",async()=>{
-		const gridBody=new GridBody(server,{
-			getChangeset: async(id)=>{
-				if (id==10001) return makeChangesetItem(1)
-				if (id==10002) return makeChangesetItem(2)
-				if (id==10003) return makeChangesetItem(3)
-			}
-		})
+		const gridBody=new GridBody(
+			colorizer,server,
+			{
+				getChangeset: async(id)=>{
+					if (id==10001) return makeChangesetItem(1)
+					if (id==10002) return makeChangesetItem(2)
+					if (id==10003) return makeChangesetItem(3)
+				}
+			},
+			()=>{},()=>{},()=>{},()=>{},()=>{},()=>{}
+		)
 		gridBody.setColumns([101,102])
 		gridBody.addItem({
 			iColumns: [0],
