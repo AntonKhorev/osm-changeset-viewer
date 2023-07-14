@@ -170,6 +170,9 @@
 	border: var(--frame-line);
 	cursor: grab;
 }
+.ui .grid thead td .card .hue-picker.grabbed {
+	cursor: grabbing;
+}
 .ui .grid thead td .card .hue-picker::before,
 .ui .grid thead td .card .hue-picker::after {
 	content: '';
