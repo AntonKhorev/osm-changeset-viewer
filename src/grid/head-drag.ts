@@ -1,3 +1,5 @@
+import installDragListeners from '../drag'
+
 type Grab = {
 	pointerId: number
 	startX: number
@@ -16,7 +18,6 @@ export default function installTabDragListeners(
 	iActive: number,
 	shiftTabCallback: (iShiftTo: number)=>void
 ) {
-	let grab: Grab | undefined
 	const {
 		$tabCell: $activeTabCell,
 		$cardCell: $activeCardCell,
@@ -49,19 +50,6 @@ export default function installTabDragListeners(
 		$activeSelectorCell.classList.remove('settling')
 	}
 	$tab.style.touchAction='none'
-	$tab.onpointerdown=ev=>{
-		if (grab) return
-		if (ev.target instanceof Element && ev.target.closest('button')) return
-		grab={
-			pointerId: ev.pointerId,
-			startX: ev.clientX,
-			iShiftTo: iActive,
-			relativeShiftX: 0
-		}
-		$tab.setPointerCapture(ev.pointerId)
-		toggleCellClass('grabbed',true)
-		$gridHead.classList.add('with-grabbed-tab')
-	}
 	const cleanup=(grab: Grab)=>{
 		for (const i of gridHeadCells.keys()) {
 			translate(0,i)
@@ -77,20 +65,17 @@ export default function installTabDragListeners(
 			})
 		})
 	}
-	$tab.onpointerup=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
-		const iShiftTo=grab.iShiftTo
-		cleanup(grab)
-		grab=undefined
-		if (iShiftTo!=iActive) shiftTabCallback(iShiftTo)
-	}
-	$tab.onpointercancel=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
-		cleanup(grab)
-		grab=undefined
-	}
-	$tab.onpointermove=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
+	installDragListeners($tab,ev=>{
+		if (ev.target instanceof Element && ev.target.closest('button')) return
+		toggleCellClass('grabbed',true)
+		$gridHead.classList.add('with-grabbed-tab')
+		return {
+			pointerId: ev.pointerId,
+			startX: ev.clientX,
+			iShiftTo: iActive,
+			relativeShiftX: 0
+		}
+	},(ev,grab)=>{
 		const cellStartX=gridHeadCells[iActive].$tabCell.offsetLeft
 		const minOffsetX=gridHeadCells[0].$tabCell.offsetLeft-cellStartX
 		const maxOffsetX=gridHeadCells[gridHeadCells.length-1].$tabCell.offsetLeft-cellStartX
@@ -122,5 +107,11 @@ export default function installTabDragListeners(
 			translate(shuffleX,iShuffle)
 		}
 		grab.iShiftTo=iShiftTo
-	}
+	},(ev,grab)=>{
+		const iShiftTo=grab.iShiftTo
+		cleanup(grab)
+		if (iShiftTo!=iActive) shiftTabCallback(iShiftTo)
+	},(ev,grab)=>{
+		cleanup(grab)
+	})
 }
