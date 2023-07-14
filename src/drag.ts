@@ -14,6 +14,7 @@ export default function installDragListeners<Grab extends {pointerId:number}>(
 		if (!grab) return
 		$e.setPointerCapture(ev.pointerId)
 		$e.style.cursor='grabbing'
+		$e.focus()
 		ev.preventDefault()
 	}
 	$e.onpointermove=ev=>{
