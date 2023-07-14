@@ -59,10 +59,8 @@ export default class GridBody {
 		private readonly itemReader: SingleItemDBReader,
 		private resetMapViewReceiver: ()=>void,
 		private addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void,
-		intersectItemsOnMapViewReceiver: (items: Iterable<ItemMapViewInfo>)=>void,
 		private highlightItemOnMapViewReceiver: (type:string,id:number)=>void,
-		private unhighlightItemOnMapViewReceiver: (type:string,id:number)=>void,
-		pingItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void
+		private unhighlightItemOnMapViewReceiver: (type:string,id:number)=>void
 	) {
 		this.$gridBody.addEventListener('click',ev=>{
 			if (!(ev.target instanceof Element)) return

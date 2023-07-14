@@ -141,6 +141,9 @@ export default class MapView {
 		this.itemLayer.removeAllItems()
 		this.scheduleFrame()
 	}
+	redraw(): void {
+		this.scheduleFrame()
+	}
 	addItem(item: ItemMapViewInfo): void {
 		this.itemLayer.addItem(item)
 		this.scheduleFrame()

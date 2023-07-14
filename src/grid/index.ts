@@ -31,11 +31,10 @@ export default class Grid {
 			userQueries: ValidUserQuery[]
 		)=>void,
 		resetMapViewReceiver: ()=>void,
+		redrawMapViewReceiver: ()=>void,
 		addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void,
-		intersectItemsOnMapViewReceiver: (items: Iterable<ItemMapViewInfo>)=>void,
 		highlightItemOnMapViewReceiver: (type:string,id:number)=>void,
-		unhighlightItemOnMapViewReceiver: (type:string,id:number)=>void,
-		pingItemOnMapViewReceiver: (item: ItemMapViewInfo)=>void
+		unhighlightItemOnMapViewReceiver: (type:string,id:number)=>void
 	) {
 		this.body=new GridBody(
 			colorizer,
@@ -43,10 +42,8 @@ export default class Grid {
 			db.getSingleItemReader(),
 			resetMapViewReceiver,
 			addItemToMapViewReceiver,
-			intersectItemsOnMapViewReceiver,
 			highlightItemOnMapViewReceiver,
-			unhighlightItemOnMapViewReceiver,
-			pingItemOnMapViewReceiver
+			unhighlightItemOnMapViewReceiver
 		)
 		this.head=new GridHead(
 			colorizer,cx,db,worker,
@@ -59,7 +56,7 @@ export default class Grid {
 					if (!($e instanceof HTMLElement)) continue
 					writeHueAttributes(colorizer,$e,uid)
 				}
-				// TODO update map
+				redrawMapViewReceiver()
 			},
 			sendUpdatedUserQueriesReceiver,
 			()=>{

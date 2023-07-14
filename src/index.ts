@@ -90,20 +90,17 @@ async function main() {
 		()=>{
 			mapView.reset()
 		},
+		()=>{
+			mapView.redraw()
+		},
 		(item)=>{
 			mapView.addItem(item)
-		},
-		(items)=>{
-			console.log('intersectItemsOnMapViewReceiver',items)
 		},
 		(type,id)=>{
 			mapView.highlightItem(type,id)
 		},
 		(type,id)=>{
 			mapView.unhighlightItem(type,id)
-		},
-		(item)=>{
-			console.log('pingItemOnMapViewReceiver',item)
 		}
 	)
 	$main.append(
