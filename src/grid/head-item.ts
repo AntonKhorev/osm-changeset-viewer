@@ -99,6 +99,17 @@ export function makeUserCard(
 			}
 		)
 	)
+	const makeHuePicker=()=>{
+		const $stripe=makeElement('span')('hue-picker-stripe')()
+		const stripeStops:string[]=[]
+		for (let hue=0;hue<=720;hue+=30) {
+			stripeStops.push(`hsl(${hue-180} 100% 50%) ${100*hue/720}%`)
+		}
+		$stripe.style.background=`linear-gradient(to right, ${stripeStops.join(', ')})`
+		const $picker=makeDiv('hue-picker')($stripe)
+		$picker.tabIndex=0
+		return $picker
+	}
 	const $card=makeDiv('card')(
 		hide(makeDiv('notice')()),
 		hide(makeDiv('avatar')()),
@@ -118,7 +129,8 @@ export function makeUserCard(
 				makeUpdatesLi('changesets'),
 				makeUpdatesLi('notes')
 			)
-		))
+		)),
+		hide(makeHuePicker())
 	)
 	return $card
 }
@@ -140,6 +152,7 @@ export function updateUserCard(
 	const $changesetsField=$card.querySelector(':scope > .field.changesets')
 	const $notesField=$card.querySelector(':scope > .field.notes')
 	const $updatesField=$card.querySelector(':scope > .field.updates')
+	const $huePicker=$card.querySelector(':scope > .hue-picker')
 	if ($notice instanceof HTMLElement) {
 		if (info.status=='pending' || info.status=='running') {
 			$notice.hidden=false
@@ -320,6 +333,18 @@ export function updateUserCard(
 			}
 		} else {
 			$updatesField.hidden=true
+		}
+	}
+	if ($huePicker instanceof HTMLElement) {
+		if (info.status=='rerunning' || info.status=='ready') {
+			$huePicker.hidden=false
+			const hue=info.user.id%360 // TODO use colorizer
+			const $stripe=$huePicker.querySelector(':scope > .hue-picker-stripe')
+			if ($stripe instanceof HTMLElement) {
+				$stripe.style.left=`${-hue*100/360}%`
+			}
+		} else {
+			$huePicker.hidden=true
 		}
 	}
 }

@@ -168,6 +168,37 @@
 .ui .grid thead td .card form > [class$="-input-group"]:last-child {
 	margin-bottom: 0;
 }
+.ui .grid thead td .card .hue-picker {
+	position: relative;
+	overflow: hidden;
+	box-sizing: border-box;
+	height: 1rem;
+	border: var(--frame-line);
+	cursor: grab;
+}
+.ui .grid thead td .card .hue-picker::before,
+.ui .grid thead td .card .hue-picker::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	height: 100%;
+	width: calc(50% - .5rem);
+	background: #888;
+	opacity: .7;
+	z-index: 1;
+}
+.ui .grid thead td .card .hue-picker::before {
+	left: 0;
+}
+.ui .grid thead td .card .hue-picker::after {
+	right: 0;
+}
+.ui .grid thead td .card .hue-picker .hue-picker-stripe {
+	position: absolute;
+	height: 100%;
+	width: 200%;
+	top: 0;
+}
 .ui .grid thead td .card::before,
 .ui .grid thead td .card::after {
 	content: '';
