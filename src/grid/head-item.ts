@@ -63,10 +63,12 @@ function makeCloseButton(
 }
 
 export function makeUserCard(
+	colorizer: Colorizer,
 	$displayedChangesetsCount: HTMLOutputElement,
 	$displayedNotesCount: HTMLOutputElement,
 	update: ()=>void,
-	rescan: (type: UserScanDbRecord['type'], uid: number)=>void
+	rescan: (type: UserScanDbRecord['type'], uid: number)=>void,
+	changeUidHue: (uid: number)=>void
 ): HTMLElement {
 	const hide=($e:HTMLElement)=>{
 		$e.hidden=true
@@ -94,10 +96,9 @@ export function makeUserCard(
 	const makeUpdatesLi=(type:UserScanDbRecord['type'])=>makeElement('li')(type)(
 		`${type}: `,at(),` `,makeUpdateButton(
 			`rescan`,()=>{
-				const uid=$card.dataset.uid
-				if (uid!=null) {
-					rescan(type,Number(uid))
-				}
+				const uidString=$card.dataset.uid
+				if (uidString==null) return
+				rescan(type,Number(uidString))
 			}
 		)
 	)
@@ -121,7 +122,13 @@ export function makeUserCard(
 				makeUpdatesLi('notes')
 			)
 		)),
-		hide(makeHuePicker())
+		hide(makeHuePicker(hue=>{
+			const uidString=$card.dataset.uid
+			if (uidString==null) return
+			const uid=Number(uidString)
+			colorizer.setHueForUid(uid,hue)
+			changeUidHue(uid)
+		}))
 	)
 	return $card
 }

@@ -222,9 +222,11 @@ export default class GridHead {
 		const $displayedChangesetsCount=this.makeUserDisplayedItemsCount()
 		const $displayedNotesCount=this.makeUserDisplayedItemsCount()
 		const $card=makeUserCard(
+			this.colorizer,
 			$displayedChangesetsCount,$displayedNotesCount,
 			()=>this.sendUserQueryToWorker(query),
-			(type,uid)=>this.sendRescanRequestToWorker(type,uid)
+			(type,uid)=>this.sendRescanRequestToWorker(type,uid),
+			(uid)=>this.changeUidHue(uid)
 		)
 		this.updateUserCard($card,info)
 		const $selector=makeUserSelector($checkbox=>{
@@ -436,6 +438,15 @@ export default class GridHead {
 			})
 		}
 		this.$tabRow.append(this.$adderCell)
+	}
+	private changeUidHue(uid: number): void {
+		for (const userEntry of this.userEntries) {
+			if (userEntry.type!='query') continue
+			if (userEntry.info.status!='ready' && userEntry.info.status!='rerunning') continue
+			if (userEntry.info.user.id!=uid) continue
+			this.updateUserCard(userEntry.$card,userEntry.info)
+		}
+		// TODO update hues
 	}
 }
 

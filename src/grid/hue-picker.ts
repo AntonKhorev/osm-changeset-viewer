@@ -1,6 +1,6 @@
 import {makeElement, makeDiv} from '../util/html'
 
-export function makeHuePicker() {
+export function makeHuePicker(changeListener: (value:number)=>void) {
 	const $stripe=makeElement('span')('hue-picker-stripe')()
 	const stripeStops:string[]=[]
 	for (let hue=0;hue<=720;hue+=30) {
@@ -22,6 +22,7 @@ export function makeHuePicker() {
 			updateHuePicker($picker,newValue)
 			ev.stopPropagation()
 			ev.preventDefault()
+			changeListener(newValue)
 		}
 	}
 	return $picker
