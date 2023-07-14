@@ -8,6 +8,7 @@ import {
 	makeUserTab, makeUserCard, makeUserSelector, updateUserCard,
 	makeFormTab, makeFormCard, makeFormSelector
 } from './head-item'
+import {writeHueAttributes} from './info'
 import type Colorizer from '../colorizer'
 import type {ValidUserQuery} from '../osm'
 import {toUserQuery} from '../osm'
@@ -99,9 +100,9 @@ export default class GridHead {
 			const replaceUserCard=(userEntry:Extract<GridUserEntry,{type:'query'}>)=>{
 				const {$tab,$card,$selector}=userEntry
 				const uid=getUserEntryUid(userEntry)
-				if ($tab.parentElement) colorizer.writeHueAttributes($tab.parentElement,uid)
-				if ($card.parentElement) colorizer.writeHueAttributes($card.parentElement,uid)
-				if ($selector.parentElement) colorizer.writeHueAttributes($selector.parentElement,uid)
+				if ($tab.parentElement) writeHueAttributes(colorizer,$tab.parentElement,uid)
+				if ($card.parentElement) writeHueAttributes(colorizer,$card.parentElement,uid)
+				if ($selector.parentElement) writeHueAttributes(colorizer,$selector.parentElement,uid)
 				this.updateUserCard($card,userEntry.info)
 			}
 			if (message.part.type=='getUserInfo') {
@@ -391,10 +392,10 @@ export default class GridHead {
 	// }
 	private rewriteUserEntriesInHead(): void {
 		const $allTabCell=makeElement('th')('all')(makeAllTab())
-		this.colorizer.writeHueAttributes($allTabCell,undefined)
+		writeHueAttributes(this.colorizer,$allTabCell,undefined)
 		this.$tabRow.replaceChildren($allTabCell)
 		const $allCardCell=makeElement('td')('all')()
-		this.colorizer.writeHueAttributes($allCardCell,undefined)
+		writeHueAttributes(this.colorizer,$allCardCell,undefined)
 		this.$cardRow.replaceChildren($allCardCell)
 		const $allSelectorCell=makeElement('td')('all')(
 			makeUserSelector($checkbox=>{
@@ -404,7 +405,7 @@ export default class GridHead {
 				}
 			})
 		)
-		this.colorizer.writeHueAttributes($allSelectorCell,undefined)
+		writeHueAttributes(this.colorizer,$allSelectorCell,undefined)
 		this.$selectorRow.replaceChildren($allSelectorCell)
 		const gridHeadCells: {
 			$tabCell: HTMLTableCellElement
@@ -417,9 +418,9 @@ export default class GridHead {
 			const $cardCell=makeElement('td')()($card)
 			const $selectorCell=makeElement('td')()($selector)
 			const uid=getUserEntryUid(userEntry)
-			this.colorizer.writeHueAttributes($tabCell,uid)
-			this.colorizer.writeHueAttributes($cardCell,uid)
-			this.colorizer.writeHueAttributes($selectorCell,uid)
+			writeHueAttributes(this.colorizer,$tabCell,uid)
+			writeHueAttributes(this.colorizer,$cardCell,uid)
+			writeHueAttributes(this.colorizer,$selectorCell,uid)
 			this.$tabRow.append($tabCell)
 			this.$cardRow.append($cardCell)
 			this.$selectorRow.append($selectorCell)

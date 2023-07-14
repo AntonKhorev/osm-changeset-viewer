@@ -1,7 +1,7 @@
 import ItemRow, {getCellContainer} from './row'
 import ItemCollectionRow from './collection-row'
 import type {ItemSequencePoint} from './info'
-import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText} from './info'
+import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText, writeHueAttributes} from './info'
 import {isItem} from './info'
 import type Colorizer from '../colorizer'
 import {makeElement, removeInlineElement} from '../util/html'
@@ -27,10 +27,10 @@ export default class EmbeddedItemRow {
 	): EmbeddedItemRow {
 		$row.classList.add(className)
 		const $allCell=$row.insertCell()
-		colorizer.writeHueAttributes($allCell,undefined)
+		writeHueAttributes(colorizer,$allCell,undefined)
 		for (const uid of columnUids) {
 			const $cell=$row.insertCell()
-			colorizer.writeHueAttributes($cell,uid)
+			writeHueAttributes(colorizer,$cell,uid)
 		}
 		const embeddedRow=new EmbeddedItemRow($row)
 		embeddedRow.addStretchButton()

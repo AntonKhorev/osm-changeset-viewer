@@ -1,4 +1,5 @@
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
+import type Colorizer from '../colorizer'
 
 export type ItemDescriptor = {
 	type: string
@@ -224,5 +225,17 @@ export function writeCollapsedItemCommentPieceText($piece: HTMLElement, text: st
 			delete $piece.dataset.fullComment
 			$piece.textContent=text
 		}
+	}
+}
+
+export function writeHueAttributes(colorizer: Colorizer, $e: HTMLElement, uid: number|undefined): void {
+	if (uid!=null) {
+		$e.dataset.hueUid=String(uid)
+		$e.style.setProperty('--hue',String(colorizer.getHueForUid(uid)))
+		$e.style.setProperty('--saturation-factor','1')
+	} else {
+		$e.dataset.hueUid=''
+		$e.style.setProperty('--hue','0')
+		$e.style.setProperty('--saturation-factor','0')
 	}
 }

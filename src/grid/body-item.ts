@@ -1,7 +1,7 @@
 import type {EditorIcon} from './editors'
 import editorData from './editors'
 import type ItemOptions from './item-options'
-import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText} from './info'
+import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText, writeHueAttributes} from './info'
 import type Colorizer from '../colorizer'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
@@ -53,8 +53,8 @@ export function makeItemShell(
 		$item.classList.add('user')
 		id=item.id
 		writeNewUserIcon($icon,id)
-		colorizer.writeHueAttributes($icon,item.id)
-		colorizer.writeHueAttributes($balloon,item.id)
+		writeHueAttributes(colorizer,$icon,item.id)
+		writeHueAttributes(colorizer,$balloon,item.id)
 	} else if (type=='changeset' || type=='changesetClose') {
 		$item.classList.add('changeset')
 		if (type=='changesetClose') $item.classList.add('closed')
@@ -66,14 +66,14 @@ export function makeItemShell(
 		}
 		$icon.dataset.size=String(size)
 		writeChangesetIcon($icon,id,type=='changesetClose',size)
-		colorizer.writeHueAttributes($icon,item.uid)
-		colorizer.writeHueAttributes($balloon,item.uid)
+		writeHueAttributes(colorizer,$icon,item.uid)
+		writeHueAttributes(colorizer,$balloon,item.uid)
 	} else if (type=='note') {
 		$item.classList.add('note')
 		id=item.id
 		writeNoteIcon($icon,id)
-		colorizer.writeHueAttributes($icon,item.uid)
-		colorizer.writeHueAttributes($balloon,item.uid)
+		writeHueAttributes(colorizer,$icon,item.uid)
+		writeHueAttributes(colorizer,$balloon,item.uid)
 	} else if (type=='changesetComment' || type=='noteComment') {
 		$item.classList.add('comment')
 		if (!item.text) $item.classList.add('mute')
@@ -96,8 +96,8 @@ export function makeItemShell(
 			$button.title=`comment for changeset ${id}`
 			commentIconSvg=getSvgOfCommentIcon('changeset')
 		}
-		colorizer.writeHueAttributes($icon,item.itemUid)
-		colorizer.writeHueAttributes($balloon,item.uid)
+		writeHueAttributes(colorizer,$icon,item.itemUid)
+		writeHueAttributes(colorizer,$balloon,item.uid)
 		if (item.uid==item.itemUid) {
 			$button.innerHTML=commentIconSvg
 			$icon.insertAdjacentHTML('beforeend',(item.text
@@ -109,7 +109,7 @@ export function makeItemShell(
 			$item.classList.add('incoming')
 			$senderIcon=makeElement('span')('icon')()
 			$senderIcon.classList.add('sender')
-			colorizer.writeHueAttributes($senderIcon,item.uid)
+			writeHueAttributes(colorizer,$senderIcon,item.uid)
 			const username=item.uid?usernames.get(item.uid):undefined
 			if (username!=null) {
 				$senderIcon.title=username
@@ -255,7 +255,7 @@ export function writeExpandedItemFlow(
 		const $button=makeElement('button')('comment-ref')()
 		$button.dataset.order=String(order)
 		$button.title=`comment ${order+1}`
-		colorizer.writeHueAttributes($button,commentRef.uid)
+		writeHueAttributes(colorizer,$button,commentRef.uid)
 		$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute,commentRef.action)
 		return $button
 	}
@@ -293,7 +293,7 @@ export function writeExpandedItemFlow(
 			}
 			{
 				const $currentCommentIcon=makeElement('span')('marker')()
-				colorizer.writeHueAttributes($currentCommentIcon,uid)
+				writeHueAttributes(colorizer,$currentCommentIcon,uid)
 				const svg=getSvgOfCommentIcon(itemType)
 				const narrowSvg=svg.replace(`width="8"`,`width="4"`)
 				$currentCommentIcon.innerHTML=narrowSvg
