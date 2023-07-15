@@ -2070,6 +2070,24 @@ function mod(n, d) {
     return (n % d + d) % d;
 }
 
+const cyrillicLetters = 'АВСЕНКМОРТХасеорху'; // can also add non-Russian letters like 'i' 
+function decorateUserName(name) {
+    const chunks = [];
+    const re = new RegExp(`(.*?\\p{Script=Latn})([${cyrillicLetters}]+)(?=\\p{Script=Latn})`, 'uy');
+    let idx = 0;
+    while (true) {
+        idx = re.lastIndex;
+        const match = re.exec(name);
+        if (!match)
+            break;
+        const [, beforeInclusion, inclusion] = match;
+        chunks.push([beforeInclusion]);
+        chunks.push([inclusion, { belongsTo: 'Cyrl', surroundedBy: 'Latn' }]);
+    }
+    chunks.push([name.slice(idx)]);
+    return chunks;
+}
+
 const merkaartorIcon = "data:image/png;base64," +
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADSE" +
     "lEQVQ4ywXBW0xbdQDA4V/Praen9zrKRQrtoDABYYOI84ZRhy5Z" +
@@ -3179,22 +3197,29 @@ function updateUserCard(colorizer, $card, info, getUserNameHref, getUserIdHref) 
             const notKnownToBeDelelted = !info.user.withDetails || info.user.visible;
             let namePlaceholder;
             if (info.user.name) {
+                const decoratedName = decorateUserName(info.user.name);
+                namePlaceholder = decoratedName.map(([text, warning]) => {
+                    if (!warning)
+                        return text;
+                    const $chunk = makeElement('span')('with-warning')(text);
+                    $chunk.title = `${warning.belongsTo} inside ${warning.surroundedBy}`;
+                    return $chunk;
+                });
                 if (notKnownToBeDelelted) {
-                    namePlaceholder = makeLink(info.user.name, getUserNameHref(info.user.name));
-                }
-                else {
-                    namePlaceholder = info.user.name;
+                    const $a = makeElement('a')()(...namePlaceholder);
+                    $a.href = getUserNameHref(info.user.name);
+                    namePlaceholder = [$a];
                 }
             }
             else {
                 if (notKnownToBeDelelted) {
-                    namePlaceholder = `user without requested details`;
+                    namePlaceholder = [`user without requested details`];
                 }
                 else {
-                    namePlaceholder = `deleted user`;
+                    namePlaceholder = [`deleted user`];
                 }
             }
-            $nameField.replaceChildren(namePlaceholder, ` `, makeElement('span')('api')(`(`, makeLink(`#${info.user.id}`, getUserIdHref(info.user.id)), `)`));
+            $nameField.replaceChildren(...namePlaceholder, ` `, makeElement('span')('api')(`(`, makeLink(`#${info.user.id}`, getUserIdHref(info.user.id)), `)`));
         }
         else {
             $nameField.hidden = true;

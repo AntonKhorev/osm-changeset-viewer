@@ -313,6 +313,9 @@ body > .symbols {
 .ui .grid thead td .card .field:nth-last-child(2n) {
 	background: #8881;
 }
+.ui .grid thead td .card .field.name .with-warning {
+	background: #F004;
+}
 .ui .grid thead td .card .updates ul {
 	margin: 0;
 	padding: 0 0 0 1em;
