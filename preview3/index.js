@@ -1869,55 +1869,138 @@ class WorkerBroadcastReceiver extends WorkerBroadcastChannel {
     }
 }
 
-function installDragListeners($e, startDrag, doDrag, endDrag, cancelDrag) {
-    let grab;
-    $e.style.touchAction = 'none';
-    $e.style.cursor = 'grab';
-    $e.onpointerdown = ev => {
-        if (grab)
-            return;
-        grab = startDrag(ev);
-        if (!grab)
-            return;
-        $e.setPointerCapture(ev.pointerId);
-        $e.style.cursor = 'grabbing';
-        $e.focus();
-        ev.preventDefault();
-    };
-    $e.onpointermove = ev => {
-        if (!grab || grab.pointerId != ev.pointerId)
-            return;
-        doDrag(ev, grab);
-        ev.preventDefault();
-    };
-    $e.onpointerup = $e.onpointercancel = ev => {
-        if (!grab || grab.pointerId != ev.pointerId)
-            return;
-        endDrag(ev, grab);
-        grab = undefined;
-        $e.style.cursor = 'grab';
-        ev.preventDefault();
-    };
-    if (cancelDrag)
-        $e.onpointercancel = ev => {
-            if (!grab || grab.pointerId != ev.pointerId)
+class DragListener {
+    constructor($target) {
+        this.$target = $target;
+        this.cursorHovering = 'grab';
+        this.cursorGrabbing = 'grabbing';
+    }
+    install() {
+        this.$target.style.touchAction = 'none';
+        this.$target.style.cursor = this.cursorHovering;
+        this.$target.onpointerdown = ev => {
+            if (this.grab)
                 return;
-            cancelDrag(ev, grab);
-            grab = undefined;
-            $e.style.cursor = 'grab';
+            this.grab = this.beginDrag(ev);
+            if (!this.grab)
+                return;
+            this.$target.setPointerCapture(ev.pointerId);
+            this.$target.style.cursor = this.cursorGrabbing;
+            this.$target.focus();
             ev.preventDefault();
         };
+        this.$target.onpointermove = ev => {
+            if (!this.grab || this.grab.pointerId != ev.pointerId)
+                return;
+            this.doDrag(ev, this.grab);
+            ev.preventDefault();
+        };
+        this.$target.onpointerup = ev => {
+            if (!this.grab || this.grab.pointerId != ev.pointerId)
+                return;
+            this.applyDrag(ev, this.grab);
+            this.endDrag(ev, this.grab);
+            this.grab = undefined;
+            this.$target.style.cursor = this.cursorHovering;
+            ev.preventDefault();
+        };
+        this.$target.onpointercancel = ev => {
+            if (!this.grab || this.grab.pointerId != ev.pointerId)
+                return;
+            this.endDrag(ev, this.grab);
+            this.grab = undefined;
+            this.$target.style.cursor = this.cursorHovering;
+            ev.preventDefault();
+        };
+    }
+    doDrag(ev, grab) { }
+    applyDrag(ev, grab) { }
+    endDrag(ev, grab) { }
 }
 
-function installTabDragListeners($gridHead, gridHeadCells, $tab, iActive, shiftTabCallback) {
-    const { $tabCell: $activeTabCell, $cardCell: $activeCardCell, $selectorCell: $activeSelectorCell } = gridHeadCells[iActive];
-    const toggleCellClass = (className, on) => {
-        $activeTabCell.classList.toggle(className, on);
-        $activeCardCell.classList.toggle(className, on);
-        $activeSelectorCell.classList.toggle(className, on);
-    };
-    const translate = (x, i = iActive) => {
-        const { $tabCell, $cardCell, $selectorCell } = gridHeadCells[i];
+class TabDragListener extends DragListener {
+    constructor($gridHead, gridHeadCells, $tab, iActive, shiftTabCallback) {
+        super($tab);
+        this.$gridHead = $gridHead;
+        this.gridHeadCells = gridHeadCells;
+        this.iActive = iActive;
+        this.shiftTabCallback = shiftTabCallback;
+    }
+    install() {
+        const activeCells = this.gridHeadCells[this.iActive];
+        activeCells.$tabCell.ontransitionend =
+            activeCells.$cardCell.ontransitionend =
+                activeCells.$selectorCell.ontransitionend = ev => {
+                    const $cell = ev.currentTarget;
+                    if (!($cell instanceof HTMLElement))
+                        return;
+                    $cell.classList.remove('settling');
+                };
+        super.install();
+    }
+    beginDrag(ev) {
+        if (ev.target instanceof Element && ev.target.closest('button'))
+            return;
+        this.toggleCellClass('grabbed', true);
+        this.$gridHead.classList.add('with-grabbed-tab');
+        return {
+            pointerId: ev.pointerId,
+            startX: ev.clientX,
+            iShiftTo: this.iActive,
+            relativeShiftX: 0
+        };
+    }
+    doDrag(ev, grab) {
+        const cellStartX = this.gridHeadCells[this.iActive].$tabCell.offsetLeft;
+        const minOffsetX = this.gridHeadCells[0].$tabCell.offsetLeft - cellStartX;
+        const maxOffsetX = this.gridHeadCells[this.gridHeadCells.length - 1].$tabCell.offsetLeft - cellStartX;
+        const offsetX = Math.max(minOffsetX, Math.min(maxOffsetX, ev.clientX - grab.startX));
+        this.translate(offsetX);
+        const cellOffsetX = cellStartX + offsetX;
+        let iShiftTo = 0;
+        for (; iShiftTo < this.gridHeadCells.length; iShiftTo++) {
+            const $shiftToCell = this.gridHeadCells[iShiftTo].$tabCell;
+            grab.relativeShiftX = cellOffsetX - $shiftToCell.offsetLeft;
+            if (cellOffsetX < $shiftToCell.offsetLeft + $shiftToCell.offsetWidth / 2) {
+                break;
+            }
+        }
+        for (let iShuffle = 0; iShuffle < this.gridHeadCells.length; iShuffle++) {
+            if (iShuffle == this.iActive)
+                continue;
+            let shuffleX = 0;
+            if (iShuffle >= iShiftTo && iShuffle < this.iActive) {
+                shuffleX = this.gridHeadCells[iShuffle + 1].$tabCell.offsetLeft - this.gridHeadCells[iShuffle].$tabCell.offsetLeft;
+            }
+            if (iShuffle > this.iActive && iShuffle <= iShiftTo) {
+                shuffleX = this.gridHeadCells[iShuffle - 1].$tabCell.offsetLeft - this.gridHeadCells[iShuffle].$tabCell.offsetLeft;
+            }
+            this.translate(shuffleX, iShuffle);
+        }
+        grab.iShiftTo = iShiftTo;
+    }
+    applyDrag(ev, grab) {
+        if (grab.iShiftTo != this.iActive)
+            this.shiftTabCallback(grab.iShiftTo);
+    }
+    endDrag(ev, grab) {
+        for (const i of this.gridHeadCells.keys()) {
+            this.translate(0, i);
+        }
+        this.toggleCellClass('grabbed', false);
+        this.$gridHead.classList.remove('with-grabbed-tab');
+        if (!grab.relativeShiftX)
+            return;
+        requestAnimationFrame(() => {
+            this.translate(grab.relativeShiftX);
+            requestAnimationFrame(() => {
+                this.toggleCellClass('settling', true);
+                this.translate(0);
+            });
+        });
+    }
+    translate(x, i = this.iActive) {
+        const { $tabCell, $cardCell, $selectorCell } = this.gridHeadCells[i];
         if (x) {
             $tabCell.style.translate = `${x}px`;
             $cardCell.style.translate = `${x}px`;
@@ -1928,82 +2011,42 @@ function installTabDragListeners($gridHead, gridHeadCells, $tab, iActive, shiftT
             $cardCell.style.removeProperty('translate');
             $selectorCell.style.removeProperty('translate');
         }
-    };
-    $activeTabCell.ontransitionend = () => {
-        $activeTabCell.classList.remove('settling');
-    };
-    $activeCardCell.ontransitionend = () => {
-        $activeCardCell.classList.remove('settling');
-    };
-    $activeSelectorCell.ontransitionend = () => {
-        $activeSelectorCell.classList.remove('settling');
-    };
-    $tab.style.touchAction = 'none';
-    const cleanup = (grab) => {
-        for (const i of gridHeadCells.keys()) {
-            translate(0, i);
-        }
-        toggleCellClass('grabbed', false);
-        $gridHead.classList.remove('with-grabbed-tab');
-        if (!grab.relativeShiftX)
-            return;
-        requestAnimationFrame(() => {
-            translate(grab.relativeShiftX);
-            requestAnimationFrame(() => {
-                toggleCellClass('settling', true);
-                translate(0);
-            });
-        });
-    };
-    installDragListeners($tab, ev => {
-        if (ev.target instanceof Element && ev.target.closest('button'))
-            return;
-        toggleCellClass('grabbed', true);
-        $gridHead.classList.add('with-grabbed-tab');
+    }
+    toggleCellClass(className, on) {
+        const activeCells = this.gridHeadCells[this.iActive];
+        activeCells.$tabCell.classList.toggle(className, on);
+        activeCells.$cardCell.classList.toggle(className, on);
+        activeCells.$selectorCell.classList.toggle(className, on);
+    }
+}
+
+class HuePickerDragListener extends DragListener {
+    constructor($target, $stripe, changeListener) {
+        super($target);
+        this.$stripe = $stripe;
+        this.changeListener = changeListener;
+    }
+    beginDrag(ev) {
         return {
             pointerId: ev.pointerId,
             startX: ev.clientX,
-            iShiftTo: iActive,
-            relativeShiftX: 0
+            startValue: readValueFromString(this.$target.dataset.value ?? '')
         };
-    }, (ev, grab) => {
-        const cellStartX = gridHeadCells[iActive].$tabCell.offsetLeft;
-        const minOffsetX = gridHeadCells[0].$tabCell.offsetLeft - cellStartX;
-        const maxOffsetX = gridHeadCells[gridHeadCells.length - 1].$tabCell.offsetLeft - cellStartX;
-        const offsetX = Math.max(minOffsetX, Math.min(maxOffsetX, ev.clientX - grab.startX));
-        translate(offsetX);
-        const cellOffsetX = cellStartX + offsetX;
-        let iShiftTo = 0;
-        for (; iShiftTo < gridHeadCells.length; iShiftTo++) {
-            const $shiftToCell = gridHeadCells[iShiftTo].$tabCell;
-            grab.relativeShiftX = cellOffsetX - $shiftToCell.offsetLeft;
-            if (cellOffsetX < $shiftToCell.offsetLeft + $shiftToCell.offsetWidth / 2) {
-                break;
-            }
-        }
-        for (let iShuffle = 0; iShuffle < gridHeadCells.length; iShuffle++) {
-            if (iShuffle == iActive)
-                continue;
-            let shuffleX = 0;
-            if (iShuffle >= iShiftTo && iShuffle < iActive) {
-                shuffleX = gridHeadCells[iShuffle + 1].$tabCell.offsetLeft - gridHeadCells[iShuffle].$tabCell.offsetLeft;
-            }
-            if (iShuffle > iActive && iShuffle <= iShiftTo) {
-                shuffleX = gridHeadCells[iShuffle - 1].$tabCell.offsetLeft - gridHeadCells[iShuffle].$tabCell.offsetLeft;
-            }
-            translate(shuffleX, iShuffle);
-        }
-        grab.iShiftTo = iShiftTo;
-    }, (ev, grab) => {
-        const iShiftTo = grab.iShiftTo;
-        cleanup(grab);
-        if (iShiftTo != iActive)
-            shiftTabCallback(iShiftTo);
-    }, (ev, grab) => {
-        cleanup(grab);
-    });
+    }
+    doDrag(ev, grab) {
+        const newValue = this.getNewValue(grab, ev.clientX);
+        slideStripe(this.$stripe, newValue);
+    }
+    endDrag(ev, grab) {
+        const newValue = this.getNewValue(grab, ev.clientX);
+        this.$target.dataset.value = String(newValue);
+        slideStripe(this.$stripe, newValue);
+        this.changeListener(newValue);
+    }
+    getNewValue(grab, pointerX) {
+        return limitValue(grab.startValue + (grab.startX - pointerX) * 360 / this.$target.clientWidth);
+    }
 }
-
 function makeHuePicker(changeListener) {
     const $stripe = makeElement('span')('hue-picker-stripe')();
     const stripeStops = [];
@@ -2031,20 +2074,7 @@ function makeHuePicker(changeListener) {
             changeListener(newValue);
         }
     };
-    const getNewValue = (grab, pointerX) => limitValue(grab.startValue + (grab.startX - pointerX) * 360 / $picker.clientWidth);
-    installDragListeners($picker, ev => ({
-        pointerId: ev.pointerId,
-        startX: ev.clientX,
-        startValue: readValueFromString($picker.dataset.value ?? '')
-    }), (ev, grab) => {
-        const newValue = getNewValue(grab, ev.clientX);
-        slideStripe($stripe, newValue);
-    }, (ev, grab) => {
-        const newValue = getNewValue(grab, ev.clientX);
-        $picker.dataset.value = String(newValue);
-        slideStripe($stripe, newValue);
-        changeListener(newValue);
-    });
+    new HuePickerDragListener($picker, $stripe, changeListener).install();
     return $picker;
 }
 function updateHuePicker($picker, value) {
@@ -4235,13 +4265,13 @@ class GridHead {
             gridHeadCells.push({ $tabCell, $cardCell, $selectorCell });
         }
         for (const [iActive, { $tab }] of this.userEntries.entries()) {
-            installTabDragListeners(this.$gridHead, gridHeadCells, $tab, iActive, iShiftTo => {
+            new TabDragListener(this.$gridHead, gridHeadCells, $tab, iActive, iShiftTo => {
                 moveInArray(this.userEntries, iActive, iShiftTo);
                 this.rewriteUserEntriesInHead();
                 this.sendUpdatedUserQueries();
                 this.reorderColumns(iActive, iShiftTo);
                 this.streamMessenger?.reorderColumns(iActive, iShiftTo);
-            });
+            }).install();
         }
         this.$tabRow.append(this.$adderCell);
     }
@@ -6165,33 +6195,33 @@ class More {
 }
 _More_autoLoad = new WeakMap();
 
+const minHeight = 32;
+let ResizerDragListener$1 = class ResizerDragListener extends DragListener {
+    constructor($resizer, $panel) {
+        super($resizer);
+        this.$panel = $panel;
+        this.cursorHovering = 'row-resize';
+        this.cursorGrabbing = 'row-resize';
+    }
+    beginDrag(ev) {
+        return {
+            pointerId: ev.pointerId,
+            startY: ev.clientY,
+            startHeight: this.$panel.clientHeight
+        };
+    }
+    doDrag(ev, grab) {
+        const newHeight = Math.max(minHeight, grab.startHeight - (ev.clientY - grab.startY));
+        this.$panel.style.height = `${newHeight}px`;
+    }
+};
 class Panel {
     makePanelAndButton() {
-        const minHeight = 32;
         const $resizer = makeElement('button')('resizer')();
         const $section = makeElement('section')()();
         const $panel = makeDiv('panel', this.className)($resizer, $section);
         $panel.hidden = true;
-        let grab;
-        $resizer.onpointerdown = ev => {
-            if (grab)
-                return;
-            grab = {
-                pointerId: ev.pointerId,
-                startY: ev.clientY,
-                startHeight: $panel.clientHeight
-            };
-            $resizer.setPointerCapture(ev.pointerId);
-        };
-        $resizer.onpointerup = ev => {
-            grab = undefined;
-        };
-        $resizer.onpointermove = ev => {
-            if (!grab || grab.pointerId != ev.pointerId)
-                return;
-            const newHeight = Math.max(minHeight, grab.startHeight - (ev.clientY - grab.startY));
-            $panel.style.height = `${newHeight}px`;
-        };
+        new ResizerDragListener$1($resizer, $panel).install();
         const $button = makeElement('button')()(this.buttonLabel);
         $button.setAttribute('aria-expanded', String(!$panel.hidden));
         $button.onclick = () => {
@@ -6619,6 +6649,44 @@ function writeFooter($root, $footer, $netDialog, server, grid, more, toggleMap) 
     }
 }
 
+function clamp(v1, v, v2) {
+    return Math.min(Math.max(v1, v), v2);
+}
+
+const minSideSize = 80;
+const frMultiplier = 100000;
+class ResizerDragListener extends DragListener {
+    constructor($root, $aside, $resizer) {
+        super($resizer);
+        this.$root = $root;
+        this.$aside = $aside;
+        this.cursorHovering = 'col-resize';
+        this.cursorGrabbing = 'col-resize';
+    }
+    beginDrag(ev) {
+        return {
+            pointerId: ev.pointerId,
+            startX: ev.clientX,
+            startAsideWidth: this.$aside.clientWidth
+        };
+    }
+    doDrag(ev, grab) {
+        const dx = clamp(minSideSize + grab.startAsideWidth - this.$root.clientWidth, ev.clientX - grab.startX, grab.startAsideWidth - minSideSize);
+        let rightSideSizeFr = Math.round(frMultiplier * (grab.startAsideWidth - minSideSize - dx) / (this.$root.clientWidth - 2 * minSideSize));
+        if (!Number.isFinite(rightSideSizeFr))
+            rightSideSizeFr = minSideSize;
+        let leftSideSizeFr = frMultiplier - rightSideSizeFr;
+        this.$root.style.setProperty('--left-side-size', `${leftSideSizeFr}fr`);
+        this.$root.style.setProperty('--right-side-size', `${rightSideSizeFr}fr`);
+    }
+}
+function writeSidebar($root, $aside, mapView) {
+    $root.style.setProperty('--min-side-size', `${minSideSize}px`);
+    const $resizer = makeElement('button')('resizer')();
+    new ResizerDragListener($root, $aside, $resizer).install();
+    $aside.append($resizer, mapView.$mapView);
+}
+
 function makeNetDialog(net) {
     const $helpDialog = makeElement('dialog')('help')();
     const $closeButton = makeElement('button')('close')();
@@ -6767,9 +6835,6 @@ function calculateY(lat) {
     const maxLat = 85.0511287798;
     const validLatRadians = clamp(-maxLat, lat, maxLat) * Math.PI / 180;
     return (1 - Math.log(Math.tan(validLatRadians) + 1 / Math.cos(validLatRadians)) / Math.PI) / 2;
-}
-function clamp(v1, v, v2) {
-    return Math.min(Math.max(v1, v), v2);
 }
 
 const TOP = 1;
@@ -7104,9 +7169,15 @@ class TileLayer extends Layer {
 }
 
 const speedDecayRate = 0.003;
-function installMapDragListeners($mapView, start, pan, fling) {
-    installDragListeners($mapView, ev => {
-        const startPxXY = start();
+class MapDragListener extends DragListener {
+    constructor($target, start, pan, fling) {
+        super($target);
+        this.start = start;
+        this.pan = pan;
+        this.fling = fling;
+    }
+    beginDrag(ev) {
+        const startPxXY = this.start();
         if (!startPxXY)
             return;
         const [startPxX, startPxY] = startPxXY;
@@ -7122,7 +7193,8 @@ function installMapDragListeners($mapView, start, pan, fling) {
             currentSpeedPxY: 0,
         };
         return grab;
-    }, (ev, grab) => {
+    }
+    doDrag(ev, grab) {
         const newPxX = grab.startPxX - (ev.clientX - grab.startViewPxOffsetX);
         const newPxY = grab.startPxY - (ev.clientY - grab.startViewPxOffsetY);
         const newTime = performance.now();
@@ -7135,10 +7207,11 @@ function installMapDragListeners($mapView, start, pan, fling) {
         grab.currentPxX = newPxX;
         grab.currentPxY = newPxY;
         grab.currentTime = newTime;
-        pan(newPxX, newPxY);
-    }, (ev, grab) => {
-        fling(grab.currentSpeedPxX, grab.currentSpeedPxY);
-    });
+        this.pan(newPxX, newPxY);
+    }
+    endDrag(ev, grab) {
+        this.fling(grab.currentSpeedPxX, grab.currentSpeedPxY);
+    }
 }
 
 class MapView {
@@ -7179,7 +7252,7 @@ class MapView {
             else if (this.animation.type == 'panning') {
                 const pxSize = calculatePxSize(this.viewZ);
                 const pxX = this.animation.xAxis.getPosition(time);
-                const pxY = this.animation.yAxis.getPosition(time);
+                const pxY = clamp(0, this.animation.yAxis.getPosition(time), 1 / pxSize);
                 this.viewX = pxX * pxSize;
                 this.viewY = pxY * pxSize;
                 if (this.animation.xAxis.isEnded(time) && this.animation.yAxis.isEnded(time)) {
@@ -7247,7 +7320,7 @@ class MapView {
             };
             this.scheduleFrame();
         };
-        installMapDragListeners(this.$mapView, () => {
+        new MapDragListener(this.$mapView, () => {
             if (this.animation.type != 'stopped')
                 return null;
             const pxSize = calculatePxSize(this.viewZ);
@@ -7266,7 +7339,7 @@ class MapView {
             const pxSize = calculatePxSize(this.viewZ);
             this.animation = makeFlingAnimation(performance.now(), this.viewX / pxSize, this.viewY / pxSize, speedPxX, speedPxY);
             this.scheduleFrame();
-        });
+        }).install();
         const resizeObserver = new ResizeObserver(() => this.scheduleFrame());
         resizeObserver.observe(this.$mapView);
     }
@@ -7318,7 +7391,7 @@ class MapView {
         this.viewZ = Math.round(clamp(0, this.viewZ, maxZoom));
         const pxSize = calculatePxSize(this.viewZ);
         this.viewX = Math.round(this.viewX / pxSize) * pxSize;
-        this.viewY = Math.round(this.viewY / pxSize) * pxSize;
+        this.viewY = clamp(0, Math.round(this.viewY / pxSize) * pxSize, 1);
     }
 }
 function getViewCenterPxOffset(viewPxSize, viewCornerPxOffset) {
@@ -7381,18 +7454,18 @@ async function main() {
         mapView.unhighlightItem(type, id);
     });
     $main.append(makeDiv('notice')(`This is a preview v0.3.0. `, `If you've been using the previous preview, please delete its databases in the browser.`), p(`In Firefox you can do the following to delete old databases: `, em(`Developer tools`), ` (F12) > `, em(`Storage`), ` > `, em(`Indexed DB`), ` > (this website) > `, em(`OsmChangesetViewer[`), `...`, em(`]`), ` (there is likely only `, em(`OsmChangesetViewer[www.openstreetmap.org]`), `, multiple databases are possible if you tried using the changeset viewer with different osm servers). `, `Right-click each one and select `, em(`Delete`), `.`), p(`In Chrome you can do the following: `, em(`DevTools`), ` (F12) > `, em(`Application`), ` > `, em(`Storage`), ` > `, em(`IndexedDB`), ` > `, em(`OsmChangesetViewer[`), `...`, em(`]`), `. `, `Press the `, em(`Delete database`), ` button.`), grid.$grid, more.$div);
-    $aside.append(mapView.$mapView);
+    writeSidebar($root, $aside, mapView);
     net.serverSelector.installHashChangeListener(net.cx, hostlessHash => {
         grid.receiveUpdatedUserQueries(getUserQueriesFromHash(hostlessHash));
     }, true);
     writeFooter($root, $footer, $netDialog, net.cx.server, grid, more, () => {
         if ($aside.hidden) {
             $aside.hidden = false;
-            $root.style.gridTemplateColumns = '1fr 1fr';
+            $main.style.gridArea = `main`;
         }
         else {
             $aside.hidden = true;
-            $root.style.gridTemplateColumns = '1fr 0fr';
+            $main.style.gridArea = `main / main / aside / aside`;
         }
         return !$aside.hidden;
     });
