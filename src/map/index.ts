@@ -2,7 +2,7 @@ import type {Animation} from './animation'
 import {makeFlingAnimation} from './animation'
 import type {RenderView, Layer} from './layer'
 import {ItemLayer, TileLayer} from './layer'
-import installDragListeners from './drag'
+import MapDragListener from './drag'
 import {calculatePxSize, clamp} from './geo'
 import type Colorizer from '../colorizer'
 import type {TileProvider} from '../net'
@@ -112,7 +112,7 @@ export default class MapView {
 			}
 			this.scheduleFrame()
 		}
-		installDragListeners(this.$mapView,()=>{
+		new MapDragListener(this.$mapView,()=>{
 			if (this.animation.type!='stopped') return null
 			const pxSize=calculatePxSize(this.viewZ)
 			return [
@@ -133,7 +133,7 @@ export default class MapView {
 				speedPxX,speedPxY
 			)
 			this.scheduleFrame()
-		})
+		}).install()
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
 		resizeObserver.observe(this.$mapView)
 	}

@@ -21,8 +21,6 @@
 	background-image: radial-gradient(var(--frame-color) 25%, #0000 0%);
 	background-size: .5rem .5rem;
 	background-position: center;
-	cursor: row-resize;
-	touch-action: none;
 }
 .ui footer > .panel > button.resizer:hover {
 	background-color: var(--hover-color);

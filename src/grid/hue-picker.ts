@@ -1,10 +1,40 @@
-import installDragListeners from '../drag'
+import DragListener from '../drag'
 import {makeElement, makeDiv} from '../util/html'
 
 type Grab = {
 	pointerId: number
 	startX: number
 	startValue: number
+}
+
+class HuePickerDragListener extends DragListener<Grab> {
+	constructor(
+		$target: HTMLElement,
+		private $stripe: HTMLElement,
+		private changeListener: (value:number)=>void
+	) {
+		super($target)
+	}
+	beginDrag(ev: PointerEvent) {
+		return {
+			pointerId: ev.pointerId,
+			startX: ev.clientX,
+			startValue: readValueFromString(this.$target.dataset.value??'')
+		}
+	}
+	doDrag(ev: PointerEvent, grab: Grab) {
+		const newValue=this.getNewValue(grab,ev.clientX)
+		slideStripe(this.$stripe,newValue)
+	}
+	endDrag(ev: PointerEvent, grab: Grab) {
+		const newValue=this.getNewValue(grab,ev.clientX)
+		this.$target.dataset.value=String(newValue)
+		slideStripe(this.$stripe,newValue)
+		this.changeListener(newValue)
+	}
+	private getNewValue(grab: Grab, pointerX: number) {
+		return limitValue(grab.startValue+(grab.startX-pointerX)*360/this.$target.clientWidth)
+	}
 }
 
 export function makeHuePicker(changeListener: (value:number)=>void) {
@@ -33,20 +63,7 @@ export function makeHuePicker(changeListener: (value:number)=>void) {
 			changeListener(newValue)
 		}
 	}
-	const getNewValue=(grab:Grab,pointerX:number)=>limitValue(grab.startValue+(grab.startX-pointerX)*360/$picker.clientWidth)
-	installDragListeners($picker,ev=>({
-		pointerId: ev.pointerId,
-		startX: ev.clientX,
-		startValue: readValueFromString($picker.dataset.value??'')
-	}),(ev,grab)=>{
-		const newValue=getNewValue(grab,ev.clientX)
-		slideStripe($stripe,newValue)
-	},(ev,grab)=>{
-		const newValue=getNewValue(grab,ev.clientX)
-		$picker.dataset.value=String(newValue)
-		slideStripe($stripe,newValue)
-		changeListener(newValue)
-	})
+	new HuePickerDragListener($picker,$stripe,changeListener).install()
 	return $picker
 }
 

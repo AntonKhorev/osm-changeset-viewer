@@ -1,15 +1,31 @@
-import installDragListeners from '../drag'
+import DragListener from '../drag'
 
 const speedDecayRate=0.003
 
-export default function installMapDragListeners(
-	$mapView: HTMLElement,
-	start: ()=>[startPxX:number,startPxY:number]|null,
-	pan: (pxX:number,pxY:number)=>void,
-	fling: (speedPxX:number,speedPxY:number)=>void
-): void {
-	installDragListeners($mapView,ev=>{
-		const startPxXY=start()
+type Grab = {
+	pointerId: number
+	startViewPxOffsetX: number
+	startViewPxOffsetY: number
+	startPxX: number
+	startPxY: number
+	currentTime: number
+	currentPxX: number
+	currentPxY: number
+	currentSpeedPxX: number
+	currentSpeedPxY: number
+}
+
+export default class MapDragListener extends DragListener<Grab> {
+	constructor(
+		$target: HTMLElement,
+		private start: ()=>[startPxX:number,startPxY:number]|null,
+		private pan: (pxX:number,pxY:number)=>void,
+		private fling: (speedPxX:number,speedPxY:number)=>void
+	) {
+		super($target)
+	}
+	beginDrag(ev: PointerEvent) {
+		const startPxXY=this.start()
 		if (!startPxXY) return
 		const [startPxX,startPxY]=startPxXY
 		const grab={
@@ -24,7 +40,8 @@ export default function installMapDragListeners(
 			currentSpeedPxY: 0,
 		}
 		return grab
-	},(ev,grab)=>{
+	}
+	doDrag(ev: PointerEvent, grab: Grab) {
 		const newPxX=grab.startPxX-(ev.clientX-grab.startViewPxOffsetX)
 		const newPxY=grab.startPxY-(ev.clientY-grab.startViewPxOffsetY)
 		const newTime=performance.now()
@@ -37,8 +54,9 @@ export default function installMapDragListeners(
 		grab.currentPxX=newPxX
 		grab.currentPxY=newPxY
 		grab.currentTime=newTime
-		pan(newPxX,newPxY)
-	},(ev,grab)=>{
-		fling(grab.currentSpeedPxX,grab.currentSpeedPxY)
-	})
+		this.pan(newPxX,newPxY)
+	}
+	endDrag(ev: PointerEvent, grab: Grab) {
+		this.fling(grab.currentSpeedPxX,grab.currentSpeedPxY)
+	}
 }

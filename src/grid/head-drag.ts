@@ -1,4 +1,4 @@
-import installDragListeners from '../drag'
+import DragListener from '../drag'
 
 type Grab = {
 	pointerId: number
@@ -7,29 +7,95 @@ type Grab = {
 	relativeShiftX: number
 }
 
-export default function installTabDragListeners(
-	$gridHead: HTMLTableSectionElement,
-	gridHeadCells: readonly {
-		$tabCell: HTMLTableCellElement
-		$cardCell: HTMLTableCellElement
-		$selectorCell: HTMLTableCellElement
-	}[],
-	$tab: HTMLElement,
-	iActive: number,
-	shiftTabCallback: (iShiftTo: number)=>void
-) {
-	const {
-		$tabCell: $activeTabCell,
-		$cardCell: $activeCardCell,
-		$selectorCell: $activeSelectorCell
-	}=gridHeadCells[iActive]
-	const toggleCellClass=(className:string,on:boolean)=>{
-		$activeTabCell.classList.toggle(className,on)
-		$activeCardCell.classList.toggle(className,on)
-		$activeSelectorCell.classList.toggle(className,on)
+export default class TabDragListener extends DragListener<Grab> {
+	constructor(
+		private $gridHead: HTMLTableSectionElement,
+		private gridHeadCells: readonly {
+			$tabCell: HTMLTableCellElement
+			$cardCell: HTMLTableCellElement
+			$selectorCell: HTMLTableCellElement
+		}[],
+		$tab: HTMLElement,
+		private iActive: number,
+		private shiftTabCallback: (iShiftTo: number)=>void
+	) {
+		super($tab)
 	}
-	const translate=(x:number,i:number=iActive)=>{
-		const {$tabCell,$cardCell,$selectorCell}=gridHeadCells[i]
+	install(): void {
+		const activeCells=this.gridHeadCells[this.iActive]
+		activeCells.$tabCell.ontransitionend=
+		activeCells.$cardCell.ontransitionend=
+		activeCells.$selectorCell.ontransitionend=ev=>{
+			const $cell=ev.currentTarget
+			if (!($cell instanceof HTMLElement)) return
+			$cell.classList.remove('settling')
+		}
+		super.install()
+	}
+	beginDrag(ev: PointerEvent) {
+		if (ev.target instanceof Element && ev.target.closest('button')) return
+		this.toggleCellClass('grabbed',true)
+		this.$gridHead.classList.add('with-grabbed-tab')
+		return {
+			pointerId: ev.pointerId,
+			startX: ev.clientX,
+			iShiftTo: this.iActive,
+			relativeShiftX: 0
+		}
+	}
+	doDrag(ev: PointerEvent, grab: Grab) {
+		const cellStartX=this.gridHeadCells[this.iActive].$tabCell.offsetLeft
+		const minOffsetX=this.gridHeadCells[0].$tabCell.offsetLeft-cellStartX
+		const maxOffsetX=this.gridHeadCells[this.gridHeadCells.length-1].$tabCell.offsetLeft-cellStartX
+		const offsetX=Math.max(
+			minOffsetX,
+		Math.min(
+			maxOffsetX,
+			ev.clientX-grab.startX
+		))
+		this.translate(offsetX)
+		const cellOffsetX=cellStartX+offsetX
+		let iShiftTo=0
+		for (;iShiftTo<this.gridHeadCells.length;iShiftTo++) {
+			const $shiftToCell=this.gridHeadCells[iShiftTo].$tabCell
+			grab.relativeShiftX=cellOffsetX-$shiftToCell.offsetLeft
+			if (cellOffsetX<$shiftToCell.offsetLeft+$shiftToCell.offsetWidth/2) {
+				break
+			}
+		}
+		for (let iShuffle=0;iShuffle<this.gridHeadCells.length;iShuffle++) {
+			if (iShuffle==this.iActive) continue
+			let shuffleX=0
+			if (iShuffle>=iShiftTo && iShuffle<this.iActive) {
+				shuffleX=this.gridHeadCells[iShuffle+1].$tabCell.offsetLeft-this.gridHeadCells[iShuffle].$tabCell.offsetLeft
+			}
+			if (iShuffle>this.iActive && iShuffle<=iShiftTo) {
+				shuffleX=this.gridHeadCells[iShuffle-1].$tabCell.offsetLeft-this.gridHeadCells[iShuffle].$tabCell.offsetLeft
+			}
+			this.translate(shuffleX,iShuffle)
+		}
+		grab.iShiftTo=iShiftTo
+	}
+	applyDrag(ev: PointerEvent, grab: Grab) {
+		if (grab.iShiftTo!=this.iActive) this.shiftTabCallback(grab.iShiftTo)
+	}
+	endDrag(ev: PointerEvent, grab: Grab) {
+		for (const i of this.gridHeadCells.keys()) {
+			this.translate(0,i)
+		}
+		this.toggleCellClass('grabbed',false)
+		this.$gridHead.classList.remove('with-grabbed-tab')
+		if (!grab.relativeShiftX) return
+		requestAnimationFrame(()=>{
+			this.translate(grab.relativeShiftX)
+			requestAnimationFrame(()=>{
+				this.toggleCellClass('settling',true)
+				this.translate(0)
+			})
+		})
+	}
+	private translate(x: number, i=this.iActive): void {
+		const {$tabCell,$cardCell,$selectorCell}=this.gridHeadCells[i]
 		if (x) {
 			$tabCell.style.translate=`${x}px`
 			$cardCell.style.translate=`${x}px`
@@ -40,78 +106,10 @@ export default function installTabDragListeners(
 			$selectorCell.style.removeProperty('translate')
 		}
 	}
-	$activeTabCell.ontransitionend=()=>{
-		$activeTabCell.classList.remove('settling')
+	private toggleCellClass(className: string, on: boolean): void {
+		const activeCells=this.gridHeadCells[this.iActive]
+		activeCells.$tabCell.classList.toggle(className,on)
+		activeCells.$cardCell.classList.toggle(className,on)
+		activeCells.$selectorCell.classList.toggle(className,on)
 	}
-	$activeCardCell.ontransitionend=()=>{
-		$activeCardCell.classList.remove('settling')
-	}
-	$activeSelectorCell.ontransitionend=()=>{
-		$activeSelectorCell.classList.remove('settling')
-	}
-	$tab.style.touchAction='none'
-	const cleanup=(grab: Grab)=>{
-		for (const i of gridHeadCells.keys()) {
-			translate(0,i)
-		}
-		toggleCellClass('grabbed',false)
-		$gridHead.classList.remove('with-grabbed-tab')
-		if (!grab.relativeShiftX) return
-		requestAnimationFrame(()=>{
-			translate(grab.relativeShiftX)
-			requestAnimationFrame(()=>{
-				toggleCellClass('settling',true)
-				translate(0)
-			})
-		})
-	}
-	installDragListeners($tab,ev=>{
-		if (ev.target instanceof Element && ev.target.closest('button')) return
-		toggleCellClass('grabbed',true)
-		$gridHead.classList.add('with-grabbed-tab')
-		return {
-			pointerId: ev.pointerId,
-			startX: ev.clientX,
-			iShiftTo: iActive,
-			relativeShiftX: 0
-		}
-	},(ev,grab)=>{
-		const cellStartX=gridHeadCells[iActive].$tabCell.offsetLeft
-		const minOffsetX=gridHeadCells[0].$tabCell.offsetLeft-cellStartX
-		const maxOffsetX=gridHeadCells[gridHeadCells.length-1].$tabCell.offsetLeft-cellStartX
-		const offsetX=Math.max(
-			minOffsetX,
-		Math.min(
-			maxOffsetX,
-			ev.clientX-grab.startX
-		))
-		translate(offsetX)
-		const cellOffsetX=cellStartX+offsetX
-		let iShiftTo=0
-		for (;iShiftTo<gridHeadCells.length;iShiftTo++) {
-			const $shiftToCell=gridHeadCells[iShiftTo].$tabCell
-			grab.relativeShiftX=cellOffsetX-$shiftToCell.offsetLeft
-			if (cellOffsetX<$shiftToCell.offsetLeft+$shiftToCell.offsetWidth/2) {
-				break
-			}
-		}
-		for (let iShuffle=0;iShuffle<gridHeadCells.length;iShuffle++) {
-			if (iShuffle==iActive) continue
-			let shuffleX=0
-			if (iShuffle>=iShiftTo && iShuffle<iActive) {
-				shuffleX=gridHeadCells[iShuffle+1].$tabCell.offsetLeft-gridHeadCells[iShuffle].$tabCell.offsetLeft
-			}
-			if (iShuffle>iActive && iShuffle<=iShiftTo) {
-				shuffleX=gridHeadCells[iShuffle-1].$tabCell.offsetLeft-gridHeadCells[iShuffle].$tabCell.offsetLeft
-			}
-			translate(shuffleX,iShuffle)
-		}
-		grab.iShiftTo=iShiftTo
-	},(ev,grab)=>{
-		const iShiftTo=grab.iShiftTo
-		cleanup(grab)
-		if (iShiftTo!=iActive) shiftTabCallback(iShiftTo)
-	},(ev,grab)=>{
-		cleanup(grab)
-	})
 }

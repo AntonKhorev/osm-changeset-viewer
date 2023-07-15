@@ -1,39 +1,45 @@
-export default function installDragListeners<Grab extends {pointerId:number}>(
-	$e: HTMLElement,
-	startDrag: (ev:PointerEvent)=>Grab|undefined,
-	doDrag: (ev:PointerEvent,grab:Grab)=>void,
-	endDrag: (ev:PointerEvent,grab:Grab)=>void,
-	cancelDrag?: (ev:PointerEvent,grab:Grab)=>void
-): void {
-	let grab: Grab | undefined
-	$e.style.touchAction='none'
-	$e.style.cursor='grab'
-	$e.onpointerdown=ev=>{
-		if (grab) return
-		grab=startDrag(ev)
-		if (!grab) return
-		$e.setPointerCapture(ev.pointerId)
-		$e.style.cursor='grabbing'
-		$e.focus()
-		ev.preventDefault()
+export default abstract class DragListener<Grab extends {pointerId:number}> {
+	protected cursorHovering='grab'
+	protected cursorGrabbing='grabbing'
+	protected grab: Grab | undefined
+	constructor(
+		protected $target: HTMLElement
+	) {}
+	install(): void {
+		this.$target.style.touchAction='none'
+		this.$target.style.cursor=this.cursorHovering
+		this.$target.onpointerdown=ev=>{
+			if (this.grab) return
+			this.grab=this.beginDrag(ev)
+			if (!this.grab) return
+			this.$target.setPointerCapture(ev.pointerId)
+			this.$target.style.cursor=this.cursorGrabbing
+			this.$target.focus()
+			ev.preventDefault()
+		}
+		this.$target.onpointermove=ev=>{
+			if (!this.grab || this.grab.pointerId!=ev.pointerId) return
+			this.doDrag(ev,this.grab)
+			ev.preventDefault()
+		}
+		this.$target.onpointerup=ev=>{
+			if (!this.grab || this.grab.pointerId!=ev.pointerId) return
+			this.applyDrag(ev,this.grab)
+			this.endDrag(ev,this.grab)
+			this.grab=undefined
+			this.$target.style.cursor=this.cursorHovering
+			ev.preventDefault()
+		}
+		this.$target.onpointercancel=ev=>{
+			if (!this.grab || this.grab.pointerId!=ev.pointerId) return
+			this.endDrag(ev,this.grab)
+			this.grab=undefined
+			this.$target.style.cursor=this.cursorHovering
+			ev.preventDefault()
+		}
 	}
-	$e.onpointermove=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
-		doDrag(ev,grab)
-		ev.preventDefault()
-	}
-	$e.onpointerup=$e.onpointercancel=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
-		endDrag(ev,grab)
-		grab=undefined
-		$e.style.cursor='grab'
-		ev.preventDefault()
-	}
-	if (cancelDrag) $e.onpointercancel=ev=>{
-		if (!grab || grab.pointerId!=ev.pointerId) return
-		cancelDrag(ev,grab)
-		grab=undefined
-		$e.style.cursor='grab'
-		ev.preventDefault()
-	}
+	abstract beginDrag(ev: PointerEvent): Grab|undefined
+	doDrag(ev: PointerEvent, grab: Grab): void {}
+	applyDrag(ev: PointerEvent, grab: Grab): void {}
+	endDrag(ev: PointerEvent, grab: Grab): void {}
 }

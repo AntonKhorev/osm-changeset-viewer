@@ -1,7 +1,7 @@
 import type {Connection} from '../net'
 import type {ChangesetViewerDBReader, UserDbRecord, UserScanDbRecord} from '../db'
 import {WorkerBroadcastReceiver} from '../broadcast-channel'
-import installTabDragListeners from './head-drag'
+import TabDragListener from './head-drag'
 import type {UserInfo, CompleteUserInfo} from './head-item'
 import {
 	makeAllTab,
@@ -433,13 +433,13 @@ export default class GridHead {
 			gridHeadCells.push({$tabCell,$cardCell,$selectorCell})
 		}
 		for (const [iActive,{$tab}] of this.userEntries.entries()) {
-			installTabDragListeners(this.$gridHead,gridHeadCells,$tab,iActive,iShiftTo=>{
+			new TabDragListener(this.$gridHead,gridHeadCells,$tab,iActive,iShiftTo=>{
 				moveInArray(this.userEntries,iActive,iShiftTo)
 				this.rewriteUserEntriesInHead()
 				this.sendUpdatedUserQueries()
 				this.reorderColumns(iActive,iShiftTo)
 				this.streamMessenger?.reorderColumns(iActive,iShiftTo)
-			})
+			}).install()
 		}
 		this.$tabRow.append(this.$adderCell)
 	}
