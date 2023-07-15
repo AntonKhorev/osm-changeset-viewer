@@ -13,7 +13,7 @@ const cyrillicLetters = 'АВСЕНКМОРТХасеорху' // can also add n
 
 export default function decorateUserName(name: string): DecoratedNameChunk[] {
 	const chunks:DecoratedNameChunk[]=[]
-	const re=new RegExp(`(.*\\p{Script=Latn})([${cyrillicLetters}]+)(?=\\p{Script=Latn})`,'uy')
+	const re=new RegExp(`(.*?\\p{Script=Latn})([${cyrillicLetters}]+)(?=\\p{Script=Latn})`,'uy')
 	let idx=0
 	while (true) {
 		idx=re.lastIndex

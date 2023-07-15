@@ -9,11 +9,18 @@ describe("grid / decorateUserName",()=>{
 			[['purename']]
 		)
 	})
-	it("detects embedded cyrillic",()=>{
+	it("detects embedded cyrillic letters",()=>{
 		const name='nonpurеname'
 		const decoratedName=decorateUserName(name)
 		assert.deepEqual(decoratedName,
 			[['nonpur'],['е',{belongsTo:'Cyrl',surroundedBy:'Latn'}],['name']]
+		)
+	})
+	it("detects multiple runs of embedded cyrillic letters",()=>{
+		const name='nonрurеname'
+		const decoratedName=decorateUserName(name)
+		assert.deepEqual(decoratedName,
+			[['non'],['р',{belongsTo:'Cyrl',surroundedBy:'Latn'}],['ur'],['е',{belongsTo:'Cyrl',surroundedBy:'Latn'}],['name']]
 		)
 	})
 	it("skips obvious cyrillic",()=>{
