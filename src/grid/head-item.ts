@@ -2,6 +2,7 @@ import type {UserQuery, ValidUserQuery} from '../osm/query-user'
 import type {UserScanDbRecord, UserDbInfo} from '../db'
 import type Colorizer from '../colorizer'
 import {makeHuePicker, updateHuePicker} from './hue-picker'
+import decorateUserName from './user-name-decorator'
 import {makeUserSvgElements} from './body-item'
 import {makeCenteredSvg} from '../widgets'
 import {makeDateOutput} from '../date'
@@ -184,22 +185,29 @@ export function updateUserCard(
 		) {
 			$nameField.hidden=false
 			const notKnownToBeDelelted = !info.user.withDetails || info.user.visible
-			let namePlaceholder: string|HTMLAnchorElement
+			let namePlaceholder: (string|HTMLElement)[]
 			if (info.user.name) {
+				const decoratedName=decorateUserName(info.user.name)
+				namePlaceholder=decoratedName.map(([text,warning])=>{
+					if (!warning) return text
+					const $chunk=makeElement('span')('with-warning')(text)
+					$chunk.title=`${warning.belongsTo} inside ${warning.surroundedBy}`
+					return $chunk
+				})
 				if (notKnownToBeDelelted) {
-					namePlaceholder=makeLink(info.user.name,getUserNameHref(info.user.name))
-				} else {
-					namePlaceholder=info.user.name
+					const $a=makeElement('a')()(...namePlaceholder)
+					$a.href=getUserNameHref(info.user.name)
+					namePlaceholder=[$a]
 				}
 			} else {
 				if (notKnownToBeDelelted) {
-					namePlaceholder=`user without requested details`
+					namePlaceholder=[`user without requested details`]
 				} else {
-					namePlaceholder=`deleted user`
+					namePlaceholder=[`deleted user`]
 				}
 			}
 			$nameField.replaceChildren(
-				namePlaceholder,` `,
+				...namePlaceholder,` `,
 				makeElement('span')('api')(
 					`(`,makeLink(`#${info.user.id}`,getUserIdHref(info.user.id)),`)`
 				)
