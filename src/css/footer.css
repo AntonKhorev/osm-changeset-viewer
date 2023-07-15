@@ -3,27 +3,14 @@
 	box-shadow: 0 0px 6px #AAA;
 }
 .ui footer > .panel {
-	--resizer-thickness: .5rem;
 	position: relative;
 	box-sizing: border-box;
 	padding-top: var(--resizer-thickness);
 }
 .ui footer > .panel > button.resizer {
-	position: absolute;
-	box-sizing: border-box;
 	width: 100%;
 	height: var(--resizer-thickness);
-	top: 0;
-	left: 0;
-	border: none;
 	border-top: var(--frame-line);
-	background: canvas;
-	background-image: radial-gradient(var(--frame-color) 25%, #0000 0%);
-	background-size: .5rem .5rem;
-	background-position: center;
-}
-.ui footer > .panel > button.resizer:hover {
-	background-color: var(--hover-color);
 }
 .ui footer > .panel > section {
 	box-sizing: border-box;

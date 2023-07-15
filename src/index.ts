@@ -5,6 +5,7 @@ import type {ValidUserQuery} from './osm'
 import Grid from './grid'
 import More from './more'
 import writeFooter from './footer'
+import writeSidebar from './sidebar'
 import makeNetDialog from './net-dialog'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
@@ -121,9 +122,7 @@ async function main() {
 		grid.$grid,
 		more.$div
 	)
-	$aside.append(
-		mapView.$mapView
-	)
+	writeSidebar($root,$aside,mapView)
 	net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
 		grid.receiveUpdatedUserQueries(
 			getUserQueriesFromHash(hostlessHash)
@@ -132,10 +131,10 @@ async function main() {
 	writeFooter($root,$footer,$netDialog,net.cx.server,grid,more,()=>{
 		if ($aside.hidden) {
 			$aside.hidden=false
-			$root.style.gridTemplateColumns='1fr 1fr'
+			$main.style.gridArea=`main`
 		} else {
 			$aside.hidden=true
-			$root.style.gridTemplateColumns='1fr 0fr'
+			$main.style.gridArea=`main / main / aside / aside`
 		}
 		return !$aside.hidden
 	})

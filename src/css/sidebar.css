@@ -1,0 +1,28 @@
+.ui aside {
+	grid-area: aside;
+	position: relative;
+}
+
+.ui aside > button.resizer {
+	height: 100%;
+	width: var(--resizer-thickness);
+	border-left: var(--frame-line);
+}
+
+.ui aside > .map {
+	position: absolute;
+	inset: 0;
+	left: var(--resizer-thickness);
+	overflow: hidden;
+	background: #888;
+}
+.ui aside > .map * {
+	pointer-events: none;
+}
+.ui aside > .map > *,
+.ui aside > .map > * > * {
+	position: absolute;
+}
+.ui aside > .map > * > img {
+	filter: contrast(.5);
+}

@@ -13,6 +13,7 @@
 	--major-button-padding: .3rem;
 	--icon-size: 1.25rem;
 	--disclosure-size: 13px;
+	--resizer-thickness: .5rem;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
@@ -35,19 +36,22 @@ body > .symbols {
 	display: none;
 }
 .ui {
+	--min-side-size: 80px;
+	--left-side-size: 1fr;
+	--right-side-size: 1fr;
 	position: fixed;
 	height: 100%;
 	width: 100%;
 	display: grid;
-	grid-template-columns: 1fr 0fr;
+	grid-template-columns: var(--min-side-size) var(--left-side-size) var(--right-side-size) var(--min-side-size);
 	grid-template-rows: 1fr auto;
 	grid-template-areas:
-		"main aside"
-		"footer footer";
+		"main main aside aside"
+		"footer footer footer footer";
 }
 
 .ui main {
-	grid-area: main;
+	grid-area: main / main / aside / aside;
 	overflow-y: auto;
 }
 .ui main > :where(h1, h2, p, [class$="-input-group"]) {
@@ -56,27 +60,6 @@ body > .symbols {
 .ui main > .notice {
 	padding: var(--spacer);
 	background: var(--notice-background-color);
-}
-
-.ui aside {
-	grid-area: aside;
-	position: relative;
-}
-.ui aside > .map {
-	position: absolute;
-	inset: 0;
-	overflow: hidden;
-	background: #888;
-}
-.ui aside > .map * {
-	pointer-events: none;
-}
-.ui aside > .map > *,
-.ui aside > .map > * > * {
-	position: absolute;
-}
-.ui aside > .map > * > img {
-	filter: contrast(.5);
 }
 
 .ui [class$="-input-group"] {
@@ -148,6 +131,21 @@ body > .symbols {
 }
 .ui button.disclosure[aria-expanded="true"] .vertical-stroke {
 	visibility: hidden;
+}
+
+.ui button.resizer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	box-sizing: border-box;
+	border: none;
+	background: canvas;
+	background-image: radial-gradient(var(--frame-color) 25%, #0000 0%);
+	background-size: .5rem .5rem;
+	background-position: center;
+}
+.ui button.resizer:hover {
+	background-color: var(--hover-color);
 }
 
 .ui dialog {

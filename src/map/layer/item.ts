@@ -1,6 +1,7 @@
 import type {RenderView} from './base'
 import Layer from './base'
-import {calculatePxSize, calculateX, calculateY, clamp} from '../geo'
+import {calculatePxSize, calculateX, calculateY} from '../geo'
+import {clamp} from '../../math'
 import type {ItemMapViewInfo} from '../../grid'
 import type Colorizer from '../../colorizer'
 import {makeElement} from '../../util/html'
