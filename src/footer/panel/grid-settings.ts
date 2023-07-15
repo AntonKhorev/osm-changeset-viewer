@@ -1,8 +1,8 @@
-import Panel from './panel'
-import type Grid from '../grid'
-import {ItemOptions} from '../grid'
-import {makeDisclosureButton, getDisclosureButtonState, setDisclosureButtonState} from '../widgets'
-import {makeElement, makeDiv, makeLabel} from '../util/html'
+import Panel from './base'
+import type Grid from '../../grid'
+import {ItemOptions} from '../../grid'
+import {makeDisclosureButton, getDisclosureButtonState, setDisclosureButtonState} from '../../widgets'
+import {makeElement, makeDiv, makeLabel} from '../../util/html'
 
 export default class GridSettingsPanel extends Panel {
 	protected className='tools'

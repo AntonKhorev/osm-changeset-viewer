@@ -1,8 +1,8 @@
-import Panel from './panel'
-import type {Server} from '../net'
-import {WorkerBroadcastReceiver} from '../broadcast-channel'
-import {makeElement, makeDiv, makeLink} from '../util/html'
-import {ul,li} from '../util/html-shortcuts'
+import Panel from './base'
+import type {Server} from '../../net'
+import {WorkerBroadcastReceiver} from '../../broadcast-channel'
+import {makeElement, makeDiv, makeLink} from '../../util/html'
+import {ul,li} from '../../util/html-shortcuts'
 
 export default class LogPanel extends Panel {
 	protected className='log'

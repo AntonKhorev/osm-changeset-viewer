@@ -1,8 +1,8 @@
-import Panel from './panel'
-import type {Server} from '../net'
-import type Grid from '../grid'
-import {makeElement, makeDiv, makeLabel} from '../util/html'
-import {makeEscapeTag} from '../util/escape'
+import Panel from './base'
+import type {Server} from '../../net'
+import type Grid from '../../grid'
+import {makeElement, makeDiv, makeLabel} from '../../util/html'
+import {makeEscapeTag} from '../../util/escape'
 
 const e=makeEscapeTag(encodeURIComponent)
 

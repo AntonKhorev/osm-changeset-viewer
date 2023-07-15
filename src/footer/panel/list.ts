@@ -1,9 +1,9 @@
-import Panel from './panel'
-import type {Server} from '../net'
-import type Grid from '../grid'
-import type {ValidUserQuery} from '../osm'
-import {toUserQuery} from '../osm'
-import {makeElement, makeDiv, makeLabel} from '../util/html'
+import Panel from './base'
+import type {Server} from '../../net'
+import type Grid from '../../grid'
+import type {ValidUserQuery} from '../../osm'
+import {toUserQuery} from '../../osm'
+import {makeElement, makeDiv, makeLabel} from '../../util/html'
 
 export default class ListPanel extends Panel {
 	protected className='list'

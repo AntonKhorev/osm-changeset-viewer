@@ -1,4 +1,4 @@
-import {makeElement, makeDiv} from '../util/html'
+import {makeElement, makeDiv} from '../../util/html'
 
 export default abstract class Panel {
 	protected abstract readonly className: string
