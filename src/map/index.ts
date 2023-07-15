@@ -51,7 +51,7 @@ export default class MapView {
 			} else if (this.animation.type=='panning') {
 				const pxSize=calculatePxSize(this.viewZ)
 				const pxX=this.animation.xAxis.getPosition(time)
-				const pxY=this.animation.yAxis.getPosition(time)
+				const pxY=clamp(0,this.animation.yAxis.getPosition(time),1/pxSize)
 				this.viewX=pxX*pxSize
 				this.viewY=pxY*pxSize
 				if (this.animation.xAxis.isEnded(time) && this.animation.yAxis.isEnded(time)) {
@@ -185,7 +185,7 @@ export default class MapView {
 		this.viewZ=Math.round(clamp(0,this.viewZ,maxZoom))
 		const pxSize=calculatePxSize(this.viewZ)
 		this.viewX=Math.round(this.viewX/pxSize)*pxSize
-		this.viewY=Math.round(this.viewY/pxSize)*pxSize
+		this.viewY=clamp(0,Math.round(this.viewY/pxSize)*pxSize,1)
 	}
 }
 
