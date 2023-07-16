@@ -30,6 +30,11 @@
 	right: 0;
 	bottom: 0;
 	padding: 2px 4px;
-	background: #FFFC;
 	font: 11px sans-serif;
+	background: #FFF8;
+}
+@media (prefers-color-scheme: dark) {
+	.ui aside > .map > .attribution {
+		background: #0008;
+	}
 }
