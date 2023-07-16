@@ -10,7 +10,7 @@ export type RenderView = {
 }
 
 export default abstract class Layer {
-	$layer=makeDiv()()
+	$layer=makeDiv('layer')()
 	abstract clear(): void
 	abstract render(view: RenderView, colorizer: Colorizer): void
 }

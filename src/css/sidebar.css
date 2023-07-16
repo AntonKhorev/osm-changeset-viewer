@@ -16,13 +16,20 @@
 	overflow: hidden;
 	background: #888;
 }
-.ui aside > .map * {
-	pointer-events: none;
-}
-.ui aside > .map > *,
-.ui aside > .map > * > * {
+.ui aside > .map > * {
 	position: absolute;
 }
-.ui aside > .map > * > img {
+.ui aside > .map > .layer > * {
+	position: absolute;
+	pointer-events: none;
+}
+.ui aside > .map > .layer > img {
 	filter: contrast(.5);
+}
+.ui aside > .map > .attribution {
+	right: 0;
+	bottom: 0;
+	padding: 2px 4px;
+	background: #FFFC;
+	font: 11px sans-serif;
 }

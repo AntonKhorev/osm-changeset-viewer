@@ -8,7 +8,7 @@ import {clamp} from '../math'
 import type Colorizer from '../colorizer'
 import type {TileProvider} from '../net'
 import type {ItemMapViewInfo} from '../grid'
-import {makeDiv} from "../util/html"
+import {makeDiv, makeLink} from "../util/html"
 
 export default class MapView {
 	$mapView=makeDiv('map')()
@@ -25,7 +25,13 @@ export default class MapView {
 	}
 	constructor(colorizer: Colorizer, tileProvider: TileProvider) {
 		this.tileLayer=new TileLayer(tileProvider)
-		this.$mapView.append(...this.layers.map(layer=>layer.$layer))
+		const $attribution=makeDiv('attribution')(
+			`© `,makeLink(tileProvider.attributionText,tileProvider.attributionUrl)
+		)
+		this.$mapView.append(
+			...this.layers.map(layer=>layer.$layer),
+			$attribution
+		)
 		this.animateFrame=(time:number)=>{
 			this.requestId=undefined
 			if (this.animation.type=='zooming') {
