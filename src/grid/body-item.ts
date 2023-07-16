@@ -329,6 +329,13 @@ export function writeExpandedItemFlow(
 			return makeBadge(`unspecified source`)(bracket(`?`),true)
 		}
 	}
+	const makeChangesBadge=(changesCount: number)=>{
+		if (changesCount>0) {
+			return makeBadge(`number of changes`)([`📝 ${changesCount}`])
+		} else {
+			return makeBadge(`no changes`)([`📝 ${changesCount}`],true)
+		}
+	}
 	const makeBboxBadge=(bbox: ChangesetDbRecord['bbox'])=>{
 		if (bbox) {
 			return makeBadge(`bounding box`)([`⌖ `,makeGeoUri(bbox.minLat,bbox.minLon),` .. `,makeGeoUri(bbox.maxLat,bbox.maxLon)])
@@ -366,11 +373,10 @@ export function writeExpandedItemFlow(
 	} else if (type=='changeset' || type=='changesetClose') {
 		date = type=='changesetClose' ? item.closedAt : item.createdAt
 		rewriteWithChangesetLinks(item.id)
-		item.bbox
 		$flow.append(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source)),
-			` `,optionalize('changes',makeBadge(`number of changes`)([`📝 ${item.changes.count}`])),
+			` `,optionalize('changes',makeChangesBadge(item.changes.count)),
 			` `,optionalize('position',makeBboxBadge(item.bbox)),
 			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
 		)
