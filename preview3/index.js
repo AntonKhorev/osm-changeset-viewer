@@ -2629,8 +2629,13 @@ function makeItemShell(colorizer, { type, item }, isExpanded, usernames) {
             const cappedChangesCount = Math.min(9999, item.changes.count);
             size = 1 + Math.floor(Math.log10(cappedChangesCount));
         }
+        else {
+            if (type != 'changesetClose') {
+                $item.classList.add('empty');
+            }
+        }
         $icon.dataset.size = String(size);
-        writeChangesetIcon($icon, id, type == 'changesetClose', size);
+        writeChangesetIcon($icon, id, type == 'changesetClose', item.changes.count == 0, size);
         writeHueAttributes(colorizer, $icon, item.uid);
         writeHueAttributes(colorizer, $balloon, item.uid);
     }
@@ -2894,6 +2899,14 @@ function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernam
             return makeBadge(`unspecified source`)(bracket(`?`), true);
         }
     };
+    const makeChangesBadge = (changesCount) => {
+        if (changesCount > 0) {
+            return makeBadge(`number of changes`)([`📝 ${changesCount}`]);
+        }
+        else {
+            return makeBadge(`no changes`)([`📝 ${changesCount}`], true);
+        }
+    };
     const makeBboxBadge = (bbox) => {
         if (bbox) {
             return makeBadge(`bounding box`)([`⌖ `, makeGeoUri(bbox.minLat, bbox.minLon), ` .. `, makeGeoUri(bbox.maxLat, bbox.maxLon)]);
@@ -2921,8 +2934,7 @@ function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernam
     else if (type == 'changeset' || type == 'changesetClose') {
         date = type == 'changesetClose' ? item.closedAt : item.createdAt;
         rewriteWithChangesetLinks(item.id);
-        item.bbox;
-        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeBadge(`number of changes`)([`📝 ${item.changes.count}`])), ` `, optionalize('position', makeBboxBadge(item.bbox)), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
+        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeChangesBadge(item.changes.count)), ` `, optionalize('position', makeBboxBadge(item.bbox)), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
         if (item.tags?.comment) {
             $flow.append(` `, optionalize('comment', makeElement('span')()(item.tags?.comment ?? '')));
         }
@@ -3013,7 +3025,7 @@ function writeNewUserIcon($icon, id) {
 function getSvgOfSenderUserIcon() {
     return makeCenteredSvg(8, makeUserSvgElements());
 }
-function writeChangesetIcon($icon, id, isClosed, size) {
+function writeChangesetIcon($icon, id, isClosed, isEmpty, size) {
     if (isClosed) {
         const $button = makeElement('button')('ref')();
         $button.title = `closed changeset ${id}`;
@@ -3021,7 +3033,12 @@ function writeChangesetIcon($icon, id, isClosed, size) {
             `<path d="M-5,0 L0,5 L5,0" fill="none" />`, `stroke="currentColor" stroke-width="2"`);
         $icon.append($button);
     }
-    else {
+    else if (isEmpty) {
+        $icon.innerHTML = makeCenteredSvg(10, `<path d="M-7.5,5.5 V-7.5 H5.5" />` +
+            `<path d="M-8.5,8.5 L8.5,-8.5" />` +
+            `<path d="M-5.5,7.5 H7.5 V-5.5" />`, `fill="none" stroke="currentColor"`);
+    }
+    if (!isClosed) {
         const $checkbox = makeElement('input')()();
         $checkbox.type = 'checkbox';
         $checkbox.title = `opened changeset ${id}`;
@@ -4492,6 +4509,9 @@ class ItemCollectionRow extends ItemRow {
             const style = $cell.getAttribute('style');
             if (style) {
                 $splitCell.setAttribute('style', style);
+            }
+            if ($cell.dataset.hueUid) {
+                $splitCell.dataset.hueUid = $cell.dataset.hueUid;
             }
             const [$container] = $cell.children;
             const $splitContainer = makeDiv()();
@@ -6819,7 +6839,7 @@ function makeFlingAnimation(startTime, startPxX, startPxY, speedPxX, speedPxY) {
 
 class Layer {
     constructor() {
-        this.$layer = makeDiv()();
+        this.$layer = makeDiv('layer')();
     }
 }
 
@@ -7226,7 +7246,8 @@ class MapView {
         this.viewY = 0.5;
         this.viewZ = 0;
         this.tileLayer = new TileLayer(tileProvider);
-        this.$mapView.append(...this.layers.map(layer => layer.$layer));
+        const $attribution = makeDiv('attribution')(`© `, makeLink(tileProvider.attributionText, tileProvider.attributionUrl));
+        this.$mapView.append(...this.layers.map(layer => layer.$layer), $attribution);
         this.animateFrame = (time) => {
             this.requestId = undefined;
             if (this.animation.type == 'zooming') {
