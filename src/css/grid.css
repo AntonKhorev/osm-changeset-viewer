@@ -386,10 +386,14 @@
 	width: var(--checkbox-size);
 	height: var(--checkbox-size);
 }
+.ui .grid tbody .item.changeset.empty .icon > svg {
+	width: 20px;
+	height: 20px;
+}
 .ui .grid tbody tr.collection .item.changeset.closed .icon > button > svg {
 	rotate: -90deg;
 }
-.ui .grid tbody .item.changeset .icon::before {
+.ui .grid tbody .item.changeset:not(.empty) .icon::before {
 	content: '';
 	display: block;
 	position: absolute;

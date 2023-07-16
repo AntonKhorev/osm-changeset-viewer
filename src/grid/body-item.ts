@@ -63,9 +63,13 @@ export function makeItemShell(
 		if (item.changes.count>0) {
 			const cappedChangesCount=Math.min(9999,item.changes.count)
 			size=1+Math.floor(Math.log10(cappedChangesCount))
+		} else {
+			if (type!='changesetClose') {
+				$item.classList.add('empty')
+			}
 		}
 		$icon.dataset.size=String(size)
-		writeChangesetIcon($icon,id,type=='changesetClose',size)
+		writeChangesetIcon($icon,id,type=='changesetClose',item.changes.count==0,size)
 		writeHueAttributes(colorizer,$icon,item.uid)
 		writeHueAttributes(colorizer,$balloon,item.uid)
 	} else if (type=='note') {
@@ -491,7 +495,7 @@ function getSvgOfSenderUserIcon(): string {
 	)
 }
 
-function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, size: number): void {
+function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, isEmpty: boolean, size: number): void {
 	if (isClosed) {
 		const $button=makeElement('button')('ref')()
 		$button.title=`closed changeset ${id}`
@@ -500,7 +504,14 @@ function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, s
 			`<path d="M-5,0 L0,5 L5,0" fill="none" />`,
 		`stroke="currentColor" stroke-width="2"`)
 		$icon.append($button)
-	} else {
+	} else if (isEmpty) {
+		$icon.innerHTML=makeCenteredSvg(10,
+			`<path d="M-7.5,5.5 V-7.5 H5.5" />`+
+			`<path d="M-8.5,8.5 L8.5,-8.5" />`+
+			`<path d="M-5.5,7.5 H7.5 V-5.5" />`,
+		`fill="none" stroke="currentColor"`)
+	}
+	if (!isClosed) {
 		const $checkbox=makeElement('input')()()
 		$checkbox.type='checkbox'
 		$checkbox.title=`opened changeset ${id}`
