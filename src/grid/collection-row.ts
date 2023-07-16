@@ -23,6 +23,9 @@ export default class ItemCollectionRow extends ItemRow {
 			if (style) {
 				$splitCell.setAttribute('style',style)
 			}
+			if ($cell.dataset.hueUid) {
+				$splitCell.dataset.hueUid=$cell.dataset.hueUid
+			}
 			const [$container]=$cell.children
 			const $splitContainer=makeDiv()()
 			$splitCell.append($splitContainer)

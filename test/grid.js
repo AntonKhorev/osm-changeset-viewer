@@ -47,11 +47,13 @@ export function makeCollectionRow(...$cells) {
 	}
 	return $row
 }
-export function makeCell(timeline,style,...$children) {
+export function makeCell(timeline,color,...$children) {
 	const $cell=document.createElement('td')
 	if (timeline.includes('a')) $cell.classList.add('with-timeline-above')
 	if (timeline.includes('b')) $cell.classList.add('with-timeline-below')
-	$cell.setAttribute('style',style)
+	$cell.dataset.hueUid=String(color.uid)
+	$cell.style.setProperty('--hue',String(color.hue))
+	$cell.style.setProperty('--saturation-factor','1')
 	const $container=document.createElement('div')
 	$cell.append($container)
 	let first=true
@@ -92,12 +94,13 @@ function assertChangesetRow($row,cells,isCollection) {
 	assert.equal($row.cells.length,cells.length)
 	for (let i=0;i<cells.length;i++) {
 		const $cell=$row.cells[i]
-		const [timeline,style,...items]=cells[i]
+		const [timeline,color,...items]=cells[i]
 		if (timeline!=null) {
 			assertTimelineClasses($cell,timeline,`cell[${i}]`)
 		}
-		if (style!=null) {
-			assert.equal($cell.getAttribute('style'),style)
+		if (color!=null) {
+			assert.equal($cell.dataset.hueUid,String(color.uid))
+			assert.equal($cell.style.getPropertyValue('--hue'),String(color.hue))
 		}
 		if (items.length==0) {
 			assert($cell.children.length==0 || $cell.children.length==1)
