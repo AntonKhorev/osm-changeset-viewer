@@ -4,59 +4,59 @@ const speedDecayRate=0.003
 
 type Grab = {
 	pointerId: number
-	startViewPxOffsetX: number
-	startViewPxOffsetY: number
-	startPxX: number
-	startPxY: number
+	startViewOffsetX: number
+	startViewOffsetY: number
+	startX: number
+	startY: number
 	currentTime: number
-	currentPxX: number
-	currentPxY: number
-	currentSpeedPxX: number
-	currentSpeedPxY: number
+	currentX: number
+	currentY: number
+	currentSpeedX: number
+	currentSpeedY: number
 }
 
 export default class MapDragListener extends DragListener<Grab> {
 	constructor(
 		$target: HTMLElement,
-		private start: ()=>[startPxX:number,startPxY:number]|null,
-		private pan: (pxX:number,pxY:number)=>void,
-		private fling: (speedPxX:number,speedPxY:number)=>void
+		private start: ()=>[startX:number,startY:number]|null,
+		private pan: (x:number,y:number)=>void,
+		private fling: (speedX:number,speedY:number)=>void
 	) {
 		super($target)
 	}
 	beginDrag(ev: PointerEvent) {
-		const startPxXY=this.start()
-		if (!startPxXY) return
-		const [startPxX,startPxY]=startPxXY
-		const grab={
+		const startXY=this.start()
+		if (!startXY) return
+		const [startX,startY]=startXY
+		const grab:Grab={
 			pointerId: ev.pointerId,
-			startViewPxOffsetX: ev.clientX,
-			startViewPxOffsetY: ev.clientY,
-			startPxX,startPxY,
+			startViewOffsetX: ev.clientX,
+			startViewOffsetY: ev.clientY,
+			startX,startY,
 			currentTime: performance.now(),
-			currentPxX: startPxX,
-			currentPxY: startPxY,
-			currentSpeedPxX: 0,
-			currentSpeedPxY: 0,
+			currentX: startX,
+			currentY: startY,
+			currentSpeedX: 0,
+			currentSpeedY: 0,
 		}
 		return grab
 	}
 	doDrag(ev: PointerEvent, grab: Grab) {
-		const newPxX=grab.startPxX-(ev.clientX-grab.startViewPxOffsetX)
-		const newPxY=grab.startPxY-(ev.clientY-grab.startViewPxOffsetY)
+		const newX=grab.startX-(ev.clientX-grab.startViewOffsetX)
+		const newY=grab.startY-(ev.clientY-grab.startViewOffsetY)
 		const newTime=performance.now()
-		const dx=newPxX-grab.currentPxX
-		const dy=newPxY-grab.currentPxY
+		const dx=newX-grab.currentX
+		const dy=newY-grab.currentY
 		const dt=newTime-grab.currentTime
 		const speedDecay=Math.exp(-speedDecayRate*dt)
-		grab.currentSpeedPxX=grab.currentSpeedPxX*speedDecay+dx/dt*(1-speedDecay)
-		grab.currentSpeedPxY=grab.currentSpeedPxY*speedDecay+dy/dt*(1-speedDecay)
-		grab.currentPxX=newPxX
-		grab.currentPxY=newPxY
+		grab.currentSpeedX=grab.currentSpeedX*speedDecay+dx/dt*(1-speedDecay)
+		grab.currentSpeedY=grab.currentSpeedY*speedDecay+dy/dt*(1-speedDecay)
+		grab.currentX=newX
+		grab.currentY=newY
 		grab.currentTime=newTime
-		this.pan(newPxX,newPxY)
+		this.pan(newX,newY)
 	}
 	endDrag(ev: PointerEvent, grab: Grab) {
-		this.fling(grab.currentSpeedPxX,grab.currentSpeedPxY)
+		this.fling(grab.currentSpeedX,grab.currentSpeedY)
 	}
 }
