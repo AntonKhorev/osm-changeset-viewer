@@ -9,6 +9,7 @@ import writeSidebar from './sidebar'
 import makeNetDialog from './net-dialog'
 import {installRelativeTimeListeners} from './date'
 import serverListConfig from './server-list-config'
+import {detachValueFromHash, attachValueToBackOfHash} from './util/hash'
 import {makeElement, makeDiv, makeLink} from './util/html'
 import {p,em} from './util/html-shortcuts'
 import {PrefixedLocalStorage} from './util/storage'
@@ -140,7 +141,10 @@ async function main() {
 	})
 	$root.addEventListener('osmChangesetViewer:mapMoveEnd',({detail:{zoom,lat,lon}})=>{
 		const mapHashValue=`${zoom}/${lat}/${lon}`
-		console.log('> map move end',mapHashValue) ///
+		const hostlessHash=net.serverSelector.getHostlessHash()
+		const [,queryHash]=detachValueFromHash('map',hostlessHash)
+		const updatedHostlessHash=attachValueToBackOfHash('map',mapHashValue,queryHash)
+		net.serverSelector.replaceHostlessHashInHistory(updatedHostlessHash)
 	})
 }
 
