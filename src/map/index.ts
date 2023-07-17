@@ -46,13 +46,11 @@ export default class MapWidget {
 					this.view.u=this.animation.start.u*startWeight+this.animation.finish.u*finishWeight
 					this.view.v=this.animation.start.v*startWeight+this.animation.finish.v*finishWeight
 					this.view.z=Math.round(this.animation.start.z*startWeight+this.animation.finish.z*finishWeight)
-					for (const layer of this.layers) {
-						layer.$layer.style.transformOrigin=`${this.animation.transformOrigin.x}px ${this.animation.transformOrigin.y}px`
-						layer.$layer.style.scale=String(
-							1*startWeight+
-							2**(this.animation.finish.z-this.animation.start.z)*finishWeight
-						)
-					}
+					this.scaleLayers(
+						1*startWeight+2**(this.animation.finish.z-this.animation.start.z)*finishWeight,
+						this.animation.transformOrigin.x,
+						this.animation.transformOrigin.y
+					)
 				}
 			} else if (this.animation.type=='panning') {
 				const xyUV=calculateXYUV(this.view.z)
@@ -63,11 +61,9 @@ export default class MapWidget {
 				if (this.animation.xAxis.isEnded(time) && this.animation.yAxis.isEnded(time)) {
 					this.animation={type:'stopped'}
 				} else {
-					const x0=this.animation.xAxis.startPosition
-					const y0=this.animation.yAxis.startPosition
-					for (const layer of this.layers) {
-						layer.$layer.style.translate=`${x0-x}px ${y0-y}px`
-					}
+					const x0=this.animation.dragStart.u/xyUV
+					const y0=this.animation.dragStart.v/xyUV
+					this.translateLayers(x0-x,y0-y)
 				}
 			}
 			if (this.animation.type=='stopped') {
@@ -76,9 +72,7 @@ export default class MapWidget {
 				if (renderViewBox) {
 					this.dispatchMoveEndEvent()
 				}
-				for (const layer of this.layers) {
-					layer.$layer.removeAttribute('style')
-				}
+				this.removeLayerTransforms()
 				if (!renderViewBox) {
 					for (const layer of this.layers) {
 						layer.clear()
@@ -121,21 +115,23 @@ export default class MapWidget {
 			this.scheduleFrame()
 		}
 		new MapDragListener(this.$widget,()=>{
-			if (this.animation.type!='stopped') return null
-			const uvXY=calculateUVXY(this.view.z)
-			return [
-				this.view.u*uvXY,
-				this.view.v*uvXY
-			]
-		},(x:number,y:number)=>{
+			if (this.animation.type!='stopped') return false
+			this.animation={
+				type: 'dragging',
+				start: {...this.view}
+			}
+			return true
+		},(dx:number,dy:number)=>{
+			if (this.animation.type!='dragging') return
 			const xyUV=calculateXYUV(this.view.z)
-			this.view.u=x*xyUV
-			this.view.v=clamp(0,y*xyUV,1)
-			this.scheduleFrame()
+			this.view.u=this.animation.start.u+dx*xyUV
+			this.view.v=this.animation.start.v+dy*xyUV
+			this.translateLayers(-dx,-dy)
 		},(speedX:number,speedY:number)=>{
-			if (this.animation.type!='stopped') return
+			if (this.animation.type!='dragging') return
 			const uvXY=calculateUVXY(this.view.z)
 			this.animation=makeFlingAnimation(
+				this.animation.start,
 				performance.now(),
 				this.view.u*uvXY,this.view.v*uvXY,
 				speedX,speedY
@@ -195,6 +191,22 @@ export default class MapWidget {
 			lat: calculateLat(this.view.v).toFixed(precision),
 			lon: calculateLon(this.view.u).toFixed(precision),
 		})
+	}
+	private translateLayers(dx: number, dy: number): void {
+		for (const layer of this.layers) {
+			layer.$layer.style.translate=`${dx}px ${dy}px`
+		}
+	}
+	private scaleLayers(scale: number, originX: number, originY: number): void {
+		for (const layer of this.layers) {
+			layer.$layer.style.transformOrigin=`${originX}px ${originY}px`
+			layer.$layer.style.scale=String(scale)
+		}
+	}
+	private removeLayerTransforms(): void {
+		for (const layer of this.layers) {
+			layer.$layer.removeAttribute('style')
+		}
 	}
 }
 

@@ -1,4 +1,4 @@
-import type {ViewTimeZoomPoint, RenderPoint} from './geo'
+import type {ViewTimeZoomPoint, ViewPoint, RenderPoint} from './geo'
 
 const curveParameter=0.002 // [px/ms^2]
 const dragStepThreshold=32 // [px]
@@ -53,11 +53,16 @@ export type Animation = {
 	transformOrigin: RenderPoint
 } | {
 	type: 'panning'
+	dragStart: ViewPoint
 	xAxis: AnimationAxis
 	yAxis: AnimationAxis
+} | {
+	type: 'dragging'
+	start: ViewPoint
 }
 
 export function makeFlingAnimation(
+	dragStart: ViewPoint,
 	startTime: number,
 	startX: number, startY: number,
 	speedX: number, speedY: number
@@ -72,6 +77,7 @@ export function makeFlingAnimation(
 		const dy=dp*speedY/speed
 		return {
 			type: 'panning',
+			dragStart,
 			xAxis: new AnimationAxis(
 				startX,dx,dp,
 				startTime,startTime,decayDuration
