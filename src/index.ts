@@ -138,6 +138,10 @@ async function main() {
 		}
 		return !$aside.hidden
 	})
+	$root.addEventListener('osmChangesetViewer:mapMoveEnd',({detail:{zoom,lat,lon}})=>{
+		const mapHashValue=`${zoom}/${lat}/${lon}`
+		console.log('> map move end',mapHashValue) ///
+	})
 }
 
 function getUserQueriesFromHash(hash: string): ValidUserQuery[] {

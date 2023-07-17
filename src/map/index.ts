@@ -3,12 +3,13 @@ import {makeFlingAnimation} from './animation'
 import type {RenderView, Layer} from './layer'
 import {ItemLayer, TileLayer} from './layer'
 import MapDragListener from './drag'
-import {calculatePxSize} from './geo'
+import {calculatePxSize, calculateLat, calculateLon} from './geo'
 import {clamp} from '../math'
 import type Colorizer from '../colorizer'
 import type {TileProvider} from '../net'
 import type {ItemMapViewInfo} from '../grid'
-import {makeDiv, makeLink} from "../util/html"
+import {bubbleCustomEvent} from '../util/events'
+import {makeDiv, makeLink} from '../util/html'
 
 export default class MapView {
 	$mapView=makeDiv('map')()
@@ -72,10 +73,13 @@ export default class MapView {
 			}
 			if (this.animation.type=='stopped') {
 				this.roundViewPosition(tileProvider.maxZoom)
+				const renderView=this.makeRenderView()
+				if (renderView) {
+					this.dispatchMoveEndEvent()
+				}
 				for (const layer of this.layers) {
 					layer.$layer.removeAttribute('style')
 				}
-				const renderView=this.makeRenderView()
 				if (!renderView) {
 					for (const layer of this.layers) {
 						layer.clear()
@@ -192,6 +196,14 @@ export default class MapView {
 		const pxSize=calculatePxSize(this.viewZ)
 		this.viewX=Math.round(this.viewX/pxSize)*pxSize
 		this.viewY=clamp(0,Math.round(this.viewY/pxSize)*pxSize,1)
+	}
+	private dispatchMoveEndEvent(): void {
+		const precision=Math.max(0,Math.ceil(Math.log2(this.viewZ)))
+		bubbleCustomEvent(this.$mapView,'osmChangesetViewer:mapMoveEnd',{
+			zoom: this.viewZ.toFixed(0),
+			lat: calculateLat(this.viewY).toFixed(precision),
+			lon: calculateLon(this.viewX).toFixed(precision),
+		})
 	}
 }
 
