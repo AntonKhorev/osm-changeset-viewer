@@ -1,3 +1,5 @@
+import type {ViewZoomPoint, RenderPoint} from './geo'
+
 const curveParameter=0.002 // [px/ms^2]
 const dragStepThreshold=32 // [px]
 
@@ -47,15 +49,10 @@ export type Animation = {
 } | {
 	type: 'zooming'
 	startTime: number
-	startX: number
-	startY: number
-	startZ: number
+	start: ViewZoomPoint
 	finishTime: number
-	finishX: number
-	finishY: number
-	finishZ: number
-	transformOriginPxX: number
-	transformOriginPxY: number
+	finish: ViewZoomPoint
+	transformOrigin: RenderPoint
 } | {
 	type: 'panning'
 	xAxis: AnimationAxis
@@ -64,25 +61,25 @@ export type Animation = {
 
 export function makeFlingAnimation(
 	startTime: number,
-	startPxX: number, startPxY: number,
-	speedPxX: number, speedPxY: number
+	startX: number, startY: number,
+	speedX: number, speedY: number
 ): Animation {
-	const speedPx=Math.hypot(speedPxX,speedPxY)
-	const decayDuration=speedPx/(2*curveParameter)
+	const speed=Math.hypot(speedX,speedY)
+	const decayDuration=speed/(2*curveParameter)
 	const dp=curveParameter*decayDuration**2
 	if (dp<dragStepThreshold) {
 		return {type:'stopped'}
 	} else {
-		const dx=dp*speedPxX/speedPx
-		const dy=dp*speedPxY/speedPx
+		const dx=dp*speedX/speed
+		const dy=dp*speedY/speed
 		return {
 			type: 'panning',
 			xAxis: new AnimationAxis(
-				startPxX,dx,dp,
+				startX,dx,dp,
 				startTime,startTime,decayDuration
 			),
 			yAxis: new AnimationAxis(
-				startPxY,dy,dp,
+				startY,dy,dp,
 				startTime,startTime,decayDuration
 			),
 		}

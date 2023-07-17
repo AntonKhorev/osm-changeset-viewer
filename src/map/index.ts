@@ -1,9 +1,10 @@
+import type {ViewZoomPoint, RenderViewZoomBox} from './geo'
+import {calculateXYUV, calculateUVXY, calculateLat, calculateLon} from './geo'
 import type {Animation} from './animation'
 import {makeFlingAnimation} from './animation'
-import type {RenderView, Layer} from './layer'
+import type {Layer} from './layer'
 import {ItemLayer, TileLayer} from './layer'
 import MapDragListener from './drag'
-import {calculatePxSize, calculateLat, calculateLon} from './geo'
 import {clamp} from '../math'
 import type Colorizer from '../colorizer'
 import type {TileProvider} from '../net'
@@ -18,9 +19,7 @@ export default class MapWidget {
 	private animation: Animation = {type:'stopped'}
 	private tileLayer: TileLayer
 	private itemLayer=new ItemLayer()
-	private viewX=0.5
-	private viewY=0.5
-	private viewZ=0
+	private view: ViewZoomPoint = { u: 0.5, v: 0.5, z: 0 }
 	get layers(): Layer[] {
 		return [this.tileLayer,this.itemLayer]
 	}
@@ -37,56 +36,56 @@ export default class MapWidget {
 			this.requestId=undefined
 			if (this.animation.type=='zooming') {
 				if (time>=this.animation.finishTime) {
-					this.viewX=this.animation.finishX-Math.floor(this.animation.finishX)
-					this.viewY=this.animation.finishY
-					this.viewZ=this.animation.finishZ
+					this.view.u=this.animation.finish.u-Math.floor(this.animation.finish.u)
+					this.view.v=this.animation.finish.v
+					this.view.z=this.animation.finish.z
 					this.animation={type:'stopped'}
 				} else {
 					const finishWeight=(time-this.animation.startTime)/(this.animation.finishTime-this.animation.startTime)
 					const startWeight=1-finishWeight
-					this.viewX=this.animation.startX*startWeight+this.animation.finishX*finishWeight
-					this.viewY=this.animation.startY*startWeight+this.animation.finishY*finishWeight
-					this.viewZ=this.animation.startZ*startWeight+this.animation.finishZ*finishWeight
+					this.view.u=this.animation.start.u*startWeight+this.animation.finish.u*finishWeight
+					this.view.v=this.animation.start.v*startWeight+this.animation.finish.v*finishWeight
+					this.view.z=this.animation.start.z*startWeight+this.animation.finish.z*finishWeight
 					for (const layer of this.layers) {
-						layer.$layer.style.transformOrigin=`${this.animation.transformOriginPxX}px ${this.animation.transformOriginPxY}px`
+						layer.$layer.style.transformOrigin=`${this.animation.transformOrigin.x}px ${this.animation.transformOrigin.y}px`
 						layer.$layer.style.scale=String(
 							1*startWeight+
-							2**(this.animation.finishZ-this.animation.startZ)*finishWeight
+							2**(this.animation.finish.z-this.animation.start.z)*finishWeight
 						)
 					}
 				}
 			} else if (this.animation.type=='panning') {
-				const pxSize=calculatePxSize(this.viewZ)
-				const pxX=this.animation.xAxis.getPosition(time)
-				const pxY=clamp(0,this.animation.yAxis.getPosition(time),1/pxSize)
-				this.viewX=pxX*pxSize
-				this.viewY=pxY*pxSize
+				const xyUV=calculateXYUV(this.view.z)
+				const x=this.animation.xAxis.getPosition(time)
+				const y=clamp(0,this.animation.yAxis.getPosition(time),1/xyUV)
+				this.view.u=x*xyUV
+				this.view.v=y*xyUV
 				if (this.animation.xAxis.isEnded(time) && this.animation.yAxis.isEnded(time)) {
 					this.animation={type:'stopped'}
 				} else {
-					const pxX0=this.animation.xAxis.startPosition
-					const pxY0=this.animation.yAxis.startPosition
+					const x0=this.animation.xAxis.startPosition
+					const y0=this.animation.yAxis.startPosition
 					for (const layer of this.layers) {
-						layer.$layer.style.translate=`${pxX0-pxX}px ${pxY0-pxY}px`
+						layer.$layer.style.translate=`${x0-x}px ${y0-y}px`
 					}
 				}
 			}
 			if (this.animation.type=='stopped') {
 				this.roundViewPosition(tileProvider.maxZoom)
-				const renderView=this.makeRenderView()
-				if (renderView) {
+				const renderViewBox=this.makeRenderViewBox()
+				if (renderViewBox) {
 					this.dispatchMoveEndEvent()
 				}
 				for (const layer of this.layers) {
 					layer.$layer.removeAttribute('style')
 				}
-				if (!renderView) {
+				if (!renderViewBox) {
 					for (const layer of this.layers) {
 						layer.clear()
 					}
 				} else {
 					for (const layer of this.layers) {
-						layer.render(renderView,colorizer)
+						layer.render(renderViewBox,colorizer)
 					}
 				}
 			} else {
@@ -95,53 +94,50 @@ export default class MapWidget {
 		}
 		this.$widget.onwheel=ev=>{
 			if (this.animation.type=='zooming') return
-			const viewPxSizeX=this.$widget.clientWidth
-			const viewPxSizeY=this.$widget.clientHeight
-			if (viewPxSizeX<=0 || viewPxSizeY<=0) return
+			const viewSizeX=this.$widget.clientWidth
+			const viewSizeY=this.$widget.clientHeight
+			if (viewSizeX<=0 || viewSizeY<=0) return
 			let dz=-Math.sign(ev.deltaY)
-			const startZ=this.viewZ
-			const finishZ=clamp(0,startZ+dz,tileProvider.maxZoom)
-			dz=finishZ-startZ
+			const finishZ=clamp(0,this.view.z+dz,tileProvider.maxZoom)
+			dz=finishZ-this.view.z
 			if (dz==0) return
-			const startX=this.viewX
-			const startY=this.viewY
-			const dx=getViewCenterPxOffset(viewPxSizeX,ev.offsetX)
-			const dy=getViewCenterPxOffset(viewPxSizeY,ev.offsetY)
-			const pxSize=calculatePxSize(this.viewZ)
-			let finishX=startX+(1-.5**dz)*dx*pxSize
-			let finishY=startY+(1-.5**dz)*dy*pxSize
-			finishY=clamp(0,finishY,1)
+			const dx=getViewCenterOffset(viewSizeX,ev.offsetX)
+			const dy=getViewCenterOffset(viewSizeY,ev.offsetY)
+			const xyUV=calculateXYUV(this.view.z)
 			const time=performance.now()
 			this.animation={
 				type: 'zooming',
 				startTime: time,
-				startX,startY,startZ,
+				start: {...this.view},
 				finishTime: time+300,
-				finishX,finishY,finishZ,
-				transformOriginPxX: ev.offsetX,
-				transformOriginPxY: ev.offsetY
+				finish: {
+					u: this.view.u+(1-.5**dz)*dx*xyUV,
+					v: clamp(0,this.view.v+(1-.5**dz)*dy*xyUV,1),
+					z: finishZ
+				},
+				transformOrigin: { x: ev.offsetX, y: ev.offsetY},
 			}
 			this.scheduleFrame()
 		}
 		new MapDragListener(this.$widget,()=>{
 			if (this.animation.type!='stopped') return null
-			const pxSize=calculatePxSize(this.viewZ)
+			const uvXY=calculateUVXY(this.view.z)
 			return [
-				this.viewX/pxSize,
-				this.viewY/pxSize
+				this.view.u*uvXY,
+				this.view.v*uvXY
 			]
-		},(pxX:number,pxY:number)=>{
-			const pxSize=calculatePxSize(this.viewZ)
-			this.viewX=pxX*pxSize
-			this.viewY=clamp(0,pxY*pxSize,1)
+		},(x:number,y:number)=>{
+			const xyUV=calculateXYUV(this.view.z)
+			this.view.u=x*xyUV
+			this.view.v=clamp(0,y*xyUV,1)
 			this.scheduleFrame()
-		},(speedPxX:number,speedPxY:number)=>{
+		},(speedX:number,speedY:number)=>{
 			if (this.animation.type!='stopped') return
-			const pxSize=calculatePxSize(this.viewZ)
+			const uvXY=calculateUVXY(this.view.z)
 			this.animation=makeFlingAnimation(
 				performance.now(),
-				this.viewX/pxSize,this.viewY/pxSize,
-				speedPxX,speedPxY
+				this.view.u*uvXY,this.view.v*uvXY,
+				speedX,speedY
 			)
 			this.scheduleFrame()
 		}).install()
@@ -171,42 +167,42 @@ export default class MapWidget {
 		if (this.requestId!=null) return
 		this.requestId=requestAnimationFrame(this.animateFrame)
 	}
-	private makeRenderView(): RenderView|null {
-		const viewPxSizeX=this.$widget.clientWidth
-		const viewPxSizeY=this.$widget.clientHeight
-		if (viewPxSizeX<=0 || viewPxSizeY<=0) {
+	private makeRenderViewBox(): RenderViewZoomBox|null {
+		const viewSizeX=this.$widget.clientWidth
+		const viewSizeY=this.$widget.clientHeight
+		if (viewSizeX<=0 || viewSizeY<=0) {
 			return null
 		}
-		const viewCenterPxOffsetX1=getViewCenterPxOffset(viewPxSizeX,0)
-		const viewCenterPxOffsetX2=getViewCenterPxOffset(viewPxSizeX,viewPxSizeX)
-		const viewCenterPxOffsetY1=getViewCenterPxOffset(viewPxSizeY,0)
-		const viewCenterPxOffsetY2=getViewCenterPxOffset(viewPxSizeY,viewPxSizeY)
-		const pxSize=calculatePxSize(this.viewZ)
-		const renderView:RenderView={
-			pxX1: this.viewX/pxSize+viewCenterPxOffsetX1,
-			pxX2: this.viewX/pxSize+viewCenterPxOffsetX2,
-			pxY1: this.viewY/pxSize+viewCenterPxOffsetY1,
-			pxY2: this.viewY/pxSize+viewCenterPxOffsetY2,
-			z: this.viewZ
+		const viewCenterOffsetX1=getViewCenterOffset(viewSizeX,0)
+		const viewCenterOffsetX2=getViewCenterOffset(viewSizeX,viewSizeX)
+		const viewCenterOffsetY1=getViewCenterOffset(viewSizeY,0)
+		const viewCenterOffsetY2=getViewCenterOffset(viewSizeY,viewSizeY)
+		const uvXY=calculateUVXY(this.view.z)
+		const renderView:RenderViewZoomBox={
+			x1: this.view.u*uvXY+viewCenterOffsetX1,
+			x2: this.view.u*uvXY+viewCenterOffsetX2,
+			y1: this.view.v*uvXY+viewCenterOffsetY1,
+			y2: this.view.v*uvXY+viewCenterOffsetY2,
+			z: this.view.z
 		}
 		return renderView
 	}
 	private roundViewPosition(maxZoom: number): void {
-		this.viewZ=Math.round(clamp(0,this.viewZ,maxZoom))
-		const pxSize=calculatePxSize(this.viewZ)
-		this.viewX=Math.round(this.viewX/pxSize)*pxSize
-		this.viewY=clamp(0,Math.round(this.viewY/pxSize)*pxSize,1)
+		this.view.z=Math.round(clamp(0,this.view.z,maxZoom))
+		const xyUV=calculateXYUV(this.view.z)
+		this.view.u=Math.round(this.view.u/xyUV)*xyUV
+		this.view.v=clamp(0,Math.round(this.view.v/xyUV)*xyUV,1)
 	}
 	private dispatchMoveEndEvent(): void {
-		const precision=Math.max(0,Math.ceil(Math.log2(this.viewZ)))
+		const precision=Math.max(0,Math.ceil(Math.log2(this.view.z)))
 		bubbleCustomEvent(this.$widget,'osmChangesetViewer:mapMoveEnd',{
-			zoom: this.viewZ.toFixed(0),
-			lat: calculateLat(this.viewY).toFixed(precision),
-			lon: calculateLon(this.viewX).toFixed(precision),
+			zoom: this.view.z.toFixed(0),
+			lat: calculateLat(this.view.v).toFixed(precision),
+			lon: calculateLon(this.view.u).toFixed(precision),
 		})
 	}
 }
 
-function getViewCenterPxOffset(viewPxSize: number, viewCornerPxOffset: number): number {
-	return viewCornerPxOffset-viewPxSize/2-(viewPxSize&1)*.5
+function getViewCenterOffset(viewSize: number, viewCornerOffset: number): number {
+	return viewCornerOffset-viewSize/2-(viewSize&1)*.5
 }

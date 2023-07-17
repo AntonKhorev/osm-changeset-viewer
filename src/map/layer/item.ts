@@ -1,6 +1,6 @@
-import type {RenderView} from './base'
 import Layer from './base'
-import {calculatePxSize, calculateX, calculateY} from '../geo'
+import type {RenderViewBox, RenderViewZoomBox} from '../geo'
+import {calculateXYUV, calculateU, calculateV} from '../geo'
 import {clamp} from '../../math'
 import type {ItemMapViewInfo} from '../../grid'
 import type Colorizer from '../../colorizer'
@@ -11,8 +11,8 @@ const RIGHT=2
 const BOTTOM=4
 const LEFT=8
 
-const bboxPxThreshold=16
-const bboxPxThickness=2
+const bboxThreshold=16
+const bboxThickness=2
 const highlightStroke='blue'
 const highlightBoxThickness=1
 
@@ -83,24 +83,25 @@ export default class ItemLayer extends Layer {
 		this.$bboxSvg.replaceChildren()
 		this.$highlightBboxSvg.replaceChildren()
 	}
-	render(view: RenderView, colorizer: Colorizer): void {
+	render(viewBox: RenderViewZoomBox, colorizer: Colorizer): void {
 		if (!this.ctx) return
-		const getCellFillStyle=(maxV:number,v:number,uid:number)=>`hsl(${colorizer.getHueForUid(uid)} 80% 50% / ${.5+.4*v/maxV})`
+		const getCellFillStyle=(globalMaxCellWeight:number,cellWeight:number,uid:number)=>
+			`hsl(${colorizer.getHueForUid(uid)} 80% 50% / ${.5+.4*cellWeight/globalMaxCellWeight})`
 
-		this.$canvas.width=view.pxX2-view.pxX1
-		this.$canvas.height=view.pxY2-view.pxY1
+		this.$canvas.width=viewBox.x2-viewBox.x1
+		this.$canvas.height=viewBox.y2-viewBox.y1
 		this.clear()
-		const pxSize=calculatePxSize(view.z)
-		const repeatX1=Math.floor(view.pxX1*pxSize)
-		const repeatX2=Math.floor(view.pxX2*pxSize)
+		const xyUV=calculateXYUV(viewBox.z)
+		const repeatU1=Math.floor(viewBox.x1*xyUV)
+		const repeatU2=Math.floor(viewBox.x2*xyUV)
 		if (this.items.size<=0 || this.subcells.size<=0) return
-		const subcellPxSize=2
-		const cellPxSizeX=this.nSubcellsX*subcellPxSize
-		const cellPxSizeY=this.nSubcellsY*subcellPxSize
-		const viewCellX1=Math.floor(view.pxX1/cellPxSizeX)
-		const viewCellX2=Math.ceil(view.pxX2/cellPxSizeX)
-		const viewCellY1=Math.floor(view.pxY1/cellPxSizeY)
-		const viewCellY2=Math.ceil(view.pxY2/cellPxSizeY)
+		const subcellSizeXY=2
+		const cellSizeX=this.nSubcellsX*subcellSizeXY
+		const cellSizeY=this.nSubcellsY*subcellSizeXY
+		const viewCellX1=Math.floor(viewBox.x1/cellSizeX)
+		const viewCellX2=Math.ceil(viewBox.x2/cellSizeX)
+		const viewCellY1=Math.floor(viewBox.y1/cellSizeY)
+		const viewCellY2=Math.ceil(viewBox.y2/cellSizeY)
 		const nCellsX=viewCellX2-viewCellX1+1
 		const nCellsY=viewCellY2-viewCellY1+1
 		if (nCellsX<=0 || nCellsY<=0) return
@@ -108,7 +109,7 @@ export default class ItemLayer extends Layer {
 			[...this.subcells.keys()].map(uid=>[uid,new Float32Array(nCellsX*nCellsY)])
 		)
 		const cellBorders=new Uint8Array(nCellsX*nCellsY)
-		let maxValue=0
+		let globalMaxCellWeight=0
 		for (const item of this.items.values()) {
 			const key=item.type+':'+item.id
 			const highlighted=this.highlightedItems.has(key)
@@ -124,35 +125,35 @@ export default class ItemLayer extends Layer {
 				minLat=maxLat=item.lat
 				minLon=maxLon=item.lon
 			}
-			for (let repeatX=repeatX1;repeatX<=repeatX2;repeatX++) {
-				const itemPxX1=(calculateX(minLon)+repeatX)/pxSize
-				const itemPxX2=(calculateX(maxLon)+repeatX)/pxSize
-				const itemPxY1=calculateY(maxLat)/pxSize
-				const itemPxY2=calculateY(minLat)/pxSize
-				if (itemPxX2-itemPxX1>bboxPxThreshold && itemPxY2-itemPxY1>bboxPxThreshold) {
+			for (let repeatU=repeatU1;repeatU<=repeatU2;repeatU++) {
+				const itemX1=(calculateU(minLon)+repeatU)/xyUV
+				const itemX2=(calculateU(maxLon)+repeatU)/xyUV
+				const itemY1=calculateV(maxLat)/xyUV
+				const itemY2=calculateV(minLat)/xyUV
+				if (itemX2-itemX1>bboxThreshold && itemY2-itemY1>bboxThreshold) {
 					this.renderBbox(
-						view,this.$bboxSvg,
-						getCellFillStyle(1,0.7,item.uid),bboxPxThickness, // TODO use weight in stroke
-						Math.round(itemPxX1),Math.round(itemPxX2),
-						Math.round(itemPxY1),Math.round(itemPxY2)
+						viewBox,this.$bboxSvg,
+						getCellFillStyle(1,0.7,item.uid),bboxThickness, // TODO use weight in stroke
+						Math.round(itemX1),Math.round(itemX2),
+						Math.round(itemY1),Math.round(itemY2)
 					)
 					if (highlighted) this.renderBbox(
-						view,this.$highlightBboxSvg,
+						viewBox,this.$highlightBboxSvg,
 						highlightStroke,highlightBoxThickness,
-						Math.round(itemPxX1),Math.round(itemPxX2),
-						Math.round(itemPxY1),Math.round(itemPxY2)
+						Math.round(itemX1),Math.round(itemX2),
+						Math.round(itemY1),Math.round(itemY2)
 					)
 				} else {
-					const itemCellX1=Math.floor(itemPxX1/cellPxSizeX)
-					const itemCellX2=Math.floor(itemPxX2/cellPxSizeX)
-					const itemCellY1=Math.floor(itemPxY1/cellPxSizeY)
-					const itemCellY2=Math.floor(itemPxY2/cellPxSizeY)
+					const itemCellX1=Math.floor(itemX1/cellSizeX)
+					const itemCellX2=Math.floor(itemX2/cellSizeX)
+					const itemCellY1=Math.floor(itemY1/cellSizeY)
+					const itemCellY2=Math.floor(itemY2/cellSizeY)
 					const weightPerCell=item.weight/((itemCellX2-itemCellX1+1)*(itemCellY2-itemCellY1+1))
 					for (let cy=Math.max(itemCellY1,viewCellY1);cy<=Math.min(itemCellY2,viewCellY2);cy++) {
 						for (let cx=Math.max(itemCellX1,viewCellX1);cx<=Math.min(itemCellX2,viewCellX2);cx++) {
 							const idx=(cx-viewCellX1)+(cy-viewCellY1)*nCellsX
-							const value=userCells[idx]+=weightPerCell
-							if (maxValue<value) maxValue=value
+							const cellWeight=userCells[idx]+=weightPerCell
+							if (globalMaxCellWeight<cellWeight) globalMaxCellWeight=cellWeight
 							if (highlighted) {
 								if (cy==itemCellY1) cellBorders[idx]|=TOP
 								if (cy==itemCellY2) cellBorders[idx]|=BOTTOM
@@ -164,123 +165,123 @@ export default class ItemLayer extends Layer {
 				}
 			}
 		}
-		this.addOrRemoveSvg(view,this.$bboxSvg)
-		this.addOrRemoveSvg(view,this.$highlightBboxSvg)
+		this.addOrRemoveSvg(viewBox,this.$bboxSvg)
+		this.addOrRemoveSvg(viewBox,this.$highlightBboxSvg)
 		for (let icy=0;icy<nCellsY;icy++) {
 			for (let icx=0;icx<nCellsX;icx++) {
-				const cellPxX=(icx+viewCellX1)*cellPxSizeX-view.pxX1
-				const cellPxY=(icy+viewCellY1)*cellPxSizeY-view.pxY1
-				let cellMaxValueUid:number|undefined
-				let cellMaxValue=0
+				const cellX=(icx+viewCellX1)*cellSizeX-viewBox.x1
+				const cellY=(icy+viewCellY1)*cellSizeY-viewBox.y1
+				let maxCellWeightUid:number|undefined
+				let maxCellWeight=0
 				for (const [uid] of this.subcells) {
 					const userCells=cells.get(uid)
 					if (!userCells) continue
-					const value=userCells[icx+icy*nCellsX]
-					if (value>cellMaxValue) {
-						cellMaxValue=value
-						cellMaxValueUid=uid
+					const cellWeight=userCells[icx+icy*nCellsX]
+					if (cellWeight>maxCellWeight) {
+						maxCellWeight=cellWeight
+						maxCellWeightUid=uid
 					}
 				}
-				if (cellMaxValueUid==null) continue
+				if (maxCellWeightUid==null) continue
 				{
-					const userCells=cells.get(cellMaxValueUid)
+					const userCells=cells.get(maxCellWeightUid)
 					if (!userCells) continue
-					this.ctx.fillStyle=getCellFillStyle(maxValue,cellMaxValue,cellMaxValueUid)
-					this.ctx.fillRect(cellPxX,cellPxY,cellPxSizeX,cellPxSizeY)
+					this.ctx.fillStyle=getCellFillStyle(globalMaxCellWeight,maxCellWeight,maxCellWeightUid)
+					this.ctx.fillRect(cellX,cellY,cellSizeX,cellSizeY)
 				}
 				for (const [uid,[scx,scy]] of this.subcells) {
-					if (uid==cellMaxValueUid) continue
+					if (uid==maxCellWeightUid) continue
 					const userCells=cells.get(uid)
 					if (!userCells) continue
-					const value=userCells[icx+icy*nCellsX]
-					if (value<=0) continue
-					const subcellPxX=cellPxX+scx*subcellPxSize-subcellPxSize/2
-					const subcellPxY=cellPxY+scy*subcellPxSize-subcellPxSize/2
-					this.ctx.fillStyle=getCellFillStyle(maxValue,value,uid)
-					this.ctx.clearRect(subcellPxX,subcellPxY,subcellPxSize,subcellPxSize)
-					this.ctx.fillRect(subcellPxX,subcellPxY,subcellPxSize,subcellPxSize)
+					const cellWeight=userCells[icx+icy*nCellsX]
+					if (cellWeight<=0) continue
+					const subcellX=cellX+scx*subcellSizeXY-subcellSizeXY/2
+					const subcellY=cellY+scy*subcellSizeXY-subcellSizeXY/2
+					this.ctx.fillStyle=getCellFillStyle(globalMaxCellWeight,cellWeight,uid)
+					this.ctx.clearRect(subcellX,subcellY,subcellSizeXY,subcellSizeXY)
+					this.ctx.fillRect(subcellX,subcellY,subcellSizeXY,subcellSizeXY)
 				}
 			}
 		}
 		this.ctx.strokeStyle=highlightStroke
 		for (let icy=0;icy<nCellsY;icy++) {
 			for (let icx=0;icx<nCellsX;icx++) {
-				const cellPxX=(icx+viewCellX1)*cellPxSizeX-view.pxX1
-				const cellPxY=(icy+viewCellY1)*cellPxSizeY-view.pxY1
+				const cellX=(icx+viewCellX1)*cellSizeX-viewBox.x1
+				const cellY=(icy+viewCellY1)*cellSizeY-viewBox.y1
 				const borders=cellBorders[icx+icy*nCellsX]
 				if (borders) this.ctx.beginPath()
 				if (borders&TOP) {
-					this.ctx.moveTo(cellPxX,cellPxY+.5)
-					this.ctx.lineTo(cellPxX+cellPxSizeX,cellPxY+.5)
+					this.ctx.moveTo(cellX,cellY+.5)
+					this.ctx.lineTo(cellX+cellSizeX,cellY+.5)
 				}
 				if (borders&BOTTOM) {
-					this.ctx.moveTo(cellPxX,cellPxY+cellPxSizeY-.5)
-					this.ctx.lineTo(cellPxX+cellPxSizeX,cellPxY+cellPxSizeY-.5)
+					this.ctx.moveTo(cellX,cellY+cellSizeY-.5)
+					this.ctx.lineTo(cellX+cellSizeX,cellY+cellSizeY-.5)
 				}
 				if (borders&LEFT) {
-					this.ctx.moveTo(cellPxX+.5,cellPxY)
-					this.ctx.lineTo(cellPxX+.5,cellPxY+cellPxSizeY)
+					this.ctx.moveTo(cellX+.5,cellY)
+					this.ctx.lineTo(cellX+.5,cellY+cellSizeY)
 				}
 				if (borders&RIGHT) {
-					this.ctx.moveTo(cellPxX+cellPxSizeX-.5,cellPxY)
-					this.ctx.lineTo(cellPxX+cellPxSizeX-.5,cellPxY+cellPxSizeY)
+					this.ctx.moveTo(cellX+cellSizeX-.5,cellY)
+					this.ctx.lineTo(cellX+cellSizeX-.5,cellY+cellSizeY)
 				}
 				if (borders) this.ctx.stroke()
 			}
 		}
 	}
 	private renderBbox(
-		view: RenderView, $svg: SVGSVGElement,
+		viewBox: RenderViewBox, $svg: SVGSVGElement,
 		stroke: string, strokeWidth: number,
-		itemPxX1: number, itemPxX2: number,
-		itemPxY1: number, itemPxY2: number
+		itemX1: number, itemX2: number,
+		itemY1: number, itemY2: number
 	): void {
-		const edgePxX1=view.pxX1-bboxPxThickness
-		const edgePxY1=view.pxY1-bboxPxThickness
-		const edgePxX2=view.pxX2-1+bboxPxThickness
-		const edgePxY2=view.pxY2-1+bboxPxThickness
-		const bboxPxX1=clamp(edgePxX1,itemPxX1,edgePxX2)
-		const bboxPxX2=clamp(edgePxX1,itemPxX2,edgePxX2)
-		const bboxPxY1=clamp(edgePxY1,itemPxY1,edgePxY2)
-		const bboxPxY2=clamp(edgePxY1,itemPxY2,edgePxY2)
+		const edgeX1=viewBox.x1-bboxThickness
+		const edgeY1=viewBox.y1-bboxThickness
+		const edgeX2=viewBox.x2-1+bboxThickness
+		const edgeY2=viewBox.y2-1+bboxThickness
+		const bboxX1=clamp(edgeX1,itemX1,edgeX2)
+		const bboxX2=clamp(edgeX1,itemX2,edgeX2)
+		const bboxY1=clamp(edgeY1,itemY1,edgeY2)
+		const bboxY2=clamp(edgeY1,itemY2,edgeY2)
 		const drawLineXY=(
 			x1: number, x2: number,
 			y1: number, y2: number
 		)=>{
 			$svg.append(makeSvgElement('line',{
-				x1: String(x1-view.pxX1),
-				x2: String(x2-view.pxX1),
-				y1: String(y1-view.pxY1),
-				y2: String(y2-view.pxY1),
+				x1: String(x1-viewBox.x1),
+				x2: String(x2-viewBox.x1),
+				y1: String(y1-viewBox.y1),
+				y2: String(y2-viewBox.y1),
 				stroke,
 				'stroke-width': String(strokeWidth),
 			}))
 		}
-		const drawLineX=(linePxX: number)=>{
+		const drawLineX=(lineX: number)=>{
 			if (
-				linePxX>=view.pxX1-bboxPxThickness/2 &&
-				linePxX<view.pxX2+bboxPxThickness/2 &&
-				bboxPxY1<bboxPxY2
-			) drawLineXY(linePxX,linePxX,bboxPxY1,bboxPxY2)
+				lineX>=viewBox.x1-bboxThickness/2 &&
+				lineX<viewBox.x2+bboxThickness/2 &&
+				bboxY1<bboxY2
+			) drawLineXY(lineX,lineX,bboxY1,bboxY2)
 		}
-		const drawLineY=(linePxY: number)=>{
+		const drawLineY=(lineY: number)=>{
 			if (
-				linePxY>=view.pxY1-bboxPxThickness/2 &&
-				linePxY<view.pxY2+bboxPxThickness/2 &&
-				bboxPxX1<bboxPxX2
-			) drawLineXY(bboxPxX1,bboxPxX2,linePxY,linePxY)
+				lineY>=viewBox.y1-bboxThickness/2 &&
+				lineY<viewBox.y2+bboxThickness/2 &&
+				bboxX1<bboxX2
+			) drawLineXY(bboxX1,bboxX2,lineY,lineY)
 		}
-		drawLineX(itemPxX1+strokeWidth/2)
-		drawLineX(itemPxX2-strokeWidth/2)
-		drawLineY(itemPxY1+strokeWidth/2)
-		drawLineY(itemPxY2-strokeWidth/2)
+		drawLineX(itemX1+strokeWidth/2)
+		drawLineX(itemX2-strokeWidth/2)
+		drawLineY(itemY1+strokeWidth/2)
+		drawLineY(itemY2-strokeWidth/2)
 	}
-	private addOrRemoveSvg(view: RenderView, $svg: SVGSVGElement): void {
+	private addOrRemoveSvg(viewBox: RenderViewBox, $svg: SVGSVGElement): void {
 		if ($svg.hasChildNodes()) {
 			this.$layer.append($svg)
 			setSvgAttributes($svg,{
-				width: String(view.pxX2-view.pxX1),
-				height: String(view.pxY2-view.pxY1)
+				width: String(viewBox.x2-viewBox.x1),
+				height: String(viewBox.y2-viewBox.y1)
 			})
 		} else {
 			$svg.remove()
