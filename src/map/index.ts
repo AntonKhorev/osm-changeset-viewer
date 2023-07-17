@@ -35,13 +35,13 @@ export default class MapWidget {
 		this.animateFrame=(time:number)=>{
 			this.requestId=undefined
 			if (this.animation.type=='zooming') {
-				if (time>=this.animation.finishTime) {
+				if (time>=this.animation.finish.time) {
 					this.view.u=this.animation.finish.u-Math.floor(this.animation.finish.u)
 					this.view.v=this.animation.finish.v
 					this.view.z=this.animation.finish.z
 					this.animation={type:'stopped'}
 				} else {
-					const finishWeight=(time-this.animation.startTime)/(this.animation.finishTime-this.animation.startTime)
+					const finishWeight=(time-this.animation.start.time)/(this.animation.finish.time-this.animation.start.time)
 					const startWeight=1-finishWeight
 					this.view.u=this.animation.start.u*startWeight+this.animation.finish.u*finishWeight
 					this.view.v=this.animation.start.v*startWeight+this.animation.finish.v*finishWeight
@@ -107,13 +107,12 @@ export default class MapWidget {
 			const time=performance.now()
 			this.animation={
 				type: 'zooming',
-				startTime: time,
-				start: {...this.view},
-				finishTime: time+300,
+				start: {...this.view, time},
 				finish: {
 					u: this.view.u+(1-.5**dz)*dx*xyUV,
 					v: clamp(0,this.view.v+(1-.5**dz)*dy*xyUV,1),
-					z: finishZ
+					z: finishZ,
+					time: time+300
 				},
 				transformOrigin: { x: ev.offsetX, y: ev.offsetY},
 			}

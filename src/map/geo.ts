@@ -13,6 +13,9 @@ export type ViewZoomPoint = {
 	v: number
 	z: number
 }
+export type ViewTimeZoomPoint = ViewZoomPoint & {
+	time: number
+}
 
 export type RenderPoint = {
 	x: number

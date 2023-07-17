@@ -1,4 +1,4 @@
-import type {ViewZoomPoint, RenderPoint} from './geo'
+import type {ViewTimeZoomPoint, RenderPoint} from './geo'
 
 const curveParameter=0.002 // [px/ms^2]
 const dragStepThreshold=32 // [px]
@@ -48,10 +48,8 @@ export type Animation = {
 	type: 'stopped'
 } | {
 	type: 'zooming'
-	startTime: number
-	start: ViewZoomPoint
-	finishTime: number
-	finish: ViewZoomPoint
+	start: ViewTimeZoomPoint
+	finish: ViewTimeZoomPoint
 	transformOrigin: RenderPoint
 } | {
 	type: 'panning'
