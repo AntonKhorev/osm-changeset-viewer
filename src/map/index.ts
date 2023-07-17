@@ -1,5 +1,5 @@
 import type {ViewZoomPoint, RenderViewZoomBox} from './geo'
-import {calculateXYUV, calculateUVXY, calculateLat, calculateLon} from './geo'
+import {calculateXYUV, calculateUVXY, calculateLat, calculateLon, normalizeViewZoomPoint} from './geo'
 import type {Animation} from './animation'
 import {makeFlingAnimation} from './animation'
 import type {Layer} from './layer'
@@ -36,16 +36,16 @@ export default class MapWidget {
 			this.requestId=undefined
 			if (this.animation.type=='zooming') {
 				if (time>=this.animation.finish.time) {
-					this.view.u=this.animation.finish.u-Math.floor(this.animation.finish.u)
-					this.view.v=this.animation.finish.v
-					this.view.z=this.animation.finish.z
+					this.view=this.animation.finish
 					this.animation={type:'stopped'}
 				} else {
-					const finishWeight=(time-this.animation.start.time)/(this.animation.finish.time-this.animation.start.time)
+					const finishWeight=clamp(0,
+						(time-this.animation.start.time)/(this.animation.finish.time-this.animation.start.time),
+					1)
 					const startWeight=1-finishWeight
 					this.view.u=this.animation.start.u*startWeight+this.animation.finish.u*finishWeight
 					this.view.v=this.animation.start.v*startWeight+this.animation.finish.v*finishWeight
-					this.view.z=this.animation.start.z*startWeight+this.animation.finish.z*finishWeight
+					this.view.z=Math.round(this.animation.start.z*startWeight+this.animation.finish.z*finishWeight)
 					for (const layer of this.layers) {
 						layer.$layer.style.transformOrigin=`${this.animation.transformOrigin.x}px ${this.animation.transformOrigin.y}px`
 						layer.$layer.style.scale=String(
@@ -71,7 +71,7 @@ export default class MapWidget {
 				}
 			}
 			if (this.animation.type=='stopped') {
-				this.roundViewPosition(tileProvider.maxZoom)
+				this.view=normalizeViewZoomPoint(this.view,tileProvider.maxZoom)
 				const renderViewBox=this.makeRenderViewBox()
 				if (renderViewBox) {
 					this.dispatchMoveEndEvent()
@@ -104,13 +104,15 @@ export default class MapWidget {
 			const dx=getViewCenterOffset(viewSizeX,ev.offsetX)
 			const dy=getViewCenterOffset(viewSizeY,ev.offsetY)
 			const xyUV=calculateXYUV(this.view.z)
+			const du=Math.round((1-.5**dz)*dx)*xyUV
+			const dv=Math.round((1-.5**dz)*dy)*xyUV
 			const time=performance.now()
 			this.animation={
 				type: 'zooming',
 				start: {...this.view, time},
 				finish: {
-					u: this.view.u+(1-.5**dz)*dx*xyUV,
-					v: clamp(0,this.view.v+(1-.5**dz)*dy*xyUV,1),
+					u: this.view.u+du,
+					v: clamp(0,this.view.v+dv,1),
 					z: finishZ,
 					time: time+300
 				},
@@ -185,12 +187,6 @@ export default class MapWidget {
 			z: this.view.z
 		}
 		return renderView
-	}
-	private roundViewPosition(maxZoom: number): void {
-		this.view.z=Math.round(clamp(0,this.view.z,maxZoom))
-		const xyUV=calculateXYUV(this.view.z)
-		this.view.u=Math.round(this.view.u/xyUV)*xyUV
-		this.view.v=clamp(0,Math.round(this.view.v/xyUV)*xyUV,1)
 	}
 	private dispatchMoveEndEvent(): void {
 		const precision=Math.max(0,Math.ceil(Math.log2(this.view.z)))

@@ -8,9 +8,11 @@ export const tileSizeXY=2**tilePowSize
 // u, v [0..1]
 // x, y [current zoom level pixels]
 
-export type ViewZoomPoint = {
+export type ViewPoint = {
 	u: number
 	v: number
+}
+export type ViewZoomPoint = ViewPoint & {
 	z: number
 }
 export type ViewTimeZoomPoint = ViewZoomPoint & {
@@ -30,6 +32,14 @@ export type RenderViewBox = {
 }
 export type RenderViewZoomBox = RenderViewBox & {
 	z: number
+}
+
+export function normalizeViewZoomPoint(view: ViewZoomPoint, maxZoom: number): ViewZoomPoint {
+	const z=Math.round(clamp(0,view.z,maxZoom))
+	const uvXY=calculateUVXY(z)
+	const u=(Math.round(view.u*uvXY)&(uvXY-1))/uvXY
+	const v=clamp(0,Math.round(view.v*uvXY),uvXY)/uvXY
+	return {u,v,z}
 }
 
 export function calculateXYUV(zoom: number): number {
