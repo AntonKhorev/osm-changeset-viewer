@@ -1,4 +1,4 @@
-import MapView from './map'
+import MapWidget from './map'
 import DragListener from './drag'
 import {clamp} from './math'
 import {makeElement} from './util/html'
@@ -46,10 +46,10 @@ class ResizerDragListener extends DragListener<Grab> {
 export default function writeSidebar(
 	$root: HTMLElement,
 	$aside: HTMLElement,
-	mapView: MapView
+	mapWidget: MapWidget
 ): void {
 	$root.style.setProperty('--min-side-size',`${minSideSize}px`)
 	const $resizer=makeElement('button')('resizer')()
 	new ResizerDragListener($root,$aside,$resizer).install()
-	$aside.append($resizer,mapView.$mapView)
+	$aside.append($resizer,mapWidget.$widget)
 }

@@ -13,7 +13,7 @@ import {makeElement, makeDiv, makeLink} from './util/html'
 import {p,em} from './util/html-shortcuts'
 import {PrefixedLocalStorage} from './util/storage'
 import {escapeHash} from './util/escape'
-import MapView from './map'
+import MapWidget from './map'
 
 const appName='osm-changeset-viewer'
 
@@ -81,7 +81,7 @@ async function main() {
 	const worker=new SharedWorker('worker.js')
 	const more=new More()
 	const colorizer=new Colorizer()
-	const mapView=new MapView(colorizer,cx.server.tile)
+	const mapWidget=new MapWidget(colorizer,cx.server.tile)
 	const grid=new Grid(colorizer,cx,db,worker,more,
 		userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
@@ -89,19 +89,19 @@ async function main() {
 			)
 		},
 		()=>{
-			mapView.reset()
+			mapWidget.reset()
 		},
 		()=>{
-			mapView.redraw()
+			mapWidget.redraw()
 		},
 		(item)=>{
-			mapView.addItem(item)
+			mapWidget.addItem(item)
 		},
 		(type,id)=>{
-			mapView.highlightItem(type,id)
+			mapWidget.highlightItem(type,id)
 		},
 		(type,id)=>{
-			mapView.unhighlightItem(type,id)
+			mapWidget.unhighlightItem(type,id)
 		}
 	)
 	$main.append(
@@ -122,7 +122,7 @@ async function main() {
 		grid.$grid,
 		more.$div
 	)
-	writeSidebar($root,$aside,mapView)
+	writeSidebar($root,$aside,mapWidget)
 	net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
 		grid.receiveUpdatedUserQueries(
 			getUserQueriesFromHash(hostlessHash)

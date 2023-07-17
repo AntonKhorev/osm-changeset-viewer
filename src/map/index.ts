@@ -11,8 +11,8 @@ import type {ItemMapViewInfo} from '../grid'
 import {bubbleCustomEvent} from '../util/events'
 import {makeDiv, makeLink} from '../util/html'
 
-export default class MapView {
-	$mapView=makeDiv('map')()
+export default class MapWidget {
+	$widget=makeDiv('map')()
 	private requestId: number|undefined
 	private readonly animateFrame:(time:number)=>void
 	private animation: Animation = {type:'stopped'}
@@ -29,7 +29,7 @@ export default class MapView {
 		const $attribution=makeDiv('attribution')(
 			`© `,makeLink(tileProvider.attributionText,tileProvider.attributionUrl)
 		)
-		this.$mapView.append(
+		this.$widget.append(
 			...this.layers.map(layer=>layer.$layer),
 			$attribution
 		)
@@ -93,10 +93,10 @@ export default class MapView {
 				this.scheduleFrame()
 			}
 		}
-		this.$mapView.onwheel=ev=>{
+		this.$widget.onwheel=ev=>{
 			if (this.animation.type=='zooming') return
-			const viewPxSizeX=this.$mapView.clientWidth
-			const viewPxSizeY=this.$mapView.clientHeight
+			const viewPxSizeX=this.$widget.clientWidth
+			const viewPxSizeY=this.$widget.clientHeight
 			if (viewPxSizeX<=0 || viewPxSizeY<=0) return
 			let dz=-Math.sign(ev.deltaY)
 			const startZ=this.viewZ
@@ -123,7 +123,7 @@ export default class MapView {
 			}
 			this.scheduleFrame()
 		}
-		new MapDragListener(this.$mapView,()=>{
+		new MapDragListener(this.$widget,()=>{
 			if (this.animation.type!='stopped') return null
 			const pxSize=calculatePxSize(this.viewZ)
 			return [
@@ -146,7 +146,7 @@ export default class MapView {
 			this.scheduleFrame()
 		}).install()
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
-		resizeObserver.observe(this.$mapView)
+		resizeObserver.observe(this.$widget)
 	}
 	reset(): void {
 		this.itemLayer.removeAllItems()
@@ -172,8 +172,8 @@ export default class MapView {
 		this.requestId=requestAnimationFrame(this.animateFrame)
 	}
 	private makeRenderView(): RenderView|null {
-		const viewPxSizeX=this.$mapView.clientWidth
-		const viewPxSizeY=this.$mapView.clientHeight
+		const viewPxSizeX=this.$widget.clientWidth
+		const viewPxSizeY=this.$widget.clientHeight
 		if (viewPxSizeX<=0 || viewPxSizeY<=0) {
 			return null
 		}
@@ -199,7 +199,7 @@ export default class MapView {
 	}
 	private dispatchMoveEndEvent(): void {
 		const precision=Math.max(0,Math.ceil(Math.log2(this.viewZ)))
-		bubbleCustomEvent(this.$mapView,'osmChangesetViewer:mapMoveEnd',{
+		bubbleCustomEvent(this.$widget,'osmChangesetViewer:mapMoveEnd',{
 			zoom: this.viewZ.toFixed(0),
 			lat: calculateLat(this.viewY).toFixed(precision),
 			lon: calculateLon(this.viewX).toFixed(precision),
