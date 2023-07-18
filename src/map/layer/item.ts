@@ -393,14 +393,13 @@ export default class ItemLayer extends Layer {
 				note.point.x-viewBox.x1,
 				note.point.y-viewBox.y1
 			)
-			if (highlighted) {
-				this.ctx.fillStyle=highlightStroke
-				this.traceNotePath(17,7)
-				this.ctx.fill()
-			}
 			this.ctx.fillStyle=getCellFillStyle(1,0.7,note.uid)
 			this.traceNotePath(16,6)
 			this.ctx.fill()
+			if (highlighted) {
+				this.ctx.strokeStyle=highlightStroke
+				this.ctx.stroke()
+			}
 			this.ctx.restore()
 		}
 	}
