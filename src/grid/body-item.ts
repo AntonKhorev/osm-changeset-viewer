@@ -348,9 +348,13 @@ export function writeExpandedItemFlow(
 		}
 	}
 	const rewriteWithLinks=(id: number, href: string, apiHref: string)=>{
+		const $mainLink=makeLink(String(id),href)
+		$mainLink.classList.add('listened')
+		const $apiLink=makeLink(`api`,apiHref)
+		$apiLink.classList.add('listened')
 		$flow.replaceChildren(
-			optionalize('id',makeLink(String(id),href)),` `,
-			optionalize('api',makeBadge()([makeLink(`api`,apiHref)]))
+			optionalize('id',$mainLink),` `,
+			optionalize('api',makeBadge()([$apiLink]))
 		)
 	}
 	const rewriteWithChangesetLinks=(id: number)=>{

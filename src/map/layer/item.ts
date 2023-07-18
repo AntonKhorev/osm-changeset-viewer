@@ -1,5 +1,5 @@
 import Layer from './base'
-import type {RenderViewBox, RenderViewZoomBox} from '../geo'
+import type {RenderViewBox, RenderViewZoomBox, GeoBox} from '../geo'
 import {calculateXYUV, calculateU, calculateV} from '../geo'
 import {clamp} from '../../math'
 import type {ItemMapViewInfo} from '../../grid'
@@ -69,6 +69,25 @@ export default class ItemLayer extends Layer {
 			}
 		}
 	}
+	getItemBbox(type: string, id: number): GeoBox|null {
+		const key=type+':'+id
+		const item=this.items.get(key)
+		if (!item) return null
+		return this.getItemBboxFromInfo(item)
+	}
+	private getItemBboxFromInfo(item: ItemMapViewInfo): GeoBox {
+		let minLat: number
+		let minLon: number
+		let maxLat: number
+		let maxLon: number
+		if (item.type=='changeset') {
+			;({minLat,minLon,maxLat,maxLon}=item)
+		} else {
+			minLat=maxLat=item.lat
+			minLon=maxLon=item.lon
+		}
+		return {minLat,minLon,maxLat,maxLon}
+	}
 	highlightItem(type: string, id: number): void {
 		const key=type+':'+id
 		this.highlightedItems.add(key)
@@ -115,21 +134,12 @@ export default class ItemLayer extends Layer {
 			const highlighted=this.highlightedItems.has(key)
 			const userCells=cells.get(item.uid)
 			if (!userCells) continue
-			let minLat: number
-			let minLon: number
-			let maxLat: number
-			let maxLon: number
-			if (item.type=='changeset') {
-				;({minLat,minLon,maxLat,maxLon}=item)
-			} else {
-				minLat=maxLat=item.lat
-				minLon=maxLon=item.lon
-			}
+			const bbox=this.getItemBboxFromInfo(item)
 			for (let repeatU=repeatU1;repeatU<=repeatU2;repeatU++) {
-				const itemX1=(calculateU(minLon)+repeatU)/xyUV
-				const itemX2=(calculateU(maxLon)+repeatU)/xyUV
-				const itemY1=calculateV(maxLat)/xyUV
-				const itemY2=calculateV(minLat)/xyUV
+				const itemX1=(calculateU(bbox.minLon)+repeatU)/xyUV
+				const itemX2=(calculateU(bbox.maxLon)+repeatU)/xyUV
+				const itemY1= calculateV(bbox.maxLat)/xyUV
+				const itemY2= calculateV(bbox.minLat)/xyUV
 				if (itemX2-itemX1>bboxThreshold && itemY2-itemY1>bboxThreshold) {
 					this.renderBbox(
 						viewBox,this.$bboxSvg,

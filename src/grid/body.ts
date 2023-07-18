@@ -21,6 +21,7 @@ import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
+import { bubbleCustomEvent } from '../util/events'
 
 export type ItemMapViewInfo = {
 	id: number
@@ -64,6 +65,10 @@ export default class GridBody {
 	) {
 		this.$gridBody.addEventListener('click',ev=>{
 			if (!(ev.target instanceof Element)) return
+			const $a=ev.target.closest('a.listened')
+			if ($a) {
+				ev.preventDefault()
+			}
 			const $button=ev.target.closest('button')
 			if ($button) {
 				if ($button.classList.contains('disclosure')) {
@@ -81,6 +86,10 @@ export default class GridBody {
 			}
 			const $item=ev.target.closest('.item')
 			if ($item instanceof HTMLElement) {
+				const descriptor=readItemDescriptor($item)
+				if (descriptor) {
+					bubbleCustomEvent($item,'osmChangesetViewer:itemPing',descriptor)
+				}
 				this.highlightClickedItem($item)
 				return
 			}

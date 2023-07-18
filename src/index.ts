@@ -82,7 +82,7 @@ async function main() {
 	const worker=new SharedWorker('worker.js')
 	const more=new More()
 	const colorizer=new Colorizer()
-	const mapWidget=new MapWidget(colorizer,cx.server.tile)
+	const mapWidget=new MapWidget($root,colorizer,cx.server.tile)
 	const grid=new Grid(colorizer,cx,db,worker,more,
 		userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(

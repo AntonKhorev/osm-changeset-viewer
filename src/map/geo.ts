@@ -1,12 +1,19 @@
 import {clamp} from '../math'
 
-const tilePowSize=8
-export const tileSizeXY=2**tilePowSize
+export const tilePower=8
+export const tileSizeXY=2**tilePower
 
 // various kinds of coordinates:
 // lat, lon [degrees]
 // u, v [0..1]
 // x, y [current zoom level pixels]
+
+export type GeoBox = {
+	minLat: number
+	minLon: number
+	maxLat: number
+	maxLon: number
+}
 
 export type ViewPoint = {
 	u: number
@@ -43,10 +50,10 @@ export function normalizeViewZoomPoint(view: ViewZoomPoint, maxZoom: number): Vi
 }
 
 export function calculateXYUV(zoom: number): number {
-	return .5**(tilePowSize+zoom)
+	return .5**(tilePower+zoom)
 }
 export function calculateUVXY(zoom: number): number {
-	return 2**(tilePowSize+zoom)
+	return 2**(tilePower+zoom)
 }
 
 export function calculateU(lon: number): number {

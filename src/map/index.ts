@@ -1,7 +1,8 @@
-import type {ViewZoomPoint, RenderViewZoomBox} from './geo'
+import type {ViewZoomPoint, RenderViewZoomBox, GeoBox} from './geo'
 import {
 	calculateXYUV, calculateUVXY, calculateU, calculateV,
-	calculateLat, calculateLon, normalizeViewZoomPoint
+	calculateLat, calculateLon,
+	normalizeViewZoomPoint, tilePower
 } from './geo'
 import type {Animation} from './animation'
 import {makeFlingAnimation} from './animation'
@@ -24,8 +25,9 @@ export default class MapWidget {
 	private itemLayer=new ItemLayer()
 	private view: ViewZoomPoint = { u: 0.5, v: 0.5, z: 0 }
 	constructor(
+		$root: HTMLElement,
 		colorizer: Colorizer,
-		private tileProvider: TileProvider
+		tileProvider: TileProvider
 	) {
 		this.tileLayer=new TileLayer(tileProvider)
 		const $attribution=makeDiv('attribution')(
@@ -143,6 +145,11 @@ export default class MapWidget {
 		}).install()
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
 		resizeObserver.observe(this.$widget)
+		$root.addEventListener('osmChangesetViewer:itemPing',({detail:{type,id}})=>{
+			const bbox=this.itemLayer.getItemBbox(type,id)
+			if (!bbox) return
+			this.fitBox(bbox)
+		})
 	}
 	get hashValue(): string {
 		const precision=Math.max(0,Math.ceil(Math.log2(this.view.z)))
@@ -227,6 +234,33 @@ export default class MapWidget {
 		for (const layer of this.layers) {
 			layer.$layer.removeAttribute('style')
 		}
+	}
+	private fitBox(box: GeoBox): void {
+		const u1=calculateU(box.minLon)
+		const u2=calculateU(box.maxLon)
+		const v1=calculateV(box.maxLat)
+		const v2=calculateV(box.minLat)
+		const viewSizeX=this.$widget.clientWidth
+		const viewSizeY=this.$widget.clientHeight
+		if (viewSizeX==0 || viewSizeY==0) return
+		const viewMarginXY=16
+		let limitedViewSizeX=viewSizeX
+		if (limitedViewSizeX>2*viewMarginXY) limitedViewSizeX-=2*viewMarginXY
+		let limitedViewSizeY=viewSizeY
+		if (limitedViewSizeY>2*viewMarginXY) limitedViewSizeY-=2*viewMarginXY
+		const u=(u1+u2)/2
+		const v=(v1+v2)/2
+		const z=Math.min(
+			Math.floor(
+				Math.log2(limitedViewSizeX/(u2-u1))
+			),
+			Math.floor(
+				Math.log2(limitedViewSizeY/(v2-v1))
+			)
+		)-tilePower
+		this.view={u,v,z}
+		this.animation={type:'stopped'}
+		this.scheduleFrame()
 	}
 }
 
