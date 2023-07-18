@@ -4,7 +4,7 @@ import {ChangesetViewerDBReader} from './db'
 import type {ValidUserQuery} from './osm'
 import Grid from './grid'
 import More from './more'
-import writeFooter from './footer'
+import Footer from './footer'
 import writeSidebar from './sidebar'
 import makeNetDialog from './net-dialog'
 import {installRelativeTimeListeners} from './date'
@@ -60,7 +60,7 @@ async function main() {
 			makeDiv('notice')(`Please select a valid server`)
 		)
 		net.serverSelector.installHashChangeListener(net.cx,()=>{})
-		writeFooter($root,$footer,$netDialog)
+		new Footer($root,$footer,$netDialog)
 		return
 	}
 
@@ -124,26 +124,41 @@ async function main() {
 		more.$div
 	)
 	writeSidebar($root,$aside,mapWidget)
-	net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
-		grid.receiveUpdatedUserQueries(
-			getUserQueriesFromHash(hostlessHash)
-		)
-	},true)
-	writeFooter($root,$footer,$netDialog,net.cx.server,grid,more,()=>{
+	const showMap=()=>{
+		$aside.hidden=false
+		$main.style.gridArea=`main`
+	}
+	const hideMap=()=>{
+		$aside.hidden=true
+		$main.style.gridArea=`main / main / aside / aside`
+	}
+	const footer=new Footer($root,$footer,$netDialog,net.cx.server,grid,more,()=>{
 		const hostlessHash=net.serverSelector.getHostlessHash()
 		const [,queryHash]=detachValueFromHash('map',hostlessHash)
 		if ($aside.hidden) {
-			$aside.hidden=false
-			$main.style.gridArea=`main`
+			showMap()
 			const updatedHostlessHash=attachValueToBackOfHash('map',mapWidget.hashValue,queryHash)
 			net.serverSelector.replaceHostlessHashInHistory(updatedHostlessHash)
 		} else {
-			$aside.hidden=true
-			$main.style.gridArea=`main / main / aside / aside`
+			hideMap()
 			net.serverSelector.replaceHostlessHashInHistory(queryHash)
 		}
 		return !$aside.hidden
 	})
+	net.serverSelector.installHashChangeListener(net.cx,hostlessHash=>{
+		const [mapHashValue,queryHash]=detachValueFromHash('map',hostlessHash)
+		if (mapHashValue!=null) {
+			mapWidget.hashValue=mapHashValue
+			showMap()
+			footer.mapVisibility=true
+		} else {
+			hideMap()
+			footer.mapVisibility=false
+		}
+		grid.receiveUpdatedUserQueries(
+			getUserQueriesFromHash(queryHash)
+		)
+	},true)
 	$root.addEventListener('osmChangesetViewer:mapMoveEnd',()=>{
 		const hostlessHash=net.serverSelector.getHostlessHash()
 		const [,queryHash]=detachValueFromHash('map',hostlessHash)

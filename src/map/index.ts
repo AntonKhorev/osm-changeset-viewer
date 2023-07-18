@@ -1,5 +1,8 @@
 import type {ViewZoomPoint, RenderViewZoomBox} from './geo'
-import {calculateXYUV, calculateUVXY, calculateLat, calculateLon, normalizeViewZoomPoint} from './geo'
+import {
+	calculateXYUV, calculateUVXY, calculateU, calculateV,
+	calculateLat, calculateLon, normalizeViewZoomPoint
+} from './geo'
 import type {Animation} from './animation'
 import {makeFlingAnimation} from './animation'
 import type {Layer} from './layer'
@@ -20,17 +23,10 @@ export default class MapWidget {
 	private tileLayer: TileLayer
 	private itemLayer=new ItemLayer()
 	private view: ViewZoomPoint = { u: 0.5, v: 0.5, z: 0 }
-	get hashValue(): string {
-		const precision=Math.max(0,Math.ceil(Math.log2(this.view.z)))
-		const zoom=this.view.z.toFixed(0)
-		const lat=calculateLat(this.view.v).toFixed(precision)
-		const lon=calculateLon(this.view.u).toFixed(precision)
-		return `${zoom}/${lat}/${lon}`
-	}
-	private get layers(): Layer[] {
-		return [this.tileLayer,this.itemLayer]
-	}
-	constructor(colorizer: Colorizer, tileProvider: TileProvider) {
+	constructor(
+		colorizer: Colorizer,
+		private tileProvider: TileProvider
+	) {
 		this.tileLayer=new TileLayer(tileProvider)
 		const $attribution=makeDiv('attribution')(
 			`© `,makeLink(tileProvider.attributionText,tileProvider.attributionUrl)
@@ -147,6 +143,31 @@ export default class MapWidget {
 		}).install()
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
 		resizeObserver.observe(this.$widget)
+	}
+	get hashValue(): string {
+		const precision=Math.max(0,Math.ceil(Math.log2(this.view.z)))
+		const zoomString=this.view.z.toFixed(0)
+		const latString=calculateLat(this.view.v).toFixed(precision)
+		const lonString=calculateLon(this.view.u).toFixed(precision)
+		return `${zoomString}/${latString}/${lonString}`
+	}
+	set hashValue(hashValue: string) {
+		const [zoomString,latString,lonString]=hashValue.split('/')
+		if (zoomString==null || latString==null || lonString==null) return
+		const zoom=Number(zoomString)
+		const lat=Number(latString)
+		const lon=Number(lonString)
+		if (!Number.isInteger(zoom) || !Number.isFinite(lat) || !Number.isFinite(lon)) return
+		this.view={
+			u: calculateU(lon),
+			v: calculateV(lat),
+			z: zoom
+		}
+		this.animation={type:'stopped'}
+		this.scheduleFrame()
+	}
+	private get layers(): Layer[] {
+		return [this.tileLayer,this.itemLayer]
 	}
 	reset(): void {
 		this.itemLayer.removeAllItems()
