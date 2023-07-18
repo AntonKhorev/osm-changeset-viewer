@@ -88,7 +88,10 @@ export default class GridBody {
 			if ($item instanceof HTMLElement) {
 				const descriptor=readItemDescriptor($item)
 				if (descriptor) {
-					bubbleCustomEvent($item,'osmChangesetViewer:itemPing',descriptor)
+					const mainDescriptor=getMainItemDescriptor(descriptor)
+					if (mainDescriptor) {
+						bubbleCustomEvent($item,'osmChangesetViewer:itemPing',mainDescriptor)
+					}
 				}
 				this.highlightClickedItem($item)
 				return

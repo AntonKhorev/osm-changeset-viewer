@@ -138,9 +138,9 @@ export function getCommentItemDescriptor(descriptor: ItemDescriptor, order: numb
 export function getMainItemDescriptor(descriptor: ItemDescriptor): ItemDescriptor|null {
 	const id=descriptor.id
 	let type: string
-	if (descriptor.type=='changesetClose' || descriptor.type=='changesetComment') {
+	if (descriptor.type=='changeset' || descriptor.type=='changesetClose' || descriptor.type=='changesetComment') {
 		type='changeset'
-	} else if (descriptor.type=='noteComment') {
+	} else if (descriptor.type=='note' || descriptor.type=='noteComment') {
 		type='note'
 	} else {
 		return null
