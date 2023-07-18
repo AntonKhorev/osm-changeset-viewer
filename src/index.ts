@@ -97,12 +97,6 @@ async function main() {
 		},
 		(item)=>{
 			mapWidget.addItem(item)
-		},
-		(type,id)=>{
-			mapWidget.highlightItem(type,id)
-		},
-		(type,id)=>{
-			mapWidget.unhighlightItem(type,id)
 		}
 	)
 	$main.append(

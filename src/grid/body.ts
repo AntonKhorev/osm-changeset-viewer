@@ -59,10 +59,21 @@ export default class GridBody {
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader,
 		private resetMapViewReceiver: ()=>void,
-		private addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void,
-		private highlightItemOnMapViewReceiver: (type:string,id:number)=>void,
-		private unhighlightItemOnMapViewReceiver: (type:string,id:number)=>void
+		private addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void
 	) {
+		const bubbleItemEvent=($item:HTMLElement,eventType:(
+			'osmChangesetViewer:itemHighlight'|
+			'osmChangesetViewer:itemUnhighlight'|
+			'osmChangesetViewer:itemPing'
+		))=>{
+			const descriptor=readItemDescriptor($item)
+			if (descriptor) {
+				const mainDescriptor=getMainItemDescriptor(descriptor)
+				if (mainDescriptor) {
+					bubbleCustomEvent($item,eventType,mainDescriptor)
+				}
+			}
+		}
 		this.$gridBody.addEventListener('click',ev=>{
 			if (!(ev.target instanceof Element)) return
 			const $a=ev.target.closest('a.listened')
@@ -86,13 +97,7 @@ export default class GridBody {
 			}
 			const $item=ev.target.closest('.item')
 			if ($item instanceof HTMLElement) {
-				const descriptor=readItemDescriptor($item)
-				if (descriptor) {
-					const mainDescriptor=getMainItemDescriptor(descriptor)
-					if (mainDescriptor) {
-						bubbleCustomEvent($item,'osmChangesetViewer:itemPing',mainDescriptor)
-					}
-				}
+				bubbleItemEvent($item,'osmChangesetViewer:itemPing')
 				this.highlightClickedItem($item)
 				return
 			}
@@ -117,6 +122,7 @@ export default class GridBody {
 				const $item=ev.target
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
+				bubbleItemEvent($item,'osmChangesetViewer:itemHighlight')
 				this.highlightHoveredItemDescriptor(descriptor)
 			} else if (ev.target.matches('button.comment-ref')) {
 				const $button=ev.target
@@ -145,6 +151,7 @@ export default class GridBody {
 				const $item=ev.target
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
+				bubbleItemEvent($item,'osmChangesetViewer:itemUnhighlight')
 				this.unhighlightHoveredItemDescriptor(descriptor)
 			} else if (ev.target.matches('button.ref, button.comment-ref')) {
 				const $button=ev.target
@@ -755,13 +762,11 @@ export default class GridBody {
 			$item.classList.remove('highlighted-by-hover-indirectly')
 			$item.classList.add('highlighted-by-hover')
 		}
-		this.highlightItemOnMapViewReceiver(descriptor.type,descriptor.id)
 	}
 	private unhighlightHoveredItemDescriptor(descriptor: ItemDescriptor): void {
 		for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
 			$item.classList.remove('highlighted-by-hover','highlighted-by-hover-indirectly')
 		}
-		this.unhighlightItemOnMapViewReceiver(descriptor.type,descriptor.id)
 	}
 	private highlightClickedItem($item: HTMLElement): void {
 		requestAnimationFrame(()=>{

@@ -145,6 +145,14 @@ export default class MapWidget {
 		}).install()
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
 		resizeObserver.observe(this.$widget)
+		$root.addEventListener('osmChangesetViewer:itemHighlight',({detail:{type,id}})=>{
+			this.itemLayer.highlightItem(type,id)
+			this.scheduleFrame()
+		})
+		$root.addEventListener('osmChangesetViewer:itemUnhighlight',({detail:{type,id}})=>{
+			this.itemLayer.unhighlightItem(type,id)
+			this.scheduleFrame()
+		})
 		$root.addEventListener('osmChangesetViewer:itemPing',({detail:{type,id}})=>{
 			const bbox=this.itemLayer.getItemBbox(type,id)
 			if (!bbox) return
@@ -185,14 +193,6 @@ export default class MapWidget {
 	}
 	addItem(item: ItemMapViewInfo): void {
 		this.itemLayer.addItem(item)
-		this.scheduleFrame()
-	}
-	highlightItem(type: string, id: number): void {
-		this.itemLayer.highlightItem(type,id)
-		this.scheduleFrame()
-	}
-	unhighlightItem(type: string, id: number): void {
-		this.itemLayer.unhighlightItem(type,id)
 		this.scheduleFrame()
 	}
 	private scheduleFrame(): void {

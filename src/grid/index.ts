@@ -32,18 +32,14 @@ export default class Grid {
 		)=>void,
 		resetMapViewReceiver: ()=>void,
 		redrawMapViewReceiver: ()=>void,
-		addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void,
-		highlightItemOnMapViewReceiver: (type:string,id:number)=>void,
-		unhighlightItemOnMapViewReceiver: (type:string,id:number)=>void
+		addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void
 	) {
 		this.body=new GridBody(
 			colorizer,
 			cx.server,
 			db.getSingleItemReader(),
 			resetMapViewReceiver,
-			addItemToMapViewReceiver,
-			highlightItemOnMapViewReceiver,
-			unhighlightItemOnMapViewReceiver
+			addItemToMapViewReceiver
 		)
 		this.head=new GridHead(
 			colorizer,cx,db,worker,
