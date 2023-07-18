@@ -130,20 +130,24 @@ async function main() {
 		)
 	},true)
 	writeFooter($root,$footer,$netDialog,net.cx.server,grid,more,()=>{
+		const hostlessHash=net.serverSelector.getHostlessHash()
+		const [,queryHash]=detachValueFromHash('map',hostlessHash)
 		if ($aside.hidden) {
 			$aside.hidden=false
 			$main.style.gridArea=`main`
+			const updatedHostlessHash=attachValueToBackOfHash('map',mapWidget.hashValue,queryHash)
+			net.serverSelector.replaceHostlessHashInHistory(updatedHostlessHash)
 		} else {
 			$aside.hidden=true
 			$main.style.gridArea=`main / main / aside / aside`
+			net.serverSelector.replaceHostlessHashInHistory(queryHash)
 		}
 		return !$aside.hidden
 	})
-	$root.addEventListener('osmChangesetViewer:mapMoveEnd',({detail:{zoom,lat,lon}})=>{
-		const mapHashValue=`${zoom}/${lat}/${lon}`
+	$root.addEventListener('osmChangesetViewer:mapMoveEnd',()=>{
 		const hostlessHash=net.serverSelector.getHostlessHash()
 		const [,queryHash]=detachValueFromHash('map',hostlessHash)
-		const updatedHostlessHash=attachValueToBackOfHash('map',mapHashValue,queryHash)
+		const updatedHostlessHash=attachValueToBackOfHash('map',mapWidget.hashValue,queryHash)
 		net.serverSelector.replaceHostlessHashInHistory(updatedHostlessHash)
 	})
 }

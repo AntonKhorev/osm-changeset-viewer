@@ -9,7 +9,7 @@ import {clamp} from '../math'
 import type Colorizer from '../colorizer'
 import type {TileProvider} from '../net'
 import type {ItemMapViewInfo} from '../grid'
-import {bubbleCustomEvent} from '../util/events'
+import {bubbleEvent} from '../util/events'
 import {makeDiv, makeLink} from '../util/html'
 
 export default class MapWidget {
@@ -20,7 +20,14 @@ export default class MapWidget {
 	private tileLayer: TileLayer
 	private itemLayer=new ItemLayer()
 	private view: ViewZoomPoint = { u: 0.5, v: 0.5, z: 0 }
-	get layers(): Layer[] {
+	get hashValue(): string {
+		const precision=Math.max(0,Math.ceil(Math.log2(this.view.z)))
+		const zoom=this.view.z.toFixed(0)
+		const lat=calculateLat(this.view.v).toFixed(precision)
+		const lon=calculateLon(this.view.u).toFixed(precision)
+		return `${zoom}/${lat}/${lon}`
+	}
+	private get layers(): Layer[] {
 		return [this.tileLayer,this.itemLayer]
 	}
 	constructor(colorizer: Colorizer, tileProvider: TileProvider) {
@@ -70,7 +77,7 @@ export default class MapWidget {
 				this.view=normalizeViewZoomPoint(this.view,tileProvider.maxZoom)
 				const renderViewBox=this.makeRenderViewBox()
 				if (renderViewBox) {
-					this.dispatchMoveEndEvent()
+					bubbleEvent(this.$widget,'osmChangesetViewer:mapMoveEnd')
 				}
 				this.removeLayerTransforms()
 				if (!renderViewBox) {
@@ -183,14 +190,6 @@ export default class MapWidget {
 			z: this.view.z
 		}
 		return renderView
-	}
-	private dispatchMoveEndEvent(): void {
-		const precision=Math.max(0,Math.ceil(Math.log2(this.view.z)))
-		bubbleCustomEvent(this.$widget,'osmChangesetViewer:mapMoveEnd',{
-			zoom: this.view.z.toFixed(0),
-			lat: calculateLat(this.view.v).toFixed(precision),
-			lon: calculateLon(this.view.u).toFixed(precision),
-		})
 	}
 	private translateLayers(dx: number, dy: number): void {
 		for (const layer of this.layers) {
