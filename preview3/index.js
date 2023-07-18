@@ -496,6 +496,14 @@ function attachValueToFrontOfHash(key, value, restOfHash) {
         return valueHash;
     return `${valueHash}&${restOfHash}`;
 }
+function attachValueToBackOfHash(key, value, restOfHash) {
+    if (value == null)
+        return restOfHash;
+    const valueHash = `${key}=${escapeHash(value)}`;
+    if (!restOfHash)
+        return valueHash;
+    return `${restOfHash}&${valueHash}`;
+}
 
 const em = (...ss) => makeElement('em')()(...ss);
 const strong = (...ss) => makeElement('strong')()(...ss);
@@ -2385,10 +2393,10 @@ function getCommentItemDescriptor(descriptor, order) {
 function getMainItemDescriptor(descriptor) {
     const id = descriptor.id;
     let type;
-    if (descriptor.type == 'changesetClose' || descriptor.type == 'changesetComment') {
+    if (descriptor.type == 'changeset' || descriptor.type == 'changesetClose' || descriptor.type == 'changesetComment') {
         type = 'changeset';
     }
-    else if (descriptor.type == 'noteComment') {
+    else if (descriptor.type == 'note' || descriptor.type == 'noteComment') {
         type = 'note';
     }
     else {
@@ -2916,7 +2924,11 @@ function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernam
         }
     };
     const rewriteWithLinks = (id, href, apiHref) => {
-        $flow.replaceChildren(optionalize('id', makeLink(String(id), href)), ` `, optionalize('api', makeBadge()([makeLink(`api`, apiHref)])));
+        const $mainLink = makeLink(String(id), href);
+        $mainLink.classList.add('listened');
+        const $apiLink = makeLink(`api`, apiHref);
+        $apiLink.classList.add('listened');
+        $flow.replaceChildren(optionalize('id', $mainLink), ` `, optionalize('api', makeBadge()([$apiLink])));
     };
     const rewriteWithChangesetLinks = (id) => {
         rewriteWithLinks(id, server.web.getUrl(e$2 `changeset/${id}`), server.api.getUrl(e$2 `changeset/${id}.json?include_discussion=true`));
@@ -5194,6 +5206,16 @@ class ItemOptions {
     }
 }
 
+function bubbleEvent($target, type) {
+    return $target.dispatchEvent(new Event(type, { bubbles: true }));
+}
+function bubbleCustomEvent($target, type, detail) {
+    return $target.dispatchEvent(new CustomEvent(type, {
+        bubbles: true,
+        detail
+    }));
+}
+
 class GridBody {
     get withAbbreviatedIds() {
         return !!this.collapsedItemOptions.get('id')?.abbreviate;
@@ -5201,23 +5223,34 @@ class GridBody {
     get withAbbreviatedComments() {
         return !!this.collapsedItemOptions.get('comment')?.abbreviate;
     }
-    constructor(colorizer, server, itemReader, resetMapViewReceiver, addItemToMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver) {
+    constructor(colorizer, server, itemReader, resetMapViewReceiver, addItemToMapViewReceiver) {
         this.colorizer = colorizer;
         this.server = server;
         this.itemReader = itemReader;
         this.resetMapViewReceiver = resetMapViewReceiver;
         this.addItemToMapViewReceiver = addItemToMapViewReceiver;
-        this.highlightItemOnMapViewReceiver = highlightItemOnMapViewReceiver;
-        this.unhighlightItemOnMapViewReceiver = unhighlightItemOnMapViewReceiver;
         this.$gridBody = makeElement('tbody')()();
         this.withClosedChangesets = false;
         this.expandedItemOptions = new ItemOptions(true);
         this.collapsedItemOptions = new ItemOptions(false);
         this.checkboxHandler = new GridBodyCheckboxHandler(this.$gridBody);
         this.columnUids = [];
+        const bubbleItemEvent = ($item, eventType) => {
+            const descriptor = readItemDescriptor($item);
+            if (descriptor) {
+                const mainDescriptor = getMainItemDescriptor(descriptor);
+                if (mainDescriptor) {
+                    bubbleCustomEvent($item, eventType, mainDescriptor);
+                }
+            }
+        };
         this.$gridBody.addEventListener('click', ev => {
             if (!(ev.target instanceof Element))
                 return;
+            const $a = ev.target.closest('a.listened');
+            if ($a) {
+                ev.preventDefault();
+            }
             const $button = ev.target.closest('button');
             if ($button) {
                 if ($button.classList.contains('disclosure')) {
@@ -5239,6 +5272,7 @@ class GridBody {
             }
             const $item = ev.target.closest('.item');
             if ($item instanceof HTMLElement) {
+                bubbleItemEvent($item, 'osmChangesetViewer:itemPing');
                 this.highlightClickedItem($item);
                 return;
             }
@@ -5269,6 +5303,7 @@ class GridBody {
                 const descriptor = readItemDescriptor($item);
                 if (!descriptor)
                     return;
+                bubbleItemEvent($item, 'osmChangesetViewer:itemHighlight');
                 this.highlightHoveredItemDescriptor(descriptor);
             }
             else if (ev.target.matches('button.comment-ref')) {
@@ -5306,6 +5341,7 @@ class GridBody {
                 const descriptor = readItemDescriptor($item);
                 if (!descriptor)
                     return;
+                bubbleItemEvent($item, 'osmChangesetViewer:itemUnhighlight');
                 this.unhighlightHoveredItemDescriptor(descriptor);
             }
             else if (ev.target.matches('button.ref, button.comment-ref')) {
@@ -5928,13 +5964,11 @@ class GridBody {
             $item.classList.remove('highlighted-by-hover-indirectly');
             $item.classList.add('highlighted-by-hover');
         }
-        this.highlightItemOnMapViewReceiver(descriptor.type, descriptor.id);
     }
     unhighlightHoveredItemDescriptor(descriptor) {
         for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
             $item.classList.remove('highlighted-by-hover', 'highlighted-by-hover-indirectly');
         }
-        this.unhighlightItemOnMapViewReceiver(descriptor.type, descriptor.id);
     }
     highlightClickedItem($item) {
         requestAnimationFrame(() => {
@@ -6014,12 +6048,12 @@ function union(sets) {
 }
 
 class Grid {
-    constructor(colorizer, cx, db, worker, more, sendUpdatedUserQueriesReceiver, resetMapViewReceiver, redrawMapViewReceiver, addItemToMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver) {
+    constructor(colorizer, cx, db, worker, more, sendUpdatedUserQueriesReceiver, resetMapViewReceiver, redrawMapViewReceiver, addItemToMapViewReceiver) {
         this.$grid = makeElement('table')('grid')();
         this.addExpandedItems = false;
         this.onExternalControlsStateUpdate = () => { };
         this.$colgroup = makeElement('colgroup')()();
-        this.body = new GridBody(colorizer, cx.server, db.getSingleItemReader(), resetMapViewReceiver, addItemToMapViewReceiver, highlightItemOnMapViewReceiver, unhighlightItemOnMapViewReceiver);
+        this.body = new GridBody(colorizer, cx.server, db.getSingleItemReader(), resetMapViewReceiver, addItemToMapViewReceiver);
         this.head = new GridHead(colorizer, cx, db, worker, columnUids => this.setColumns(columnUids), (iShiftFrom, iShiftTo) => this.body.reorderColumns(iShiftFrom, iShiftTo), () => this.body.getColumnCheckboxStatuses(), (iColumn, isChecked) => this.body.triggerColumnCheckboxes(iColumn, isChecked), (uid) => {
             for (const $e of this.$grid.querySelectorAll(`[data-hue-uid="${uid}"]`)) {
                 if (!($e instanceof HTMLElement))
@@ -6578,94 +6612,99 @@ class ListPanel extends Panel {
     }
 }
 
-function writeFooter($root, $footer, $netDialog, server, grid, more, toggleMap) {
-    const $panelButtons = [];
-    const addPanel = ([$panel, $button]) => {
-        $footer.append($panel);
-        $panelButtons.push($button);
-    };
-    if (server)
-        addPanel(new LogPanel(server).makePanelAndButton());
-    if (grid)
-        addPanel(new GridSettingsPanel(grid).makePanelAndButton());
-    if (server && grid)
-        addPanel(new ActionsPanel(server, grid).makePanelAndButton());
-    if (server && grid)
-        addPanel(new ListPanel(server, grid).makePanelAndButton());
-    const $toolbar = makeDiv('toolbar')();
-    $footer.append($toolbar);
-    {
-        const $message = makeDiv('message')();
-        $toolbar.append($message);
-        if (server) {
-            const broadcastReceiver = new WorkerBroadcastReceiver(server.host);
-            broadcastReceiver.onmessage = ({ data: message }) => {
-                if (message.type != 'operation')
-                    return;
-                $message.replaceChildren(strong(message.part.status), ` `, message.part.text);
-                if (message.part.status == 'failed') {
-                    $message.append(`: `, strong(message.part.failedText));
-                }
+class Footer {
+    constructor($root, $footer, $netDialog, server, grid, more, toggleMap) {
+        this.$mapButton = makeElement('button')()(`Map`);
+        const $panelButtons = [];
+        const addPanel = ([$panel, $button]) => {
+            $footer.append($panel);
+            $panelButtons.push($button);
+        };
+        if (server)
+            addPanel(new LogPanel(server).makePanelAndButton());
+        if (grid)
+            addPanel(new GridSettingsPanel(grid).makePanelAndButton());
+        if (server && grid)
+            addPanel(new ActionsPanel(server, grid).makePanelAndButton());
+        if (server && grid)
+            addPanel(new ListPanel(server, grid).makePanelAndButton());
+        const $toolbar = makeDiv('toolbar')();
+        $footer.append($toolbar);
+        {
+            const $message = makeDiv('message')();
+            $toolbar.append($message);
+            if (server) {
+                const broadcastReceiver = new WorkerBroadcastReceiver(server.host);
+                broadcastReceiver.onmessage = ({ data: message }) => {
+                    if (message.type != 'operation')
+                        return;
+                    $message.replaceChildren(strong(message.part.status), ` `, message.part.text);
+                    if (message.part.status == 'failed') {
+                        $message.append(`: `, strong(message.part.failedText));
+                    }
+                };
+            }
+        }
+        if (more) {
+            const $checkbox = makeElement('input')()();
+            $checkbox.type = 'checkbox';
+            $checkbox.oninput = () => {
+                more.autoLoad = $checkbox.checked;
             };
+            $toolbar.append(makeDiv('input-group')(makeLabel()($checkbox, ` auto load more`)));
+        }
+        if (server) {
+            const $checkbox = makeElement('input')()();
+            $checkbox.type = 'checkbox';
+            $checkbox.oninput = () => {
+                $root.classList.toggle('with-time', $checkbox.checked);
+            };
+            $toolbar.append(makeDiv('input-group')(makeLabel()($checkbox, ` time`)));
+        }
+        if (grid) {
+            const $checkbox = makeElement('input')()();
+            $checkbox.type = 'checkbox';
+            $checkbox.oninput = () => {
+                grid.addExpandedItems = $checkbox.checked;
+            };
+            $toolbar.append(makeDiv('input-group')(makeLabel()($checkbox, ` add expanded items`)));
+        }
+        if (grid) {
+            const addButton = (label, title, action) => {
+                const $button = makeElement('button')()(label);
+                $button.title = title;
+                $button.onclick = action;
+                $toolbar.append($button);
+                return $button;
+            };
+            addButton(`+`, `Expand selected items`, () => { grid.expandSelectedItems(); });
+            addButton(`−`, `Collapse selected items`, () => { grid.collapseSelectedItems(); });
+            const $stretchAllButton = addButton(`<*>`, `Stretch all items`, () => { grid.stretchAllItems(); });
+            const $shrinkAllButton = addButton(`>*<`, `Shrink all items`, () => { grid.shrinkAllItems(); });
+            (grid.onExternalControlsStateUpdate = () => {
+                $stretchAllButton.disabled = $shrinkAllButton.disabled = !grid.withTotalColumn;
+            })();
+        }
+        for (const $button of $panelButtons) {
+            $toolbar.append($button);
+        }
+        {
+            const $button = makeElement('button')()(`Servers and logins`);
+            $button.onclick = () => {
+                $netDialog.showModal();
+            };
+            $toolbar.append($button);
+        }
+        if (toggleMap) {
+            this.$mapButton.setAttribute('aria-expanded', 'false');
+            this.$mapButton.onclick = () => {
+                this.$mapButton.setAttribute('aria-expanded', String(toggleMap()));
+            };
+            $toolbar.append(this.$mapButton);
         }
     }
-    if (more) {
-        const $checkbox = makeElement('input')()();
-        $checkbox.type = 'checkbox';
-        $checkbox.oninput = () => {
-            more.autoLoad = $checkbox.checked;
-        };
-        $toolbar.append(makeDiv('input-group')(makeLabel()($checkbox, ` auto load more`)));
-    }
-    if (server) {
-        const $checkbox = makeElement('input')()();
-        $checkbox.type = 'checkbox';
-        $checkbox.oninput = () => {
-            $root.classList.toggle('with-time', $checkbox.checked);
-        };
-        $toolbar.append(makeDiv('input-group')(makeLabel()($checkbox, ` time`)));
-    }
-    if (grid) {
-        const $checkbox = makeElement('input')()();
-        $checkbox.type = 'checkbox';
-        $checkbox.oninput = () => {
-            grid.addExpandedItems = $checkbox.checked;
-        };
-        $toolbar.append(makeDiv('input-group')(makeLabel()($checkbox, ` add expanded items`)));
-    }
-    if (grid) {
-        const addButton = (label, title, action) => {
-            const $button = makeElement('button')()(label);
-            $button.title = title;
-            $button.onclick = action;
-            $toolbar.append($button);
-            return $button;
-        };
-        addButton(`+`, `Expand selected items`, () => { grid.expandSelectedItems(); });
-        addButton(`−`, `Collapse selected items`, () => { grid.collapseSelectedItems(); });
-        const $stretchAllButton = addButton(`<*>`, `Stretch all items`, () => { grid.stretchAllItems(); });
-        const $shrinkAllButton = addButton(`>*<`, `Shrink all items`, () => { grid.shrinkAllItems(); });
-        (grid.onExternalControlsStateUpdate = () => {
-            $stretchAllButton.disabled = $shrinkAllButton.disabled = !grid.withTotalColumn;
-        })();
-    }
-    for (const $button of $panelButtons) {
-        $toolbar.append($button);
-    }
-    {
-        const $button = makeElement('button')()(`Servers and logins`);
-        $button.onclick = () => {
-            $netDialog.showModal();
-        };
-        $toolbar.append($button);
-    }
-    if (toggleMap) {
-        const $button = makeElement('button')()(`Map`);
-        $button.setAttribute('aria-expanded', 'false');
-        $button.onclick = () => {
-            $button.setAttribute('aria-expanded', String(toggleMap()));
-        };
-        $toolbar.append($button);
+    set mapVisibility(visibility) {
+        this.$mapButton.setAttribute('aria-expanded', String(visibility));
     }
 }
 
@@ -6700,11 +6739,11 @@ class ResizerDragListener extends DragListener {
         this.$root.style.setProperty('--right-side-size', `${rightSideSizeFr}fr`);
     }
 }
-function writeSidebar($root, $aside, mapView) {
+function writeSidebar($root, $aside, mapWidget) {
     $root.style.setProperty('--min-side-size', `${minSideSize}px`);
     const $resizer = makeElement('button')('resizer')();
     new ResizerDragListener($root, $aside, $resizer).install();
-    $aside.append($resizer, mapView.$mapView);
+    $aside.append($resizer, mapWidget.$widget);
 }
 
 function makeNetDialog(net) {
@@ -6778,6 +6817,37 @@ var serverListConfig = [
     }
 ];
 
+const tilePower = 8;
+const tileSizeXY = 2 ** tilePower;
+function normalizeViewZoomPoint(view, maxZoom) {
+    const z = Math.round(clamp(0, view.z, maxZoom));
+    const uvXY = calculateUVXY(z);
+    const u = (Math.round(view.u * uvXY) & (uvXY - 1)) / uvXY;
+    const v = clamp(0, Math.round(view.v * uvXY), uvXY) / uvXY;
+    return { u, v, z };
+}
+function calculateXYUV(zoom) {
+    return .5 ** (tilePower + zoom);
+}
+function calculateUVXY(zoom) {
+    return 2 ** (tilePower + zoom);
+}
+function calculateU(lon) {
+    return (lon + 180) / 360;
+}
+function calculateV(lat) {
+    const maxLat = 85.0511287798;
+    const validLatRadians = clamp(-maxLat, lat, maxLat) * Math.PI / 180;
+    return (1 - Math.log(Math.tan(validLatRadians) + 1 / Math.cos(validLatRadians)) / Math.PI) / 2;
+}
+function calculateLon(u) {
+    return u * 360 - 180;
+}
+function calculateLat(v) {
+    const n = Math.PI - 2 * Math.PI * v;
+    return 180 / Math.PI * Math.atan(.5 * (Math.exp(n) - Math.exp(-n)));
+}
+
 const curveParameter = 0.002; // [px/ms^2]
 const dragStepThreshold = 32; // [px]
 class AnimationAxis {
@@ -6819,20 +6889,21 @@ class AnimationAxis {
             this.decayOffset - axisDirection * curveParameter * decayRemainingTime ** 2);
     }
 }
-function makeFlingAnimation(startTime, startPxX, startPxY, speedPxX, speedPxY) {
-    const speedPx = Math.hypot(speedPxX, speedPxY);
-    const decayDuration = speedPx / (2 * curveParameter);
+function makeFlingAnimation(dragStart, startTime, startX, startY, speedX, speedY) {
+    const speed = Math.hypot(speedX, speedY);
+    const decayDuration = speed / (2 * curveParameter);
     const dp = curveParameter * decayDuration ** 2;
     if (dp < dragStepThreshold) {
         return { type: 'stopped' };
     }
     else {
-        const dx = dp * speedPxX / speedPx;
-        const dy = dp * speedPxY / speedPx;
+        const dx = dp * speedX / speed;
+        const dy = dp * speedY / speed;
         return {
             type: 'panning',
-            xAxis: new AnimationAxis(startPxX, dx, dp, startTime, startTime, decayDuration),
-            yAxis: new AnimationAxis(startPxY, dy, dp, startTime, startTime, decayDuration),
+            dragStart,
+            xAxis: new AnimationAxis(startX, dx, dp, startTime, startTime, decayDuration),
+            yAxis: new AnimationAxis(startY, dy, dp, startTime, startTime, decayDuration),
         };
     }
 }
@@ -6843,29 +6914,18 @@ class Layer {
     }
 }
 
-const tilePowSize = 8;
-const tilePxSize = 2 ** tilePowSize;
-function calculatePxSize(zoom) {
-    return .5 ** (tilePowSize + zoom);
-}
-function calculateX(lon) {
-    return (lon + 180) / 360;
-}
-function calculateY(lat) {
-    const maxLat = 85.0511287798;
-    const validLatRadians = clamp(-maxLat, lat, maxLat) * Math.PI / 180;
-    return (1 - Math.log(Math.tan(validLatRadians) + 1 / Math.cos(validLatRadians)) / Math.PI) / 2;
-}
-
 const TOP = 1;
 const RIGHT = 2;
 const BOTTOM = 4;
 const LEFT = 8;
-const bboxPxThreshold = 16;
-const bboxPxThickness = 2;
+const bboxThreshold = 16;
+const bboxThickness = 2;
 const highlightStroke = 'blue';
 const highlightBoxThickness = 1;
+const subcellSizeXY = 2;
 class ItemLayer extends Layer {
+    get cellSizeX() { return this.nSubcellsX * subcellSizeXY; }
+    get cellSizeY() { return this.nSubcellsY * subcellSizeXY; }
     constructor() {
         super();
         this.items = new Map();
@@ -6876,8 +6936,6 @@ class ItemLayer extends Layer {
         this.iSubcellX = 1;
         this.iSubcellY = 1;
         this.$canvas = makeElement('canvas')()();
-        this.$bboxSvg = makeSvgElement('svg');
-        this.$highlightBboxSvg = makeSvgElement('svg');
         this.ctx = this.$canvas.getContext('2d');
         this.$layer.append(this.$canvas);
     }
@@ -6920,6 +6978,27 @@ class ItemLayer extends Layer {
             }
         }
     }
+    getItemBbox(type, id) {
+        const key = type + ':' + id;
+        const item = this.items.get(key);
+        if (!item)
+            return null;
+        return this.getItemBboxFromInfo(item);
+    }
+    getItemBboxFromInfo(item) {
+        let minLat;
+        let minLon;
+        let maxLat;
+        let maxLon;
+        if (item.type == 'changeset') {
+            ({ minLat, minLon, maxLat, maxLon } = item);
+        }
+        else {
+            minLat = maxLat = item.lat;
+            minLon = maxLon = item.lon;
+        }
+        return { minLat, minLon, maxLat, maxLon };
+    }
     highlightItem(type, id) {
         const key = type + ':' + id;
         this.highlightedItems.add(key);
@@ -6932,75 +7011,87 @@ class ItemLayer extends Layer {
         if (!this.ctx)
             return;
         this.ctx.clearRect(0, 0, this.$canvas.width, this.$canvas.height);
-        this.$bboxSvg.replaceChildren();
-        this.$highlightBboxSvg.replaceChildren();
     }
-    render(view, colorizer) {
+    render(viewBox, colorizer) {
         if (!this.ctx)
             return;
-        const getCellFillStyle = (maxV, v, uid) => `hsl(${colorizer.getHueForUid(uid)} 80% 50% / ${.5 + .4 * v / maxV})`;
-        this.$canvas.width = view.pxX2 - view.pxX1;
-        this.$canvas.height = view.pxY2 - view.pxY1;
+        const getCellFillStyle = (globalMaxCellWeight, cellWeight, uid) => `hsl(${colorizer.getHueForUid(uid)} 80% 50% / ${.5 + .4 * cellWeight / globalMaxCellWeight})`;
+        this.$canvas.width = viewBox.x2 - viewBox.x1;
+        this.$canvas.height = viewBox.y2 - viewBox.y1;
         this.clear();
-        const pxSize = calculatePxSize(view.z);
-        const repeatX1 = Math.floor(view.pxX1 * pxSize);
-        const repeatX2 = Math.floor(view.pxX2 * pxSize);
+        const xyUV = calculateXYUV(viewBox.z);
+        const repeatU1 = Math.floor(viewBox.x1 * xyUV);
+        const repeatU2 = Math.floor(viewBox.x2 * xyUV);
         if (this.items.size <= 0 || this.subcells.size <= 0)
             return;
-        const subcellPxSize = 2;
-        const cellPxSizeX = this.nSubcellsX * subcellPxSize;
-        const cellPxSizeY = this.nSubcellsY * subcellPxSize;
-        const viewCellX1 = Math.floor(view.pxX1 / cellPxSizeX);
-        const viewCellX2 = Math.ceil(view.pxX2 / cellPxSizeX);
-        const viewCellY1 = Math.floor(view.pxY1 / cellPxSizeY);
-        const viewCellY2 = Math.ceil(view.pxY2 / cellPxSizeY);
+        const viewCellX1 = Math.floor(viewBox.x1 / this.cellSizeX);
+        const viewCellX2 = Math.ceil(viewBox.x2 / this.cellSizeX);
+        const viewCellY1 = Math.floor(viewBox.y1 / this.cellSizeY);
+        const viewCellY2 = Math.ceil(viewBox.y2 / this.cellSizeY);
         const nCellsX = viewCellX2 - viewCellX1 + 1;
         const nCellsY = viewCellY2 - viewCellY1 + 1;
         if (nCellsX <= 0 || nCellsY <= 0)
             return;
         const cells = new Map([...this.subcells.keys()].map(uid => [uid, new Float32Array(nCellsX * nCellsY)]));
         const cellBorders = new Uint8Array(nCellsX * nCellsY);
-        let maxValue = 0;
+        const changesets = [];
+        const highlightedChangesets = [];
+        const notes = [];
+        const highlightedNotes = [];
+        const noteIdsWithoutCellCollisions = this.findNoteIdsWithoutCellCollisions(viewBox.z, this.cellSizeX, this.cellSizeY);
+        let globalMaxCellWeight = 0;
         for (const item of this.items.values()) {
             const key = item.type + ':' + item.id;
             const highlighted = this.highlightedItems.has(key);
             const userCells = cells.get(item.uid);
             if (!userCells)
                 continue;
-            let minLat;
-            let minLon;
-            let maxLat;
-            let maxLon;
-            if (item.type == 'changeset') {
-                ({ minLat, minLon, maxLat, maxLon } = item);
-            }
-            else {
-                minLat = maxLat = item.lat;
-                minLon = maxLon = item.lon;
-            }
-            for (let repeatX = repeatX1; repeatX <= repeatX2; repeatX++) {
-                const itemPxX1 = (calculateX(minLon) + repeatX) / pxSize;
-                const itemPxX2 = (calculateX(maxLon) + repeatX) / pxSize;
-                const itemPxY1 = calculateY(maxLat) / pxSize;
-                const itemPxY2 = calculateY(minLat) / pxSize;
-                if (itemPxX2 - itemPxX1 > bboxPxThreshold && itemPxY2 - itemPxY1 > bboxPxThreshold) {
-                    this.renderBbox(view, this.$bboxSvg, getCellFillStyle(1, 0.7, item.uid), bboxPxThickness, // TODO use weight in stroke
-                    Math.round(itemPxX1), Math.round(itemPxX2), Math.round(itemPxY1), Math.round(itemPxY2));
-                    if (highlighted)
-                        this.renderBbox(view, this.$highlightBboxSvg, highlightStroke, highlightBoxThickness, Math.round(itemPxX1), Math.round(itemPxX2), Math.round(itemPxY1), Math.round(itemPxY2));
+            const bbox = this.getItemBboxFromInfo(item);
+            for (let repeatU = repeatU1; repeatU <= repeatU2; repeatU++) {
+                const uid = item.uid;
+                const itemX1 = (calculateU(bbox.minLon) + repeatU) / xyUV;
+                const itemX2 = (calculateU(bbox.maxLon) + repeatU) / xyUV;
+                const itemY1 = calculateV(bbox.maxLat) / xyUV;
+                const itemY2 = calculateV(bbox.minLat) / xyUV;
+                if (item.type == 'changeset' && itemX2 - itemX1 > bboxThreshold && itemY2 - itemY1 > bboxThreshold) {
+                    const bbox = {
+                        x1: Math.round(itemX1), x2: Math.round(itemX2),
+                        y1: Math.round(itemY1), y2: Math.round(itemY2)
+                    };
+                    if (highlighted) {
+                        highlightedChangesets.push({ bbox, uid });
+                    }
+                    else {
+                        changesets.push({ bbox, uid });
+                    }
+                }
+                else if (item.type == 'note' && noteIdsWithoutCellCollisions.has(item.id)) {
+                    const noteRenderMargin = 32;
+                    if (itemX1 >= viewBox.x1 - noteRenderMargin &&
+                        itemX2 <= viewBox.x2 + noteRenderMargin &&
+                        itemY1 >= viewBox.y1 - noteRenderMargin &&
+                        itemY2 <= viewBox.y2 + noteRenderMargin) {
+                        const point = { x: Math.round(itemX1), y: Math.round(itemY1) };
+                        if (highlighted) {
+                            highlightedNotes.push({ point, uid });
+                        }
+                        else {
+                            notes.push({ point, uid });
+                        }
+                    }
                 }
                 else {
-                    const itemCellX1 = Math.floor(itemPxX1 / cellPxSizeX);
-                    const itemCellX2 = Math.floor(itemPxX2 / cellPxSizeX);
-                    const itemCellY1 = Math.floor(itemPxY1 / cellPxSizeY);
-                    const itemCellY2 = Math.floor(itemPxY2 / cellPxSizeY);
+                    const itemCellX1 = Math.floor(itemX1 / this.cellSizeX);
+                    const itemCellX2 = Math.floor(itemX2 / this.cellSizeX);
+                    const itemCellY1 = Math.floor(itemY1 / this.cellSizeY);
+                    const itemCellY2 = Math.floor(itemY2 / this.cellSizeY);
                     const weightPerCell = item.weight / ((itemCellX2 - itemCellX1 + 1) * (itemCellY2 - itemCellY1 + 1));
                     for (let cy = Math.max(itemCellY1, viewCellY1); cy <= Math.min(itemCellY2, viewCellY2); cy++) {
                         for (let cx = Math.max(itemCellX1, viewCellX1); cx <= Math.min(itemCellX2, viewCellX2); cx++) {
                             const idx = (cx - viewCellX1) + (cy - viewCellY1) * nCellsX;
-                            const value = userCells[idx] += weightPerCell;
-                            if (maxValue < value)
-                                maxValue = value;
+                            const cellWeight = userCells[idx] += weightPerCell;
+                            if (globalMaxCellWeight < cellWeight)
+                                globalMaxCellWeight = cellWeight;
                             if (highlighted) {
                                 if (cy == itemCellY1)
                                     cellBorders[idx] |= TOP;
@@ -7016,142 +7107,191 @@ class ItemLayer extends Layer {
                 }
             }
         }
-        this.addOrRemoveSvg(view, this.$bboxSvg);
-        this.addOrRemoveSvg(view, this.$highlightBboxSvg);
+        this.renderHeatmap(cells, globalMaxCellWeight, nCellsX, nCellsY, icx => (icx + viewCellX1) * this.cellSizeX - viewBox.x1, icy => (icy + viewCellY1) * this.cellSizeY - viewBox.y1, getCellFillStyle);
+        this.renderChangesets(viewBox, changesets, false, getCellFillStyle);
+        this.renderNotes(viewBox, notes, false, getCellFillStyle);
+        this.renderHeatmapHighlights(cellBorders, nCellsX, nCellsY, icx => (icx + viewCellX1) * this.cellSizeX - viewBox.x1, icy => (icy + viewCellY1) * this.cellSizeY - viewBox.y1);
+        this.renderChangesets(viewBox, highlightedChangesets, true, getCellFillStyle);
+        this.renderNotes(viewBox, highlightedNotes, true, getCellFillStyle);
+    }
+    findNoteIdsWithoutCellCollisions(z, cellSizeX, cellSizeY) {
+        const cells = new Map();
+        const xyUV = calculateXYUV(z);
+        for (const item of this.items.values()) {
+            if (item.type != 'note')
+                continue;
+            const itemX = calculateU(item.lon) / xyUV;
+            const itemY = calculateV(item.lat) / xyUV;
+            const itemCellX = Math.floor(itemX / cellSizeX);
+            const itemCellY = Math.floor(itemY / cellSizeY);
+            const key = `${itemCellX}:${itemCellY}`;
+            if (cells.has(key)) {
+                cells.set(key, null);
+            }
+            else {
+                cells.set(key, item.id);
+            }
+        }
+        const resultIds = new Set();
+        for (const id of cells.values()) {
+            if (id == null)
+                continue;
+            resultIds.add(id);
+        }
+        return resultIds;
+    }
+    renderHeatmap(cells, globalMaxCellWeight, nCellsX, nCellsY, getCellX, getCellY, getCellFillStyle) {
+        if (!this.ctx)
+            return;
         for (let icy = 0; icy < nCellsY; icy++) {
             for (let icx = 0; icx < nCellsX; icx++) {
-                const cellPxX = (icx + viewCellX1) * cellPxSizeX - view.pxX1;
-                const cellPxY = (icy + viewCellY1) * cellPxSizeY - view.pxY1;
-                let cellMaxValueUid;
-                let cellMaxValue = 0;
+                const cellX = getCellX(icx);
+                const cellY = getCellY(icy);
+                let maxCellWeightUid;
+                let maxCellWeight = 0;
                 for (const [uid] of this.subcells) {
                     const userCells = cells.get(uid);
                     if (!userCells)
                         continue;
-                    const value = userCells[icx + icy * nCellsX];
-                    if (value > cellMaxValue) {
-                        cellMaxValue = value;
-                        cellMaxValueUid = uid;
+                    const cellWeight = userCells[icx + icy * nCellsX];
+                    if (cellWeight > maxCellWeight) {
+                        maxCellWeight = cellWeight;
+                        maxCellWeightUid = uid;
                     }
                 }
-                if (cellMaxValueUid == null)
+                if (maxCellWeightUid == null)
                     continue;
                 {
-                    const userCells = cells.get(cellMaxValueUid);
+                    const userCells = cells.get(maxCellWeightUid);
                     if (!userCells)
                         continue;
-                    this.ctx.fillStyle = getCellFillStyle(maxValue, cellMaxValue, cellMaxValueUid);
-                    this.ctx.fillRect(cellPxX, cellPxY, cellPxSizeX, cellPxSizeY);
+                    this.ctx.fillStyle = getCellFillStyle(globalMaxCellWeight, maxCellWeight, maxCellWeightUid);
+                    this.ctx.fillRect(cellX, cellY, this.cellSizeX, this.cellSizeY);
                 }
                 for (const [uid, [scx, scy]] of this.subcells) {
-                    if (uid == cellMaxValueUid)
+                    if (uid == maxCellWeightUid)
                         continue;
                     const userCells = cells.get(uid);
                     if (!userCells)
                         continue;
-                    const value = userCells[icx + icy * nCellsX];
-                    if (value <= 0)
+                    const cellWeight = userCells[icx + icy * nCellsX];
+                    if (cellWeight <= 0)
                         continue;
-                    const subcellPxX = cellPxX + scx * subcellPxSize - subcellPxSize / 2;
-                    const subcellPxY = cellPxY + scy * subcellPxSize - subcellPxSize / 2;
-                    this.ctx.fillStyle = getCellFillStyle(maxValue, value, uid);
-                    this.ctx.clearRect(subcellPxX, subcellPxY, subcellPxSize, subcellPxSize);
-                    this.ctx.fillRect(subcellPxX, subcellPxY, subcellPxSize, subcellPxSize);
+                    const subcellX = cellX + scx * subcellSizeXY - subcellSizeXY / 2;
+                    const subcellY = cellY + scy * subcellSizeXY - subcellSizeXY / 2;
+                    this.ctx.fillStyle = getCellFillStyle(globalMaxCellWeight, cellWeight, uid);
+                    this.ctx.clearRect(subcellX, subcellY, subcellSizeXY, subcellSizeXY);
+                    this.ctx.fillRect(subcellX, subcellY, subcellSizeXY, subcellSizeXY);
                 }
             }
         }
+    }
+    renderHeatmapHighlights(cellBorders, nCellsX, nCellsY, getCellX, getCellY) {
+        if (!this.ctx)
+            return;
         this.ctx.strokeStyle = highlightStroke;
         for (let icy = 0; icy < nCellsY; icy++) {
             for (let icx = 0; icx < nCellsX; icx++) {
-                const cellPxX = (icx + viewCellX1) * cellPxSizeX - view.pxX1;
-                const cellPxY = (icy + viewCellY1) * cellPxSizeY - view.pxY1;
+                const cellX = getCellX(icx);
+                const cellY = getCellY(icy);
                 const borders = cellBorders[icx + icy * nCellsX];
                 if (borders)
                     this.ctx.beginPath();
                 if (borders & TOP) {
-                    this.ctx.moveTo(cellPxX, cellPxY + .5);
-                    this.ctx.lineTo(cellPxX + cellPxSizeX, cellPxY + .5);
+                    this.ctx.moveTo(cellX, cellY + .5);
+                    this.ctx.lineTo(cellX + this.cellSizeX, cellY + .5);
                 }
                 if (borders & BOTTOM) {
-                    this.ctx.moveTo(cellPxX, cellPxY + cellPxSizeY - .5);
-                    this.ctx.lineTo(cellPxX + cellPxSizeX, cellPxY + cellPxSizeY - .5);
+                    this.ctx.moveTo(cellX, cellY + this.cellSizeY - .5);
+                    this.ctx.lineTo(cellX + this.cellSizeX, cellY + this.cellSizeY - .5);
                 }
                 if (borders & LEFT) {
-                    this.ctx.moveTo(cellPxX + .5, cellPxY);
-                    this.ctx.lineTo(cellPxX + .5, cellPxY + cellPxSizeY);
+                    this.ctx.moveTo(cellX + .5, cellY);
+                    this.ctx.lineTo(cellX + .5, cellY + this.cellSizeY);
                 }
                 if (borders & RIGHT) {
-                    this.ctx.moveTo(cellPxX + cellPxSizeX - .5, cellPxY);
-                    this.ctx.lineTo(cellPxX + cellPxSizeX - .5, cellPxY + cellPxSizeY);
+                    this.ctx.moveTo(cellX + this.cellSizeX - .5, cellY);
+                    this.ctx.lineTo(cellX + this.cellSizeX - .5, cellY + this.cellSizeY);
                 }
                 if (borders)
                     this.ctx.stroke();
             }
         }
     }
-    renderBbox(view, $svg, stroke, strokeWidth, itemPxX1, itemPxX2, itemPxY1, itemPxY2) {
-        const edgePxX1 = view.pxX1 - bboxPxThickness;
-        const edgePxY1 = view.pxY1 - bboxPxThickness;
-        const edgePxX2 = view.pxX2 - 1 + bboxPxThickness;
-        const edgePxY2 = view.pxY2 - 1 + bboxPxThickness;
-        const bboxPxX1 = clamp(edgePxX1, itemPxX1, edgePxX2);
-        const bboxPxX2 = clamp(edgePxX1, itemPxX2, edgePxX2);
-        const bboxPxY1 = clamp(edgePxY1, itemPxY1, edgePxY2);
-        const bboxPxY2 = clamp(edgePxY1, itemPxY2, edgePxY2);
+    renderChangesets(viewBox, changesets, highlighted, getCellFillStyle) {
+        for (const changeset of changesets) {
+            this.renderBox(viewBox, getCellFillStyle(1, 0.7, changeset.uid), bboxThickness, // TODO use weight in stroke
+            changeset.bbox);
+            if (highlighted)
+                this.renderBox(viewBox, highlightStroke, highlightBoxThickness, changeset.bbox);
+        }
+    }
+    renderBox(viewBox, stroke, strokeWidth, box) {
+        const edgeX1 = viewBox.x1 - bboxThickness;
+        const edgeY1 = viewBox.y1 - bboxThickness;
+        const edgeX2 = viewBox.x2 - 1 + bboxThickness;
+        const edgeY2 = viewBox.y2 - 1 + bboxThickness;
+        const bboxX1 = clamp(edgeX1, box.x1, edgeX2);
+        const bboxX2 = clamp(edgeX1, box.x2, edgeX2);
+        const bboxY1 = clamp(edgeY1, box.y1, edgeY2);
+        const bboxY2 = clamp(edgeY1, box.y2, edgeY2);
         const drawLineXY = (x1, x2, y1, y2) => {
-            $svg.append(makeSvgElement('line', {
-                x1: String(x1 - view.pxX1),
-                x2: String(x2 - view.pxX1),
-                y1: String(y1 - view.pxY1),
-                y2: String(y2 - view.pxY1),
-                stroke,
-                'stroke-width': String(strokeWidth),
-            }));
+            if (!this.ctx)
+                return;
+            this.ctx.save();
+            this.ctx.lineWidth = strokeWidth;
+            this.ctx.strokeStyle = stroke;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x1 - viewBox.x1, y1 - viewBox.y1);
+            this.ctx.lineTo(x2 - viewBox.x1, y2 - viewBox.y1);
+            this.ctx.stroke();
+            this.ctx.restore();
         };
-        const drawLineX = (linePxX) => {
-            if (linePxX >= view.pxX1 - bboxPxThickness / 2 &&
-                linePxX < view.pxX2 + bboxPxThickness / 2 &&
-                bboxPxY1 < bboxPxY2)
-                drawLineXY(linePxX, linePxX, bboxPxY1, bboxPxY2);
+        const drawLineX = (lineX) => {
+            if (lineX >= viewBox.x1 - bboxThickness / 2 &&
+                lineX < viewBox.x2 + bboxThickness / 2 &&
+                bboxY1 < bboxY2)
+                drawLineXY(lineX, lineX, bboxY1, bboxY2);
         };
-        const drawLineY = (linePxY) => {
-            if (linePxY >= view.pxY1 - bboxPxThickness / 2 &&
-                linePxY < view.pxY2 + bboxPxThickness / 2 &&
-                bboxPxX1 < bboxPxX2)
-                drawLineXY(bboxPxX1, bboxPxX2, linePxY, linePxY);
+        const drawLineY = (lineY) => {
+            if (lineY >= viewBox.y1 - bboxThickness / 2 &&
+                lineY < viewBox.y2 + bboxThickness / 2 &&
+                bboxX1 < bboxX2)
+                drawLineXY(bboxX1, bboxX2, lineY, lineY);
         };
-        drawLineX(itemPxX1 + strokeWidth / 2);
-        drawLineX(itemPxX2 - strokeWidth / 2);
-        drawLineY(itemPxY1 + strokeWidth / 2);
-        drawLineY(itemPxY2 - strokeWidth / 2);
+        drawLineX(box.x1 + strokeWidth / 2);
+        drawLineX(box.x2 - strokeWidth / 2);
+        drawLineY(box.y1 + strokeWidth / 2);
+        drawLineY(box.y2 - strokeWidth / 2);
     }
-    addOrRemoveSvg(view, $svg) {
-        if ($svg.hasChildNodes()) {
-            this.$layer.append($svg);
-            setSvgAttributes($svg, {
-                width: String(view.pxX2 - view.pxX1),
-                height: String(view.pxY2 - view.pxY1)
-            });
+    renderNotes(viewBox, notes, highlighted, getCellFillStyle) {
+        if (!this.ctx)
+            return;
+        for (const note of notes) {
+            this.ctx.save();
+            this.ctx.translate(note.point.x - viewBox.x1, note.point.y - viewBox.y1);
+            this.ctx.fillStyle = getCellFillStyle(1, 0.7, note.uid);
+            this.traceNotePath(16, 6);
+            this.ctx.fill();
+            if (highlighted) {
+                this.ctx.strokeStyle = highlightStroke;
+                this.ctx.stroke();
+            }
+            this.ctx.restore();
         }
-        else {
-            $svg.remove();
-            removeSvgAttributes($svg, ['width', 'height']);
-        }
     }
-}
-function makeSvgElement(tag, attrs = {}) {
-    const $e = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    setSvgAttributes($e, attrs);
-    return $e;
-}
-function setSvgAttributes($e, attrs) {
-    for (const name in attrs) {
-        $e.setAttributeNS(null, name, attrs[name]);
-    }
-}
-function removeSvgAttributes($e, attrs) {
-    for (const name of attrs) {
-        $e.removeAttributeNS(null, name);
+    traceNotePath(h, r) {
+        if (!this.ctx)
+            return;
+        const rp = h - r;
+        const y = r ** 2 / rp;
+        const x = Math.sqrt(r ** 2 - y ** 2);
+        const xt = x + x * (r + y) / (h - (r + y));
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, 0);
+        this.ctx.arcTo(-xt, -h, 0, -h, r);
+        this.ctx.arcTo(+xt, -h, 0, 0, r);
+        this.ctx.closePath();
     }
 }
 
@@ -7163,25 +7303,25 @@ class TileLayer extends Layer {
     clear() {
         this.$layer.replaceChildren();
     }
-    render(view) {
+    render(viewBox) {
         this.clear();
-        const viewTileX1 = Math.floor(view.pxX1 / tilePxSize);
-        const viewTileX2 = Math.ceil(view.pxX2 / tilePxSize);
-        const viewTileY1 = Math.floor(view.pxY1 / tilePxSize);
-        const viewTileY2 = Math.ceil(view.pxY2 / tilePxSize);
-        const tileMask = 2 ** view.z - 1;
+        const viewTileX1 = Math.floor(viewBox.x1 / tileSizeXY);
+        const viewTileX2 = Math.ceil(viewBox.x2 / tileSizeXY);
+        const viewTileY1 = Math.floor(viewBox.y1 / tileSizeXY);
+        const viewTileY2 = Math.ceil(viewBox.y2 / tileSizeXY);
+        const tileMask = 2 ** viewBox.z - 1;
         for (let tileY = viewTileY1; tileY < viewTileY2; tileY++) {
             if (tileY < 0 || tileY > tileMask)
                 continue;
-            const tileOffsetPxY = tileY * tilePxSize - view.pxY1;
+            const tileOffsetY = tileY * tileSizeXY - viewBox.y1;
             for (let tileX = viewTileX1; tileX < viewTileX2; tileX++) {
-                const tileOffsetPxX = tileX * tilePxSize - view.pxX1;
+                const tileOffsetX = tileX * tileSizeXY - viewBox.x1;
                 const $img = makeElement('img')()();
                 $img.src = this.tileProvider.urlTemplate
-                    .replace('{z}', String(view.z))
+                    .replace('{z}', String(viewBox.z))
                     .replace('{x}', String(tileX & tileMask))
                     .replace('{y}', String(tileY & tileMask));
-                $img.style.translate = `${tileOffsetPxX}px ${tileOffsetPxY}px`;
+                $img.style.translate = `${tileOffsetX}px ${tileOffsetY}px`;
                 this.$layer.append($img);
             }
         }
@@ -7197,110 +7337,94 @@ class MapDragListener extends DragListener {
         this.fling = fling;
     }
     beginDrag(ev) {
-        const startPxXY = this.start();
-        if (!startPxXY)
+        if (!this.start())
             return;
-        const [startPxX, startPxY] = startPxXY;
+        const startX = ev.clientX;
+        const startY = ev.clientY;
         const grab = {
             pointerId: ev.pointerId,
-            startViewPxOffsetX: ev.clientX,
-            startViewPxOffsetY: ev.clientY,
-            startPxX, startPxY,
+            startX, startY,
+            currentX: startX,
+            currentY: startY,
+            currentSpeedX: 0,
+            currentSpeedY: 0,
             currentTime: performance.now(),
-            currentPxX: startPxX,
-            currentPxY: startPxY,
-            currentSpeedPxX: 0,
-            currentSpeedPxY: 0,
         };
         return grab;
     }
     doDrag(ev, grab) {
-        const newPxX = grab.startPxX - (ev.clientX - grab.startViewPxOffsetX);
-        const newPxY = grab.startPxY - (ev.clientY - grab.startViewPxOffsetY);
         const newTime = performance.now();
-        const dx = newPxX - grab.currentPxX;
-        const dy = newPxY - grab.currentPxY;
+        const dx = ev.clientX - grab.currentX;
+        const dy = ev.clientY - grab.currentY;
         const dt = newTime - grab.currentTime;
         const speedDecay = Math.exp(-speedDecayRate * dt);
-        grab.currentSpeedPxX = grab.currentSpeedPxX * speedDecay + dx / dt * (1 - speedDecay);
-        grab.currentSpeedPxY = grab.currentSpeedPxY * speedDecay + dy / dt * (1 - speedDecay);
-        grab.currentPxX = newPxX;
-        grab.currentPxY = newPxY;
+        grab.currentSpeedX = grab.currentSpeedX * speedDecay + dx / dt * (1 - speedDecay);
+        grab.currentSpeedY = grab.currentSpeedY * speedDecay + dy / dt * (1 - speedDecay);
+        grab.currentX = ev.clientX;
+        grab.currentY = ev.clientY;
         grab.currentTime = newTime;
-        this.pan(newPxX, newPxY);
+        this.pan(grab.startX - ev.clientX, grab.startY - ev.clientY);
     }
     endDrag(ev, grab) {
-        this.fling(grab.currentSpeedPxX, grab.currentSpeedPxY);
+        this.fling(-grab.currentSpeedX, -grab.currentSpeedY);
     }
 }
 
-class MapView {
-    get layers() {
-        return [this.tileLayer, this.itemLayer];
-    }
-    constructor(colorizer, tileProvider) {
-        this.$mapView = makeDiv('map')();
+class MapWidget {
+    constructor($root, colorizer, tileProvider) {
+        this.$widget = makeDiv('map')();
         this.animation = { type: 'stopped' };
         this.itemLayer = new ItemLayer();
-        this.viewX = 0.5;
-        this.viewY = 0.5;
-        this.viewZ = 0;
+        this.view = { u: 0.5, v: 0.5, z: 0 };
         this.tileLayer = new TileLayer(tileProvider);
         const $attribution = makeDiv('attribution')(`© `, makeLink(tileProvider.attributionText, tileProvider.attributionUrl));
-        this.$mapView.append(...this.layers.map(layer => layer.$layer), $attribution);
+        this.$widget.append(...this.layers.map(layer => layer.$layer), $attribution);
         this.animateFrame = (time) => {
             this.requestId = undefined;
             if (this.animation.type == 'zooming') {
-                if (time >= this.animation.finishTime) {
-                    this.viewX = this.animation.finishX - Math.floor(this.animation.finishX);
-                    this.viewY = this.animation.finishY;
-                    this.viewZ = this.animation.finishZ;
+                if (time >= this.animation.finish.time) {
+                    this.view = this.animation.finish;
                     this.animation = { type: 'stopped' };
                 }
                 else {
-                    const finishWeight = (time - this.animation.startTime) / (this.animation.finishTime - this.animation.startTime);
+                    const finishWeight = clamp(0, (time - this.animation.start.time) / (this.animation.finish.time - this.animation.start.time), 1);
                     const startWeight = 1 - finishWeight;
-                    this.viewX = this.animation.startX * startWeight + this.animation.finishX * finishWeight;
-                    this.viewY = this.animation.startY * startWeight + this.animation.finishY * finishWeight;
-                    this.viewZ = this.animation.startZ * startWeight + this.animation.finishZ * finishWeight;
-                    for (const layer of this.layers) {
-                        layer.$layer.style.transformOrigin = `${this.animation.transformOriginPxX}px ${this.animation.transformOriginPxY}px`;
-                        layer.$layer.style.scale = String(1 * startWeight +
-                            2 ** (this.animation.finishZ - this.animation.startZ) * finishWeight);
-                    }
+                    this.view.u = this.animation.start.u * startWeight + this.animation.finish.u * finishWeight;
+                    this.view.v = this.animation.start.v * startWeight + this.animation.finish.v * finishWeight;
+                    this.view.z = Math.round(this.animation.start.z * startWeight + this.animation.finish.z * finishWeight);
+                    this.scaleLayers(1 * startWeight + 2 ** (this.animation.finish.z - this.animation.start.z) * finishWeight, this.animation.transformOrigin.x, this.animation.transformOrigin.y);
                 }
             }
             else if (this.animation.type == 'panning') {
-                const pxSize = calculatePxSize(this.viewZ);
-                const pxX = this.animation.xAxis.getPosition(time);
-                const pxY = clamp(0, this.animation.yAxis.getPosition(time), 1 / pxSize);
-                this.viewX = pxX * pxSize;
-                this.viewY = pxY * pxSize;
+                const xyUV = calculateXYUV(this.view.z);
+                const x = this.animation.xAxis.getPosition(time);
+                const y = clamp(0, this.animation.yAxis.getPosition(time), 1 / xyUV);
+                this.view.u = x * xyUV;
+                this.view.v = y * xyUV;
                 if (this.animation.xAxis.isEnded(time) && this.animation.yAxis.isEnded(time)) {
                     this.animation = { type: 'stopped' };
                 }
                 else {
-                    const pxX0 = this.animation.xAxis.startPosition;
-                    const pxY0 = this.animation.yAxis.startPosition;
-                    for (const layer of this.layers) {
-                        layer.$layer.style.translate = `${pxX0 - pxX}px ${pxY0 - pxY}px`;
-                    }
+                    const x0 = this.animation.dragStart.u / xyUV;
+                    const y0 = this.animation.dragStart.v / xyUV;
+                    this.translateLayers(x0 - x, y0 - y);
                 }
             }
             if (this.animation.type == 'stopped') {
-                this.roundViewPosition(tileProvider.maxZoom);
-                for (const layer of this.layers) {
-                    layer.$layer.removeAttribute('style');
+                this.view = normalizeViewZoomPoint(this.view, tileProvider.maxZoom);
+                const renderViewBox = this.makeRenderViewBox();
+                if (renderViewBox) {
+                    bubbleEvent(this.$widget, 'osmChangesetViewer:mapMoveEnd');
                 }
-                const renderView = this.makeRenderView();
-                if (!renderView) {
+                this.removeLayerTransforms();
+                if (!renderViewBox) {
                     for (const layer of this.layers) {
                         layer.clear();
                     }
                 }
                 else {
                     for (const layer of this.layers) {
-                        layer.render(renderView, colorizer);
+                        layer.render(renderViewBox, colorizer);
                     }
                 }
             }
@@ -7308,61 +7432,102 @@ class MapView {
                 this.scheduleFrame();
             }
         };
-        this.$mapView.onwheel = ev => {
+        this.$widget.onwheel = ev => {
             if (this.animation.type == 'zooming')
                 return;
-            const viewPxSizeX = this.$mapView.clientWidth;
-            const viewPxSizeY = this.$mapView.clientHeight;
-            if (viewPxSizeX <= 0 || viewPxSizeY <= 0)
+            const viewSizeX = this.$widget.clientWidth;
+            const viewSizeY = this.$widget.clientHeight;
+            if (viewSizeX <= 0 || viewSizeY <= 0)
                 return;
             let dz = -Math.sign(ev.deltaY);
-            const startZ = this.viewZ;
-            const finishZ = clamp(0, startZ + dz, tileProvider.maxZoom);
-            dz = finishZ - startZ;
+            const finishZ = clamp(0, this.view.z + dz, tileProvider.maxZoom);
+            dz = finishZ - this.view.z;
             if (dz == 0)
                 return;
-            const startX = this.viewX;
-            const startY = this.viewY;
-            const dx = getViewCenterPxOffset(viewPxSizeX, ev.offsetX);
-            const dy = getViewCenterPxOffset(viewPxSizeY, ev.offsetY);
-            const pxSize = calculatePxSize(this.viewZ);
-            let finishX = startX + (1 - .5 ** dz) * dx * pxSize;
-            let finishY = startY + (1 - .5 ** dz) * dy * pxSize;
-            finishY = clamp(0, finishY, 1);
+            const dx = getViewCenterOffset(viewSizeX, ev.offsetX);
+            const dy = getViewCenterOffset(viewSizeY, ev.offsetY);
+            const xyUV = calculateXYUV(this.view.z);
+            const du = Math.round((1 - .5 ** dz) * dx) * xyUV;
+            const dv = Math.round((1 - .5 ** dz) * dy) * xyUV;
             const time = performance.now();
             this.animation = {
                 type: 'zooming',
-                startTime: time,
-                startX, startY, startZ,
-                finishTime: time + 300,
-                finishX, finishY, finishZ,
-                transformOriginPxX: ev.offsetX,
-                transformOriginPxY: ev.offsetY
+                start: { ...this.view, time },
+                finish: {
+                    u: this.view.u + du,
+                    v: clamp(0, this.view.v + dv, 1),
+                    z: finishZ,
+                    time: time + 300
+                },
+                transformOrigin: { x: ev.offsetX, y: ev.offsetY },
             };
             this.scheduleFrame();
         };
-        new MapDragListener(this.$mapView, () => {
+        new MapDragListener(this.$widget, () => {
             if (this.animation.type != 'stopped')
-                return null;
-            const pxSize = calculatePxSize(this.viewZ);
-            return [
-                this.viewX / pxSize,
-                this.viewY / pxSize
-            ];
-        }, (pxX, pxY) => {
-            const pxSize = calculatePxSize(this.viewZ);
-            this.viewX = pxX * pxSize;
-            this.viewY = clamp(0, pxY * pxSize, 1);
-            this.scheduleFrame();
-        }, (speedPxX, speedPxY) => {
-            if (this.animation.type != 'stopped')
+                return false;
+            this.animation = {
+                type: 'dragging',
+                start: { ...this.view }
+            };
+            return true;
+        }, (dx, dy) => {
+            if (this.animation.type != 'dragging')
                 return;
-            const pxSize = calculatePxSize(this.viewZ);
-            this.animation = makeFlingAnimation(performance.now(), this.viewX / pxSize, this.viewY / pxSize, speedPxX, speedPxY);
+            const xyUV = calculateXYUV(this.view.z);
+            this.view.u = this.animation.start.u + dx * xyUV;
+            this.view.v = this.animation.start.v + dy * xyUV;
+            this.translateLayers(-dx, -dy);
+        }, (speedX, speedY) => {
+            if (this.animation.type != 'dragging')
+                return;
+            const uvXY = calculateUVXY(this.view.z);
+            this.animation = makeFlingAnimation(this.animation.start, performance.now(), this.view.u * uvXY, this.view.v * uvXY, speedX, speedY);
             this.scheduleFrame();
         }).install();
         const resizeObserver = new ResizeObserver(() => this.scheduleFrame());
-        resizeObserver.observe(this.$mapView);
+        resizeObserver.observe(this.$widget);
+        $root.addEventListener('osmChangesetViewer:itemHighlight', ({ detail: { type, id } }) => {
+            this.itemLayer.highlightItem(type, id);
+            this.scheduleFrame();
+        });
+        $root.addEventListener('osmChangesetViewer:itemUnhighlight', ({ detail: { type, id } }) => {
+            this.itemLayer.unhighlightItem(type, id);
+            this.scheduleFrame();
+        });
+        $root.addEventListener('osmChangesetViewer:itemPing', ({ detail: { type, id } }) => {
+            const bbox = this.itemLayer.getItemBbox(type, id);
+            if (!bbox)
+                return;
+            this.fitBox(bbox);
+        });
+    }
+    get hashValue() {
+        const precision = Math.max(0, Math.ceil(Math.log2(this.view.z)));
+        const zoomString = this.view.z.toFixed(0);
+        const latString = calculateLat(this.view.v).toFixed(precision);
+        const lonString = calculateLon(this.view.u).toFixed(precision);
+        return `${zoomString}/${latString}/${lonString}`;
+    }
+    set hashValue(hashValue) {
+        const [zoomString, latString, lonString] = hashValue.split('/');
+        if (zoomString == null || latString == null || lonString == null)
+            return;
+        const zoom = Number(zoomString);
+        const lat = Number(latString);
+        const lon = Number(lonString);
+        if (!Number.isInteger(zoom) || !Number.isFinite(lat) || !Number.isFinite(lon))
+            return;
+        this.view = {
+            u: calculateU(lon),
+            v: calculateV(lat),
+            z: zoom
+        };
+        this.animation = { type: 'stopped' };
+        this.scheduleFrame();
+    }
+    get layers() {
+        return [this.tileLayer, this.itemLayer];
     }
     reset() {
         this.itemLayer.removeAllItems();
@@ -7375,48 +7540,73 @@ class MapView {
         this.itemLayer.addItem(item);
         this.scheduleFrame();
     }
-    highlightItem(type, id) {
-        this.itemLayer.highlightItem(type, id);
-        this.scheduleFrame();
-    }
-    unhighlightItem(type, id) {
-        this.itemLayer.unhighlightItem(type, id);
-        this.scheduleFrame();
-    }
     scheduleFrame() {
         if (this.requestId != null)
             return;
         this.requestId = requestAnimationFrame(this.animateFrame);
     }
-    makeRenderView() {
-        const viewPxSizeX = this.$mapView.clientWidth;
-        const viewPxSizeY = this.$mapView.clientHeight;
-        if (viewPxSizeX <= 0 || viewPxSizeY <= 0) {
+    makeRenderViewBox() {
+        const viewSizeX = this.$widget.clientWidth;
+        const viewSizeY = this.$widget.clientHeight;
+        if (viewSizeX <= 0 || viewSizeY <= 0) {
             return null;
         }
-        const viewCenterPxOffsetX1 = getViewCenterPxOffset(viewPxSizeX, 0);
-        const viewCenterPxOffsetX2 = getViewCenterPxOffset(viewPxSizeX, viewPxSizeX);
-        const viewCenterPxOffsetY1 = getViewCenterPxOffset(viewPxSizeY, 0);
-        const viewCenterPxOffsetY2 = getViewCenterPxOffset(viewPxSizeY, viewPxSizeY);
-        const pxSize = calculatePxSize(this.viewZ);
+        const viewCenterOffsetX1 = getViewCenterOffset(viewSizeX, 0);
+        const viewCenterOffsetX2 = getViewCenterOffset(viewSizeX, viewSizeX);
+        const viewCenterOffsetY1 = getViewCenterOffset(viewSizeY, 0);
+        const viewCenterOffsetY2 = getViewCenterOffset(viewSizeY, viewSizeY);
+        const uvXY = calculateUVXY(this.view.z);
         const renderView = {
-            pxX1: this.viewX / pxSize + viewCenterPxOffsetX1,
-            pxX2: this.viewX / pxSize + viewCenterPxOffsetX2,
-            pxY1: this.viewY / pxSize + viewCenterPxOffsetY1,
-            pxY2: this.viewY / pxSize + viewCenterPxOffsetY2,
-            z: this.viewZ
+            x1: this.view.u * uvXY + viewCenterOffsetX1,
+            x2: this.view.u * uvXY + viewCenterOffsetX2,
+            y1: this.view.v * uvXY + viewCenterOffsetY1,
+            y2: this.view.v * uvXY + viewCenterOffsetY2,
+            z: this.view.z
         };
         return renderView;
     }
-    roundViewPosition(maxZoom) {
-        this.viewZ = Math.round(clamp(0, this.viewZ, maxZoom));
-        const pxSize = calculatePxSize(this.viewZ);
-        this.viewX = Math.round(this.viewX / pxSize) * pxSize;
-        this.viewY = clamp(0, Math.round(this.viewY / pxSize) * pxSize, 1);
+    translateLayers(dx, dy) {
+        for (const layer of this.layers) {
+            layer.$layer.style.translate = `${dx}px ${dy}px`;
+        }
+    }
+    scaleLayers(scale, originX, originY) {
+        for (const layer of this.layers) {
+            layer.$layer.style.transformOrigin = `${originX}px ${originY}px`;
+            layer.$layer.style.scale = String(scale);
+        }
+    }
+    removeLayerTransforms() {
+        for (const layer of this.layers) {
+            layer.$layer.removeAttribute('style');
+        }
+    }
+    fitBox(box) {
+        const u1 = calculateU(box.minLon);
+        const u2 = calculateU(box.maxLon);
+        const v1 = calculateV(box.maxLat);
+        const v2 = calculateV(box.minLat);
+        const viewSizeX = this.$widget.clientWidth;
+        const viewSizeY = this.$widget.clientHeight;
+        if (viewSizeX == 0 || viewSizeY == 0)
+            return;
+        const viewMarginXY = 16;
+        let limitedViewSizeX = viewSizeX;
+        if (limitedViewSizeX > 2 * viewMarginXY)
+            limitedViewSizeX -= 2 * viewMarginXY;
+        let limitedViewSizeY = viewSizeY;
+        if (limitedViewSizeY > 2 * viewMarginXY)
+            limitedViewSizeY -= 2 * viewMarginXY;
+        const u = (u1 + u2) / 2;
+        const v = (v1 + v2) / 2;
+        const z = Math.min(Math.floor(Math.log2(limitedViewSizeX / (u2 - u1))), Math.floor(Math.log2(limitedViewSizeY / (v2 - v1)))) - tilePower;
+        this.view = { u, v, z };
+        this.animation = { type: 'stopped' };
+        this.scheduleFrame();
     }
 }
-function getViewCenterPxOffset(viewPxSize, viewCornerPxOffset) {
-    return viewCornerPxOffset - viewPxSize / 2 - (viewPxSize & 1) * .5;
+function getViewCenterOffset(viewSize, viewCornerOffset) {
+    return viewCornerOffset - viewSize / 2 - (viewSize & 1) * .5;
 }
 
 const appName = 'osm-changeset-viewer';
@@ -7445,7 +7635,7 @@ async function main() {
     if (!net.cx) {
         $main.append(makeDiv('notice')(`Please select a valid server`));
         net.serverSelector.installHashChangeListener(net.cx, () => { });
-        writeFooter($root, $footer, $netDialog);
+        new Footer($root, $footer, $netDialog);
         return;
     }
     const cx = net.cx;
@@ -7460,35 +7650,58 @@ async function main() {
     const worker = new SharedWorker('worker.js');
     const more = new More();
     const colorizer = new Colorizer();
-    const mapView = new MapView(colorizer, cx.server.tile);
+    const mapWidget = new MapWidget($root, colorizer, cx.server.tile);
     const grid = new Grid(colorizer, cx, db, worker, more, userQueries => {
         net.serverSelector.pushHostlessHashInHistory(getHashFromUserQueries(userQueries));
     }, () => {
-        mapView.reset();
+        mapWidget.reset();
     }, () => {
-        mapView.redraw();
+        mapWidget.redraw();
     }, (item) => {
-        mapView.addItem(item);
-    }, (type, id) => {
-        mapView.highlightItem(type, id);
-    }, (type, id) => {
-        mapView.unhighlightItem(type, id);
+        mapWidget.addItem(item);
     });
     $main.append(makeDiv('notice')(`This is a preview v0.3.0. `, `If you've been using the previous preview, please delete its databases in the browser.`), p(`In Firefox you can do the following to delete old databases: `, em(`Developer tools`), ` (F12) > `, em(`Storage`), ` > `, em(`Indexed DB`), ` > (this website) > `, em(`OsmChangesetViewer[`), `...`, em(`]`), ` (there is likely only `, em(`OsmChangesetViewer[www.openstreetmap.org]`), `, multiple databases are possible if you tried using the changeset viewer with different osm servers). `, `Right-click each one and select `, em(`Delete`), `.`), p(`In Chrome you can do the following: `, em(`DevTools`), ` (F12) > `, em(`Application`), ` > `, em(`Storage`), ` > `, em(`IndexedDB`), ` > `, em(`OsmChangesetViewer[`), `...`, em(`]`), `. `, `Press the `, em(`Delete database`), ` button.`), grid.$grid, more.$div);
-    writeSidebar($root, $aside, mapView);
-    net.serverSelector.installHashChangeListener(net.cx, hostlessHash => {
-        grid.receiveUpdatedUserQueries(getUserQueriesFromHash(hostlessHash));
-    }, true);
-    writeFooter($root, $footer, $netDialog, net.cx.server, grid, more, () => {
+    writeSidebar($root, $aside, mapWidget);
+    const showMap = () => {
+        $aside.hidden = false;
+        $main.style.gridArea = `main`;
+    };
+    const hideMap = () => {
+        $aside.hidden = true;
+        $main.style.gridArea = `main / main / aside / aside`;
+    };
+    const footer = new Footer($root, $footer, $netDialog, net.cx.server, grid, more, () => {
+        const hostlessHash = net.serverSelector.getHostlessHash();
+        const [, queryHash] = detachValueFromHash('map', hostlessHash);
         if ($aside.hidden) {
-            $aside.hidden = false;
-            $main.style.gridArea = `main`;
+            showMap();
+            const updatedHostlessHash = attachValueToBackOfHash('map', mapWidget.hashValue, queryHash);
+            net.serverSelector.replaceHostlessHashInHistory(updatedHostlessHash);
         }
         else {
-            $aside.hidden = true;
-            $main.style.gridArea = `main / main / aside / aside`;
+            hideMap();
+            net.serverSelector.replaceHostlessHashInHistory(queryHash);
         }
         return !$aside.hidden;
+    });
+    net.serverSelector.installHashChangeListener(net.cx, hostlessHash => {
+        const [mapHashValue, queryHash] = detachValueFromHash('map', hostlessHash);
+        if (mapHashValue != null) {
+            mapWidget.hashValue = mapHashValue;
+            showMap();
+            footer.mapVisibility = true;
+        }
+        else {
+            hideMap();
+            footer.mapVisibility = false;
+        }
+        grid.receiveUpdatedUserQueries(getUserQueriesFromHash(queryHash));
+    }, true);
+    $root.addEventListener('osmChangesetViewer:mapMoveEnd', () => {
+        const hostlessHash = net.serverSelector.getHostlessHash();
+        const [, queryHash] = detachValueFromHash('map', hostlessHash);
+        const updatedHostlessHash = attachValueToBackOfHash('map', mapWidget.hashValue, queryHash);
+        net.serverSelector.replaceHostlessHashInHistory(updatedHostlessHash);
     });
 }
 function getUserQueriesFromHash(hash) {

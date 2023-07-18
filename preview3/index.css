@@ -88,6 +88,10 @@ body > .symbols {
 	padding: var(--major-button-padding);
 }
 
+.ui a.listened {
+	text-decoration: underline dotted 1px;
+}
+
 .ui.with-time time[title] {
 	text-decoration: underline dotted 1px;
 }
