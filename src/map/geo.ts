@@ -31,13 +31,13 @@ export type RenderPoint = {
 	y: number
 }
 
-export type RenderViewBox = {
+export type RenderBox = {
 	x1: number
 	x2: number
 	y1: number
 	y2: number
 }
-export type RenderViewZoomBox = RenderViewBox & {
+export type RenderZoomBox = RenderBox & {
 	z: number
 }
 

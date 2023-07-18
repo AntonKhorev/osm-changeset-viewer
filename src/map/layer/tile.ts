@@ -1,6 +1,6 @@
 import Layer from './base'
 import {TileProvider} from '../../net'
-import type {RenderViewZoomBox} from '../geo'
+import type {RenderZoomBox} from '../geo'
 import {tileSizeXY} from '../geo'
 import {makeElement} from '../../util/html'
 
@@ -13,7 +13,7 @@ export default class TileLayer extends Layer {
 	clear(): void {
 		this.$layer.replaceChildren()
 	}
-	render(viewBox: RenderViewZoomBox): void {
+	render(viewBox: RenderZoomBox): void {
 		this.clear()
 		const viewTileX1=Math.floor(viewBox.x1/tileSizeXY)
 		const viewTileX2=Math.ceil (viewBox.x2/tileSizeXY)

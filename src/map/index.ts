@@ -1,4 +1,4 @@
-import type {ViewZoomPoint, RenderViewZoomBox, GeoBox} from './geo'
+import type {ViewZoomPoint, RenderZoomBox, GeoBox} from './geo'
 import {
 	calculateXYUV, calculateUVXY, calculateU, calculateV,
 	calculateLat, calculateLon,
@@ -199,7 +199,7 @@ export default class MapWidget {
 		if (this.requestId!=null) return
 		this.requestId=requestAnimationFrame(this.animateFrame)
 	}
-	private makeRenderViewBox(): RenderViewZoomBox|null {
+	private makeRenderViewBox(): RenderZoomBox|null {
 		const viewSizeX=this.$widget.clientWidth
 		const viewSizeY=this.$widget.clientHeight
 		if (viewSizeX<=0 || viewSizeY<=0) {
@@ -210,7 +210,7 @@ export default class MapWidget {
 		const viewCenterOffsetY1=getViewCenterOffset(viewSizeY,0)
 		const viewCenterOffsetY2=getViewCenterOffset(viewSizeY,viewSizeY)
 		const uvXY=calculateUVXY(this.view.z)
-		const renderView:RenderViewZoomBox={
+		const renderView:RenderZoomBox={
 			x1: this.view.u*uvXY+viewCenterOffsetX1,
 			x2: this.view.u*uvXY+viewCenterOffsetX2,
 			y1: this.view.v*uvXY+viewCenterOffsetY1,
