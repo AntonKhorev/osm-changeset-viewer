@@ -42,12 +42,14 @@ export default class MapDragListener extends DragListener<Grab> {
 		const dx=ev.clientX-grab.currentX
 		const dy=ev.clientY-grab.currentY
 		const dt=newTime-grab.currentTime
-		const speedDecay=Math.exp(-speedDecayRate*dt)
-		grab.currentSpeedX=grab.currentSpeedX*speedDecay+dx/dt*(1-speedDecay)
-		grab.currentSpeedY=grab.currentSpeedY*speedDecay+dy/dt*(1-speedDecay)
-		grab.currentX=ev.clientX
-		grab.currentY=ev.clientY
-		grab.currentTime=newTime
+		if (dt>0) {
+			const speedDecay=Math.exp(-speedDecayRate*dt)
+			grab.currentSpeedX=grab.currentSpeedX*speedDecay+dx/dt*(1-speedDecay)
+			grab.currentSpeedY=grab.currentSpeedY*speedDecay+dy/dt*(1-speedDecay)
+			grab.currentX=ev.clientX
+			grab.currentY=ev.clientY
+			grab.currentTime=newTime
+		}
 		this.pan(grab.startX-ev.clientX,grab.startY-ev.clientY)
 	}
 	endDrag(ev: PointerEvent, grab: Grab) {
