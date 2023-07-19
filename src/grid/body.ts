@@ -21,7 +21,7 @@ import type {GridBatchItem} from '../mux-user-item-db-stream-messenger'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import {toIsoYearMonthString} from '../date'
 import {makeElement, makeDiv} from '../util/html'
-import { bubbleCustomEvent } from '../util/events'
+import {bubbleEvent, bubbleCustomEvent} from '../util/events'
 
 export type ItemMapViewInfo = {
 	id: number
@@ -64,7 +64,6 @@ export default class GridBody {
 	) {
 		const bubbleItemEvent=($item:HTMLElement,eventType:(
 			'osmChangesetViewer:itemHighlight'|
-			'osmChangesetViewer:itemUnhighlight'|
 			'osmChangesetViewer:itemPing'
 		))=>{
 			const descriptor=readItemDescriptor($item)
@@ -152,7 +151,7 @@ export default class GridBody {
 				const $item=ev.target
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
-				bubbleItemEvent($item,'osmChangesetViewer:itemUnhighlight')
+				bubbleEvent($item,'osmChangesetViewer:itemUnhighlight')
 				this.unhighlightHoveredItemDescriptor(descriptor)
 			} else if (ev.target.matches('button.ref, button.comment-ref')) {
 				const $button=ev.target

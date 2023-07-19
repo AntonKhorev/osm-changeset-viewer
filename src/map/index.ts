@@ -182,8 +182,8 @@ export default class MapWidget {
 			this.itemLayer.highlightItem(type,id)
 			this.scheduleFrame()
 		})
-		$root.addEventListener('osmChangesetViewer:itemUnhighlight',({detail:{type,id}})=>{
-			this.itemLayer.unhighlightItem(type,id)
+		$root.addEventListener('osmChangesetViewer:itemUnhighlight',()=>{
+			this.itemLayer.unhighlightItem()
 			this.scheduleFrame()
 		})
 		$root.addEventListener('osmChangesetViewer:itemPing',ev=>{

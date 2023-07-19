@@ -19,7 +19,7 @@ const LEFT=8
 
 export default class ItemLayer extends Layer {
 	private items=new Map<string,ItemMapViewInfo>()
-	private highlightedItems=new Set<string>()
+	private highlightedItemKey: string|undefined
 	private subcells=new Map<number,[number,number]>
 	private nSubcellsX=2
 	private nSubcellsY=1
@@ -35,7 +35,7 @@ export default class ItemLayer extends Layer {
 	}
 	removeAllItems(): void {
 		this.items.clear()
-		this.highlightedItems.clear()
+		this.highlightedItemKey=undefined
 		this.subcells.clear()
 		this.nSubcellsX=2
 		this.nSubcellsY=1
@@ -90,12 +90,10 @@ export default class ItemLayer extends Layer {
 		return {minLat,minLon,maxLat,maxLon}
 	}
 	highlightItem(type: string, id: number): void {
-		const key=type+':'+id
-		this.highlightedItems.add(key)
+		this.highlightedItemKey=type+':'+id
 	}
-	unhighlightItem(type: string, id: number): void {
-		const key=type+':'+id
-		this.highlightedItems.delete(key)
+	unhighlightItem(): void {
+		this.highlightedItemKey=undefined
 	}
 	clear(): void {
 		if (!this.ctx) return
@@ -138,7 +136,7 @@ export default class ItemLayer extends Layer {
 		for (let i=itemArray.length-1;i>=0;i--) {
 			const item=itemArray[i]
 			const key=item.type+':'+item.id
-			const highlighted=this.highlightedItems.has(key)
+			const highlighted=this.highlightedItemKey==key
 			const userCells=cells.get(item.uid)
 			if (!userCells) continue
 			const bbox=this.getItemBboxFromInfo(item)
