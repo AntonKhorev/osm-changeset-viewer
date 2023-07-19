@@ -7,7 +7,7 @@ import {
 import type {Animation} from './animation'
 import {makeFlingAnimation} from './animation'
 import type {Layer} from './layer'
-import {ItemLayer, TileLayer} from './layer'
+import {ItemLayer, TileLayer, STENCIL_ID_MASK, STENCIL_CHANGESET_MASK, STENCIL_NOTE_MASK} from './layer'
 import MapDragListener from './drag'
 import {clamp} from '../math'
 import type Colorizer from '../colorizer'
@@ -128,11 +128,25 @@ export default class MapWidget {
 			this.scheduleFrame()
 		}
 		this.$widget.onmousemove=ev=>{
-			if (ev.target!=this.$widget) return
+			if (this.animation.type!='stopped') return
 			if (!this.stencils) return
+			if (ev.target!=this.$widget) return
 			const viewSizeX=this.$widget.clientWidth
 			const stencil=this.stencils[ev.offsetX+ev.offsetY*viewSizeX]
-			console.log('mousemove stencil',stencil) ///
+			this.$widget.style.cursor=stencil?'pointer':'grab'
+		}
+		this.$widget.onclick=ev=>{
+			if (this.animation.type!='stopped') return
+			if (!this.stencils) return
+			if (ev.target!=this.$widget) return
+			const viewSizeX=this.$widget.clientWidth
+			const stencil=this.stencils[ev.offsetX+ev.offsetY*viewSizeX]
+			const id=Number(stencil&STENCIL_ID_MASK)
+			if (stencil&STENCIL_CHANGESET_MASK) {
+				console.log('click changeset',id)
+			} else if (stencil&STENCIL_NOTE_MASK) {
+				console.log('click note',id)
+			}
 		}
 		new MapDragListener(this.$widget,()=>{
 			if (this.animation.type!='stopped') return false
