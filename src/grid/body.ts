@@ -54,6 +54,10 @@ export default class GridBody {
 	}
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
 	private columnUids: (number|undefined)[] = []
+	private highlightState: {
+		descriptor: ItemDescriptor
+		refDescriptor?: ItemDescriptor
+	}|undefined
 	constructor(
 		$root: HTMLElement,
 		private readonly colorizer: Colorizer,
@@ -123,7 +127,7 @@ export default class GridBody {
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
 				bubbleItemEvent($item,'osmChangesetViewer:itemHighlight')
-				this.highlightHoveredItemDescriptor(descriptor)
+				this.updateItemHighlightState(descriptor)
 			} else if (ev.target.matches('button.comment-ref')) {
 				const $button=ev.target
 				const $item=$button.closest('.item')
@@ -132,9 +136,9 @@ export default class GridBody {
 				if (!descriptor) return
 				const order=Number($button.dataset.order)
 				if (Number.isInteger(order)) {
-					this.highlightHoveredItemDescriptor(descriptor,getCommentItemDescriptor(descriptor,order))
+					this.updateItemHighlightState(descriptor,getCommentItemDescriptor(descriptor,order)??undefined)
 				} else {
-					this.highlightHoveredItemDescriptor(descriptor)
+					this.updateItemHighlightState(descriptor)
 				}
 			} else if (ev.target.matches('button.ref')) {
 				const $button=ev.target
@@ -142,7 +146,7 @@ export default class GridBody {
 				if (!($item instanceof HTMLElement)) return
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
-				this.highlightHoveredItemDescriptor(descriptor,getMainItemDescriptor(descriptor))
+				this.updateItemHighlightState(descriptor,getMainItemDescriptor(descriptor)??undefined)
 			}
 		},true)
 		this.$gridBody.addEventListener('mouseleave',ev=>{
@@ -152,16 +156,26 @@ export default class GridBody {
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
 				bubbleEvent($item,'osmChangesetViewer:itemUnhighlight')
-				this.unhighlightHoveredItemDescriptor(descriptor)
+				this.updateItemHighlightState()
 			} else if (ev.target.matches('button.ref, button.comment-ref')) {
 				const $button=ev.target
 				const $item=$button.closest('.item')
 				if (!($item instanceof HTMLElement)) return
 				const descriptor=readItemDescriptor($item)
 				if (!descriptor) return
-				this.highlightHoveredItemDescriptor(descriptor)
+				this.updateItemHighlightState(descriptor)
 			}
 		},true)
+		$root.addEventListener('osmChangesetViewer:itemHighlight',ev=>{
+			if (!(ev.target instanceof Node)) return
+			if (this.$gridBody.contains(ev.target)) return
+			this.updateItemHighlightState(ev.detail)
+		})
+		$root.addEventListener('osmChangesetViewer:itemUnhighlight',ev=>{
+			if (!(ev.target instanceof Node)) return
+			if (this.$gridBody.contains(ev.target)) return
+			this.updateItemHighlightState()
+		})
 		$root.addEventListener('osmChangesetViewer:itemPing',ev=>{
 			if (!(ev.target instanceof Node)) return
 			if (this.$gridBody.contains(ev.target)) return
@@ -184,6 +198,7 @@ export default class GridBody {
 		this.checkboxHandler.onItemSelect=callback
 	}
 	setColumns(columnUids: (number|undefined)[]): void {
+		this.highlightState=undefined
 		this.resetMapViewReceiver()
 		this.columnUids=columnUids
 		this.$gridBody.replaceChildren()
@@ -760,7 +775,27 @@ export default class GridBody {
 		}
 		this.highlightClickedItem($targetItem)
 	}
-	private highlightHoveredItemDescriptor(descriptor: ItemDescriptor, refDescriptor?: ItemDescriptor|null): void {
+	private updateItemHighlightState(descriptor?: ItemDescriptor, refDescriptor?: ItemDescriptor): void {
+		if (this.highlightState && (
+			!descriptor ||
+			!isEqualItemDescriptor(this.highlightState.descriptor,descriptor) ||
+			!refDescriptor && this.highlightState.refDescriptor ||
+			refDescriptor && !this.highlightState.refDescriptor ||
+			refDescriptor && this.highlightState.refDescriptor && !isEqualItemDescriptor(this.highlightState.refDescriptor,refDescriptor)
+		)) {
+			const selector=`.item:is(.highlighted-by-hover,.highlighted-by-hover-indirectly)`
+			for (const $item of this.$gridBody.querySelectorAll(selector)) {
+				$item.classList.remove('highlighted-by-hover','highlighted-by-hover-indirectly')
+			}
+		}
+		if (!descriptor) {
+			this.highlightState=undefined
+		} else if (!refDescriptor) {
+			this.highlightState={descriptor}
+		} else {
+			this.highlightState={descriptor,refDescriptor}
+		}
+		if (!descriptor) return
 		let broadSelector=getBroadItemDescriptorSelector(descriptor)
 		let narrowSelector=getItemDescriptorSelector(descriptor)
 		if (refDescriptor) {
@@ -772,11 +807,6 @@ export default class GridBody {
 		for (const $item of this.$gridBody.querySelectorAll(narrowSelector)) {
 			$item.classList.remove('highlighted-by-hover-indirectly')
 			$item.classList.add('highlighted-by-hover')
-		}
-	}
-	private unhighlightHoveredItemDescriptor(descriptor: ItemDescriptor): void {
-		for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
-			$item.classList.remove('highlighted-by-hover','highlighted-by-hover-indirectly')
 		}
 	}
 	private highlightClickedItem($item: HTMLElement): void {
