@@ -127,30 +127,39 @@ export default class MapWidget {
 			}
 			this.scheduleFrame()
 		}
+		const readStencilItem=(x:number,y:number)=>{
+			if (!this.stencils) return undefined
+			const viewSizeX=this.$widget.clientWidth
+			const stencil=this.stencils[x+y*viewSizeX]
+			const id=Number(stencil&STENCIL_ID_MASK)
+			if (stencil&STENCIL_CHANGESET_MASK) {
+				return {type:'changeset',id}
+			} else if (stencil&STENCIL_NOTE_MASK) {
+				return {type:'note',id}
+			}
+			return undefined
+		}
 		this.$widget.onmousemove=ev=>{
 			if (this.animation.type!='stopped') return
-			if (!this.stencils) return
 			if (ev.target!=this.$widget) return
-			const viewSizeX=this.$widget.clientWidth
-			const stencil=this.stencils[ev.offsetX+ev.offsetY*viewSizeX]
-			this.$widget.style.cursor=stencil?'pointer':'grab'
+			const stencilItem=readStencilItem(ev.offsetX,ev.offsetY)
+			this.$widget.style.cursor=stencilItem?'pointer':'grab'
+			if (!stencilItem && this.itemLayer.highlightedItem!=null) {
+				this.itemLayer.highlightedItem=undefined
+				bubbleEvent(this.$widget,'osmChangesetViewer:itemUnhighlight')
+				this.scheduleFrame()
+			} else if (stencilItem && !this.itemLayer.isItemHighlighted(stencilItem)) {
+				this.itemLayer.highlightedItem=stencilItem
+				bubbleCustomEvent(this.$widget,'osmChangesetViewer:itemHighlight',stencilItem)
+				this.scheduleFrame()
+			}
 		}
 		this.$widget.onclick=ev=>{
 			if (this.animation.type!='stopped') return
-			if (!this.stencils) return
 			if (ev.target!=this.$widget) return
-			const viewSizeX=this.$widget.clientWidth
-			const stencil=this.stencils[ev.offsetX+ev.offsetY*viewSizeX]
-			const id=Number(stencil&STENCIL_ID_MASK)
-			let type: string
-			if (stencil&STENCIL_CHANGESET_MASK) {
-				type='changeset'
-			} else if (stencil&STENCIL_NOTE_MASK) {
-				type='note'
-			} else {
-				return
-			}
-			bubbleCustomEvent(this.$widget,'osmChangesetViewer:itemPing',{type,id})
+			const stencilItem=readStencilItem(ev.offsetX,ev.offsetY)
+			if (!stencilItem) return
+			bubbleCustomEvent(this.$widget,'osmChangesetViewer:itemPing',stencilItem)
 		}
 		new MapDragListener(this.$widget,()=>{
 			if (this.animation.type!='stopped') return false
@@ -178,11 +187,14 @@ export default class MapWidget {
 		}).install()
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
 		resizeObserver.observe(this.$widget)
-		$root.addEventListener('osmChangesetViewer:itemHighlight',({detail:{type,id}})=>{
+		$root.addEventListener('osmChangesetViewer:itemHighlight',ev=>{
+			if (ev.target==this.$widget) return
+			const {type,id}=ev.detail
 			this.itemLayer.highlightedItem={type,id}
 			this.scheduleFrame()
 		})
-		$root.addEventListener('osmChangesetViewer:itemUnhighlight',()=>{
+		$root.addEventListener('osmChangesetViewer:itemUnhighlight',ev=>{
+			if (ev.target==this.$widget) return
 			this.itemLayer.highlightedItem=undefined
 			this.scheduleFrame()
 		})

@@ -88,7 +88,7 @@ export default class ItemLayer extends Layer {
 		}
 		return {minLat,minLon,maxLat,maxLon}
 	}
-	private isItemHighlighted(item: ItemMapViewInfo): boolean {
+	isItemHighlighted(item: {type:string,id:number}): boolean {
 		if (!this.highlightedItem) return false
 		return (
 			this.highlightedItem.type==item.type &&
