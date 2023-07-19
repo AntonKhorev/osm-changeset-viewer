@@ -211,7 +211,7 @@ export default class ItemLayer extends Layer {
 			getCellFillStyle
 		)
 		this.renderChangesets(stencils,changesets,false,getCellFillStyle)
-		this.renderNotes(notes,false,getCellFillStyle)
+		this.renderNotes(stencils,notes,false,getCellFillStyle)
 		this.renderHeatmapHighlightBorders(
 			cellBorders,
 			nCellsX,nCellsY,
@@ -219,7 +219,7 @@ export default class ItemLayer extends Layer {
 			icy=>(icy+viewCellY1)*this.cellSizeY-renderBox.y1
 		)
 		this.renderChangesets(stencils,highlightedChangesets,true,getCellFillStyle)
-		this.renderNotes(highlightedNotes,true,getCellFillStyle)
+		this.renderNotes(stencils,highlightedNotes,true,getCellFillStyle)
 	}
 	private findNoteIdsWithoutCellCollisions(z: number, cellSizeX: number, cellSizeY: number): Set<number> {
 		const cells=new Map<string,number|null>()
@@ -400,25 +400,38 @@ export default class ItemLayer extends Layer {
 		this.ctx.restore()
 	}
 	private renderNotes(
-		notes: {point:RenderPoint,uid:number}[],
+		stencils: BigUint64Array,
+		notes: {point:RenderPoint,uid:number,id:number}[],
 		highlighted: boolean,
 		getCellFillStyle: (globalMaxCellWeight:number,cellWeight:number,uid:number)=>string
 	): void {
 		if (!this.ctx) return
+		const canvasSizeX=this.$canvas.width
+		const canvasSizeY=this.$canvas.height
 		for (const note of notes) {
+			const markerHeight=16
+			const markerRadius=6
 			this.ctx.save()
 			this.ctx.translate(
 				note.point.x,
 				note.point.y
 			)
 			this.ctx.fillStyle=getCellFillStyle(1,0.7,note.uid)
-			this.traceNotePath(16,6)
+			this.traceNotePath(markerHeight,markerRadius)
 			this.ctx.fill()
 			if (highlighted) {
 				this.ctx.strokeStyle=highlightStroke
 				this.ctx.stroke()
 			}
 			this.ctx.restore()
+			fillStencilRectangle(
+				stencils,canvasSizeX,canvasSizeY,
+				note.point.x-markerRadius,
+				note.point.y-markerHeight,
+				markerRadius*2,
+				markerHeight,
+				STENCIL_NOTE_MASK|BigInt(note.id)
+			)
 		}
 	}
 	private traceNotePath(h: number, r: number): void {
