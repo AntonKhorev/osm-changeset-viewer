@@ -125,10 +125,10 @@ export default class ItemLayer extends Layer {
 		)
 		const cellBorders=new Uint8Array(nCellsX*nCellsY)
 		const cellStencils=new BigUint64Array(nCellsX*nCellsY)
-		const changesets: {bbox:RenderBox,uid:number}[] = []
-		const highlightedChangesets: {bbox:RenderBox,uid:number}[] = []
-		const notes: {point:RenderPoint,uid:number}[] = []
-		const highlightedNotes: {point:RenderPoint,uid:number}[] = []
+		const changesets: {bbox:RenderBox,uid:number,id:number}[] = []
+		const highlightedChangesets: {bbox:RenderBox,uid:number,id:number}[] = []
+		const notes: {point:RenderPoint,uid:number,id:number}[] = []
+		const highlightedNotes: {point:RenderPoint,uid:number,id:number}[] = []
 		const noteIdsWithoutCellCollisions=this.findNoteIdsWithoutCellCollisions(renderBox.z,this.cellSizeX,this.cellSizeY)
 
 		let globalMaxCellWeight=0
@@ -140,7 +140,6 @@ export default class ItemLayer extends Layer {
 			if (!userCells) continue
 			const bbox=this.getItemBboxFromInfo(item)
 			for (let repeatU=repeatU1;repeatU<=repeatU2;repeatU++) {
-				const uid=item.uid
 				const itemX1=(calculateU(bbox.minLon)+repeatU)/xyUV
 				const itemX2=(calculateU(bbox.maxLon)+repeatU)/xyUV
 				const itemY1= calculateV(bbox.maxLat)/xyUV
@@ -152,10 +151,11 @@ export default class ItemLayer extends Layer {
 						y1: Math.round(itemY1)-renderBox.y1,
 						y2: Math.round(itemY2)-renderBox.y1,
 					}
+					const changeset={bbox,uid:item.uid,id:item.id}
 					if (highlighted) {
-						highlightedChangesets.push({bbox,uid})
+						highlightedChangesets.push(changeset)
 					} else {
-						changesets.push({bbox,uid})
+						changesets.push(changeset)
 					}
 				} else if (item.type=='note' && noteIdsWithoutCellCollisions.has(item.id)) {
 					const noteRenderMargin=32
@@ -169,10 +169,11 @@ export default class ItemLayer extends Layer {
 							x: Math.round(itemX1)-renderBox.x1,
 							y: Math.round(itemY1)-renderBox.y1,
 						}
+						const note={point,uid:item.uid,id:item.id}
 						if (highlighted) {
-							highlightedNotes.push({point,uid})
+							highlightedNotes.push(note)
 						} else {
-							notes.push({point,uid})
+							notes.push(note)
 						}
 					}
 				} else {
@@ -209,7 +210,7 @@ export default class ItemLayer extends Layer {
 			icy=>(icy+viewCellY1)*this.cellSizeY-renderBox.y1,
 			getCellFillStyle
 		)
-		this.renderChangesets(changesets,false,getCellFillStyle)
+		this.renderChangesets(stencils,changesets,false,getCellFillStyle)
 		this.renderNotes(notes,false,getCellFillStyle)
 		this.renderHeatmapHighlightBorders(
 			cellBorders,
@@ -217,7 +218,7 @@ export default class ItemLayer extends Layer {
 			icx=>(icx+viewCellX1)*this.cellSizeX-renderBox.x1,
 			icy=>(icy+viewCellY1)*this.cellSizeY-renderBox.y1
 		)
-		this.renderChangesets(highlightedChangesets,true,getCellFillStyle)
+		this.renderChangesets(stencils,highlightedChangesets,true,getCellFillStyle)
 		this.renderNotes(highlightedNotes,true,getCellFillStyle)
 	}
 	private findNoteIdsWithoutCellCollisions(z: number, cellSizeX: number, cellSizeY: number): Set<number> {
@@ -277,15 +278,11 @@ export default class ItemLayer extends Layer {
 					if (!userCells) continue
 					this.ctx.fillStyle=getCellFillStyle(globalMaxCellWeight,maxCellWeight,maxCellWeightUid)
 					this.ctx.fillRect(cellX,cellY,this.cellSizeX,this.cellSizeY)
-					const x1=Math.max(0,cellX)
-					const x2=Math.min(canvasSizeX,cellX+this.cellSizeX)
-					const y1=Math.max(0,cellY)
-					const y2=Math.min(canvasSizeY,cellY+this.cellSizeY)
-					for (let y=y1;y<y2;y++) {
-						for (let x=x1;x<x2;x++) {
-							stencils[x+y*canvasSizeX]=cellStencils[icx+icy*nCellsX]
-						}
-					}
+					fillStencilRectangle(
+						stencils,canvasSizeX,canvasSizeY,
+						cellX,cellY,this.cellSizeX,this.cellSizeY,
+						cellStencils[icx+icy*nCellsX]
+					)
 				}
 				for (const [uid,[scx,scy]] of this.subcells) {
 					if (uid==maxCellWeightUid) continue
@@ -337,26 +334,32 @@ export default class ItemLayer extends Layer {
 		}
 	}
 	private renderChangesets(
-		changesets: {bbox:RenderBox,uid:number}[],
+		stencils: BigUint64Array,
+		changesets: {bbox:RenderBox,uid:number,id:number}[],
 		highlighted: boolean,
 		getCellFillStyle: (globalMaxCellWeight:number,cellWeight:number,uid:number)=>string
 	): void {
 		for (const changeset of changesets) {
 			this.renderChangesetBox(
+				stencils,
+				changeset.bbox,
 				getCellFillStyle(1,0.7,changeset.uid),
 				bboxThickness, // TODO use weight in stroke
-				changeset.bbox
+				STENCIL_CHANGESET_MASK|BigInt(changeset.id)
 			)
 			if (highlighted) this.renderChangesetBox(
+				stencils,
+				changeset.bbox,
 				highlightStroke,
-				highlightBoxThickness,
-				changeset.bbox
+				highlightBoxThickness
 			)
 		}
 	}
 	private renderChangesetBox(
+		stencils: BigUint64Array,
+		box: RenderBox,
 		stroke: string, strokeWidth: number,
-		box: RenderBox
+		stencil?: bigint
 	): void {
 		if (!this.ctx) return
 		const canvasSizeX=this.$canvas.width
@@ -369,16 +372,23 @@ export default class ItemLayer extends Layer {
 		const bboxX2=clamp(edgeX1,box.x2,edgeX2)
 		const bboxY1=clamp(edgeY1,box.y1,edgeY2)
 		const bboxY2=clamp(edgeY1,box.y2,edgeY2)
-		const drawLineX=(x: number)=>{
+		const drawRect=(x: number, y: number, w: number, h: number)=>{
 			if (!this.ctx) return
+			this.ctx.fillRect(x,y,w,h)
+			if (stencil!=null) fillStencilRectangle(
+				stencils,canvasSizeX,canvasSizeY,
+				x,y,w,h,
+				stencil
+			)
+		}
+		const drawLineX=(x: number)=>{
 			if (x>=-strokeWidth && x<canvasSizeX && bboxY1<bboxY2) {
-				this.ctx.fillRect(x,bboxY1,strokeWidth,bboxY2-bboxY1)
+				drawRect(x,bboxY1,strokeWidth,bboxY2-bboxY1)
 			}
 		}
 		const drawLineY=(y: number)=>{
-			if (!this.ctx) return
 			if (y>=-strokeWidth && y<canvasSizeY && bboxX1<bboxX2) {
-				this.ctx.fillRect(bboxX1,y,bboxX2-bboxX1,strokeWidth)
+				drawRect(bboxX1,y,bboxX2-bboxX1,strokeWidth)
 			}
 		}
 		this.ctx.save()
@@ -422,5 +432,23 @@ export default class ItemLayer extends Layer {
 		this.ctx.arcTo(-xt,-h,0,-h,r)
 		this.ctx.arcTo(+xt,-h,0,0,r)
 		this.ctx.closePath()
+	}
+}
+
+function fillStencilRectangle(
+	stencils: BigUint64Array,
+	canvasSizeX: number,
+	canvasSizeY: number,
+	x: number, y: number, w: number, h: number,
+	v: bigint
+): void {
+	const x1=Math.max(0,x)
+	const x2=Math.min(canvasSizeX,x+w)
+	const y1=Math.max(0,y)
+	const y2=Math.min(canvasSizeY,y+h)
+	for (let ys=y1;ys<y2;ys++) {
+		for (let xs=x1;xs<x2;xs++) {
+			stencils[xs+ys*canvasSizeX]=v
+		}
 	}
 }
