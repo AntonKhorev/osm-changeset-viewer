@@ -358,6 +358,7 @@ export default class ItemLayer extends Layer {
 		stroke: string, strokeWidth: number,
 		box: RenderBox
 	): void {
+		if (!this.ctx) return
 		const canvasSizeX=this.$canvas.width
 		const canvasSizeY=this.$canvas.height
 		const edgeX1=-bboxThickness
@@ -368,38 +369,25 @@ export default class ItemLayer extends Layer {
 		const bboxX2=clamp(edgeX1,box.x2,edgeX2)
 		const bboxY1=clamp(edgeY1,box.y1,edgeY2)
 		const bboxY2=clamp(edgeY1,box.y2,edgeY2)
-		const drawLineXY=(
-			x1: number, x2: number,
-			y1: number, y2: number
-		)=>{
+		const drawLineX=(x: number)=>{
 			if (!this.ctx) return
-			this.ctx.save()
-			this.ctx.lineWidth=strokeWidth
-			this.ctx.strokeStyle=stroke
-			this.ctx.beginPath()
-			this.ctx.moveTo(x1,y1)
-			this.ctx.lineTo(x2,y2)
-			this.ctx.stroke()
-			this.ctx.restore()
+			if (x>=-strokeWidth && x<canvasSizeX && bboxY1<bboxY2) {
+				this.ctx.fillRect(x,bboxY1,strokeWidth,bboxY2-bboxY1)
+			}
 		}
-		const drawLineX=(lineX: number)=>{
-			if (
-				lineX>=-bboxThickness/2 &&
-				lineX<canvasSizeX+bboxThickness/2 &&
-				bboxY1<bboxY2
-			) drawLineXY(lineX,lineX,bboxY1,bboxY2)
+		const drawLineY=(y: number)=>{
+			if (!this.ctx) return
+			if (y>=-strokeWidth && y<canvasSizeY && bboxX1<bboxX2) {
+				this.ctx.fillRect(bboxX1,y,bboxX2-bboxX1,strokeWidth)
+			}
 		}
-		const drawLineY=(lineY: number)=>{
-			if (
-				lineY>=-bboxThickness/2 &&
-				lineY<canvasSizeY+bboxThickness/2 &&
-				bboxX1<bboxX2
-			) drawLineXY(bboxX1,bboxX2,lineY,lineY)
-		}
-		drawLineX(box.x1+strokeWidth/2)
-		drawLineX(box.x2-strokeWidth/2)
-		drawLineY(box.y1+strokeWidth/2)
-		drawLineY(box.y2-strokeWidth/2)
+		this.ctx.save()
+		this.ctx.fillStyle=stroke
+		drawLineX(box.x1)
+		drawLineX(box.x2-strokeWidth)
+		drawLineY(box.y1)
+		drawLineY(box.y2-strokeWidth)
+		this.ctx.restore()
 	}
 	private renderNotes(
 		notes: {point:RenderPoint,uid:number}[],
