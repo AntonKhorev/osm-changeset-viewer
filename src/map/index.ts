@@ -24,6 +24,7 @@ export default class MapWidget {
 	private tileLayer: TileLayer
 	private itemLayer=new ItemLayer()
 	private view: ViewZoomPoint = { u: 0.5, v: 0.5, z: 0 }
+	private stencils: BigUint64Array|undefined
 	constructor(
 		$root: HTMLElement,
 		colorizer: Colorizer,
@@ -79,12 +80,19 @@ export default class MapWidget {
 				}
 				this.removeLayerTransforms()
 				if (!renderViewBox) {
+					this.stencils=undefined
 					for (const layer of this.layers) {
 						layer.clear()
 					}
 				} else {
+					const stencilLength=(renderViewBox.x2-renderViewBox.x1)*(renderViewBox.y2-renderViewBox.y1)
+					if (!this.stencils || this.stencils.length!=stencilLength) {
+						this.stencils=new BigUint64Array(stencilLength)
+					} else {
+						this.stencils.fill(0n)
+					}
 					for (const layer of this.layers) {
-						layer.render(renderViewBox,colorizer)
+						layer.render(renderViewBox,this.stencils,colorizer)
 					}
 				}
 			} else {
@@ -92,7 +100,7 @@ export default class MapWidget {
 			}
 		}
 		this.$widget.onwheel=ev=>{
-			if (this.animation.type=='zooming') return
+			if (this.animation.type!='stopped') return
 			const viewSizeX=this.$widget.clientWidth
 			const viewSizeY=this.$widget.clientHeight
 			if (viewSizeX<=0 || viewSizeY<=0) return
@@ -118,6 +126,13 @@ export default class MapWidget {
 				transformOrigin: { x: ev.offsetX, y: ev.offsetY},
 			}
 			this.scheduleFrame()
+		}
+		this.$widget.onmousemove=ev=>{
+			if (ev.target!=this.$widget) return
+			if (!this.stencils) return
+			const viewSizeX=this.$widget.clientWidth
+			const stencil=this.stencils[ev.offsetX+ev.offsetY*viewSizeX]
+			console.log('mousemove stencil',stencil) ///
 		}
 		new MapDragListener(this.$widget,()=>{
 			if (this.animation.type!='stopped') return false

@@ -1,4 +1,4 @@
-import Layer from './base'
+import Layer, {STENCIL_ID_MASK, STENCIL_CHANGESET_MASK, STENCIL_NOTE_MASK} from './base'
 import type {RenderPoint, RenderBox, RenderZoomBox, GeoBox} from '../geo'
 import {calculateXYUV, calculateU, calculateV} from '../geo'
 import {clamp} from '../../math'
@@ -6,16 +6,16 @@ import type {ItemMapViewInfo} from '../../grid'
 import type Colorizer from '../../colorizer'
 import {makeElement} from '../../util/html'
 
-const TOP=1
-const RIGHT=2
-const BOTTOM=4
-const LEFT=8
-
 const bboxThreshold=16
 const bboxThickness=2
 const highlightStroke='blue'
 const highlightBoxThickness=1
 const subcellSizeXY=2
+
+const TOP=1
+const RIGHT=2
+const BOTTOM=4
+const LEFT=8
 
 export default class ItemLayer extends Layer {
 	private items=new Map<string,ItemMapViewInfo>()
@@ -101,23 +101,23 @@ export default class ItemLayer extends Layer {
 		if (!this.ctx) return
 		this.ctx.clearRect(0,0,this.$canvas.width,this.$canvas.height)
 	}
-	render(viewBox: RenderZoomBox, colorizer: Colorizer): void {
+	render(renderBox: RenderZoomBox, stencils: BigUint64Array, colorizer: Colorizer): void {
 		if (!this.ctx) return
 		const getCellFillStyle=(globalMaxCellWeight:number,cellWeight:number,uid:number)=>
 			`hsl(${colorizer.getHueForUid(uid)} 80% 50% / ${.5+.4*cellWeight/globalMaxCellWeight})`
 
-		this.$canvas.width=viewBox.x2-viewBox.x1
-		this.$canvas.height=viewBox.y2-viewBox.y1
+		this.$canvas.width=renderBox.x2-renderBox.x1
+		this.$canvas.height=renderBox.y2-renderBox.y1
 		this.clear()
 
-		const xyUV=calculateXYUV(viewBox.z)
-		const repeatU1=Math.floor(viewBox.x1*xyUV)
-		const repeatU2=Math.floor(viewBox.x2*xyUV)
+		const xyUV=calculateXYUV(renderBox.z)
+		const repeatU1=Math.floor(renderBox.x1*xyUV)
+		const repeatU2=Math.floor(renderBox.x2*xyUV)
 		if (this.items.size<=0 || this.subcells.size<=0) return
-		const viewCellX1=Math.floor(viewBox.x1/this.cellSizeX)
-		const viewCellX2=Math.ceil (viewBox.x2/this.cellSizeX)
-		const viewCellY1=Math.floor(viewBox.y1/this.cellSizeY)
-		const viewCellY2=Math.ceil (viewBox.y2/this.cellSizeY)
+		const viewCellX1=Math.floor(renderBox.x1/this.cellSizeX)
+		const viewCellX2=Math.ceil (renderBox.x2/this.cellSizeX)
+		const viewCellY1=Math.floor(renderBox.y1/this.cellSizeY)
+		const viewCellY2=Math.ceil (renderBox.y2/this.cellSizeY)
 		const nCellsX=viewCellX2-viewCellX1+1
 		const nCellsY=viewCellY2-viewCellY1+1
 		if (nCellsX<=0 || nCellsY<=0) return
@@ -126,14 +126,17 @@ export default class ItemLayer extends Layer {
 			[...this.subcells.keys()].map(uid=>[uid,new Float32Array(nCellsX*nCellsY)])
 		)
 		const cellBorders=new Uint8Array(nCellsX*nCellsY)
+		const cellStencils=new BigUint64Array(nCellsX*nCellsY)
 		const changesets: {bbox:RenderBox,uid:number}[] = []
 		const highlightedChangesets: {bbox:RenderBox,uid:number}[] = []
 		const notes: {point:RenderPoint,uid:number}[] = []
 		const highlightedNotes: {point:RenderPoint,uid:number}[] = []
-		const noteIdsWithoutCellCollisions=this.findNoteIdsWithoutCellCollisions(viewBox.z,this.cellSizeX,this.cellSizeY)
+		const noteIdsWithoutCellCollisions=this.findNoteIdsWithoutCellCollisions(renderBox.z,this.cellSizeX,this.cellSizeY)
 
 		let globalMaxCellWeight=0
-		for (const item of this.items.values()) {
+		const itemArray=[...this.items.values()]
+		for (let i=itemArray.length-1;i>=0;i--) {
+			const item=itemArray[i]
 			const key=item.type+':'+item.id
 			const highlighted=this.highlightedItems.has(key)
 			const userCells=cells.get(item.uid)
@@ -158,10 +161,10 @@ export default class ItemLayer extends Layer {
 				} else if (item.type=='note' && noteIdsWithoutCellCollisions.has(item.id)) {
 					const noteRenderMargin=32
 					if (
-						itemX1>=viewBox.x1-noteRenderMargin &&
-						itemX2<=viewBox.x2+noteRenderMargin &&
-						itemY1>=viewBox.y1-noteRenderMargin &&
-						itemY2<=viewBox.y2+noteRenderMargin
+						itemX1>=renderBox.x1-noteRenderMargin &&
+						itemX2<=renderBox.x2+noteRenderMargin &&
+						itemY1>=renderBox.y1-noteRenderMargin &&
+						itemY2<=renderBox.y2+noteRenderMargin
 					) {
 						const point={x:Math.round(itemX1), y:Math.round(itemY1)}
 						if (highlighted) {
@@ -178,14 +181,19 @@ export default class ItemLayer extends Layer {
 					const weightPerCell=item.weight/((itemCellX2-itemCellX1+1)*(itemCellY2-itemCellY1+1))
 					for (let cy=Math.max(itemCellY1,viewCellY1);cy<=Math.min(itemCellY2,viewCellY2);cy++) {
 						for (let cx=Math.max(itemCellX1,viewCellX1);cx<=Math.min(itemCellX2,viewCellX2);cx++) {
-							const idx=(cx-viewCellX1)+(cy-viewCellY1)*nCellsX
-							const cellWeight=userCells[idx]+=weightPerCell
+							const iCellArray=(cx-viewCellX1)+(cy-viewCellY1)*nCellsX
+							const cellWeight=userCells[iCellArray]+=weightPerCell
 							if (globalMaxCellWeight<cellWeight) globalMaxCellWeight=cellWeight
 							if (highlighted) {
-								if (cy==itemCellY1) cellBorders[idx]|=TOP
-								if (cy==itemCellY2) cellBorders[idx]|=BOTTOM
-								if (cx==itemCellX1) cellBorders[idx]|=LEFT
-								if (cx==itemCellX2) cellBorders[idx]|=RIGHT
+								if (cy==itemCellY1) cellBorders[iCellArray]|=TOP
+								if (cy==itemCellY2) cellBorders[iCellArray]|=BOTTOM
+								if (cx==itemCellX1) cellBorders[iCellArray]|=LEFT
+								if (cx==itemCellX2) cellBorders[iCellArray]|=RIGHT
+							}
+							if (highlighted || cellBorders[iCellArray]==0) {
+								cellStencils[iCellArray]=
+									(item.type=='changeset' ? STENCIL_CHANGESET_MASK : STENCIL_NOTE_MASK) |
+									BigInt(item.id)
 							}
 						}
 					}
@@ -193,22 +201,22 @@ export default class ItemLayer extends Layer {
 			}
 		}
 		this.renderHeatmap(
-			cells,globalMaxCellWeight,
+			cells,cellStencils,stencils,globalMaxCellWeight,
 			nCellsX,nCellsY,
-			icx=>(icx+viewCellX1)*this.cellSizeX-viewBox.x1,
-			icy=>(icy+viewCellY1)*this.cellSizeY-viewBox.y1,
+			icx=>(icx+viewCellX1)*this.cellSizeX-renderBox.x1,
+			icy=>(icy+viewCellY1)*this.cellSizeY-renderBox.y1,
 			getCellFillStyle
 		)
-		this.renderChangesets(viewBox,changesets,false,getCellFillStyle)
-		this.renderNotes(viewBox,notes,false,getCellFillStyle)
-		this.renderHeatmapHighlights(
+		this.renderChangesets(renderBox,changesets,false,getCellFillStyle)
+		this.renderNotes(renderBox,notes,false,getCellFillStyle)
+		this.renderHeatmapHighlightBorders(
 			cellBorders,
 			nCellsX,nCellsY,
-			icx=>(icx+viewCellX1)*this.cellSizeX-viewBox.x1,
-			icy=>(icy+viewCellY1)*this.cellSizeY-viewBox.y1
+			icx=>(icx+viewCellX1)*this.cellSizeX-renderBox.x1,
+			icy=>(icy+viewCellY1)*this.cellSizeY-renderBox.y1
 		)
-		this.renderChangesets(viewBox,highlightedChangesets,true,getCellFillStyle)
-		this.renderNotes(viewBox,highlightedNotes,true,getCellFillStyle)
+		this.renderChangesets(renderBox,highlightedChangesets,true,getCellFillStyle)
+		this.renderNotes(renderBox,highlightedNotes,true,getCellFillStyle)
 	}
 	private findNoteIdsWithoutCellCollisions(z: number, cellSizeX: number, cellSizeY: number): Set<number> {
 		const cells=new Map<string,number|null>()
@@ -235,6 +243,8 @@ export default class ItemLayer extends Layer {
 	}
 	private renderHeatmap(
 		cells: Map<number,Float32Array>,
+		cellStencils: BigUint64Array,
+		stencils: BigUint64Array,
 		globalMaxCellWeight: number,
 		nCellsX: number, nCellsY: number,
 		getCellX: (icx:number)=>number,
@@ -242,6 +252,8 @@ export default class ItemLayer extends Layer {
 		getCellFillStyle: (globalMaxCellWeight:number,cellWeight:number,uid:number)=>string
 	): void {
 		if (!this.ctx) return
+		const canvasSizeX=this.$canvas.width
+		const canvasSizeY=this.$canvas.height
 		for (let icy=0;icy<nCellsY;icy++) {
 			for (let icx=0;icx<nCellsX;icx++) {
 				const cellX=getCellX(icx)
@@ -263,6 +275,15 @@ export default class ItemLayer extends Layer {
 					if (!userCells) continue
 					this.ctx.fillStyle=getCellFillStyle(globalMaxCellWeight,maxCellWeight,maxCellWeightUid)
 					this.ctx.fillRect(cellX,cellY,this.cellSizeX,this.cellSizeY)
+					const x1=Math.max(0,cellX)
+					const x2=Math.min(canvasSizeX,cellX+this.cellSizeX)
+					const y1=Math.max(0,cellY)
+					const y2=Math.min(canvasSizeY,cellY+this.cellSizeY)
+					for (let y=y1;y<y2;y++) {
+						for (let x=x1;x<x2;x++) {
+							stencils[x+y*canvasSizeX]=cellStencils[icx+icy*nCellsX]
+						}
+					}
 				}
 				for (const [uid,[scx,scy]] of this.subcells) {
 					if (uid==maxCellWeightUid) continue
@@ -279,7 +300,7 @@ export default class ItemLayer extends Layer {
 			}
 		}
 	}
-	private renderHeatmapHighlights(
+	private renderHeatmapHighlightBorders(
 		cellBorders: Uint8Array,
 		nCellsX: number, nCellsY: number,
 		getCellX: (icx:number)=>number,
@@ -314,35 +335,35 @@ export default class ItemLayer extends Layer {
 		}
 	}
 	private renderChangesets(
-		viewBox: RenderBox,
+		renderBox: RenderBox,
 		changesets: {bbox:RenderBox,uid:number}[],
 		highlighted: boolean,
 		getCellFillStyle: (globalMaxCellWeight:number,cellWeight:number,uid:number)=>string
 	): void {
 		for (const changeset of changesets) {
-			this.renderBox(
-				viewBox,
+			this.renderChangesetBox(
+				renderBox,
 				getCellFillStyle(1,0.7,changeset.uid),
 				bboxThickness, // TODO use weight in stroke
 				changeset.bbox
 			)
-			if (highlighted) this.renderBox(
-				viewBox,
+			if (highlighted) this.renderChangesetBox(
+				renderBox,
 				highlightStroke,
 				highlightBoxThickness,
 				changeset.bbox
 			)
 		}
 	}
-	private renderBox(
-		viewBox: RenderBox,
+	private renderChangesetBox(
+		renderBox: RenderBox,
 		stroke: string, strokeWidth: number,
 		box: RenderBox
 	): void {
-		const edgeX1=viewBox.x1-bboxThickness
-		const edgeY1=viewBox.y1-bboxThickness
-		const edgeX2=viewBox.x2-1+bboxThickness
-		const edgeY2=viewBox.y2-1+bboxThickness
+		const edgeX1=renderBox.x1-bboxThickness
+		const edgeY1=renderBox.y1-bboxThickness
+		const edgeX2=renderBox.x2-1+bboxThickness
+		const edgeY2=renderBox.y2-1+bboxThickness
 		const bboxX1=clamp(edgeX1,box.x1,edgeX2)
 		const bboxX2=clamp(edgeX1,box.x2,edgeX2)
 		const bboxY1=clamp(edgeY1,box.y1,edgeY2)
@@ -356,22 +377,22 @@ export default class ItemLayer extends Layer {
 			this.ctx.lineWidth=strokeWidth
 			this.ctx.strokeStyle=stroke
 			this.ctx.beginPath()
-			this.ctx.moveTo(x1-viewBox.x1,y1-viewBox.y1)
-			this.ctx.lineTo(x2-viewBox.x1,y2-viewBox.y1)
+			this.ctx.moveTo(x1-renderBox.x1,y1-renderBox.y1)
+			this.ctx.lineTo(x2-renderBox.x1,y2-renderBox.y1)
 			this.ctx.stroke()
 			this.ctx.restore()
 		}
 		const drawLineX=(lineX: number)=>{
 			if (
-				lineX>=viewBox.x1-bboxThickness/2 &&
-				lineX<viewBox.x2+bboxThickness/2 &&
+				lineX>=renderBox.x1-bboxThickness/2 &&
+				lineX<renderBox.x2+bboxThickness/2 &&
 				bboxY1<bboxY2
 			) drawLineXY(lineX,lineX,bboxY1,bboxY2)
 		}
 		const drawLineY=(lineY: number)=>{
 			if (
-				lineY>=viewBox.y1-bboxThickness/2 &&
-				lineY<viewBox.y2+bboxThickness/2 &&
+				lineY>=renderBox.y1-bboxThickness/2 &&
+				lineY<renderBox.y2+bboxThickness/2 &&
 				bboxX1<bboxX2
 			) drawLineXY(bboxX1,bboxX2,lineY,lineY)
 		}
@@ -381,7 +402,7 @@ export default class ItemLayer extends Layer {
 		drawLineY(box.y2-strokeWidth/2)
 	}
 	private renderNotes(
-		viewBox: RenderBox,
+		renderBox: RenderBox,
 		notes: {point:RenderPoint,uid:number}[],
 		highlighted: boolean,
 		getCellFillStyle: (globalMaxCellWeight:number,cellWeight:number,uid:number)=>string
@@ -390,8 +411,8 @@ export default class ItemLayer extends Layer {
 		for (const note of notes) {
 			this.ctx.save()
 			this.ctx.translate(
-				note.point.x-viewBox.x1,
-				note.point.y-viewBox.y1
+				note.point.x-renderBox.x1,
+				note.point.y-renderBox.y1
 			)
 			this.ctx.fillStyle=getCellFillStyle(1,0.7,note.uid)
 			this.traceNotePath(16,6)
