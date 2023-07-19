@@ -179,11 +179,11 @@ export default class MapWidget {
 		const resizeObserver=new ResizeObserver(()=>this.scheduleFrame())
 		resizeObserver.observe(this.$widget)
 		$root.addEventListener('osmChangesetViewer:itemHighlight',({detail:{type,id}})=>{
-			this.itemLayer.highlightItem(type,id)
+			this.itemLayer.highlightedItem={type,id}
 			this.scheduleFrame()
 		})
 		$root.addEventListener('osmChangesetViewer:itemUnhighlight',()=>{
-			this.itemLayer.unhighlightItem()
+			this.itemLayer.highlightedItem=undefined
 			this.scheduleFrame()
 		})
 		$root.addEventListener('osmChangesetViewer:itemPing',ev=>{
@@ -220,6 +220,7 @@ export default class MapWidget {
 		return [this.tileLayer,this.itemLayer]
 	}
 	reset(): void {
+		this.itemLayer.highlightedItem=undefined
 		this.itemLayer.removeAllItems()
 		this.scheduleFrame()
 	}
