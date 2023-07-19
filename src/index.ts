@@ -83,7 +83,7 @@ async function main() {
 	const more=new More()
 	const colorizer=new Colorizer()
 	const mapWidget=new MapWidget($root,colorizer,cx.server.tile)
-	const grid=new Grid(colorizer,cx,db,worker,more,
+	const grid=new Grid($root,colorizer,cx,db,worker,more,
 		userQueries=>{
 			net.serverSelector.pushHostlessHashInHistory(
 				getHashFromUserQueries(userQueries)

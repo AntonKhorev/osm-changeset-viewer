@@ -22,6 +22,7 @@ export default class Grid {
 	private head: GridHead
 	private body: GridBody
 	constructor(
+		$root: HTMLElement,
 		colorizer: Colorizer,
 		cx: Connection,
 		db: ChangesetViewerDBReader,
@@ -35,8 +36,7 @@ export default class Grid {
 		addItemToMapViewReceiver: (items: ItemMapViewInfo)=>void
 	) {
 		this.body=new GridBody(
-			colorizer,
-			cx.server,
+			$root,colorizer,cx.server,
 			db.getSingleItemReader(),
 			resetMapViewReceiver,
 			addItemToMapViewReceiver

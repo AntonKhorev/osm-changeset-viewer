@@ -13,7 +13,7 @@ import {clamp} from '../math'
 import type Colorizer from '../colorizer'
 import type {TileProvider} from '../net'
 import type {ItemMapViewInfo} from '../grid'
-import {bubbleEvent} from '../util/events'
+import {bubbleCustomEvent, bubbleEvent} from '../util/events'
 import {makeDiv, makeLink} from '../util/html'
 
 export default class MapWidget {
@@ -142,11 +142,15 @@ export default class MapWidget {
 			const viewSizeX=this.$widget.clientWidth
 			const stencil=this.stencils[ev.offsetX+ev.offsetY*viewSizeX]
 			const id=Number(stencil&STENCIL_ID_MASK)
+			let type: string
 			if (stencil&STENCIL_CHANGESET_MASK) {
-				console.log('click changeset',id)
+				type='changeset'
 			} else if (stencil&STENCIL_NOTE_MASK) {
-				console.log('click note',id)
+				type='note'
+			} else {
+				return
 			}
+			bubbleCustomEvent(this.$widget,'osmChangesetViewer:itemPing',{type,id})
 		}
 		new MapDragListener(this.$widget,()=>{
 			if (this.animation.type!='stopped') return false
@@ -182,7 +186,9 @@ export default class MapWidget {
 			this.itemLayer.unhighlightItem(type,id)
 			this.scheduleFrame()
 		})
-		$root.addEventListener('osmChangesetViewer:itemPing',({detail:{type,id}})=>{
+		$root.addEventListener('osmChangesetViewer:itemPing',ev=>{
+			if (ev.target==this.$widget) return
+			const {type,id}=ev.detail
 			const bbox=this.itemLayer.getItemBbox(type,id)
 			if (!bbox) return
 			this.fitBox(bbox)

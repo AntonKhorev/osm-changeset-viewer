@@ -55,6 +55,7 @@ export default class GridBody {
 	private checkboxHandler=new GridBodyCheckboxHandler(this.$gridBody)
 	private columnUids: (number|undefined)[] = []
 	constructor(
+		$root: HTMLElement,
 		private readonly colorizer: Colorizer,
 		private readonly server: ServerUrlGetter,
 		private readonly itemReader: SingleItemDBReader,
@@ -162,6 +163,17 @@ export default class GridBody {
 				this.highlightHoveredItemDescriptor(descriptor)
 			}
 		},true)
+		$root.addEventListener('osmChangesetViewer:itemPing',ev=>{
+			if (!(ev.target instanceof Node)) return
+			if (this.$gridBody.contains(ev.target)) return
+			const {type,id}=ev.detail
+			const selector=getItemDescriptorSelector({type,id})
+			for (const $item of this.$gridBody.querySelectorAll(selector)) {
+				if (!($item instanceof HTMLElement)) continue
+				$item.scrollIntoView({block:'nearest'})
+				this.highlightClickedItem($item)
+			}
+		})
 	}
 	get nColumns() {
 		return this.columnUids.length
