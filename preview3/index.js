@@ -5223,7 +5223,7 @@ class GridBody {
     get withAbbreviatedComments() {
         return !!this.collapsedItemOptions.get('comment')?.abbreviate;
     }
-    constructor(colorizer, server, itemReader, resetMapViewReceiver, addItemToMapViewReceiver) {
+    constructor($root, colorizer, server, itemReader, resetMapViewReceiver, addItemToMapViewReceiver) {
         this.colorizer = colorizer;
         this.server = server;
         this.itemReader = itemReader;
@@ -5304,7 +5304,7 @@ class GridBody {
                 if (!descriptor)
                     return;
                 bubbleItemEvent($item, 'osmChangesetViewer:itemHighlight');
-                this.highlightHoveredItemDescriptor(descriptor);
+                this.updateItemHighlightState(descriptor);
             }
             else if (ev.target.matches('button.comment-ref')) {
                 const $button = ev.target;
@@ -5316,10 +5316,10 @@ class GridBody {
                     return;
                 const order = Number($button.dataset.order);
                 if (Number.isInteger(order)) {
-                    this.highlightHoveredItemDescriptor(descriptor, getCommentItemDescriptor(descriptor, order));
+                    this.updateItemHighlightState(descriptor, getCommentItemDescriptor(descriptor, order) ?? undefined);
                 }
                 else {
-                    this.highlightHoveredItemDescriptor(descriptor);
+                    this.updateItemHighlightState(descriptor);
                 }
             }
             else if (ev.target.matches('button.ref')) {
@@ -5330,7 +5330,7 @@ class GridBody {
                 const descriptor = readItemDescriptor($item);
                 if (!descriptor)
                     return;
-                this.highlightHoveredItemDescriptor(descriptor, getMainItemDescriptor(descriptor));
+                this.updateItemHighlightState(descriptor, getMainItemDescriptor(descriptor) ?? undefined);
             }
         }, true);
         this.$gridBody.addEventListener('mouseleave', ev => {
@@ -5341,8 +5341,8 @@ class GridBody {
                 const descriptor = readItemDescriptor($item);
                 if (!descriptor)
                     return;
-                bubbleItemEvent($item, 'osmChangesetViewer:itemUnhighlight');
-                this.unhighlightHoveredItemDescriptor(descriptor);
+                bubbleEvent($item, 'osmChangesetViewer:itemUnhighlight');
+                this.updateItemHighlightState();
             }
             else if (ev.target.matches('button.ref, button.comment-ref')) {
                 const $button = ev.target;
@@ -5352,9 +5352,37 @@ class GridBody {
                 const descriptor = readItemDescriptor($item);
                 if (!descriptor)
                     return;
-                this.highlightHoveredItemDescriptor(descriptor);
+                this.updateItemHighlightState(descriptor);
             }
         }, true);
+        $root.addEventListener('osmChangesetViewer:itemHighlight', ev => {
+            if (!(ev.target instanceof Node))
+                return;
+            if (this.$gridBody.contains(ev.target))
+                return;
+            this.updateItemHighlightState(ev.detail);
+        });
+        $root.addEventListener('osmChangesetViewer:itemUnhighlight', ev => {
+            if (!(ev.target instanceof Node))
+                return;
+            if (this.$gridBody.contains(ev.target))
+                return;
+            this.updateItemHighlightState();
+        });
+        $root.addEventListener('osmChangesetViewer:itemPing', ev => {
+            if (!(ev.target instanceof Node))
+                return;
+            if (this.$gridBody.contains(ev.target))
+                return;
+            const { type, id } = ev.detail;
+            const selector = getItemDescriptorSelector({ type, id });
+            for (const $item of this.$gridBody.querySelectorAll(selector)) {
+                if (!($item instanceof HTMLElement))
+                    continue;
+                $item.scrollIntoView({ block: 'nearest' });
+                this.highlightClickedItem($item);
+            }
+        });
     }
     get nColumns() {
         return this.columnUids.length;
@@ -5366,6 +5394,7 @@ class GridBody {
         this.checkboxHandler.onItemSelect = callback;
     }
     setColumns(columnUids) {
+        this.highlightState = undefined;
         this.resetMapViewReceiver();
         this.columnUids = columnUids;
         this.$gridBody.replaceChildren();
@@ -5951,7 +5980,28 @@ class GridBody {
         }
         this.highlightClickedItem($targetItem);
     }
-    highlightHoveredItemDescriptor(descriptor, refDescriptor) {
+    updateItemHighlightState(descriptor, refDescriptor) {
+        if (this.highlightState && (!descriptor ||
+            !isEqualItemDescriptor(this.highlightState.descriptor, descriptor) ||
+            !refDescriptor && this.highlightState.refDescriptor ||
+            refDescriptor && !this.highlightState.refDescriptor ||
+            refDescriptor && this.highlightState.refDescriptor && !isEqualItemDescriptor(this.highlightState.refDescriptor, refDescriptor))) {
+            const selector = `.item:is(.highlighted-by-hover,.highlighted-by-hover-indirectly)`;
+            for (const $item of this.$gridBody.querySelectorAll(selector)) {
+                $item.classList.remove('highlighted-by-hover', 'highlighted-by-hover-indirectly');
+            }
+        }
+        if (!descriptor) {
+            this.highlightState = undefined;
+        }
+        else if (!refDescriptor) {
+            this.highlightState = { descriptor };
+        }
+        else {
+            this.highlightState = { descriptor, refDescriptor };
+        }
+        if (!descriptor)
+            return;
         let broadSelector = getBroadItemDescriptorSelector(descriptor);
         let narrowSelector = getItemDescriptorSelector(descriptor);
         if (refDescriptor) {
@@ -5963,11 +6013,6 @@ class GridBody {
         for (const $item of this.$gridBody.querySelectorAll(narrowSelector)) {
             $item.classList.remove('highlighted-by-hover-indirectly');
             $item.classList.add('highlighted-by-hover');
-        }
-    }
-    unhighlightHoveredItemDescriptor(descriptor) {
-        for (const $item of this.$gridBody.querySelectorAll(getBroadItemDescriptorSelector(descriptor))) {
-            $item.classList.remove('highlighted-by-hover', 'highlighted-by-hover-indirectly');
         }
     }
     highlightClickedItem($item) {
@@ -6048,12 +6093,12 @@ function union(sets) {
 }
 
 class Grid {
-    constructor(colorizer, cx, db, worker, more, sendUpdatedUserQueriesReceiver, resetMapViewReceiver, redrawMapViewReceiver, addItemToMapViewReceiver) {
+    constructor($root, colorizer, cx, db, worker, more, sendUpdatedUserQueriesReceiver, resetMapViewReceiver, redrawMapViewReceiver, addItemToMapViewReceiver) {
         this.$grid = makeElement('table')('grid')();
         this.addExpandedItems = false;
         this.onExternalControlsStateUpdate = () => { };
         this.$colgroup = makeElement('colgroup')()();
-        this.body = new GridBody(colorizer, cx.server, db.getSingleItemReader(), resetMapViewReceiver, addItemToMapViewReceiver);
+        this.body = new GridBody($root, colorizer, cx.server, db.getSingleItemReader(), resetMapViewReceiver, addItemToMapViewReceiver);
         this.head = new GridHead(colorizer, cx, db, worker, columnUids => this.setColumns(columnUids), (iShiftFrom, iShiftTo) => this.body.reorderColumns(iShiftFrom, iShiftTo), () => this.body.getColumnCheckboxStatuses(), (iColumn, isChecked) => this.body.triggerColumnCheckboxes(iColumn, isChecked), (uid) => {
             for (const $e of this.$grid.querySelectorAll(`[data-hue-uid="${uid}"]`)) {
                 if (!($e instanceof HTMLElement))
@@ -6908,28 +6953,30 @@ function makeFlingAnimation(dragStart, startTime, startX, startY, speedX, speedY
     }
 }
 
+const STENCIL_ID_MASK = 2n ** 60n - 1n;
+const STENCIL_CHANGESET_MASK = 2n ** 60n;
+const STENCIL_NOTE_MASK = 2n ** 61n;
 class Layer {
     constructor() {
         this.$layer = makeDiv('layer')();
     }
 }
 
-const TOP = 1;
-const RIGHT = 2;
-const BOTTOM = 4;
-const LEFT = 8;
 const bboxThreshold = 16;
 const bboxThickness = 2;
 const highlightStroke = 'blue';
 const highlightBoxThickness = 1;
 const subcellSizeXY = 2;
+const TOP = 1;
+const RIGHT = 2;
+const BOTTOM = 4;
+const LEFT = 8;
 class ItemLayer extends Layer {
     get cellSizeX() { return this.nSubcellsX * subcellSizeXY; }
     get cellSizeY() { return this.nSubcellsY * subcellSizeXY; }
     constructor() {
         super();
         this.items = new Map();
-        this.highlightedItems = new Set();
         this.subcells = new Map;
         this.nSubcellsX = 2;
         this.nSubcellsY = 1;
@@ -6941,7 +6988,6 @@ class ItemLayer extends Layer {
     }
     removeAllItems() {
         this.items.clear();
-        this.highlightedItems.clear();
         this.subcells.clear();
         this.nSubcellsX = 2;
         this.nSubcellsY = 1;
@@ -6999,84 +7045,90 @@ class ItemLayer extends Layer {
         }
         return { minLat, minLon, maxLat, maxLon };
     }
-    highlightItem(type, id) {
-        const key = type + ':' + id;
-        this.highlightedItems.add(key);
-    }
-    unhighlightItem(type, id) {
-        const key = type + ':' + id;
-        this.highlightedItems.delete(key);
+    isItemHighlighted(item) {
+        if (!this.highlightedItem)
+            return false;
+        return (this.highlightedItem.type == item.type &&
+            this.highlightedItem.id == item.id);
     }
     clear() {
         if (!this.ctx)
             return;
         this.ctx.clearRect(0, 0, this.$canvas.width, this.$canvas.height);
     }
-    render(viewBox, colorizer) {
+    render(renderBox, stencils, colorizer) {
         if (!this.ctx)
             return;
         const getCellFillStyle = (globalMaxCellWeight, cellWeight, uid) => `hsl(${colorizer.getHueForUid(uid)} 80% 50% / ${.5 + .4 * cellWeight / globalMaxCellWeight})`;
-        this.$canvas.width = viewBox.x2 - viewBox.x1;
-        this.$canvas.height = viewBox.y2 - viewBox.y1;
+        this.$canvas.width = renderBox.x2 - renderBox.x1;
+        this.$canvas.height = renderBox.y2 - renderBox.y1;
         this.clear();
-        const xyUV = calculateXYUV(viewBox.z);
-        const repeatU1 = Math.floor(viewBox.x1 * xyUV);
-        const repeatU2 = Math.floor(viewBox.x2 * xyUV);
+        const xyUV = calculateXYUV(renderBox.z);
+        const repeatU1 = Math.floor(renderBox.x1 * xyUV);
+        const repeatU2 = Math.floor(renderBox.x2 * xyUV);
         if (this.items.size <= 0 || this.subcells.size <= 0)
             return;
-        const viewCellX1 = Math.floor(viewBox.x1 / this.cellSizeX);
-        const viewCellX2 = Math.ceil(viewBox.x2 / this.cellSizeX);
-        const viewCellY1 = Math.floor(viewBox.y1 / this.cellSizeY);
-        const viewCellY2 = Math.ceil(viewBox.y2 / this.cellSizeY);
+        const viewCellX1 = Math.floor(renderBox.x1 / this.cellSizeX);
+        const viewCellX2 = Math.ceil(renderBox.x2 / this.cellSizeX);
+        const viewCellY1 = Math.floor(renderBox.y1 / this.cellSizeY);
+        const viewCellY2 = Math.ceil(renderBox.y2 / this.cellSizeY);
         const nCellsX = viewCellX2 - viewCellX1 + 1;
         const nCellsY = viewCellY2 - viewCellY1 + 1;
         if (nCellsX <= 0 || nCellsY <= 0)
             return;
         const cells = new Map([...this.subcells.keys()].map(uid => [uid, new Float32Array(nCellsX * nCellsY)]));
         const cellBorders = new Uint8Array(nCellsX * nCellsY);
+        const cellStencils = new BigUint64Array(nCellsX * nCellsY);
         const changesets = [];
         const highlightedChangesets = [];
         const notes = [];
         const highlightedNotes = [];
-        const noteIdsWithoutCellCollisions = this.findNoteIdsWithoutCellCollisions(viewBox.z, this.cellSizeX, this.cellSizeY);
+        const noteIdsWithoutCellCollisions = this.findNoteIdsWithoutCellCollisions(renderBox.z, this.cellSizeX, this.cellSizeY);
         let globalMaxCellWeight = 0;
-        for (const item of this.items.values()) {
-            const key = item.type + ':' + item.id;
-            const highlighted = this.highlightedItems.has(key);
+        const itemArray = [...this.items.values()];
+        for (let i = itemArray.length - 1; i >= 0; i--) {
+            const item = itemArray[i];
+            const highlighted = this.isItemHighlighted(item);
             const userCells = cells.get(item.uid);
             if (!userCells)
                 continue;
             const bbox = this.getItemBboxFromInfo(item);
             for (let repeatU = repeatU1; repeatU <= repeatU2; repeatU++) {
-                const uid = item.uid;
                 const itemX1 = (calculateU(bbox.minLon) + repeatU) / xyUV;
                 const itemX2 = (calculateU(bbox.maxLon) + repeatU) / xyUV;
                 const itemY1 = calculateV(bbox.maxLat) / xyUV;
                 const itemY2 = calculateV(bbox.minLat) / xyUV;
                 if (item.type == 'changeset' && itemX2 - itemX1 > bboxThreshold && itemY2 - itemY1 > bboxThreshold) {
                     const bbox = {
-                        x1: Math.round(itemX1), x2: Math.round(itemX2),
-                        y1: Math.round(itemY1), y2: Math.round(itemY2)
+                        x1: Math.round(itemX1) - renderBox.x1,
+                        x2: Math.round(itemX2) - renderBox.x1,
+                        y1: Math.round(itemY1) - renderBox.y1,
+                        y2: Math.round(itemY2) - renderBox.y1,
                     };
+                    const changeset = { bbox, uid: item.uid, id: item.id };
                     if (highlighted) {
-                        highlightedChangesets.push({ bbox, uid });
+                        highlightedChangesets.push(changeset);
                     }
                     else {
-                        changesets.push({ bbox, uid });
+                        changesets.push(changeset);
                     }
                 }
                 else if (item.type == 'note' && noteIdsWithoutCellCollisions.has(item.id)) {
                     const noteRenderMargin = 32;
-                    if (itemX1 >= viewBox.x1 - noteRenderMargin &&
-                        itemX2 <= viewBox.x2 + noteRenderMargin &&
-                        itemY1 >= viewBox.y1 - noteRenderMargin &&
-                        itemY2 <= viewBox.y2 + noteRenderMargin) {
-                        const point = { x: Math.round(itemX1), y: Math.round(itemY1) };
+                    if (itemX1 >= renderBox.x1 - noteRenderMargin &&
+                        itemX2 <= renderBox.x2 + noteRenderMargin &&
+                        itemY1 >= renderBox.y1 - noteRenderMargin &&
+                        itemY2 <= renderBox.y2 + noteRenderMargin) {
+                        const point = {
+                            x: Math.round(itemX1) - renderBox.x1,
+                            y: Math.round(itemY1) - renderBox.y1,
+                        };
+                        const note = { point, uid: item.uid, id: item.id };
                         if (highlighted) {
-                            highlightedNotes.push({ point, uid });
+                            highlightedNotes.push(note);
                         }
                         else {
-                            notes.push({ point, uid });
+                            notes.push(note);
                         }
                     }
                 }
@@ -7088,31 +7140,36 @@ class ItemLayer extends Layer {
                     const weightPerCell = item.weight / ((itemCellX2 - itemCellX1 + 1) * (itemCellY2 - itemCellY1 + 1));
                     for (let cy = Math.max(itemCellY1, viewCellY1); cy <= Math.min(itemCellY2, viewCellY2); cy++) {
                         for (let cx = Math.max(itemCellX1, viewCellX1); cx <= Math.min(itemCellX2, viewCellX2); cx++) {
-                            const idx = (cx - viewCellX1) + (cy - viewCellY1) * nCellsX;
-                            const cellWeight = userCells[idx] += weightPerCell;
+                            const iCellArray = (cx - viewCellX1) + (cy - viewCellY1) * nCellsX;
+                            const cellWeight = userCells[iCellArray] += weightPerCell;
                             if (globalMaxCellWeight < cellWeight)
                                 globalMaxCellWeight = cellWeight;
                             if (highlighted) {
                                 if (cy == itemCellY1)
-                                    cellBorders[idx] |= TOP;
+                                    cellBorders[iCellArray] |= TOP;
                                 if (cy == itemCellY2)
-                                    cellBorders[idx] |= BOTTOM;
+                                    cellBorders[iCellArray] |= BOTTOM;
                                 if (cx == itemCellX1)
-                                    cellBorders[idx] |= LEFT;
+                                    cellBorders[iCellArray] |= LEFT;
                                 if (cx == itemCellX2)
-                                    cellBorders[idx] |= RIGHT;
+                                    cellBorders[iCellArray] |= RIGHT;
+                            }
+                            if (highlighted || cellBorders[iCellArray] == 0) {
+                                cellStencils[iCellArray] =
+                                    (item.type == 'changeset' ? STENCIL_CHANGESET_MASK : STENCIL_NOTE_MASK) |
+                                        BigInt(item.id);
                             }
                         }
                     }
                 }
             }
         }
-        this.renderHeatmap(cells, globalMaxCellWeight, nCellsX, nCellsY, icx => (icx + viewCellX1) * this.cellSizeX - viewBox.x1, icy => (icy + viewCellY1) * this.cellSizeY - viewBox.y1, getCellFillStyle);
-        this.renderChangesets(viewBox, changesets, false, getCellFillStyle);
-        this.renderNotes(viewBox, notes, false, getCellFillStyle);
-        this.renderHeatmapHighlights(cellBorders, nCellsX, nCellsY, icx => (icx + viewCellX1) * this.cellSizeX - viewBox.x1, icy => (icy + viewCellY1) * this.cellSizeY - viewBox.y1);
-        this.renderChangesets(viewBox, highlightedChangesets, true, getCellFillStyle);
-        this.renderNotes(viewBox, highlightedNotes, true, getCellFillStyle);
+        this.renderHeatmap(cells, cellStencils, stencils, globalMaxCellWeight, nCellsX, nCellsY, icx => (icx + viewCellX1) * this.cellSizeX - renderBox.x1, icy => (icy + viewCellY1) * this.cellSizeY - renderBox.y1, getCellFillStyle);
+        this.renderChangesets(stencils, changesets, false, getCellFillStyle);
+        this.renderNotes(stencils, notes, false, getCellFillStyle);
+        this.renderHeatmapHighlightBorders(cellBorders, nCellsX, nCellsY, icx => (icx + viewCellX1) * this.cellSizeX - renderBox.x1, icy => (icy + viewCellY1) * this.cellSizeY - renderBox.y1);
+        this.renderChangesets(stencils, highlightedChangesets, true, getCellFillStyle);
+        this.renderNotes(stencils, highlightedNotes, true, getCellFillStyle);
     }
     findNoteIdsWithoutCellCollisions(z, cellSizeX, cellSizeY) {
         const cells = new Map();
@@ -7140,9 +7197,11 @@ class ItemLayer extends Layer {
         }
         return resultIds;
     }
-    renderHeatmap(cells, globalMaxCellWeight, nCellsX, nCellsY, getCellX, getCellY, getCellFillStyle) {
+    renderHeatmap(cells, cellStencils, stencils, globalMaxCellWeight, nCellsX, nCellsY, getCellX, getCellY, getCellFillStyle) {
         if (!this.ctx)
             return;
+        const canvasSizeX = this.$canvas.width;
+        const canvasSizeY = this.$canvas.height;
         for (let icy = 0; icy < nCellsY; icy++) {
             for (let icx = 0; icx < nCellsX; icx++) {
                 const cellX = getCellX(icx);
@@ -7167,6 +7226,7 @@ class ItemLayer extends Layer {
                         continue;
                     this.ctx.fillStyle = getCellFillStyle(globalMaxCellWeight, maxCellWeight, maxCellWeightUid);
                     this.ctx.fillRect(cellX, cellY, this.cellSizeX, this.cellSizeY);
+                    fillStencilRectangle(stencils, canvasSizeX, canvasSizeY, cellX, cellY, this.cellSizeX, this.cellSizeY, cellStencils[icx + icy * nCellsX]);
                 }
                 for (const [uid, [scx, scy]] of this.subcells) {
                     if (uid == maxCellWeightUid)
@@ -7186,7 +7246,7 @@ class ItemLayer extends Layer {
             }
         }
     }
-    renderHeatmapHighlights(cellBorders, nCellsX, nCellsY, getCellX, getCellY) {
+    renderHeatmapHighlightBorders(cellBorders, nCellsX, nCellsY, getCellX, getCellY) {
         if (!this.ctx)
             return;
         this.ctx.strokeStyle = highlightStroke;
@@ -7218,66 +7278,71 @@ class ItemLayer extends Layer {
             }
         }
     }
-    renderChangesets(viewBox, changesets, highlighted, getCellFillStyle) {
+    renderChangesets(stencils, changesets, highlighted, getCellFillStyle) {
         for (const changeset of changesets) {
-            this.renderBox(viewBox, getCellFillStyle(1, 0.7, changeset.uid), bboxThickness, // TODO use weight in stroke
-            changeset.bbox);
+            this.renderChangesetBox(stencils, changeset.bbox, getCellFillStyle(1, 0.7, changeset.uid), bboxThickness, // TODO use weight in stroke
+            STENCIL_CHANGESET_MASK | BigInt(changeset.id));
             if (highlighted)
-                this.renderBox(viewBox, highlightStroke, highlightBoxThickness, changeset.bbox);
+                this.renderChangesetBox(stencils, changeset.bbox, highlightStroke, highlightBoxThickness);
         }
     }
-    renderBox(viewBox, stroke, strokeWidth, box) {
-        const edgeX1 = viewBox.x1 - bboxThickness;
-        const edgeY1 = viewBox.y1 - bboxThickness;
-        const edgeX2 = viewBox.x2 - 1 + bboxThickness;
-        const edgeY2 = viewBox.y2 - 1 + bboxThickness;
+    renderChangesetBox(stencils, box, stroke, strokeWidth, stencil) {
+        if (!this.ctx)
+            return;
+        const canvasSizeX = this.$canvas.width;
+        const canvasSizeY = this.$canvas.height;
+        const edgeX1 = -bboxThickness;
+        const edgeY1 = -bboxThickness;
+        const edgeX2 = canvasSizeX - 1 + bboxThickness;
+        const edgeY2 = canvasSizeY - 1 + bboxThickness;
         const bboxX1 = clamp(edgeX1, box.x1, edgeX2);
         const bboxX2 = clamp(edgeX1, box.x2, edgeX2);
         const bboxY1 = clamp(edgeY1, box.y1, edgeY2);
         const bboxY2 = clamp(edgeY1, box.y2, edgeY2);
-        const drawLineXY = (x1, x2, y1, y2) => {
+        const drawRect = (x, y, w, h) => {
             if (!this.ctx)
                 return;
-            this.ctx.save();
-            this.ctx.lineWidth = strokeWidth;
-            this.ctx.strokeStyle = stroke;
-            this.ctx.beginPath();
-            this.ctx.moveTo(x1 - viewBox.x1, y1 - viewBox.y1);
-            this.ctx.lineTo(x2 - viewBox.x1, y2 - viewBox.y1);
-            this.ctx.stroke();
-            this.ctx.restore();
+            this.ctx.fillRect(x, y, w, h);
+            if (stencil != null)
+                fillStencilRectangle(stencils, canvasSizeX, canvasSizeY, x, y, w, h, stencil);
         };
-        const drawLineX = (lineX) => {
-            if (lineX >= viewBox.x1 - bboxThickness / 2 &&
-                lineX < viewBox.x2 + bboxThickness / 2 &&
-                bboxY1 < bboxY2)
-                drawLineXY(lineX, lineX, bboxY1, bboxY2);
+        const drawLineX = (x) => {
+            if (x >= -strokeWidth && x < canvasSizeX && bboxY1 < bboxY2) {
+                drawRect(x, bboxY1, strokeWidth, bboxY2 - bboxY1);
+            }
         };
-        const drawLineY = (lineY) => {
-            if (lineY >= viewBox.y1 - bboxThickness / 2 &&
-                lineY < viewBox.y2 + bboxThickness / 2 &&
-                bboxX1 < bboxX2)
-                drawLineXY(bboxX1, bboxX2, lineY, lineY);
+        const drawLineY = (y) => {
+            if (y >= -strokeWidth && y < canvasSizeY && bboxX1 < bboxX2) {
+                drawRect(bboxX1, y, bboxX2 - bboxX1, strokeWidth);
+            }
         };
-        drawLineX(box.x1 + strokeWidth / 2);
-        drawLineX(box.x2 - strokeWidth / 2);
-        drawLineY(box.y1 + strokeWidth / 2);
-        drawLineY(box.y2 - strokeWidth / 2);
+        this.ctx.save();
+        this.ctx.fillStyle = stroke;
+        drawLineX(box.x1);
+        drawLineX(box.x2 - strokeWidth);
+        drawLineY(box.y1);
+        drawLineY(box.y2 - strokeWidth);
+        this.ctx.restore();
     }
-    renderNotes(viewBox, notes, highlighted, getCellFillStyle) {
+    renderNotes(stencils, notes, highlighted, getCellFillStyle) {
         if (!this.ctx)
             return;
+        const canvasSizeX = this.$canvas.width;
+        const canvasSizeY = this.$canvas.height;
         for (const note of notes) {
+            const markerHeight = 16;
+            const markerRadius = 6;
             this.ctx.save();
-            this.ctx.translate(note.point.x - viewBox.x1, note.point.y - viewBox.y1);
+            this.ctx.translate(note.point.x, note.point.y);
             this.ctx.fillStyle = getCellFillStyle(1, 0.7, note.uid);
-            this.traceNotePath(16, 6);
+            this.traceNotePath(markerHeight, markerRadius);
             this.ctx.fill();
             if (highlighted) {
                 this.ctx.strokeStyle = highlightStroke;
                 this.ctx.stroke();
             }
             this.ctx.restore();
+            fillStencilRectangle(stencils, canvasSizeX, canvasSizeY, note.point.x - markerRadius, note.point.y - markerHeight, markerRadius * 2, markerHeight, STENCIL_NOTE_MASK | BigInt(note.id));
         }
     }
     traceNotePath(h, r) {
@@ -7294,6 +7359,17 @@ class ItemLayer extends Layer {
         this.ctx.closePath();
     }
 }
+function fillStencilRectangle(stencils, canvasSizeX, canvasSizeY, x, y, w, h, v) {
+    const x1 = Math.max(0, x);
+    const x2 = Math.min(canvasSizeX, x + w);
+    const y1 = Math.max(0, y);
+    const y2 = Math.min(canvasSizeY, y + h);
+    for (let ys = y1; ys < y2; ys++) {
+        for (let xs = x1; xs < x2; xs++) {
+            stencils[xs + ys * canvasSizeX] = v;
+        }
+    }
+}
 
 class TileLayer extends Layer {
     constructor(tileProvider) {
@@ -7303,22 +7379,22 @@ class TileLayer extends Layer {
     clear() {
         this.$layer.replaceChildren();
     }
-    render(viewBox) {
+    render(renderBox) {
         this.clear();
-        const viewTileX1 = Math.floor(viewBox.x1 / tileSizeXY);
-        const viewTileX2 = Math.ceil(viewBox.x2 / tileSizeXY);
-        const viewTileY1 = Math.floor(viewBox.y1 / tileSizeXY);
-        const viewTileY2 = Math.ceil(viewBox.y2 / tileSizeXY);
-        const tileMask = 2 ** viewBox.z - 1;
+        const viewTileX1 = Math.floor(renderBox.x1 / tileSizeXY);
+        const viewTileX2 = Math.ceil(renderBox.x2 / tileSizeXY);
+        const viewTileY1 = Math.floor(renderBox.y1 / tileSizeXY);
+        const viewTileY2 = Math.ceil(renderBox.y2 / tileSizeXY);
+        const tileMask = 2 ** renderBox.z - 1;
         for (let tileY = viewTileY1; tileY < viewTileY2; tileY++) {
             if (tileY < 0 || tileY > tileMask)
                 continue;
-            const tileOffsetY = tileY * tileSizeXY - viewBox.y1;
+            const tileOffsetY = tileY * tileSizeXY - renderBox.y1;
             for (let tileX = viewTileX1; tileX < viewTileX2; tileX++) {
-                const tileOffsetX = tileX * tileSizeXY - viewBox.x1;
+                const tileOffsetX = tileX * tileSizeXY - renderBox.x1;
                 const $img = makeElement('img')()();
                 $img.src = this.tileProvider.urlTemplate
-                    .replace('{z}', String(viewBox.z))
+                    .replace('{z}', String(renderBox.z))
                     .replace('{x}', String(tileX & tileMask))
                     .replace('{y}', String(tileY & tileMask));
                 $img.style.translate = `${tileOffsetX}px ${tileOffsetY}px`;
@@ -7357,12 +7433,14 @@ class MapDragListener extends DragListener {
         const dx = ev.clientX - grab.currentX;
         const dy = ev.clientY - grab.currentY;
         const dt = newTime - grab.currentTime;
-        const speedDecay = Math.exp(-speedDecayRate * dt);
-        grab.currentSpeedX = grab.currentSpeedX * speedDecay + dx / dt * (1 - speedDecay);
-        grab.currentSpeedY = grab.currentSpeedY * speedDecay + dy / dt * (1 - speedDecay);
-        grab.currentX = ev.clientX;
-        grab.currentY = ev.clientY;
-        grab.currentTime = newTime;
+        if (dt > 0) {
+            const speedDecay = Math.exp(-speedDecayRate * dt);
+            grab.currentSpeedX = grab.currentSpeedX * speedDecay + dx / dt * (1 - speedDecay);
+            grab.currentSpeedY = grab.currentSpeedY * speedDecay + dy / dt * (1 - speedDecay);
+            grab.currentX = ev.clientX;
+            grab.currentY = ev.clientY;
+            grab.currentTime = newTime;
+        }
         this.pan(grab.startX - ev.clientX, grab.startY - ev.clientY);
     }
     endDrag(ev, grab) {
@@ -7418,13 +7496,21 @@ class MapWidget {
                 }
                 this.removeLayerTransforms();
                 if (!renderViewBox) {
+                    this.stencils = undefined;
                     for (const layer of this.layers) {
                         layer.clear();
                     }
                 }
                 else {
+                    const stencilLength = (renderViewBox.x2 - renderViewBox.x1) * (renderViewBox.y2 - renderViewBox.y1);
+                    if (!this.stencils || this.stencils.length != stencilLength) {
+                        this.stencils = new BigUint64Array(stencilLength);
+                    }
+                    else {
+                        this.stencils.fill(0n);
+                    }
                     for (const layer of this.layers) {
-                        layer.render(renderViewBox, colorizer);
+                        layer.render(renderViewBox, this.stencils, colorizer);
                     }
                 }
             }
@@ -7433,7 +7519,7 @@ class MapWidget {
             }
         };
         this.$widget.onwheel = ev => {
-            if (this.animation.type == 'zooming')
+            if (this.animation.type != 'stopped')
                 return;
             const viewSizeX = this.$widget.clientWidth;
             const viewSizeY = this.$widget.clientHeight;
@@ -7463,6 +7549,48 @@ class MapWidget {
             };
             this.scheduleFrame();
         };
+        const readStencilItem = (x, y) => {
+            if (!this.stencils)
+                return undefined;
+            const viewSizeX = this.$widget.clientWidth;
+            const stencil = this.stencils[x + y * viewSizeX];
+            const id = Number(stencil & STENCIL_ID_MASK);
+            if (stencil & STENCIL_CHANGESET_MASK) {
+                return { type: 'changeset', id };
+            }
+            else if (stencil & STENCIL_NOTE_MASK) {
+                return { type: 'note', id };
+            }
+            return undefined;
+        };
+        this.$widget.onmousemove = ev => {
+            if (this.animation.type != 'stopped')
+                return;
+            if (ev.target != this.$widget)
+                return;
+            const stencilItem = readStencilItem(ev.offsetX, ev.offsetY);
+            this.$widget.style.cursor = stencilItem ? 'pointer' : 'grab';
+            if (!stencilItem && this.itemLayer.highlightedItem != null) {
+                this.itemLayer.highlightedItem = undefined;
+                bubbleEvent(this.$widget, 'osmChangesetViewer:itemUnhighlight');
+                this.scheduleFrame();
+            }
+            else if (stencilItem && !this.itemLayer.isItemHighlighted(stencilItem)) {
+                this.itemLayer.highlightedItem = stencilItem;
+                bubbleCustomEvent(this.$widget, 'osmChangesetViewer:itemHighlight', stencilItem);
+                this.scheduleFrame();
+            }
+        };
+        this.$widget.onclick = ev => {
+            if (this.animation.type != 'stopped')
+                return;
+            if (ev.target != this.$widget)
+                return;
+            const stencilItem = readStencilItem(ev.offsetX, ev.offsetY);
+            if (!stencilItem)
+                return;
+            bubbleCustomEvent(this.$widget, 'osmChangesetViewer:itemPing', stencilItem);
+        };
         new MapDragListener(this.$widget, () => {
             if (this.animation.type != 'stopped')
                 return false;
@@ -7487,15 +7615,23 @@ class MapWidget {
         }).install();
         const resizeObserver = new ResizeObserver(() => this.scheduleFrame());
         resizeObserver.observe(this.$widget);
-        $root.addEventListener('osmChangesetViewer:itemHighlight', ({ detail: { type, id } }) => {
-            this.itemLayer.highlightItem(type, id);
+        $root.addEventListener('osmChangesetViewer:itemHighlight', ev => {
+            if (ev.target == this.$widget)
+                return;
+            const { type, id } = ev.detail;
+            this.itemLayer.highlightedItem = { type, id };
             this.scheduleFrame();
         });
-        $root.addEventListener('osmChangesetViewer:itemUnhighlight', ({ detail: { type, id } }) => {
-            this.itemLayer.unhighlightItem(type, id);
+        $root.addEventListener('osmChangesetViewer:itemUnhighlight', ev => {
+            if (ev.target == this.$widget)
+                return;
+            this.itemLayer.highlightedItem = undefined;
             this.scheduleFrame();
         });
-        $root.addEventListener('osmChangesetViewer:itemPing', ({ detail: { type, id } }) => {
+        $root.addEventListener('osmChangesetViewer:itemPing', ev => {
+            if (ev.target == this.$widget)
+                return;
+            const { type, id } = ev.detail;
             const bbox = this.itemLayer.getItemBbox(type, id);
             if (!bbox)
                 return;
@@ -7530,6 +7666,7 @@ class MapWidget {
         return [this.tileLayer, this.itemLayer];
     }
     reset() {
+        this.itemLayer.highlightedItem = undefined;
         this.itemLayer.removeAllItems();
         this.scheduleFrame();
     }
@@ -7651,7 +7788,7 @@ async function main() {
     const more = new More();
     const colorizer = new Colorizer();
     const mapWidget = new MapWidget($root, colorizer, cx.server.tile);
-    const grid = new Grid(colorizer, cx, db, worker, more, userQueries => {
+    const grid = new Grid($root, colorizer, cx, db, worker, more, userQueries => {
         net.serverSelector.pushHostlessHashInHistory(getHashFromUserQueries(userQueries));
     }, () => {
         mapWidget.reset();
