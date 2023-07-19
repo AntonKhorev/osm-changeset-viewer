@@ -147,8 +147,10 @@ export default class ItemLayer extends Layer {
 				const itemY2= calculateV(bbox.minLat)/xyUV
 				if (item.type=='changeset' && itemX2-itemX1>bboxThreshold && itemY2-itemY1>bboxThreshold) {
 					const bbox={
-						x1:Math.round(itemX1), x2:Math.round(itemX2),
-						y1:Math.round(itemY1), y2:Math.round(itemY2)
+						x1: Math.round(itemX1)-renderBox.x1,
+						x2: Math.round(itemX2)-renderBox.x1,
+						y1: Math.round(itemY1)-renderBox.y1,
+						y2: Math.round(itemY2)-renderBox.y1,
 					}
 					if (highlighted) {
 						highlightedChangesets.push({bbox,uid})
@@ -163,7 +165,10 @@ export default class ItemLayer extends Layer {
 						itemY1>=renderBox.y1-noteRenderMargin &&
 						itemY2<=renderBox.y2+noteRenderMargin
 					) {
-						const point={x:Math.round(itemX1), y:Math.round(itemY1)}
+						const point={
+							x: Math.round(itemX1)-renderBox.x1,
+							y: Math.round(itemY1)-renderBox.y1,
+						}
 						if (highlighted) {
 							highlightedNotes.push({point,uid})
 						} else {
@@ -204,16 +209,16 @@ export default class ItemLayer extends Layer {
 			icy=>(icy+viewCellY1)*this.cellSizeY-renderBox.y1,
 			getCellFillStyle
 		)
-		this.renderChangesets(renderBox,changesets,false,getCellFillStyle)
-		this.renderNotes(renderBox,notes,false,getCellFillStyle)
+		this.renderChangesets(changesets,false,getCellFillStyle)
+		this.renderNotes(notes,false,getCellFillStyle)
 		this.renderHeatmapHighlightBorders(
 			cellBorders,
 			nCellsX,nCellsY,
 			icx=>(icx+viewCellX1)*this.cellSizeX-renderBox.x1,
 			icy=>(icy+viewCellY1)*this.cellSizeY-renderBox.y1
 		)
-		this.renderChangesets(renderBox,highlightedChangesets,true,getCellFillStyle)
-		this.renderNotes(renderBox,highlightedNotes,true,getCellFillStyle)
+		this.renderChangesets(highlightedChangesets,true,getCellFillStyle)
+		this.renderNotes(highlightedNotes,true,getCellFillStyle)
 	}
 	private findNoteIdsWithoutCellCollisions(z: number, cellSizeX: number, cellSizeY: number): Set<number> {
 		const cells=new Map<string,number|null>()
@@ -332,20 +337,17 @@ export default class ItemLayer extends Layer {
 		}
 	}
 	private renderChangesets(
-		renderBox: RenderBox,
 		changesets: {bbox:RenderBox,uid:number}[],
 		highlighted: boolean,
 		getCellFillStyle: (globalMaxCellWeight:number,cellWeight:number,uid:number)=>string
 	): void {
 		for (const changeset of changesets) {
 			this.renderChangesetBox(
-				renderBox,
 				getCellFillStyle(1,0.7,changeset.uid),
 				bboxThickness, // TODO use weight in stroke
 				changeset.bbox
 			)
 			if (highlighted) this.renderChangesetBox(
-				renderBox,
 				highlightStroke,
 				highlightBoxThickness,
 				changeset.bbox
@@ -353,14 +355,15 @@ export default class ItemLayer extends Layer {
 		}
 	}
 	private renderChangesetBox(
-		renderBox: RenderBox,
 		stroke: string, strokeWidth: number,
 		box: RenderBox
 	): void {
-		const edgeX1=renderBox.x1-bboxThickness
-		const edgeY1=renderBox.y1-bboxThickness
-		const edgeX2=renderBox.x2-1+bboxThickness
-		const edgeY2=renderBox.y2-1+bboxThickness
+		const canvasSizeX=this.$canvas.width
+		const canvasSizeY=this.$canvas.height
+		const edgeX1=-bboxThickness
+		const edgeY1=-bboxThickness
+		const edgeX2=canvasSizeX-1+bboxThickness
+		const edgeY2=canvasSizeY-1+bboxThickness
 		const bboxX1=clamp(edgeX1,box.x1,edgeX2)
 		const bboxX2=clamp(edgeX1,box.x2,edgeX2)
 		const bboxY1=clamp(edgeY1,box.y1,edgeY2)
@@ -374,22 +377,22 @@ export default class ItemLayer extends Layer {
 			this.ctx.lineWidth=strokeWidth
 			this.ctx.strokeStyle=stroke
 			this.ctx.beginPath()
-			this.ctx.moveTo(x1-renderBox.x1,y1-renderBox.y1)
-			this.ctx.lineTo(x2-renderBox.x1,y2-renderBox.y1)
+			this.ctx.moveTo(x1,y1)
+			this.ctx.lineTo(x2,y2)
 			this.ctx.stroke()
 			this.ctx.restore()
 		}
 		const drawLineX=(lineX: number)=>{
 			if (
-				lineX>=renderBox.x1-bboxThickness/2 &&
-				lineX<renderBox.x2+bboxThickness/2 &&
+				lineX>=-bboxThickness/2 &&
+				lineX<canvasSizeX+bboxThickness/2 &&
 				bboxY1<bboxY2
 			) drawLineXY(lineX,lineX,bboxY1,bboxY2)
 		}
 		const drawLineY=(lineY: number)=>{
 			if (
-				lineY>=renderBox.y1-bboxThickness/2 &&
-				lineY<renderBox.y2+bboxThickness/2 &&
+				lineY>=-bboxThickness/2 &&
+				lineY<canvasSizeY+bboxThickness/2 &&
 				bboxX1<bboxX2
 			) drawLineXY(bboxX1,bboxX2,lineY,lineY)
 		}
@@ -399,7 +402,6 @@ export default class ItemLayer extends Layer {
 		drawLineY(box.y2-strokeWidth/2)
 	}
 	private renderNotes(
-		renderBox: RenderBox,
 		notes: {point:RenderPoint,uid:number}[],
 		highlighted: boolean,
 		getCellFillStyle: (globalMaxCellWeight:number,cellWeight:number,uid:number)=>string
@@ -408,8 +410,8 @@ export default class ItemLayer extends Layer {
 		for (const note of notes) {
 			this.ctx.save()
 			this.ctx.translate(
-				note.point.x-renderBox.x1,
-				note.point.y-renderBox.y1
+				note.point.x,
+				note.point.y
 			)
 			this.ctx.fillStyle=getCellFillStyle(1,0.7,note.uid)
 			this.traceNotePath(16,6)
