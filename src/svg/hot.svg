@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -5 16 10">
+<!-- simplified version based on https://github.com/hotosm/tasking-manager/blob/develop/frontend/src/assets/img/hot-logo-square.svg -->
+<path d="M-8,-1 h3 l-2,-2 h3 l-2,-2 h9 l5,6 h-3 l2,2 h-3 l2,2 h-9 Z" fill="#d73f3f" />
+<circle r="3.5" fill="#fff" />
+</svg>

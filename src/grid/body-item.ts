@@ -362,7 +362,11 @@ export function writeExpandedItemFlow(
 		if (!match) return null
 		const [hotTag,hotId]=match
 		const hotUrl=e`https://tasks.hotosm.org/projects/${hotId}`
-		return makeBadge(hotTag)([`hot `,makeLink(hotId,hotUrl)])
+		const $a=makeLink(``,hotUrl)
+		$a.innerHTML=`<svg width="16" height="10"><use href="#hot" /></svg>`
+		$a.append(` ${hotId}`)
+		$a.title=hotTag
+		return makeBadge()([$a])
 	}
 	const rewriteWithChangesetLinks=(id: number)=>{
 		rewriteWithLinks(id,
