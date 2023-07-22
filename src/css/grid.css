@@ -670,6 +670,14 @@
 .ui .grid tbody .item .balloon .flow .badge .content button:not([disabled]).comment-ref:hover .balloon-ref {
 	fill: var(--hover-color);
 }
+.ui .grid tbody .item .balloon .flow .badge a.hot {
+	text-decoration: none;
+}
+.ui .grid tbody .item .balloon .flow .badge a.hot span {
+	text-decoration: underline;
+	font-size: 10px;
+	vertical-align: 2px;
+}
 .ui .grid tbody .item .balloon .flow .editor {
 	color: unset;
 }

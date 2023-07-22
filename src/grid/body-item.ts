@@ -361,10 +361,10 @@ export function writeExpandedItemFlow(
 		const match=comment.match(/#hotosm-project-(\d+)/)
 		if (!match) return null
 		const [hotTag,hotId]=match
-		const hotUrl=e`https://tasks.hotosm.org/projects/${hotId}`
-		const $a=makeLink(``,hotUrl)
+		const $a=makeElement('a')('hot')()
+		$a.href=e`https://tasks.hotosm.org/projects/${hotId}`
 		$a.innerHTML=`<svg width="16" height="10"><use href="#hot" /></svg>`
-		$a.append(` ${hotId}`)
+		$a.append(` `,makeElement('span')()(hotId))
 		$a.title=hotTag
 		return makeBadge()([$a])
 	}
