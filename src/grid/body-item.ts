@@ -357,6 +357,13 @@ export function writeExpandedItemFlow(
 			optionalize('api',makeBadge()([$apiLink]))
 		)
 	}
+	const makeHotBadgeFromComment=(comment: string)=>{
+		const match=comment.match(/#hotosm-project-(\d+)/)
+		if (!match) return null
+		const [hotTag,hotId]=match
+		const hotUrl=e`https://tasks.hotosm.org/projects/${hotId}`
+		return makeBadge(hotTag)([`hot `,makeLink(hotId,hotUrl)])
+	}
 	const rewriteWithChangesetLinks=(id: number)=>{
 		rewriteWithLinks(id,
 			server.web.getUrl(e`changeset/${id}`),
@@ -383,7 +390,17 @@ export function writeExpandedItemFlow(
 		rewriteWithChangesetLinks(item.id)
 		$flow.append(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
-			` `,optionalize('source',makeSourceBadge(item.tags.source)),
+			` `,optionalize('source',makeSourceBadge(item.tags.source))
+		)
+		{
+			const $hotBadge=makeHotBadgeFromComment(item.tags?.comment)
+			if ($hotBadge) {
+				$flow.append(
+					` `,optionalize('hot',$hotBadge)
+				)
+			}
+		}
+		$flow.append(
 			` `,optionalize('changes',makeChangesBadge(item.changes.count)),
 			` `,optionalize('position',makeBboxBadge(item.bbox)),
 			` `,optionalize('refs',makeAllCommentsBadge(item.uid,item.commentRefs))
