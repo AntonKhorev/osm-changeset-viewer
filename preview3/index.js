@@ -2930,6 +2930,18 @@ function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernam
         $apiLink.classList.add('listened');
         $flow.replaceChildren(optionalize('id', $mainLink), ` `, optionalize('api', makeBadge()([$apiLink])));
     };
+    const makeHotBadgeFromComment = (comment) => {
+        const match = comment.match(/#hotosm-project-(\d+)/);
+        if (!match)
+            return null;
+        const [hotTag, hotId] = match;
+        const $a = makeElement('a')('hot')();
+        $a.href = e$2 `https://tasks.hotosm.org/projects/${hotId}`;
+        $a.innerHTML = `<svg width="16" height="10"><use href="#hot" /></svg>`;
+        $a.append(` `, makeElement('span')()(hotId));
+        $a.title = hotTag;
+        return makeBadge()([$a]);
+    };
     const rewriteWithChangesetLinks = (id) => {
         rewriteWithLinks(id, server.web.getUrl(e$2 `changeset/${id}`), server.api.getUrl(e$2 `changeset/${id}.json?include_discussion=true`));
     };
@@ -2946,7 +2958,14 @@ function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernam
     else if (type == 'changeset' || type == 'changesetClose') {
         date = type == 'changesetClose' ? item.closedAt : item.createdAt;
         rewriteWithChangesetLinks(item.id);
-        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)), ` `, optionalize('changes', makeChangesBadge(item.changes.count)), ` `, optionalize('position', makeBboxBadge(item.bbox)), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
+        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)));
+        {
+            const $hotBadge = makeHotBadgeFromComment(item.tags?.comment);
+            if ($hotBadge) {
+                $flow.append(` `, optionalize('hot', $hotBadge));
+            }
+        }
+        $flow.append(` `, optionalize('changes', makeChangesBadge(item.changes.count)), ` `, optionalize('position', makeBboxBadge(item.bbox)), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
         if (item.tags?.comment) {
             $flow.append(` `, optionalize('comment', makeElement('span')()(item.tags?.comment ?? '')));
         }
@@ -5187,6 +5206,7 @@ class ItemOptions {
             new ItemOption(isExpanded, 'api', makeItemTypes('CcNnU '), 'api'),
             new ItemOption(isExpanded, 'editor', makeItemTypes('C N   '), '🛠️'),
             new ItemOption(isExpanded, 'source', makeItemTypes('C     '), '[]'),
+            new ItemOption(isExpanded, 'hot', makeItemTypes('Cc    '), 'hot'),
             new ItemOption(isExpanded, 'position', makeItemTypes('C N   '), '⌖'),
             new ItemOption(isExpanded, 'changes', makeItemTypes('C     '), '📝', 'changes count'),
             new ItemOption(isExpanded, 'refs', makeItemTypes('CcNn  '), '💬', 'comment references'),
