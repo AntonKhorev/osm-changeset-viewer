@@ -2190,7 +2190,7 @@ const editorData = [
         { type: 'text', name: 'Level0' },
     ], [
         'Map builder',
-        'https://www.bing.com/mapbuilder/',
+        'https://wiki.openstreetmap.org/wiki/Map_builder',
         { type: 'svg', id: 'mapbuilder' },
     ], [
         'MapComplete',
