@@ -396,7 +396,7 @@ export function writeExpandedItemFlow(
 			` `,optionalize('editor',makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)),
 			` `,optionalize('source',makeSourceBadge(item.tags.source))
 		)
-		{
+		if (item.tags?.comment) {
 			const $hotBadge=makeHotBadgeFromComment(item.tags?.comment)
 			if ($hotBadge) {
 				$flow.append(
