@@ -2959,7 +2959,7 @@ function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernam
         date = type == 'changesetClose' ? item.closedAt : item.createdAt;
         rewriteWithChangesetLinks(item.id);
         $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)));
-        {
+        if (item.tags?.comment) {
             const $hotBadge = makeHotBadgeFromComment(item.tags?.comment);
             if ($hotBadge) {
                 $flow.append(` `, optionalize('hot', $hotBadge));
