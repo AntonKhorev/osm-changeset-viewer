@@ -3,6 +3,7 @@ import editorData from './editors'
 import makeProjectBadgeContentFromComment from './projects'
 import type ItemOptions from './item-options'
 import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText, writeHueAttributes} from './info'
+import {makeSvgOfUser, makeSvgOfNote, makeSvgOfNewUser, makeSvgOfBalloonRef, makeSvgOfComment} from './svg'
 import type Colorizer from '../colorizer'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
@@ -94,12 +95,12 @@ export function makeItemShell(
 				$item.classList.add(item.action)
 			}
 			$button.title=`${item.action} note ${id}`
-			commentIconSvg=getSvgOfCommentIcon('note',item.action)
+			commentIconSvg=makeSvgOfComment('note',item.action)
 		} else {
 			$item.classList.add('for-changeset')
 			$item.classList.add('passive')
 			$button.title=`comment for changeset ${id}`
-			commentIconSvg=getSvgOfCommentIcon('changeset')
+			commentIconSvg=makeSvgOfComment('changeset')
 		}
 		writeHueAttributes(colorizer,$icon,item.itemUid)
 		writeHueAttributes(colorizer,$balloon,item.uid)
@@ -123,7 +124,7 @@ export function makeItemShell(
 			} else {
 				$senderIcon.title=`anonymous`
 			}
-			$senderIcon.innerHTML=getSvgOfSenderUserIcon()+(item.text
+			$senderIcon.innerHTML=makeSvgOfUser()+(item.text
 				? getSvgOfCommentTip(1)
 				: getSvgOfMuteCommentTip(1)
 			)
@@ -230,38 +231,12 @@ export function writeExpandedItemFlow(
 		}
 		return null
 	}
-	const getBalloonRefHtml=(incoming=false,mute=false,action?:string)=>{
-		const flip=incoming?` transform="scale(-1,1)"`:``
-		const balloonColors=`fill="transparent" stroke="var(--icon-frame-color)"`
-		let balloon:string
-		if (mute) {
-			balloon=`<g${flip} ${balloonColors}>`+
-				`<circle class="balloon-ref" r="6" />`+
-				`<circle class="balloon-ref" r="2" cx="-6" cy="4" />`+
-			`</g>`
-		} else {
-			const balloonPathData=`M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`
-			balloon=`<path class="balloon-ref"${flip} d="${balloonPathData}" ${balloonColors} />`
-		}
-		let balloonContents=(
-			`<circle r=".7" fill="currentColor" cx="-3" />`+
-			`<circle r=".7" fill="currentColor" />`+
-			`<circle r=".7" fill="currentColor" cx="3" />`
-		)
-		const actionGlyph=getSvgOfActionGlyph(action)
-		if (actionGlyph!=null) {
-			balloonContents=`<g stroke="currentColor" stroke-width="2">${actionGlyph}</g>`
-		}
-		return `<svg width="15" height="13" viewBox="${incoming?-6.5:-8.5} -6.5 15 13">`+
-			balloon+balloonContents+
-		`</svg>`
-	}
 	const makeCommentRefButton=(uid: number, order: number, commentRef: CommentRef)=>{
 		const $button=makeElement('button')('comment-ref')()
 		$button.dataset.order=String(order)
 		$button.title=`comment ${order+1}`
 		writeHueAttributes(colorizer,$button,commentRef.uid)
-		$button.innerHTML=getBalloonRefHtml(commentRef.uid!=uid,commentRef.mute,commentRef.action)
+		$button.innerHTML=makeSvgOfBalloonRef(commentRef.uid!=uid,commentRef.mute,commentRef.action)
 		return $button
 	}
 	const makeAllCommentsBadge=(uid: number, commentRefs: CommentRef[])=>{
@@ -283,7 +258,7 @@ export function writeExpandedItemFlow(
 		} else {
 			const $button=makeElement('button')('comment-ref')()
 			$button.disabled=true
-			$button.innerHTML=getBalloonRefHtml()
+			$button.innerHTML=makeSvgOfBalloonRef()
 			return makeBadge(`no comments`)([$button],true)
 		}
 	}
@@ -299,7 +274,7 @@ export function writeExpandedItemFlow(
 			{
 				const $currentCommentIcon=makeElement('span')('marker')()
 				writeHueAttributes(colorizer,$currentCommentIcon,uid)
-				const svg=getSvgOfCommentIcon(itemType)
+				const svg=makeSvgOfComment(itemType)
 				const narrowSvg=svg.replace(`width="8"`,`width="4"`)
 				$currentCommentIcon.innerHTML=narrowSvg
 				content.push($currentCommentIcon)
@@ -318,7 +293,7 @@ export function writeExpandedItemFlow(
 		} else {
 			const $button=makeElement('button')('comment-ref')()
 			$button.disabled=true
-			$button.innerHTML=getBalloonRefHtml()
+			$button.innerHTML=makeSvgOfBalloonRef()
 			return makeBadge(`no comments`)([$button],true)
 		}
 	}
@@ -448,7 +423,7 @@ export function writeExpandedItemFlow(
 		if (item.uid!=item.itemUid) {
 			const $senderIcon=makeElement('span')('icon')()
 			$senderIcon.classList.add('sender')
-			$senderIcon.innerHTML=getSvgOfSenderUserIcon()+(item.text
+			$senderIcon.innerHTML=makeSvgOfUser()+(item.text
 				? getSvgOfCommentTip(1)
 				: ``
 			)
@@ -503,16 +478,7 @@ export function makeCollectionIcon(): HTMLElement {
 
 function writeNewUserIcon($icon: HTMLElement, id: number|undefined): void {
 	$icon.title=id!=null?`user ${id}`:`anonymous user`
-	$icon.innerHTML=makeCenteredSvg(10,
-		`<path d="${computeNewOutlinePath(9,7,10)}" fill="canvas" stroke="currentColor" stroke-width="2" />`+
-		makeUserSvgElements()
-	)
-}
-
-function getSvgOfSenderUserIcon(): string {
-	return makeCenteredSvg(8,
-		makeUserSvgElements()
-	)
+	$icon.innerHTML=makeSvgOfNewUser()
 }
 
 function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, isEmpty: boolean, size: number): void {
@@ -543,46 +509,8 @@ function writeNoteIcon($icon: HTMLElement, id: number): void {
 	const $anchor=makeElement('a')()()
 	$anchor.tabIndex=0
 	$anchor.title=`note ${id}`
-	const s=3
-	$anchor.innerHTML=makeCenteredSvg(10,
-		`<path d="${computeNewOutlinePath(9.5,8,10)}" fill="none" stroke-width="1" />`+
-		`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" />`+
-		`<line x1="${-s}" x2="${s}" />`+
-		`<line y1="${-s}" y2="${s}" />`,
-	`stroke="currentColor" stroke-width="2"`)
+	$anchor.innerHTML=makeSvgOfNote()
 	$icon.append($anchor)
-}
-
-function getSvgOfCommentIcon(itemType: 'note'|'changeset', action?: string): string {
-	if (itemType=='note') {
-		const actionGlyph=getSvgOfActionGlyph(action)
-		if (actionGlyph!=null) {
-			return makeCenteredSvg(10,
-				`<path d="${computeMarkerOutlinePath(16,6)}" fill="canvas" />`+
-				actionGlyph,
-			`stroke="currentColor" stroke-width="2"`)
-		} else {
-			const r=4
-			return makeCenteredSvg(r,`<circle r=${r} fill="currentColor" />`)
-		}
-	} else {
-		const r=4
-		return makeCenteredSvg(r,`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" fill="currentColor" />`)
-	}
-}
-
-function getSvgOfActionGlyph(action?: string): string|undefined {
-	const s=2.5
-	if (action=='closed') {
-		return `<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" />`
-	} else if (action=='reopened') {
-		return (
-			`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" />`+
-			`<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" />`
-		)
-	} else if (action=='hidden') {
-		return ``
-	}
 }
 
 function getSvgOfCommentTip(side: -1|1): string {
@@ -596,33 +524,4 @@ function getSvgOfMuteCommentTip(side: -1|1): string {
 		`<circle cx="${-10.5*side}" cy="-3.5" r="4" class="balloon-part" />`+
 		`<circle cx="${-5.5*side}" cy="1.5" r="2" class="balloon-part" />`+
 	`</svg>`
-}
-
-function computeMarkerOutlinePath(h: number, r: number): string {
-	const rp=h-r
-	const y=r**2/rp
-	const x=Math.sqrt(r**2-y**2)
-	const xf=x.toFixed(2)
-	const yf=y.toFixed(2)
-	return `M0,${rp} L-${xf},${yf} A${r},${r} 0 1 1 ${xf},${yf} Z`
-}
-
-function computeNewOutlinePath(R: number, r: number, n: number): string {
-	let outline=``
-	for (let i=0;i<n*2;i++) {
-		const a=Math.PI*i/n
-		const s=i&1?r:R
-		outline+=(i?'L':'M')+
-			(s*Math.cos(a)).toFixed(2)+','+
-			(s*Math.sin(a)).toFixed(2)
-	}
-	outline+='Z'
-	return outline
-}
-
-export function makeUserSvgElements(): string {
-	return (
-		`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />`+
-		`<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`
-	)
 }

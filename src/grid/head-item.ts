@@ -3,8 +3,7 @@ import type {UserScanDbRecord, UserDbInfo} from '../db'
 import type Colorizer from '../colorizer'
 import {makeHuePicker, updateHuePicker} from './hue-picker'
 import decorateUserName from './user-name-decorator'
-import {makeUserSvgElements} from './body-item'
-import {makeCenteredSvg} from '../widgets'
+import {makeSvgOfUser, makeSvgOfAllUsers} from './svg'
 import {makeDateOutput} from '../date'
 import {makeElement, makeDiv, makeLabel, makeLink} from '../util/html'
 import {ul} from '../util/html-shortcuts'
@@ -19,11 +18,7 @@ export type UserInfo = {
 export function makeAllTab(): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`all user items`
-	$icon.innerHTML=makeCenteredSvg(8,
-		`<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" />`+
-		`<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(60)" />`+
-		`<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(-60)" />`
-	)
+	$icon.innerHTML=makeSvgOfAllUsers()
 	return makeDiv('tab')($icon)
 }
 
@@ -33,7 +28,7 @@ export function makeUserTab(
 ): HTMLElement {
 	const $icon=makeElement('span')('icon')()
 	$icon.title=`user`
-	$icon.innerHTML=makeCenteredSvg(8,makeUserSvgElements())
+	$icon.innerHTML=makeSvgOfUser()
 	const $label=makeElement('span')('column-label')()
 	if (query.type=='id') {
 		$label.append(`#${query.uid}`)
