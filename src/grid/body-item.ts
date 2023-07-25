@@ -357,11 +357,11 @@ export function writeExpandedItemFlow(
 			optionalize('api',makeBadge()([$apiLink]))
 		)
 	}
-	const makeHotBadgeFromComment=(comment: string)=>{
+	const makeProjectBadgeFromComment=(comment: string)=>{
 		const match=comment.match(/#hotosm-project-(\d+)/)
 		if (!match) return null
 		const [hotTag,hotId]=match
-		const $a=makeElement('a')('hot')()
+		const $a=makeElement('a')('project')()
 		$a.href=e`https://tasks.hotosm.org/projects/${hotId}`
 		$a.innerHTML=`<svg width="16" height="10"><use href="#project-hot" /></svg>`
 		$a.append(` `,makeElement('span')()(hotId))
@@ -397,10 +397,10 @@ export function writeExpandedItemFlow(
 			` `,optionalize('source',makeSourceBadge(item.tags.source))
 		)
 		if (item.tags?.comment) {
-			const $hotBadge=makeHotBadgeFromComment(item.tags?.comment)
-			if ($hotBadge) {
+			const $projectBadge=makeProjectBadgeFromComment(item.tags?.comment)
+			if ($projectBadge) {
 				$flow.append(
-					` `,optionalize('hot',$hotBadge)
+					` `,optionalize('project',$projectBadge)
 				)
 			}
 		}
