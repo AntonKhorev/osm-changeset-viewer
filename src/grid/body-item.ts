@@ -361,12 +361,19 @@ export function writeExpandedItemFlow(
 		const match=comment.match(/#(hotosm|teachosm)-project-(\d+)/)
 		if (!match) return null
 		const [projectTag,projectType,projectId]=match
-		const $a=makeElement('a')('project')()
-		$a.href=e`https://tasks.${projectType}.org/projects/${projectId}`
-		$a.innerHTML=`<svg width="16" height="10"><use href="#project-${projectType}" /></svg>`
-		$a.append(` `,makeElement('span')()(projectId))
-		$a.title=projectTag
-		return makeBadge()([$a])
+		const $wikiLink=makeElement('a')()()
+		if (projectType=='hotosm') {
+			$wikiLink.href=`https://wiki.openstreetmap.org/wiki/Humanitarian_OSM_Team#The_Tasking_Manager`
+			$wikiLink.title=`HOT project`
+		} else if (projectType=='teachosm') {
+			$wikiLink.href=`https://wiki.openstreetmap.org/wiki/TeachOSM`
+			$wikiLink.title=`TeachOSM project`
+		}
+		$wikiLink.innerHTML=`<svg width="16" height="10"><use href="#project-${projectType}" /></svg>`
+		const $projectLink=makeElement('a')('project-id')(projectId)
+		$projectLink.href=e`https://tasks.${projectType}.org/projects/${projectId}`
+		$projectLink.title=projectTag
+		return makeBadge()([$wikiLink,` `,$projectLink])
 	}
 	const rewriteWithChangesetLinks=(id: number)=>{
 		rewriteWithLinks(id,
