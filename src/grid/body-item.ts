@@ -3,7 +3,10 @@ import editorData from './editors'
 import makeProjectBadgeContentFromComment from './projects'
 import type ItemOptions from './item-options'
 import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText, writeHueAttributes} from './info'
-import {makeSvgOfUser, makeSvgOfNote, makeSvgOfNewUser, makeSvgOfBalloonRef, makeSvgOfComment} from './svg'
+import {
+	makeSvgOfUser, makeSvgOfNewUser, makeSvgOfNote, makeSvgOfComment,
+	makeSvgOfBalloonRef, makeSvgOfCommentTip, makeSvgOfMuteCommentTip
+} from './svg'
 import type Colorizer from '../colorizer'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
@@ -107,8 +110,8 @@ export function makeItemShell(
 		if (item.uid==item.itemUid) {
 			$button.innerHTML=commentIconSvg
 			$icon.insertAdjacentHTML('beforeend',(item.text
-				? getSvgOfCommentTip(-1)
-				: getSvgOfMuteCommentTip(-1)
+				? makeSvgOfCommentTip(-1)
+				: makeSvgOfMuteCommentTip(-1)
 			))
 		} else {
 			$button.innerHTML=commentIconSvg
@@ -125,8 +128,8 @@ export function makeItemShell(
 				$senderIcon.title=`anonymous`
 			}
 			$senderIcon.innerHTML=makeSvgOfUser()+(item.text
-				? getSvgOfCommentTip(1)
-				: getSvgOfMuteCommentTip(1)
+				? makeSvgOfCommentTip(1)
+				: makeSvgOfMuteCommentTip(1)
 			)
 		}
 	}
@@ -424,7 +427,7 @@ export function writeExpandedItemFlow(
 			const $senderIcon=makeElement('span')('icon')()
 			$senderIcon.classList.add('sender')
 			$senderIcon.innerHTML=makeSvgOfUser()+(item.text
-				? getSvgOfCommentTip(1)
+				? makeSvgOfCommentTip(1)
 				: ``
 			)
 			from.push($senderIcon)
@@ -496,17 +499,4 @@ function writeNoteIcon($icon: HTMLElement, id: number): void {
 	$anchor.title=`note ${id}`
 	$anchor.innerHTML=makeSvgOfNote()
 	$icon.append($anchor)
-}
-
-function getSvgOfCommentTip(side: -1|1): string {
-	return `<svg class="tip" width="7" height="13" viewBox="${side<0?-.5:-5.5} -6.5 7 13" fill="canvas">`+
-		`<path d="M0,0L${-7*side},7V-7Z" class="balloon-part"></path>`+
-		`<path d="M${-6*side},-6L0,0L${-6*side},6" fill="none" stroke="var(--balloon-frame-color)"></path>`+
-	`</svg>`
-}
-function getSvgOfMuteCommentTip(side: -1|1): string {
-	return `<svg class="tip" width="15" height="20" viewBox="${side<0?0:-15} -10 15 20" fill="canvas" stroke="var(--balloon-frame-color)">`+
-		`<circle cx="${-10.5*side}" cy="-3.5" r="4" class="balloon-part" />`+
-		`<circle cx="${-5.5*side}" cy="1.5" r="2" class="balloon-part" />`+
-	`</svg>`
 }

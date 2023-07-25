@@ -87,6 +87,19 @@ export function makeSvgOfBalloonRef(incoming=false,mute=false,action?:string): s
 	`</svg>`
 }
 
+export function makeSvgOfCommentTip(side: -1|1): string {
+	return `<svg class="tip" width="7" height="13" viewBox="${side<0?-.5:-5.5} -6.5 7 13" fill="canvas">`+
+		`<path d="M0,0L${-7*side},7V-7Z" class="balloon-part"></path>`+
+		`<path d="M${-6*side},-6L0,0L${-6*side},6" fill="none" stroke="var(--balloon-frame-color)"></path>`+
+	`</svg>`
+}
+export function makeSvgOfMuteCommentTip(side: -1|1): string {
+	return `<svg class="tip" width="15" height="20" viewBox="${side<0?0:-15} -10 15 20" fill="canvas" stroke="var(--balloon-frame-color)">`+
+		`<circle cx="${-10.5*side}" cy="-3.5" r="4" class="balloon-part" />`+
+		`<circle cx="${-5.5*side}" cy="1.5" r="2" class="balloon-part" />`+
+	`</svg>`
+}
+
 function makeSvgElementsOfActionGlyph(action?: string): string|undefined {
 	const s=2.5
 	if (action=='closed') {
