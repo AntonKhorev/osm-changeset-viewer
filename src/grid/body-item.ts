@@ -358,14 +358,14 @@ export function writeExpandedItemFlow(
 		)
 	}
 	const makeProjectBadgeFromComment=(comment: string)=>{
-		const match=comment.match(/#hotosm-project-(\d+)/)
+		const match=comment.match(/#(hotosm|teachosm)-project-(\d+)/)
 		if (!match) return null
-		const [hotTag,hotId]=match
+		const [projectTag,projectType,projectId]=match
 		const $a=makeElement('a')('project')()
-		$a.href=e`https://tasks.hotosm.org/projects/${hotId}`
-		$a.innerHTML=`<svg width="16" height="10"><use href="#project-hot" /></svg>`
-		$a.append(` `,makeElement('span')()(hotId))
-		$a.title=hotTag
+		$a.href=e`https://tasks.${projectType}.org/projects/${projectId}`
+		$a.innerHTML=`<svg width="16" height="10"><use href="#project-${projectType}" /></svg>`
+		$a.append(` `,makeElement('span')()(projectId))
+		$a.title=projectTag
 		return makeBadge()([$a])
 	}
 	const rewriteWithChangesetLinks=(id: number)=>{
