@@ -358,20 +358,33 @@ export function writeExpandedItemFlow(
 		)
 	}
 	const makeProjectBadgeFromComment=(comment: string)=>{
-		const match=comment.match(/#(hotosm|teachosm)-project-(\d+)/)
+		const match=comment.match(/#(hotosm-project|teachosm-project|kaart)-(\d+)/)
 		if (!match) return null
 		const [projectTag,projectType,projectId]=match
 		const $wikiLink=makeElement('a')()()
-		if (projectType=='hotosm') {
-			$wikiLink.href=`https://wiki.openstreetmap.org/wiki/Humanitarian_OSM_Team#The_Tasking_Manager`
+		let projectName:string
+		let projectDomain:string
+		if (projectType=='hotosm-project') {
 			$wikiLink.title=`HOT project`
-		} else if (projectType=='teachosm') {
-			$wikiLink.href=`https://wiki.openstreetmap.org/wiki/TeachOSM`
+			$wikiLink.href=`https://wiki.openstreetmap.org/wiki/Humanitarian_OSM_Team#The_Tasking_Manager`
+			projectName=`hotosm`
+			projectDomain=`tasks.hotosm.org`
+		} else if (projectType=='teachosm-project') {
 			$wikiLink.title=`TeachOSM project`
+			$wikiLink.href=`https://wiki.openstreetmap.org/wiki/TeachOSM`
+			projectName=`teachosm`
+			projectDomain=`tasks.teachosm.org`
+		} else if (projectType=='kaart') {
+			$wikiLink.title=`Kaart tasking manager project`
+			$wikiLink.href=`https://wiki.openstreetmap.org/wiki/Kaart`
+			projectName=`kaart`
+			projectDomain=`tasks.kaart.com`
+		} else {
+			return null
 		}
-		$wikiLink.innerHTML=`<svg width="16" height="10"><use href="#project-${projectType}" /></svg>`
+		$wikiLink.innerHTML=`<svg width="16" height="10"><use href="#project-${projectName}" /></svg>`
 		const $projectLink=makeElement('a')('project-id')(projectId)
-		$projectLink.href=e`https://tasks.${projectType}.org/projects/${projectId}`
+		$projectLink.href=e`https://${projectDomain}/projects/${projectId}`
 		$projectLink.title=projectTag
 		return makeBadge()([$wikiLink,` `,$projectLink])
 	}
