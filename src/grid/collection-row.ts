@@ -1,7 +1,7 @@
 import ItemRow from './row'
 import type {ItemSequencePoint} from './info'
 import {isItem, readItemSequencePoint, isGreaterElementSequencePoint} from './info'
-import {makeCollectionIcon} from './body-item'
+import {makeSvgOfCollection} from './svg'
 import {makeElement, makeDiv, removeInlineElement} from '../util/html'
 
 export default class ItemCollectionRow extends ItemRow {
@@ -196,4 +196,10 @@ export default class ItemCollectionRow extends ItemRow {
 			}
 		}
 	}
+}
+
+function makeCollectionIcon(): HTMLElement {
+	const $icon=makeElement('span')('icon')()
+	$icon.innerHTML=makeSvgOfCollection()
+	return $icon
 }

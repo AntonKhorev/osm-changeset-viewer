@@ -1,5 +1,18 @@
 import {makeCenteredSvg} from '../widgets'
 
+export function makeSvgOfCollection(): string {
+	const r=4
+	const c1=-10
+	const c2=10-2*r
+	return makeCenteredSvg(10,
+		`<rect x="${c1}" y="${c1}" width="${2*r}" height="${2*r}" />`+
+		`<rect x="${c1}" y="${c2}" width="${2*r}" height="${2*r}" />`+
+		`<rect x="${c2}" y="${c1}" width="${2*r}" height="${2*r}" />`+
+		`<rect x="${c2}" y="${c2}" width="${2*r}" height="${2*r}" />`+
+		`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" />`,
+	`fill="currentColor"`)
+}
+
 export function makeSvgOfAllUsers(): string {
 	return makeCenteredSvg(8,
 		`<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" />`+

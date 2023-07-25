@@ -461,21 +461,6 @@ export function writeExpandedItemFlow(
 	}
 }
 
-export function makeCollectionIcon(): HTMLElement {
-	const $icon=makeElement('span')('icon')()
-	const r=4
-	const c1=-10
-	const c2=10-2*r
-	$icon.innerHTML=makeCenteredSvg(10,
-		`<rect x="${c1}" y="${c1}" width="${2*r}" height="${2*r}" />`+
-		`<rect x="${c1}" y="${c2}" width="${2*r}" height="${2*r}" />`+
-		`<rect x="${c2}" y="${c1}" width="${2*r}" height="${2*r}" />`+
-		`<rect x="${c2}" y="${c2}" width="${2*r}" height="${2*r}" />`+
-		`<rect x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" />`,
-	`fill="currentColor"`)
-	return $icon
-}
-
 function writeNewUserIcon($icon: HTMLElement, id: number|undefined): void {
 	$icon.title=id!=null?`user ${id}`:`anonymous user`
 	$icon.innerHTML=makeSvgOfNewUser()

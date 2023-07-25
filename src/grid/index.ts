@@ -12,8 +12,6 @@ import {makeElement} from '../util/html'
 
 export {ItemOptions, ItemMapViewInfo}
 
-export {makeCollectionIcon} from './body-item'
-
 export default class Grid {
 	$grid=makeElement('table')('grid')()
 	addExpandedItems=false
