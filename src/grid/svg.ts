@@ -13,6 +13,20 @@ export function makeSvgOfCollection(): string {
 	`fill="currentColor"`)
 }
 
+export function makeSvgOfClosedChangeset(size: number): string {
+	return makeCenteredSvg(6+size,
+		`<line y1="-5" y2="5" />`+
+		`<path d="M-5,0 L0,5 L5,0" fill="none" />`,
+	`stroke="currentColor" stroke-width="2"`)
+}
+export function makeSvgOfEmptyChangeset(): string {
+	return makeCenteredSvg(10,
+		`<path d="M-7.5,5.5 V-7.5 H5.5" />`+
+		`<path d="M-8.5,8.5 L8.5,-8.5" />`+
+		`<path d="M-5.5,7.5 H7.5 V-5.5" />`,
+	`fill="none" stroke="currentColor"`)
+}
+
 export function makeSvgOfAllUsers(): string {
 	return makeCenteredSvg(8,
 		`<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" />`+

@@ -5,13 +5,14 @@ import type ItemOptions from './item-options'
 import {readCollapsedItemCommentPieceText, writeCollapsedItemCommentPieceText, writeHueAttributes} from './info'
 import {
 	makeSvgOfUser, makeSvgOfNewUser, makeSvgOfNote, makeSvgOfComment,
+	makeSvgOfClosedChangeset, makeSvgOfEmptyChangeset,
 	makeSvgOfBalloonRef, makeSvgOfCommentTip, makeSvgOfMuteCommentTip
 } from './svg'
 import type Colorizer from '../colorizer'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
 import type {ChangesetDbRecord} from '../db'
-import {makeCenteredSvg, makeDisclosureButton} from '../widgets'
+import {makeDisclosureButton} from '../widgets'
 import {makeElement, makeLink} from '../util/html'
 import {makeEscapeTag} from '../util/escape'
 
@@ -473,17 +474,10 @@ function writeChangesetIcon($icon: HTMLElement, id: number, isClosed: boolean, i
 	if (isClosed) {
 		const $button=makeElement('button')('ref')()
 		$button.title=`closed changeset ${id}`
-		$button.innerHTML=makeCenteredSvg(6+size,
-			`<line y1="-5" y2="5" />`+
-			`<path d="M-5,0 L0,5 L5,0" fill="none" />`,
-		`stroke="currentColor" stroke-width="2"`)
+		$button.innerHTML=makeSvgOfClosedChangeset(size)
 		$icon.append($button)
 	} else if (isEmpty) {
-		$icon.innerHTML=makeCenteredSvg(10,
-			`<path d="M-7.5,5.5 V-7.5 H5.5" />`+
-			`<path d="M-8.5,8.5 L8.5,-8.5" />`+
-			`<path d="M-5.5,7.5 H7.5 V-5.5" />`,
-		`fill="none" stroke="currentColor"`)
+		$icon.innerHTML=makeSvgOfEmptyChangeset()
 	}
 	if (!isClosed) {
 		const $checkbox=makeElement('input')()()
