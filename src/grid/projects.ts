@@ -56,6 +56,7 @@ export default function makeProjectBadgeContentFromComment(comment: string): (HT
 			title: `MapRoulette challenge`,
 			taskUrl: `https://maproulette.org/browse/challenges`,
 			wikiUrl: `https://wiki.openstreetmap.org/wiki/MapRoulette`,
+			icon: `maproulette`
 		}
 	} else {
 		return null
