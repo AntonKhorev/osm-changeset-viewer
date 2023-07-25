@@ -49,7 +49,12 @@ export default class GridSettingsPanel extends Panel {
 					$cell.append($button)
 				}
 				for (const itemOption of itemOptions) {
-					const $cell=makeElement('th')()(itemOption.label)
+					const $cell=makeElement('th')()()
+					if (typeof itemOption.label == 'string') {
+						$cell.textContent=itemOption.label
+					} else {
+						$cell.innerHTML=`<svg width="${itemOption.label.width}" height="${itemOption.label.height}"><use href="#${itemOption.label.icon}" /></svg>`
+					}
 					$cell.title=itemOption.title??itemOption.name
 					$row.append($cell)
 				}
