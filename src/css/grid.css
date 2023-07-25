@@ -670,7 +670,7 @@
 .ui .grid tbody .item .balloon .flow .badge .content button:not([disabled]).comment-ref:hover .balloon-ref {
 	fill: var(--hover-color);
 }
-.ui .grid tbody .item .balloon .flow .badge .content a.project-id {
+.ui .grid tbody .item .balloon .flow .badge .content a.project-text {
 	text-decoration: underline;
 	font-size: 10px;
 	vertical-align: 2px;
