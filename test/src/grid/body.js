@@ -102,7 +102,7 @@ function makeChangesetCloseBatchItem(i,createdAtString,closedAtString) {
 
 function makeSingleColumnGrid(itemReader) {
 	const gridBody=new GridBody(
-		colorizer,server,itemReader,
+		document,colorizer,server,itemReader,
 		()=>{},()=>{},()=>{},()=>{},()=>{},()=>{}
 	)
 	gridBody.setColumns([101])
@@ -713,7 +713,7 @@ describe("GridBody",()=>{
 	})
 	it("adds items to two-column collection",()=>{
 		const gridBody=new GridBody(
-			colorizer,server,null,
+			document,colorizer,server,null,
 			()=>{},()=>{},()=>{},()=>{},()=>{},()=>{}
 		)
 		gridBody.setColumns([101,102])
@@ -756,7 +756,7 @@ describe("GridBody",()=>{
 	})
 	it("splits collection when items are in different columns",async()=>{
 		const gridBody=new GridBody(
-			colorizer,server,
+			document,colorizer,server,
 			{
 				getChangeset: async(id)=>{
 					if (id==10001) return makeChangesetItem(1)
