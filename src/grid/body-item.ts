@@ -363,7 +363,7 @@ export function writeExpandedItemFlow(
 		const [hotTag,hotId]=match
 		const $a=makeElement('a')('hot')()
 		$a.href=e`https://tasks.hotosm.org/projects/${hotId}`
-		$a.innerHTML=`<svg width="16" height="10"><use href="#hot" /></svg>`
+		$a.innerHTML=`<svg width="16" height="10"><use href="#project-hot" /></svg>`
 		$a.append(` `,makeElement('span')()(hotId))
 		$a.title=hotTag
 		return makeBadge()([$a])
