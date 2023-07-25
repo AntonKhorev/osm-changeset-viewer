@@ -243,6 +243,9 @@ function makeGetKnownErrorMessage(KnownError // KnownError: typeof TypeError,
     };
 }
 
+function escapeRegex(text) {
+    return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
 function escapeHash(text) {
     // fns escape all chars but:
     // encodeURIComponent: A–Za–z0–9-_.!~*'()
@@ -2126,382 +2129,159 @@ function decorateUserName(name) {
     return chunks;
 }
 
-const merkaartorIcon = "data:image/png;base64," +
-    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADSE" +
-    "lEQVQ4ywXBW0xbdQDA4V/Praen9zrKRQrtoDABYYOI84ZRhy5Z" +
-    "4maiMxkxPviq8c3om0/GV5+mZiZuZm9bfNmIYYkJMTFZhpaxZQ" +
-    "wcZC1QSinrhdL29Fz+fp/nxuVZsZxZomWCqmnki00Wl5ocNSxm" +
-    "puOk+rvZzO6BcPEbPlI9gvKhS1A3iXelUP59sIfVtsjtmtx7aF" +
-    "E9hHPvpBgZjjM5nkTVo9y9t8LKgyfc+StLy4SRAQ/pPhWHAooi" +
-    "22TW66znPOgafPP1KV4YO81WdpXdkslecZ2QX2JycgKf7yGm6X" +
-    "DzjyLHIoJw2EQJhwyyu1CtC8IB+OFKhrad4c1XB2gcLlMoVsju" +
-    "QsuERhtiQZga1VheEwykZKSQH/bLYLah0YL9Knx4toe5i2/xya" +
-    "X36O324zhgC7AsmBo1ODksIUsWjzYcpLarY9sQDcH0i16ChkS1" +
-    "oeMKmVJVoSOm0RGDoT4VQ4d60yVouCQ6oXjQRqnWZTweiARhdN" +
-    "DPmdc7uDG/wfNLG9xeWEJ2K1gOlEs2QoBHmKiqTk9cYrMAirBr" +
-    "dEQhYEAooKDKFl99PoushZkaexevEeba1d8YTA+Ry20zNiBRqb" +
-    "Xo7ZTYe3aEJMsKpSr0d6tEI358RoCt7QI//vonT7dKXPnlOgiL" +
-    "y9dWiMcUBAqq6sGnq4SDGkrL0kCAEBKO43BUr3D19x36e48xv5" +
-    "ChXm+yXxZc+mCcjtgB4ZCOZbXQVPDgIOGRCQVgeMCPpvkwzTbJ" +
-    "LocL517CcQW1I4HqDTD79gRHppfvf8oi8NJuN5EVBUnVDFL9nS" +
-    "QSx3m8WUXWE0yMRLh1a57xIY3tPZiaSOPYFhs5k2ze5ruf99gp" +
-    "BVBkF2UwGWP6yzPIikrm/mNW17aIR6Gzw0C4LaIh6E88h6wG2d" +
-    "4poXvBsuHmnQrJXgP5i89Ofytci918nkgsQbIvwtNcme6uGCuP" +
-    "imTzAtduospHdHeFaDQOuXh+muO9XvKFCkq5ahMyXFZW89QaOh" +
-    "9fOIUQMk/W/uH+msv5syd47eVRkqkUh7UDZmbeQFF0hLDZKVxH" +
-    "elauUq9VWFjcIBz0oihe0uk0txdrzH30Cp/Ovc+J0ZPIqo+/76" +
-    "6i60F0X5DN/5YJ+SX+B9iyZV21U+bvAAAAAElFTkSuQmCC";
-const editorData = [
-    [
-        'ArcGIS Editor',
-        'https://wiki.openstreetmap.org/wiki/ArcGIS_Editor_for_OSM',
-        { type: 'text', name: 'ArcGIS' },
-    ], [
-        'autoAWS',
-        'https://wiki.openstreetmap.org/wiki/AutoAWS',
-        { type: 'text', name: 'autoAWS' },
-    ], [
-        'Every Door',
-        'https://wiki.openstreetmap.org/wiki/Every_Door',
-        { type: 'svg', id: 'everydoor' },
-    ], [
-        'Go Map!!',
-        'https://wiki.openstreetmap.org/wiki/Go_Map!!',
-        { type: 'svg', id: 'gomap' },
-    ], [
-        'https://osm.wikidata.link/',
-        'https://wiki.openstreetmap.org/wiki/OSM_%E2%86%94_Wikidata_matcher',
-        { type: 'text', name: 'OSM↔Wikidata' },
-    ], [
-        'https_all_the_things',
-        'https://wiki.openstreetmap.org/wiki/Automated_Edits/b-jazz-bot',
-        { type: 'text', name: 'https_all_the_things' },
-    ], [
-        'iD',
-        'https://wiki.openstreetmap.org/wiki/ID',
-        { type: 'svg', id: 'id' },
-    ], [
-        'JOSM',
-        'https://wiki.openstreetmap.org/wiki/JOSM',
-        { type: 'svg', id: 'josm' },
-    ], [
-        'Level0',
-        'https://wiki.openstreetmap.org/wiki/Level0',
-        { type: 'text', name: 'Level0' },
-    ], [
-        'Map builder',
-        'https://wiki.openstreetmap.org/wiki/Map_builder',
-        { type: 'svg', id: 'mapbuilder' },
-    ], [
-        'MapComplete',
-        'https://wiki.openstreetmap.org/wiki/MapComplete',
-        { type: 'svg', id: 'mapcomplete' },
-    ], [
-        'MapRoulette',
-        'https://wiki.openstreetmap.org/wiki/MapRoulette',
-        { type: 'svg', id: 'maproulette' },
-    ], [
-        'MAPS.ME',
-        'https://wiki.openstreetmap.org/wiki/MAPS.ME',
-        { type: 'svg', id: 'mapsme' },
-        /^\s*#mapsme\s*$/m
-    ], [
-        'Merkaartor',
-        'https://wiki.openstreetmap.org/wiki/Merkaartor',
-        { type: 'data', data: merkaartorIcon },
-    ], [
-        'Organic Maps',
-        'https://wiki.openstreetmap.org/wiki/Organic_Maps',
-        { type: 'svg', id: 'organicmaps' },
-        /^\s*#organicmaps\s*$/m
-    ], [
-        'osm-bulk-upload/upload.py',
-        'https://wiki.openstreetmap.org/wiki/Upload.py',
-        { type: 'text', name: 'upload.py' },
-    ], [
-        'osm-relatify',
-        'https://wiki.openstreetmap.org/wiki/Relatify',
-        { type: 'text', name: 'Relatify' },
-    ], [
-        'OsmAnd',
-        'https://wiki.openstreetmap.org/wiki/OsmAnd',
-        { type: 'svg', id: 'osmand' },
-    ], [
-        'osmapi/',
-        'https://wiki.openstreetmap.org/wiki/Osmapi_(Python_library)',
-        { type: 'text', name: 'osmapi' },
-    ], [
-        'OsmHydrant',
-        'https://wiki.openstreetmap.org/wiki/OsmHydrant',
-        { type: 'text', name: 'OsmHydrant' },
-    ], [
-        'OsmInEdit',
-        'https://wiki.openstreetmap.org/wiki/OsmInEdit',
-        { type: 'text', name: 'OsmInEdit' },
-    ], [
-        'Osmose Editor',
-        'https://wiki.openstreetmap.org/wiki/Osmose#Osmose_integrated_tags_editor',
-        { type: 'svg', id: 'osmose' },
-    ], [
-        'osmtools',
-        'https://wiki.openstreetmap.org/wiki/Revert_scripts',
-        { type: 'text', name: 'osmtools' },
-    ], [
-        'Potlatch',
-        'https://wiki.openstreetmap.org/wiki/Potlatch',
-        { type: 'svg', id: 'potlatch' },
-    ], [
-        'RapiD',
-        'https://wiki.openstreetmap.org/wiki/Rapid',
-        { type: 'svg', id: 'rapid' },
-    ], [
-        'Redaction bot',
-        'https://wiki.openstreetmap.org/wiki/OSMF_Redaction_Bot',
-        { type: 'text', name: 'Redaction bot' }
-    ], [
-        'StreetComplete',
-        'https://wiki.openstreetmap.org/wiki/StreetComplete',
-        { type: 'svg', id: 'streetcomplete' },
-        /(?:^Unable to answer.*?|\n\n)via (StreetComplete\s+.*?):?$/m
-    ], [
-        'Vespucci',
-        'https://wiki.openstreetmap.org/wiki/Vespucci',
-        { type: 'svg', id: 'vespucci' },
-    ],
-];
-
-function getItemDescriptorSelector({ type, id, order }) {
-    return `.item[data-type="${type}"][data-id="${id}"]` + (order
-        ? `[data-order="${order}"]`
-        : `:not([data-order])`);
+function makeDisclosureButton(isExpanded, label) {
+    const $disclosure = makeElement('button')('disclosure')();
+    $disclosure.title = (isExpanded ? `Collapse` : `Expand`) + ` ` + label;
+    setDisclosureButtonState($disclosure, isExpanded);
+    const r = 5.5;
+    const s = 3.5;
+    $disclosure.innerHTML = makeCenteredSvg(r, `<line x1="${-s}" x2="${s}" />` +
+        `<line y1="${-s}" y2="${s}" class="vertical-stroke" />`, `stroke="currentColor"`);
+    return $disclosure;
 }
-function getBroadItemDescriptorSelector({ type, id }) {
-    let typeSelector = `[data-type="${type}"]`;
-    if (type == 'changeset' || type == 'changesetClose' || type == 'changesetComment') {
-        typeSelector = `[data-type^="changeset"]`;
-    }
-    else if (type == 'note' || type == 'noteComment') {
-        typeSelector = `[data-type^="note"]`;
-    }
-    return `.item${typeSelector}[data-id="${id}"]`;
+function getDisclosureButtonState($disclosure) {
+    return $disclosure.getAttribute('aria-expanded') == 'true';
 }
-function isItem($item) {
-    return $item instanceof HTMLElement && $item.classList.contains('item');
-}
-function isGreaterElementSequencePoint(a, b) {
-    if (a.timestamp != b.timestamp)
-        return a.timestamp > b.timestamp;
-    const aRank = getElementTypeRank(a.type);
-    const bRank = getElementTypeRank(b.type);
-    if (aRank != bRank)
-        return aRank > bRank;
-    if (a.id != b.id)
-        return (a.id ?? 0) > (b.id ?? 0);
-    return (a.order ?? 0) > (b.order ?? 0);
-}
-function isEqualItemDescriptor(a, b) {
-    return a.type == b.type && a.id == b.id && a.order == b.order;
-}
-function getElementTypeRank(type) {
-    switch (type) {
-        case 'user':
-            return 1;
-        case 'changeset':
-            return 2;
-        case 'changesetClose':
-            return 3;
-        case 'note':
-            return 4;
-        case 'changesetComment':
-            return 5;
-        case 'noteComment':
-            return 6;
-    }
-    return +Infinity; // rank of separators
-}
-function getBatchItemSequencePoint({ type, item }) {
-    let date;
-    let id;
-    let order;
-    if (type == 'user') {
-        date = item.createdAt;
-        id = item.id;
-    }
-    else if (type == 'changeset' || type == 'changesetClose') {
-        date = item.createdAt;
-        if (type == 'changesetClose' && item.closedAt) {
-            date = item.closedAt;
-        }
-        id = item.id;
-    }
-    else if (type == 'note') {
-        date = item.createdAt;
-        id = item.id;
-    }
-    else if (type == 'changesetComment' || type == 'noteComment') {
-        date = item.createdAt;
-        id = item.itemId;
-        order = item.order;
+function setDisclosureButtonState($disclosure, isExpanded) {
+    $disclosure.setAttribute('aria-expanded', String(isExpanded));
+    if (isExpanded) {
+        $disclosure.title = $disclosure.title.replace(`Expand`, `Collapse`);
     }
     else {
-        return null;
-    }
-    const timestamp = date.getTime();
-    if (order) {
-        return { timestamp, type, id, order };
-    }
-    else {
-        return { timestamp, type, id };
+        $disclosure.title = $disclosure.title.replace(`Collapse`, `Expand`);
     }
 }
-function readItemDescriptor($item) {
-    const type = $item.dataset.type;
-    if (!type)
-        return null;
-    const id = Number($item.dataset.id);
-    if (!Number.isInteger(id))
-        return null;
-    const orderString = $item.dataset.order;
-    if (orderString != null) {
-        const order = Number(orderString);
-        if (!Number.isInteger(order))
-            return null;
-        if (order != 0)
-            return { type, id, order };
-    }
-    return { type, id };
+function makeSvgOfCollection() {
+    const r = 4;
+    const c1 = -10;
+    const c2 = 10 - 2 * r;
+    return makeCenteredSvg(10, `<rect x="${c1}" y="${c1}" width="${2 * r}" height="${2 * r}" />` +
+        `<rect x="${c1}" y="${c2}" width="${2 * r}" height="${2 * r}" />` +
+        `<rect x="${c2}" y="${c1}" width="${2 * r}" height="${2 * r}" />` +
+        `<rect x="${c2}" y="${c2}" width="${2 * r}" height="${2 * r}" />` +
+        `<rect x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" />`, `fill="currentColor"`);
 }
-function getCommentItemDescriptor(descriptor, order) {
-    const id = descriptor.id;
-    let type;
-    if (descriptor.type == 'changeset' || descriptor.type == 'changesetClose' || descriptor.type == 'changesetComment') {
-        type = 'changesetComment';
-    }
-    else if (descriptor.type == 'note' || descriptor.type == 'noteComment') {
-        type = 'noteComment';
-    }
-    else {
-        return null;
-    }
-    if (order != 0) {
-        return { type, id, order };
-    }
-    else {
-        return { type, id };
-    }
+function makeSvgOfClosedChangeset(size) {
+    return makeCenteredSvg(6 + size, `<line y1="-5" y2="5" />` +
+        `<path d="M-5,0 L0,5 L5,0" fill="none" />`, `stroke="currentColor" stroke-width="2"`);
 }
-function getMainItemDescriptor(descriptor) {
-    const id = descriptor.id;
-    let type;
-    if (descriptor.type == 'changeset' || descriptor.type == 'changesetClose' || descriptor.type == 'changesetComment') {
-        type = 'changeset';
-    }
-    else if (descriptor.type == 'note' || descriptor.type == 'noteComment') {
-        type = 'note';
-    }
-    else {
-        return null;
-    }
-    return { type, id };
+function makeSvgOfEmptyChangeset() {
+    return makeCenteredSvg(10, `<path d="M-7.5,5.5 V-7.5 H5.5" />` +
+        `<path d="M-8.5,8.5 L8.5,-8.5" />` +
+        `<path d="M-5.5,7.5 H7.5 V-5.5" />`, `fill="none" stroke="currentColor"`);
 }
-function readElementSequencePoint($e) {
-    const timestamp = Number($e.dataset.timestamp);
-    if (timestamp == null)
-        return null;
-    const type = $e.dataset.type;
-    if (!type)
-        return null;
-    const idString = $e.dataset.id;
-    if (idString == null)
-        return { timestamp, type };
-    const id = Number(idString);
-    if (!Number.isInteger(id))
-        return null;
-    const orderString = $e.dataset.order;
-    if (orderString == null)
-        return { timestamp, type, id };
-    const order = Number(orderString);
-    if (!Number.isInteger(order))
-        return null;
-    if (order == 0)
-        return { timestamp, type, id };
-    return { timestamp, type, id, order };
+function makeSvgOfAllUsers() {
+    return makeCenteredSvg(8, `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" />` +
+        `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(60)" />` +
+        `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(-60)" />`);
 }
-function readItemSequencePoint($e) {
-    const sequencePoint = readElementSequencePoint($e);
-    if (!sequencePoint || sequencePoint.id == null)
-        return null;
-    return sequencePoint;
+function makeSvgOfUser() {
+    return makeCenteredSvg(8, makeSvgElementsOfUser());
 }
-function writeElementSequencePoint($e, info) {
-    $e.dataset.timestamp = String(info.timestamp);
-    $e.dataset.type = info.type;
-    if (info.id) {
-        $e.dataset.id = String(info.id);
-    }
-    else {
-        delete $e.dataset.id;
-    }
-    if (info.order) {
-        $e.dataset.order = String(info.order);
-    }
-    else {
-        delete $e.dataset.order;
-    }
+function makeSvgOfNewUser() {
+    return makeCenteredSvg(10, `<path d="${computeNewOutlinePath(9, 7, 10)}" fill="canvas" stroke="currentColor" stroke-width="2" />` +
+        makeSvgElementsOfUser());
 }
-function writeSeparatorSequencePoint($e, date) {
-    writeElementSequencePoint($e, {
-        timestamp: getLastTimestampOfMonth(date),
-        type: 'separator',
-    });
+function makeSvgOfNote() {
+    const s = 3;
+    return makeCenteredSvg(10, `<path d="${computeNewOutlinePath(9.5, 8, 10)}" fill="none" stroke-width="1" />` +
+        `<path d="${computeMarkerOutlinePath(16, 6)}" fill="canvas" />` +
+        `<line x1="${-s}" x2="${s}" />` +
+        `<line y1="${-s}" y2="${s}" />`, `stroke="currentColor" stroke-width="2"`);
 }
-function getLastTimestampOfMonth(date) {
-    let monthIndex = date.getUTCMonth();
-    let year = date.getUTCFullYear();
-    monthIndex++;
-    if (monthIndex >= 12) {
-        monthIndex = 0;
-        year++;
-    }
-    return Date.UTC(year, monthIndex) - 1;
-}
-function readCollapsedItemCommentPieceText($piece) {
-    return $piece.dataset.fullComment ?? $piece.textContent;
-}
-function writeCollapsedItemCommentPieceText($piece, text, shortText) {
-    const maxLength = 200;
-    const maxLengthThreshold = maxLength + 3;
-    if (shortText != null) {
-        $piece.dataset.fullComment = text;
-        if (shortText.length > maxLengthThreshold) {
-            $piece.textContent = '...' + shortText.substring(0, maxLength) + '...';
+function makeSvgOfComment(itemType, action) {
+    if (itemType == 'note') {
+        const actionGlyph = makeSvgElementsOfActionGlyph(action);
+        if (actionGlyph != null) {
+            return makeCenteredSvg(10, `<path d="${computeMarkerOutlinePath(16, 6)}" fill="canvas" />` +
+                actionGlyph, `stroke="currentColor" stroke-width="2"`);
         }
         else {
-            $piece.textContent = '...' + shortText;
+            const r = 4;
+            return makeCenteredSvg(r, `<circle r=${r} fill="currentColor" />`);
         }
     }
     else {
-        if (text.length > maxLengthThreshold) {
-            $piece.dataset.fullComment = text;
-            $piece.textContent = text.substring(0, maxLength) + '...';
-        }
-        else {
-            delete $piece.dataset.fullComment;
-            $piece.textContent = text;
-        }
+        const r = 4;
+        return makeCenteredSvg(r, `<rect x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" fill="currentColor" />`);
     }
 }
-function writeHueAttributes(colorizer, $e, uid) {
-    if (uid != null) {
-        $e.dataset.hueUid = String(uid);
-        $e.style.setProperty('--hue', String(colorizer.getHueForUid(uid)));
-        $e.style.setProperty('--saturation-factor', '1');
+function makeSvgOfBalloonRef(incoming = false, mute = false, action) {
+    const flip = incoming ? ` transform="scale(-1,1)"` : ``;
+    const balloonColors = `fill="transparent" stroke="var(--icon-frame-color)"`;
+    let balloon;
+    if (mute) {
+        balloon = `<g${flip} ${balloonColors}>` +
+            `<circle class="balloon-ref" r="6" />` +
+            `<circle class="balloon-ref" r="2" cx="-6" cy="4" />` +
+            `</g>`;
     }
     else {
-        $e.dataset.hueUid = '';
-        $e.style.setProperty('--hue', '0');
-        $e.style.setProperty('--saturation-factor', '0');
+        const balloonPathData = `M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`;
+        balloon = `<path class="balloon-ref"${flip} d="${balloonPathData}" ${balloonColors} />`;
     }
+    let balloonContents = (`<circle r=".7" fill="currentColor" cx="-3" />` +
+        `<circle r=".7" fill="currentColor" />` +
+        `<circle r=".7" fill="currentColor" cx="3" />`);
+    const actionGlyph = makeSvgElementsOfActionGlyph(action);
+    if (actionGlyph != null) {
+        balloonContents = `<g stroke="currentColor" stroke-width="2">${actionGlyph}</g>`;
+    }
+    return `<svg width="15" height="13" viewBox="${incoming ? -6.5 : -8.5} -6.5 15 13">` +
+        balloon + balloonContents +
+        `</svg>`;
+}
+function makeSvgOfCommentTip(side) {
+    return `<svg class="tip" width="7" height="13" viewBox="${side < 0 ? -.5 : -5.5} -6.5 7 13" fill="canvas">` +
+        `<path d="M0,0L${-7 * side},7V-7Z" class="balloon-part"></path>` +
+        `<path d="M${-6 * side},-6L0,0L${-6 * side},6" fill="none" stroke="var(--balloon-frame-color)"></path>` +
+        `</svg>`;
+}
+function makeSvgOfMuteCommentTip(side) {
+    return `<svg class="tip" width="15" height="20" viewBox="${side < 0 ? 0 : -15} -10 15 20" fill="canvas" stroke="var(--balloon-frame-color)">` +
+        `<circle cx="${-10.5 * side}" cy="-3.5" r="4" class="balloon-part" />` +
+        `<circle cx="${-5.5 * side}" cy="1.5" r="2" class="balloon-part" />` +
+        `</svg>`;
+}
+function makeSvgElementsOfActionGlyph(action) {
+    const s = 2.5;
+    if (action == 'closed') {
+        return `<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" />`;
+    }
+    else if (action == 'reopened') {
+        return (`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" />` +
+            `<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" />`);
+    }
+    else if (action == 'hidden') {
+        return ``;
+    }
+}
+function makeSvgElementsOfUser() {
+    return (`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />` +
+        `<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`);
+}
+function computeNewOutlinePath(R, r, n) {
+    let outline = ``;
+    for (let i = 0; i < n * 2; i++) {
+        const a = Math.PI * i / n;
+        const s = i & 1 ? r : R;
+        outline += (i ? 'L' : 'M') +
+            (s * Math.cos(a)).toFixed(2) + ',' +
+            (s * Math.sin(a)).toFixed(2);
+    }
+    outline += 'Z';
+    return outline;
+}
+function computeMarkerOutlinePath(h, r) {
+    const rp = h - r;
+    const y = r ** 2 / rp;
+    const x = Math.sqrt(r ** 2 - y ** 2);
+    const xf = x.toFixed(2);
+    const yf = y.toFixed(2);
+    return `M0,${rp} L-${xf},${yf} A${r},${r} 0 1 1 ${xf},${yf} Z`;
+}
+function makeCenteredSvg(r, content, attrs) {
+    return `<svg width="${2 * r}" height="${2 * r}" viewBox="${-r} ${-r} ${2 * r} ${2 * r}"${attrs ? ' ' + attrs : ''}>${content}</svg>`;
 }
 
 const pad = (n) => ('0' + n).slice(-2);
@@ -2575,597 +2355,16 @@ function listener(ev) {
     $time.title = `${readableTime}, ${relativeTime}`;
 }
 
-function makeDisclosureButton(isExpanded, label) {
-    const $disclosure = makeElement('button')('disclosure')();
-    $disclosure.title = (isExpanded ? `Collapse` : `Expand`) + ` ` + label;
-    setDisclosureButtonState($disclosure, isExpanded);
-    const r = 5.5;
-    const s = 3.5;
-    $disclosure.innerHTML = makeCenteredSvg(r, `<line x1="${-s}" x2="${s}" />` +
-        `<line y1="${-s}" y2="${s}" class="vertical-stroke" />`, `stroke="currentColor"`);
-    return $disclosure;
-}
-function getDisclosureButtonState($disclosure) {
-    return $disclosure.getAttribute('aria-expanded') == 'true';
-}
-function setDisclosureButtonState($disclosure, isExpanded) {
-    $disclosure.setAttribute('aria-expanded', String(isExpanded));
-    if (isExpanded) {
-        $disclosure.title = $disclosure.title.replace(`Expand`, `Collapse`);
-    }
-    else {
-        $disclosure.title = $disclosure.title.replace(`Collapse`, `Expand`);
-    }
-}
-function makeCenteredSvg(r, content, attrs) {
-    return `<svg width="${2 * r}" height="${2 * r}" viewBox="${-r} ${-r} ${2 * r} ${2 * r}"${attrs ? ' ' + attrs : ''}>${content}</svg>`;
-}
-
-const e$2 = makeEscapeTag(encodeURIComponent);
-function getItemCheckbox($item) {
-    const $checkbox = $item.querySelector('.icon input');
-    if ($checkbox instanceof HTMLInputElement) {
-        return $checkbox;
-    }
-}
-function getItemDisclosureButton($item) {
-    const $button = $item.querySelector('button.disclosure');
-    if ($button instanceof HTMLButtonElement) {
-        return $button;
-    }
-}
-function makeItemShell(colorizer, { type, item }, isExpanded, usernames) {
-    let id;
-    const $icon = makeElement('span')('icon')();
-    let $senderIcon;
-    const $balloon = makeElement('span')('balloon')(makeDisclosureButton(isExpanded, `item info`), ` `, makeElement('span')('flow')());
-    const $item = makeElement('span')('item')();
-    if (type == 'user') {
-        $item.classList.add('user');
-        id = item.id;
-        writeNewUserIcon($icon, id);
-        writeHueAttributes(colorizer, $icon, item.id);
-        writeHueAttributes(colorizer, $balloon, item.id);
-    }
-    else if (type == 'changeset' || type == 'changesetClose') {
-        $item.classList.add('changeset');
-        if (type == 'changesetClose')
-            $item.classList.add('closed');
-        id = item.id;
-        let size = 0;
-        if (item.changes.count > 0) {
-            const cappedChangesCount = Math.min(9999, item.changes.count);
-            size = 1 + Math.floor(Math.log10(cappedChangesCount));
-        }
-        else {
-            if (type != 'changesetClose') {
-                $item.classList.add('empty');
-            }
-        }
-        $icon.dataset.size = String(size);
-        writeChangesetIcon($icon, id, type == 'changesetClose', item.changes.count == 0, size);
-        writeHueAttributes(colorizer, $icon, item.uid);
-        writeHueAttributes(colorizer, $balloon, item.uid);
-    }
-    else if (type == 'note') {
-        $item.classList.add('note');
-        id = item.id;
-        writeNoteIcon($icon, id);
-        writeHueAttributes(colorizer, $icon, item.uid);
-        writeHueAttributes(colorizer, $balloon, item.uid);
-    }
-    else if (type == 'changesetComment' || type == 'noteComment') {
-        $item.classList.add('comment');
-        if (!item.text)
-            $item.classList.add('mute');
-        id = item.itemId;
-        const $button = makeElement('button')('ref')();
-        $icon.append($button);
-        let commentIconSvg;
-        if (type == 'noteComment') {
-            $item.classList.add('for-note');
-            if (item.action == 'commented') {
-                $item.classList.add('passive');
-            }
-            else {
-                $item.classList.add(item.action);
-            }
-            $button.title = `${item.action} note ${id}`;
-            commentIconSvg = getSvgOfCommentIcon('note', item.action);
-        }
-        else {
-            $item.classList.add('for-changeset');
-            $item.classList.add('passive');
-            $button.title = `comment for changeset ${id}`;
-            commentIconSvg = getSvgOfCommentIcon('changeset');
-        }
-        writeHueAttributes(colorizer, $icon, item.itemUid);
-        writeHueAttributes(colorizer, $balloon, item.uid);
-        if (item.uid == item.itemUid) {
-            $button.innerHTML = commentIconSvg;
-            $icon.insertAdjacentHTML('beforeend', (item.text
-                ? getSvgOfCommentTip(-1)
-                : getSvgOfMuteCommentTip(-1)));
-        }
-        else {
-            $button.innerHTML = commentIconSvg;
-            $item.classList.add('incoming');
-            $senderIcon = makeElement('span')('icon')();
-            $senderIcon.classList.add('sender');
-            writeHueAttributes(colorizer, $senderIcon, item.uid);
-            const username = item.uid ? usernames.get(item.uid) : undefined;
-            if (username != null) {
-                $senderIcon.title = username;
-            }
-            else if (item.uid != null) {
-                $senderIcon.title = `#` + item.uid;
-            }
-            else {
-                $senderIcon.title = `anonymous`;
-            }
-            $senderIcon.innerHTML = getSvgOfSenderUserIcon() + (item.text
-                ? getSvgOfCommentTip(1)
-                : getSvgOfMuteCommentTip(1));
-        }
-    }
-    $item.append($icon, $balloon);
-    if ($senderIcon) {
-        $item.append($senderIcon);
-    }
-    return $item;
-}
-function trimToCollapsedItemFlow($flow, type, itemOptions) {
-    const $pieces = [];
-    for (const itemOption of itemOptions) {
-        const $piece = $flow.querySelector(`:scope > [data-optional="${itemOption.name}"]`);
-        if (!($piece instanceof HTMLElement))
-            continue;
-        $piece.hidden = !itemOption.get(type);
-        if (itemOption.name == 'comment') {
-            const comment = readCollapsedItemCommentPieceText($piece);
-            if (comment)
-                writeCollapsedItemCommentPieceText($piece, comment);
-        }
-        $pieces.push($piece);
-    }
-    $flow.replaceChildren();
-    let metVisiblePiece = false;
-    for (const $piece of $pieces) {
-        if (!$piece.hidden && metVisiblePiece)
-            $flow.append(' ');
-        metVisiblePiece || (metVisiblePiece = !$piece.hidden);
-        $flow.append($piece);
-    }
-}
-function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernames, itemOptions) {
-    const optionalize = (name, $e) => {
-        $e.dataset.optional = name;
-        $e.hidden = !itemOptions.get(name)?.get(type);
-        return $e;
-    };
-    const makeGeoUri = (lat, lon) => {
-        return makeLink(`${lat}, ${lon}`, `geo:${lat},${lon}`);
-    };
-    const makeBadge = (title, $leftEdge, $rightEdge) => (content, isEmpty = false) => {
-        const $badgeContent = makeElement('span')('content')(...content);
-        if (isEmpty)
-            $badgeContent.classList.add('empty');
-        const $badge = makeElement('span')('badge')($badgeContent);
-        if ($leftEdge)
-            $badge.prepend($leftEdge);
-        if ($rightEdge)
-            $badge.append($rightEdge);
-        if (title)
-            $badge.title = title;
-        return $badge;
-    };
-    const makeKnownEditorBadgeOrIcon = (createdBy, editorIcon, url) => {
-        const $a = makeLink(``, url);
-        if (editorIcon.type == 'svg') {
-            $a.innerHTML = `<svg width="16" height="16"><use href="#editor-${editorIcon.id}" /></svg>`;
-        }
-        else if (editorIcon.type == 'data') {
-            $a.innerHTML = `<img width="16" height="16" src="${editorIcon.data}">`;
-        }
-        else {
-            $a.textContent = `🛠️ ` + editorIcon.name;
-            return makeBadge(createdBy)([$a]);
-        }
-        $a.title = createdBy;
-        $a.classList.add('editor');
-        return $a;
-    };
-    const makeEditorBadgeOrIconFromCreatedBy = (createdBy) => {
-        if (!createdBy) {
-            return makeBadge(`unknown editor`)([`🛠️ ?`]);
-        }
-        for (const [createdByPrefix, url, editorIcon] of editorData) {
-            for (const createdByValue of createdBy.split(';')) {
-                if (createdByValue.toLowerCase().startsWith(createdByPrefix.toLowerCase())) {
-                    return makeKnownEditorBadgeOrIcon(createdBy, editorIcon, url);
-                }
-            }
-        }
-        let createdByLead = createdBy;
-        const match = createdBy.match(/(.*)(\/|\s+|v)\d/);
-        if (match && match[1]) {
-            createdByLead = match[1];
-        }
-        return makeBadge(createdBy)([`🛠️ ${createdByLead ?? '?'}`]);
-    };
-    const makeEditorBadgeOrIconFromNoteComment = (comment) => {
-        for (const [createdByPrefix, url, editorIcon, noteRegExp] of editorData) {
-            if (!noteRegExp)
-                continue;
-            let match;
-            if (match = comment.match(noteRegExp)) {
-                const [, createdBy] = match;
-                return makeKnownEditorBadgeOrIcon(createdBy ?? createdByPrefix, editorIcon, url);
-            }
-        }
-        return null;
-    };
-    const getBalloonRefHtml = (incoming = false, mute = false, action) => {
-        const flip = incoming ? ` transform="scale(-1,1)"` : ``;
-        const balloonColors = `fill="transparent" stroke="var(--icon-frame-color)"`;
-        let balloon;
-        if (mute) {
-            balloon = `<g${flip} ${balloonColors}>` +
-                `<circle class="balloon-ref" r="6" />` +
-                `<circle class="balloon-ref" r="2" cx="-6" cy="4" />` +
-                `</g>`;
-        }
-        else {
-            const balloonPathData = `M-8,0 l2,-2 V-4 a2,2 0 0 1 2,-2 H4 a2,2 0 0 1 2,2 V4 a2,2 0 0 1 -2,2 H-4 a2,2 0 0 1 -2,-2 V2 Z`;
-            balloon = `<path class="balloon-ref"${flip} d="${balloonPathData}" ${balloonColors} />`;
-        }
-        let balloonContents = (`<circle r=".7" fill="currentColor" cx="-3" />` +
-            `<circle r=".7" fill="currentColor" />` +
-            `<circle r=".7" fill="currentColor" cx="3" />`);
-        const actionGlyph = getSvgOfActionGlyph(action);
-        if (actionGlyph != null) {
-            balloonContents = `<g stroke="currentColor" stroke-width="2">${actionGlyph}</g>`;
-        }
-        return `<svg width="15" height="13" viewBox="${incoming ? -6.5 : -8.5} -6.5 15 13">` +
-            balloon + balloonContents +
-            `</svg>`;
-    };
-    const makeCommentRefButton = (uid, order, commentRef) => {
-        const $button = makeElement('button')('comment-ref')();
-        $button.dataset.order = String(order);
-        $button.title = `comment ${order + 1}`;
-        writeHueAttributes(colorizer, $button, commentRef.uid);
-        $button.innerHTML = getBalloonRefHtml(commentRef.uid != uid, commentRef.mute, commentRef.action);
-        return $button;
-    };
-    const makeAllCommentsBadge = (uid, commentRefs) => {
-        if (commentRefs.length > 0) {
-            const content = [];
-            for (const [i, commentRef] of commentRefs.entries()) {
-                if (i)
-                    content.push(` `);
-                content.push(makeCommentRefButton(uid, i, commentRef));
-            }
-            if (commentRefs.length > 1) {
-                const $leftButton = makeElement('button')('arrow', 'to-right')();
-                $leftButton.title = `earlier comment side`;
-                const $rightButton = makeElement('button')('arrow', 'to-right')();
-                $rightButton.title = `later comment side`;
-                return makeBadge(undefined, $leftButton, $rightButton)(content);
-            }
-            else {
-                return makeBadge()(content);
-            }
-        }
-        else {
-            const $button = makeElement('button')('comment-ref')();
-            $button.disabled = true;
-            $button.innerHTML = getBalloonRefHtml();
-            return makeBadge(`no comments`)([$button], true);
-        }
-    };
-    const makeNeighborCommentsBadge = (itemType, uid, order, prevCommentRef, nextCommentRef) => {
-        if (prevCommentRef || nextCommentRef) {
-            const content = [];
-            if (nextCommentRef) {
-                content.push(makeCommentRefButton(uid, order + 1, nextCommentRef), ` `);
-            }
-            {
-                const $currentCommentIcon = makeElement('span')('marker')();
-                writeHueAttributes(colorizer, $currentCommentIcon, uid);
-                const svg = getSvgOfCommentIcon(itemType);
-                const narrowSvg = svg.replace(`width="8"`, `width="4"`);
-                $currentCommentIcon.innerHTML = narrowSvg;
-                content.push($currentCommentIcon);
-            }
-            if (prevCommentRef) {
-                content.push(` `, makeCommentRefButton(uid, order - 1, prevCommentRef));
-            }
-            const $leftButton = makeElement('button')('arrow', 'to-left')();
-            $leftButton.title = `later comment side`;
-            const $rightButton = makeElement('button')('arrow', 'to-left')();
-            $rightButton.title = `earlier comment side`;
-            return makeBadge(undefined, $leftButton, $rightButton)(content);
-        }
-        else {
-            const $button = makeElement('button')('comment-ref')();
-            $button.disabled = true;
-            $button.innerHTML = getBalloonRefHtml();
-            return makeBadge(`no comments`)([$button], true);
-        }
-    };
-    const makeSourceBadge = (source) => {
-        const bracket = (text) => [
-            makeElement('span')('delimiter')(`[`),
-            text,
-            makeElement('span')('delimiter')(`]`)
-        ];
-        if (source) {
-            return makeBadge(`source`)(bracket(source));
-        }
-        else {
-            return makeBadge(`unspecified source`)(bracket(`?`), true);
-        }
-    };
-    const makeChangesBadge = (changesCount) => {
-        if (changesCount > 0) {
-            return makeBadge(`number of changes`)([`📝 ${changesCount}`]);
-        }
-        else {
-            return makeBadge(`no changes`)([`📝 ${changesCount}`], true);
-        }
-    };
-    const makeBboxBadge = (bbox) => {
-        if (bbox) {
-            return makeBadge(`bounding box`)([`⌖ `, makeGeoUri(bbox.minLat, bbox.minLon), ` .. `, makeGeoUri(bbox.maxLat, bbox.maxLon)]);
-        }
-        else {
-            return makeBadge(`no bounding box`)([`⌖ none`], true);
-        }
-    };
-    const rewriteWithLinks = (id, href, apiHref) => {
-        const $mainLink = makeLink(String(id), href);
-        $mainLink.classList.add('listened');
-        const $apiLink = makeLink(`api`, apiHref);
-        $apiLink.classList.add('listened');
-        $flow.replaceChildren(optionalize('id', $mainLink), ` `, optionalize('api', makeBadge()([$apiLink])));
-    };
-    const makeHotBadgeFromComment = (comment) => {
-        const match = comment.match(/#hotosm-project-(\d+)/);
-        if (!match)
-            return null;
-        const [hotTag, hotId] = match;
-        const $a = makeElement('a')('hot')();
-        $a.href = e$2 `https://tasks.hotosm.org/projects/${hotId}`;
-        $a.innerHTML = `<svg width="16" height="10"><use href="#hot" /></svg>`;
-        $a.append(` `, makeElement('span')()(hotId));
-        $a.title = hotTag;
-        return makeBadge()([$a]);
-    };
-    const rewriteWithChangesetLinks = (id) => {
-        rewriteWithLinks(id, server.web.getUrl(e$2 `changeset/${id}`), server.api.getUrl(e$2 `changeset/${id}.json?include_discussion=true`));
-    };
-    const rewriteWithNoteLinks = (id) => {
-        rewriteWithLinks(id, server.web.getUrl(e$2 `note/${id}`), server.api.getUrl(e$2 `notes/${id}.json`));
-    };
-    let from = [];
-    let date;
-    if (type == 'user') {
-        date = item.createdAt;
-        const apiHref = server.api.getUrl(e$2 `user/${item.id}.json`);
-        $flow.replaceChildren(optionalize('api', makeBadge()([makeLink(`api`, apiHref)])), ` `, optionalize('status', makeElement('span')()(`account created`)));
-    }
-    else if (type == 'changeset' || type == 'changesetClose') {
-        date = type == 'changesetClose' ? item.closedAt : item.createdAt;
-        rewriteWithChangesetLinks(item.id);
-        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)));
-        if (item.tags?.comment) {
-            const $hotBadge = makeHotBadgeFromComment(item.tags?.comment);
-            if ($hotBadge) {
-                $flow.append(` `, optionalize('hot', $hotBadge));
-            }
-        }
-        $flow.append(` `, optionalize('changes', makeChangesBadge(item.changes.count)), ` `, optionalize('position', makeBboxBadge(item.bbox)), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
-        if (item.tags?.comment) {
-            $flow.append(` `, optionalize('comment', makeElement('span')()(item.tags?.comment ?? '')));
-        }
-    }
-    else if (type == 'note') {
-        date = item.createdAt;
-        rewriteWithNoteLinks(item.id);
-        if (item.openingComment) {
-            const $editorBadge = makeEditorBadgeOrIconFromNoteComment(item.openingComment);
-            if ($editorBadge) {
-                $flow.append(` `, optionalize('editor', $editorBadge));
-            }
-        }
-        $flow.append(` `, optionalize('position', makeBadge(`position`)([`⌖ `, makeGeoUri(item.lat, item.lon)])), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
-        if (item.openingComment) {
-            $flow.append(` `, optionalize('comment', makeElement('span')()(item.openingComment)));
-        }
-    }
-    else if (type == 'changesetComment' || type == 'noteComment') {
-        date = item.createdAt;
-        let username;
-        if (item.uid) {
-            username = usernames.get(item.uid);
-        }
-        let itemType;
-        if (type == 'changesetComment') {
-            itemType = 'changeset';
-            rewriteWithChangesetLinks(item.itemId);
-        }
-        else if (type == 'noteComment') {
-            itemType = 'note';
-            rewriteWithNoteLinks(item.itemId);
-        }
-        else {
-            return;
-        }
-        if (item.uid != item.itemUid) {
-            const $senderIcon = makeElement('span')('icon')();
-            $senderIcon.classList.add('sender');
-            $senderIcon.innerHTML = getSvgOfSenderUserIcon() + (item.text
-                ? getSvgOfCommentTip(1)
-                : ``);
-            from.push($senderIcon);
-            if (username != null) {
-                from.push(makeLink(username, server.web.getUrl(e$2 `user/${username}`)));
-            }
-            else if (item.uid != null) {
-                from.push(`#${item.uid}`);
-            }
-            else {
-                from.push(`anonymous`);
-            }
-        }
-        if (item.prevCommentRef || item.nextCommentRef) {
-            $flow.append(` `, optionalize('refs', makeNeighborCommentsBadge(itemType, item.itemUid, item.order, item.prevCommentRef, item.nextCommentRef)));
-        }
-        if (item.text) {
-            $flow.append(` `, optionalize('comment', makeElement('span')()(item.text)));
-        }
-    }
-    else {
-        return;
-    }
-    if (date) {
-        $flow.prepend(optionalize('date', makeDateOutput(date)), ` `);
-    }
-    if (from.length > 0) {
-        $flow.prepend(makeElement('span')('from')(...from), ` `);
-    }
-}
-function makeCollectionIcon() {
-    const $icon = makeElement('span')('icon')();
-    const r = 4;
-    const c1 = -10;
-    const c2 = 10 - 2 * r;
-    $icon.innerHTML = makeCenteredSvg(10, `<rect x="${c1}" y="${c1}" width="${2 * r}" height="${2 * r}" />` +
-        `<rect x="${c1}" y="${c2}" width="${2 * r}" height="${2 * r}" />` +
-        `<rect x="${c2}" y="${c1}" width="${2 * r}" height="${2 * r}" />` +
-        `<rect x="${c2}" y="${c2}" width="${2 * r}" height="${2 * r}" />` +
-        `<rect x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" />`, `fill="currentColor"`);
-    return $icon;
-}
-function writeNewUserIcon($icon, id) {
-    $icon.title = id != null ? `user ${id}` : `anonymous user`;
-    $icon.innerHTML = makeCenteredSvg(10, `<path d="${computeNewOutlinePath(9, 7, 10)}" fill="canvas" stroke="currentColor" stroke-width="2" />` +
-        makeUserSvgElements());
-}
-function getSvgOfSenderUserIcon() {
-    return makeCenteredSvg(8, makeUserSvgElements());
-}
-function writeChangesetIcon($icon, id, isClosed, isEmpty, size) {
-    if (isClosed) {
-        const $button = makeElement('button')('ref')();
-        $button.title = `closed changeset ${id}`;
-        $button.innerHTML = makeCenteredSvg(6 + size, `<line y1="-5" y2="5" />` +
-            `<path d="M-5,0 L0,5 L5,0" fill="none" />`, `stroke="currentColor" stroke-width="2"`);
-        $icon.append($button);
-    }
-    else if (isEmpty) {
-        $icon.innerHTML = makeCenteredSvg(10, `<path d="M-7.5,5.5 V-7.5 H5.5" />` +
-            `<path d="M-8.5,8.5 L8.5,-8.5" />` +
-            `<path d="M-5.5,7.5 H7.5 V-5.5" />`, `fill="none" stroke="currentColor"`);
-    }
-    if (!isClosed) {
-        const $checkbox = makeElement('input')()();
-        $checkbox.type = 'checkbox';
-        $checkbox.title = `opened changeset ${id}`;
-        $icon.append($checkbox);
-    }
-}
-function writeNoteIcon($icon, id) {
-    const $anchor = makeElement('a')()();
-    $anchor.tabIndex = 0;
-    $anchor.title = `note ${id}`;
-    const s = 3;
-    $anchor.innerHTML = makeCenteredSvg(10, `<path d="${computeNewOutlinePath(9.5, 8, 10)}" fill="none" stroke-width="1" />` +
-        `<path d="${computeMarkerOutlinePath(16, 6)}" fill="canvas" />` +
-        `<line x1="${-s}" x2="${s}" />` +
-        `<line y1="${-s}" y2="${s}" />`, `stroke="currentColor" stroke-width="2"`);
-    $icon.append($anchor);
-}
-function getSvgOfCommentIcon(itemType, action) {
-    if (itemType == 'note') {
-        const actionGlyph = getSvgOfActionGlyph(action);
-        if (actionGlyph != null) {
-            return makeCenteredSvg(10, `<path d="${computeMarkerOutlinePath(16, 6)}" fill="canvas" />` +
-                actionGlyph, `stroke="currentColor" stroke-width="2"`);
-        }
-        else {
-            const r = 4;
-            return makeCenteredSvg(r, `<circle r=${r} fill="currentColor" />`);
-        }
-    }
-    else {
-        const r = 4;
-        return makeCenteredSvg(r, `<rect x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" fill="currentColor" />`);
-    }
-}
-function getSvgOfActionGlyph(action) {
-    const s = 2.5;
-    if (action == 'closed') {
-        return `<path d="M${-s},0 L0,${s} L${s},${-s}" fill="none" />`;
-    }
-    else if (action == 'reopened') {
-        return (`<line x1="${-s}" x2="${s}" y1="${-s}" y2="${s}" />` +
-            `<line x1="${-s}" x2="${s}" y1="${s}" y2="${-s}" />`);
-    }
-    else if (action == 'hidden') {
-        return ``;
-    }
-}
-function getSvgOfCommentTip(side) {
-    return `<svg class="tip" width="7" height="13" viewBox="${side < 0 ? -.5 : -5.5} -6.5 7 13" fill="canvas">` +
-        `<path d="M0,0L${-7 * side},7V-7Z" class="balloon-part"></path>` +
-        `<path d="M${-6 * side},-6L0,0L${-6 * side},6" fill="none" stroke="var(--balloon-frame-color)"></path>` +
-        `</svg>`;
-}
-function getSvgOfMuteCommentTip(side) {
-    return `<svg class="tip" width="15" height="20" viewBox="${side < 0 ? 0 : -15} -10 15 20" fill="canvas" stroke="var(--balloon-frame-color)">` +
-        `<circle cx="${-10.5 * side}" cy="-3.5" r="4" class="balloon-part" />` +
-        `<circle cx="${-5.5 * side}" cy="1.5" r="2" class="balloon-part" />` +
-        `</svg>`;
-}
-function computeMarkerOutlinePath(h, r) {
-    const rp = h - r;
-    const y = r ** 2 / rp;
-    const x = Math.sqrt(r ** 2 - y ** 2);
-    const xf = x.toFixed(2);
-    const yf = y.toFixed(2);
-    return `M0,${rp} L-${xf},${yf} A${r},${r} 0 1 1 ${xf},${yf} Z`;
-}
-function computeNewOutlinePath(R, r, n) {
-    let outline = ``;
-    for (let i = 0; i < n * 2; i++) {
-        const a = Math.PI * i / n;
-        const s = i & 1 ? r : R;
-        outline += (i ? 'L' : 'M') +
-            (s * Math.cos(a)).toFixed(2) + ',' +
-            (s * Math.sin(a)).toFixed(2);
-    }
-    outline += 'Z';
-    return outline;
-}
-function makeUserSvgElements() {
-    return (`<circle cx="0" cy="-2" r="2.5" fill="currentColor" />` +
-        `<path d="M -4,5.5 A 4 4 0 0 1 4,5.5 Z" fill="currentColor" />`);
-}
-
 function makeAllTab() {
     const $icon = makeElement('span')('icon')();
     $icon.title = `all user items`;
-    $icon.innerHTML = makeCenteredSvg(8, `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" />` +
-        `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(60)" />` +
-        `<line y1="-6" y2="6" stroke="currentColor" stroke-width="2" transform="rotate(-60)" />`);
+    $icon.innerHTML = makeSvgOfAllUsers();
     return makeDiv('tab')($icon);
 }
 function makeUserTab(removeColumnClickListener, query) {
     const $icon = makeElement('span')('icon')();
     $icon.title = `user`;
-    $icon.innerHTML = makeCenteredSvg(8, makeUserSvgElements());
+    $icon.innerHTML = makeSvgOfUser();
     const $label = makeElement('span')('column-label')();
     if (query.type == 'id') {
         $label.append(`#${query.uid}`);
@@ -3476,6 +2675,240 @@ function rotateButton($button) {
             $button.style.rotate = `1turn`;
         });
     });
+}
+
+function getItemDescriptorSelector({ type, id, order }) {
+    return `.item[data-type="${type}"][data-id="${id}"]` + (order
+        ? `[data-order="${order}"]`
+        : `:not([data-order])`);
+}
+function getBroadItemDescriptorSelector({ type, id }) {
+    let typeSelector = `[data-type="${type}"]`;
+    if (type == 'changeset' || type == 'changesetClose' || type == 'changesetComment') {
+        typeSelector = `[data-type^="changeset"]`;
+    }
+    else if (type == 'note' || type == 'noteComment') {
+        typeSelector = `[data-type^="note"]`;
+    }
+    return `.item${typeSelector}[data-id="${id}"]`;
+}
+function isItem($item) {
+    return $item instanceof HTMLElement && $item.classList.contains('item');
+}
+function isGreaterElementSequencePoint(a, b) {
+    if (a.timestamp != b.timestamp)
+        return a.timestamp > b.timestamp;
+    const aRank = getElementTypeRank(a.type);
+    const bRank = getElementTypeRank(b.type);
+    if (aRank != bRank)
+        return aRank > bRank;
+    if (a.id != b.id)
+        return (a.id ?? 0) > (b.id ?? 0);
+    return (a.order ?? 0) > (b.order ?? 0);
+}
+function isEqualItemDescriptor(a, b) {
+    return a.type == b.type && a.id == b.id && a.order == b.order;
+}
+function getElementTypeRank(type) {
+    switch (type) {
+        case 'user':
+            return 1;
+        case 'changeset':
+            return 2;
+        case 'changesetClose':
+            return 3;
+        case 'note':
+            return 4;
+        case 'changesetComment':
+            return 5;
+        case 'noteComment':
+            return 6;
+    }
+    return +Infinity; // rank of separators
+}
+function getBatchItemSequencePoint({ type, item }) {
+    let date;
+    let id;
+    let order;
+    if (type == 'user') {
+        date = item.createdAt;
+        id = item.id;
+    }
+    else if (type == 'changeset' || type == 'changesetClose') {
+        date = item.createdAt;
+        if (type == 'changesetClose' && item.closedAt) {
+            date = item.closedAt;
+        }
+        id = item.id;
+    }
+    else if (type == 'note') {
+        date = item.createdAt;
+        id = item.id;
+    }
+    else if (type == 'changesetComment' || type == 'noteComment') {
+        date = item.createdAt;
+        id = item.itemId;
+        order = item.order;
+    }
+    else {
+        return null;
+    }
+    const timestamp = date.getTime();
+    if (order) {
+        return { timestamp, type, id, order };
+    }
+    else {
+        return { timestamp, type, id };
+    }
+}
+function readItemDescriptor($item) {
+    const type = $item.dataset.type;
+    if (!type)
+        return null;
+    const id = Number($item.dataset.id);
+    if (!Number.isInteger(id))
+        return null;
+    const orderString = $item.dataset.order;
+    if (orderString != null) {
+        const order = Number(orderString);
+        if (!Number.isInteger(order))
+            return null;
+        if (order != 0)
+            return { type, id, order };
+    }
+    return { type, id };
+}
+function getCommentItemDescriptor(descriptor, order) {
+    const id = descriptor.id;
+    let type;
+    if (descriptor.type == 'changeset' || descriptor.type == 'changesetClose' || descriptor.type == 'changesetComment') {
+        type = 'changesetComment';
+    }
+    else if (descriptor.type == 'note' || descriptor.type == 'noteComment') {
+        type = 'noteComment';
+    }
+    else {
+        return null;
+    }
+    if (order != 0) {
+        return { type, id, order };
+    }
+    else {
+        return { type, id };
+    }
+}
+function getMainItemDescriptor(descriptor) {
+    const id = descriptor.id;
+    let type;
+    if (descriptor.type == 'changeset' || descriptor.type == 'changesetClose' || descriptor.type == 'changesetComment') {
+        type = 'changeset';
+    }
+    else if (descriptor.type == 'note' || descriptor.type == 'noteComment') {
+        type = 'note';
+    }
+    else {
+        return null;
+    }
+    return { type, id };
+}
+function readElementSequencePoint($e) {
+    const timestamp = Number($e.dataset.timestamp);
+    if (timestamp == null)
+        return null;
+    const type = $e.dataset.type;
+    if (!type)
+        return null;
+    const idString = $e.dataset.id;
+    if (idString == null)
+        return { timestamp, type };
+    const id = Number(idString);
+    if (!Number.isInteger(id))
+        return null;
+    const orderString = $e.dataset.order;
+    if (orderString == null)
+        return { timestamp, type, id };
+    const order = Number(orderString);
+    if (!Number.isInteger(order))
+        return null;
+    if (order == 0)
+        return { timestamp, type, id };
+    return { timestamp, type, id, order };
+}
+function readItemSequencePoint($e) {
+    const sequencePoint = readElementSequencePoint($e);
+    if (!sequencePoint || sequencePoint.id == null)
+        return null;
+    return sequencePoint;
+}
+function writeElementSequencePoint($e, info) {
+    $e.dataset.timestamp = String(info.timestamp);
+    $e.dataset.type = info.type;
+    if (info.id) {
+        $e.dataset.id = String(info.id);
+    }
+    else {
+        delete $e.dataset.id;
+    }
+    if (info.order) {
+        $e.dataset.order = String(info.order);
+    }
+    else {
+        delete $e.dataset.order;
+    }
+}
+function writeSeparatorSequencePoint($e, date) {
+    writeElementSequencePoint($e, {
+        timestamp: getLastTimestampOfMonth(date),
+        type: 'separator',
+    });
+}
+function getLastTimestampOfMonth(date) {
+    let monthIndex = date.getUTCMonth();
+    let year = date.getUTCFullYear();
+    monthIndex++;
+    if (monthIndex >= 12) {
+        monthIndex = 0;
+        year++;
+    }
+    return Date.UTC(year, monthIndex) - 1;
+}
+function readCollapsedItemCommentPieceText($piece) {
+    return $piece.dataset.fullComment ?? $piece.textContent;
+}
+function writeCollapsedItemCommentPieceText($piece, text, shortText) {
+    const maxLength = 200;
+    const maxLengthThreshold = maxLength + 3;
+    if (shortText != null) {
+        $piece.dataset.fullComment = text;
+        if (shortText.length > maxLengthThreshold) {
+            $piece.textContent = '...' + shortText.substring(0, maxLength) + '...';
+        }
+        else {
+            $piece.textContent = '...' + shortText;
+        }
+    }
+    else {
+        if (text.length > maxLengthThreshold) {
+            $piece.dataset.fullComment = text;
+            $piece.textContent = text.substring(0, maxLength) + '...';
+        }
+        else {
+            delete $piece.dataset.fullComment;
+            $piece.textContent = text;
+        }
+    }
+}
+function writeHueAttributes(colorizer, $e, uid) {
+    if (uid != null) {
+        $e.dataset.hueUid = String(uid);
+        $e.style.setProperty('--hue', String(colorizer.getHueForUid(uid)));
+        $e.style.setProperty('--saturation-factor', '1');
+    }
+    else {
+        $e.dataset.hueUid = '';
+        $e.style.setProperty('--hue', '0');
+        $e.style.setProperty('--saturation-factor', '0');
+    }
 }
 
 function toUserQuery(apiUrlLister, webUrlLister, value) {
@@ -3940,7 +3373,7 @@ function getMuxBatchItemUid(batchItem) {
     }
 }
 
-const e$1 = makeEscapeTag(encodeURIComponent);
+const e$2 = makeEscapeTag(encodeURIComponent);
 class GridHead {
     constructor(colorizer, cx, db, worker, 
     // former direct grid method calls:
@@ -4142,7 +3575,7 @@ class GridHead {
         };
     }
     updateUserCard($card, info) {
-        updateUserCard(this.colorizer, $card, info, name => this.cx.server.web.getUrl(e$1 `user/${name}`), id => this.cx.server.api.getUrl(e$1 `user/${id}.json`));
+        updateUserCard(this.colorizer, $card, info, name => this.cx.server.web.getUrl(e$2 `user/${name}`), id => this.cx.server.api.getUrl(e$2 `user/${id}.json`));
     }
     makeFormUserEntry() {
         const userEntry = {
@@ -4354,6 +3787,655 @@ function getUserEntryUid(userEntry) {
     return (userEntry.type == 'query' && (userEntry.info.status == 'ready' || userEntry.info.status == 'rerunning')
         ? userEntry.info.user.id
         : undefined);
+}
+
+const merkaartorIcon = "data:image/png;base64," +
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADSE" +
+    "lEQVQ4ywXBW0xbdQDA4V/Praen9zrKRQrtoDABYYOI84ZRhy5Z" +
+    "4maiMxkxPviq8c3om0/GV5+mZiZuZm9bfNmIYYkJMTFZhpaxZQ" +
+    "wcZC1QSinrhdL29Fz+fp/nxuVZsZxZomWCqmnki00Wl5ocNSxm" +
+    "puOk+rvZzO6BcPEbPlI9gvKhS1A3iXelUP59sIfVtsjtmtx7aF" +
+    "E9hHPvpBgZjjM5nkTVo9y9t8LKgyfc+StLy4SRAQ/pPhWHAooi" +
+    "22TW66znPOgafPP1KV4YO81WdpXdkslecZ2QX2JycgKf7yGm6X" +
+    "DzjyLHIoJw2EQJhwyyu1CtC8IB+OFKhrad4c1XB2gcLlMoVsju" +
+    "QsuERhtiQZga1VheEwykZKSQH/bLYLah0YL9Knx4toe5i2/xya" +
+    "X36O324zhgC7AsmBo1ODksIUsWjzYcpLarY9sQDcH0i16ChkS1" +
+    "oeMKmVJVoSOm0RGDoT4VQ4d60yVouCQ6oXjQRqnWZTweiARhdN" +
+    "DPmdc7uDG/wfNLG9xeWEJ2K1gOlEs2QoBHmKiqTk9cYrMAirBr" +
+    "dEQhYEAooKDKFl99PoushZkaexevEeba1d8YTA+Ry20zNiBRqb" +
+    "Xo7ZTYe3aEJMsKpSr0d6tEI358RoCt7QI//vonT7dKXPnlOgiL" +
+    "y9dWiMcUBAqq6sGnq4SDGkrL0kCAEBKO43BUr3D19x36e48xv5" +
+    "ChXm+yXxZc+mCcjtgB4ZCOZbXQVPDgIOGRCQVgeMCPpvkwzTbJ" +
+    "LocL517CcQW1I4HqDTD79gRHppfvf8oi8NJuN5EVBUnVDFL9nS" +
+    "QSx3m8WUXWE0yMRLh1a57xIY3tPZiaSOPYFhs5k2ze5ruf99gp" +
+    "BVBkF2UwGWP6yzPIikrm/mNW17aIR6Gzw0C4LaIh6E88h6wG2d" +
+    "4poXvBsuHmnQrJXgP5i89Ofytci918nkgsQbIvwtNcme6uGCuP" +
+    "imTzAtduospHdHeFaDQOuXh+muO9XvKFCkq5ahMyXFZW89QaOh" +
+    "9fOIUQMk/W/uH+msv5syd47eVRkqkUh7UDZmbeQFF0hLDZKVxH" +
+    "elauUq9VWFjcIBz0oihe0uk0txdrzH30Cp/Ovc+J0ZPIqo+/76" +
+    "6i60F0X5DN/5YJ+SX+B9iyZV21U+bvAAAAAElFTkSuQmCC";
+const editorData = [
+    [
+        'ArcGIS Editor',
+        'https://wiki.openstreetmap.org/wiki/ArcGIS_Editor_for_OSM',
+        { type: 'text', name: 'ArcGIS' },
+    ], [
+        'autoAWS',
+        'https://wiki.openstreetmap.org/wiki/AutoAWS',
+        { type: 'text', name: 'autoAWS' },
+    ], [
+        'Every Door',
+        'https://wiki.openstreetmap.org/wiki/Every_Door',
+        { type: 'svg', id: 'everydoor' },
+    ], [
+        'Go Map!!',
+        'https://wiki.openstreetmap.org/wiki/Go_Map!!',
+        { type: 'svg', id: 'gomap' },
+    ], [
+        'https://osm.wikidata.link/',
+        'https://wiki.openstreetmap.org/wiki/OSM_%E2%86%94_Wikidata_matcher',
+        { type: 'text', name: 'OSM↔Wikidata' },
+    ], [
+        'https_all_the_things',
+        'https://wiki.openstreetmap.org/wiki/Automated_Edits/b-jazz-bot',
+        { type: 'text', name: 'https_all_the_things' },
+    ], [
+        'iD',
+        'https://wiki.openstreetmap.org/wiki/ID',
+        { type: 'svg', id: 'id' },
+    ], [
+        'JOSM',
+        'https://wiki.openstreetmap.org/wiki/JOSM',
+        { type: 'svg', id: 'josm' },
+    ], [
+        'Level0',
+        'https://wiki.openstreetmap.org/wiki/Level0',
+        { type: 'text', name: 'Level0' },
+    ], [
+        'Map builder',
+        'https://wiki.openstreetmap.org/wiki/Map_builder',
+        { type: 'svg', id: 'mapbuilder' },
+    ], [
+        'MapComplete',
+        'https://wiki.openstreetmap.org/wiki/MapComplete',
+        { type: 'svg', id: 'mapcomplete' },
+    ], [
+        'MapRoulette',
+        'https://wiki.openstreetmap.org/wiki/MapRoulette',
+        { type: 'svg', id: 'maproulette' },
+    ], [
+        'MAPS.ME',
+        'https://wiki.openstreetmap.org/wiki/MAPS.ME',
+        { type: 'svg', id: 'mapsme' },
+        /^\s*#mapsme\s*$/m
+    ], [
+        'Merkaartor',
+        'https://wiki.openstreetmap.org/wiki/Merkaartor',
+        { type: 'data', data: merkaartorIcon },
+    ], [
+        'Organic Maps',
+        'https://wiki.openstreetmap.org/wiki/Organic_Maps',
+        { type: 'svg', id: 'organicmaps' },
+        /^\s*#organicmaps\s*$/m
+    ], [
+        'osm-bulk-upload/upload.py',
+        'https://wiki.openstreetmap.org/wiki/Upload.py',
+        { type: 'text', name: 'upload.py' },
+    ], [
+        'osm-relatify',
+        'https://wiki.openstreetmap.org/wiki/Relatify',
+        { type: 'text', name: 'Relatify' },
+    ], [
+        'OsmAnd',
+        'https://wiki.openstreetmap.org/wiki/OsmAnd',
+        { type: 'svg', id: 'osmand' },
+    ], [
+        'osmapi/',
+        'https://wiki.openstreetmap.org/wiki/Osmapi_(Python_library)',
+        { type: 'text', name: 'osmapi' },
+    ], [
+        'OsmHydrant',
+        'https://wiki.openstreetmap.org/wiki/OsmHydrant',
+        { type: 'text', name: 'OsmHydrant' },
+    ], [
+        'OsmInEdit',
+        'https://wiki.openstreetmap.org/wiki/OsmInEdit',
+        { type: 'text', name: 'OsmInEdit' },
+    ], [
+        'Osmose Editor',
+        'https://wiki.openstreetmap.org/wiki/Osmose#Osmose_integrated_tags_editor',
+        { type: 'svg', id: 'osmose' },
+    ], [
+        'osmtools',
+        'https://wiki.openstreetmap.org/wiki/Revert_scripts',
+        { type: 'text', name: 'osmtools' },
+    ], [
+        'Potlatch',
+        'https://wiki.openstreetmap.org/wiki/Potlatch',
+        { type: 'svg', id: 'potlatch' },
+    ], [
+        'RapiD',
+        'https://wiki.openstreetmap.org/wiki/Rapid',
+        { type: 'svg', id: 'rapid' },
+    ], [
+        'Redaction bot',
+        'https://wiki.openstreetmap.org/wiki/OSMF_Redaction_Bot',
+        { type: 'text', name: 'Redaction bot' }
+    ], [
+        'StreetComplete',
+        'https://wiki.openstreetmap.org/wiki/StreetComplete',
+        { type: 'svg', id: 'streetcomplete' },
+        /(?:^Unable to answer.*?|\n\n)via (StreetComplete\s+.*?):?$/m
+    ], [
+        'Vespucci',
+        'https://wiki.openstreetmap.org/wiki/Vespucci',
+        { type: 'svg', id: 'vespucci' },
+    ],
+];
+
+const er = makeEscapeTag(escapeRegex);
+const projectManagerData = {
+    'hotosm-project': {
+        title: `HOT project`,
+        taskUrl: taskUrl(`hotosm.org`),
+        wikiUrl: `https://wiki.openstreetmap.org/wiki/Humanitarian_OSM_Team#The_Tasking_Manager`,
+        icon: `hotosm`,
+    },
+    'teachosm-project': {
+        title: `TeachOSM project`,
+        taskUrl: taskUrl(`teachosm.org`),
+        wikiUrl: `https://wiki.openstreetmap.org/wiki/TeachOSM`,
+        icon: `teachosm`,
+    },
+    'kaart': {
+        title: `Kaart project`,
+        taskUrl: taskUrl(`kaart.com`),
+        wikiUrl: `https://wiki.openstreetmap.org/wiki/Kaart`,
+        icon: `kaart`,
+    },
+    'osmus-tasks': {
+        title: `OSM US task`,
+        taskUrl: taskUrl(`openstreetmap.us`),
+        wikiUrl: `https://wiki.openstreetmap.org/wiki/Foundation/Local_Chapters/United_States`,
+    },
+};
+const taskManagerMatcher = new RegExp(`#(${Object.keys(projectManagerData).join('|')})-(\\d+)`);
+const mapRouletteMatcher = new RegExp(er `\\b${'https://maproulette.org/browse/challenges/'}(\\d+)`);
+function makeProjectBadgeContentFromComment(comment) {
+    let match;
+    let projectManager;
+    let projectId;
+    let projectTitle;
+    if (match = comment.match(taskManagerMatcher)) {
+        const [hashtag, hashtagPrefix, id] = match;
+        projectManager = projectManagerData[hashtagPrefix];
+        if (!projectManager)
+            return null;
+        projectId = id;
+        projectTitle = hashtag;
+    }
+    else if (match = comment.match(mapRouletteMatcher)) {
+        [projectTitle, projectId] = match;
+        projectManager = {
+            title: `MapRoulette challenge`,
+            taskUrl: `https://maproulette.org/browse/challenges`,
+            wikiUrl: `https://wiki.openstreetmap.org/wiki/MapRoulette`,
+            icon: `maproulette`
+        };
+    }
+    else {
+        return null;
+    }
+    const $wikiLink = makeElement('a')()();
+    $wikiLink.href = projectManager.wikiUrl;
+    if (projectManager.icon != null) {
+        $wikiLink.title = projectManager.title;
+        $wikiLink.innerHTML = `<svg width="16" height="10"><use href="#project-${projectManager.icon}" /></svg>`;
+    }
+    else {
+        $wikiLink.textContent = projectManager.title;
+        $wikiLink.classList.add('project-text');
+    }
+    const $projectLink = makeElement('a')('project-text')(projectId);
+    $projectLink.href = `${projectManager.taskUrl}/${projectId}`;
+    $projectLink.title = projectTitle;
+    return [$wikiLink, ` `, $projectLink];
+}
+function taskUrl(domain) {
+    return `https://tasks.${domain}/projects`;
+}
+
+const e$1 = makeEscapeTag(encodeURIComponent);
+function getItemCheckbox($item) {
+    const $checkbox = $item.querySelector('.icon input');
+    if ($checkbox instanceof HTMLInputElement) {
+        return $checkbox;
+    }
+}
+function getItemDisclosureButton($item) {
+    const $button = $item.querySelector('button.disclosure');
+    if ($button instanceof HTMLButtonElement) {
+        return $button;
+    }
+}
+function makeItemShell(colorizer, { type, item }, isExpanded, usernames) {
+    let id;
+    const $icon = makeElement('span')('icon')();
+    let $senderIcon;
+    const $balloon = makeElement('span')('balloon')(makeDisclosureButton(isExpanded, `item info`), ` `, makeElement('span')('flow')());
+    const $item = makeElement('span')('item')();
+    if (type == 'user') {
+        $item.classList.add('user');
+        id = item.id;
+        writeNewUserIcon($icon, id);
+        writeHueAttributes(colorizer, $icon, item.id);
+        writeHueAttributes(colorizer, $balloon, item.id);
+    }
+    else if (type == 'changeset' || type == 'changesetClose') {
+        $item.classList.add('changeset');
+        if (type == 'changesetClose')
+            $item.classList.add('closed');
+        id = item.id;
+        let size = 0;
+        if (item.changes.count > 0) {
+            const cappedChangesCount = Math.min(9999, item.changes.count);
+            size = 1 + Math.floor(Math.log10(cappedChangesCount));
+        }
+        else {
+            if (type != 'changesetClose') {
+                $item.classList.add('empty');
+            }
+        }
+        $icon.dataset.size = String(size);
+        writeChangesetIcon($icon, id, type == 'changesetClose', item.changes.count == 0, size);
+        writeHueAttributes(colorizer, $icon, item.uid);
+        writeHueAttributes(colorizer, $balloon, item.uid);
+    }
+    else if (type == 'note') {
+        $item.classList.add('note');
+        id = item.id;
+        writeNoteIcon($icon, id);
+        writeHueAttributes(colorizer, $icon, item.uid);
+        writeHueAttributes(colorizer, $balloon, item.uid);
+    }
+    else if (type == 'changesetComment' || type == 'noteComment') {
+        $item.classList.add('comment');
+        if (!item.text)
+            $item.classList.add('mute');
+        id = item.itemId;
+        const $button = makeElement('button')('ref')();
+        $icon.append($button);
+        let commentIconSvg;
+        if (type == 'noteComment') {
+            $item.classList.add('for-note');
+            if (item.action == 'commented') {
+                $item.classList.add('passive');
+            }
+            else {
+                $item.classList.add(item.action);
+            }
+            $button.title = `${item.action} note ${id}`;
+            commentIconSvg = makeSvgOfComment('note', item.action);
+        }
+        else {
+            $item.classList.add('for-changeset');
+            $item.classList.add('passive');
+            $button.title = `comment for changeset ${id}`;
+            commentIconSvg = makeSvgOfComment('changeset');
+        }
+        writeHueAttributes(colorizer, $icon, item.itemUid);
+        writeHueAttributes(colorizer, $balloon, item.uid);
+        if (item.uid == item.itemUid) {
+            $button.innerHTML = commentIconSvg;
+            $icon.insertAdjacentHTML('beforeend', (item.text
+                ? makeSvgOfCommentTip(-1)
+                : makeSvgOfMuteCommentTip(-1)));
+        }
+        else {
+            $button.innerHTML = commentIconSvg;
+            $item.classList.add('incoming');
+            $senderIcon = makeElement('span')('icon')();
+            $senderIcon.classList.add('sender');
+            writeHueAttributes(colorizer, $senderIcon, item.uid);
+            const username = item.uid ? usernames.get(item.uid) : undefined;
+            if (username != null) {
+                $senderIcon.title = username;
+            }
+            else if (item.uid != null) {
+                $senderIcon.title = `#` + item.uid;
+            }
+            else {
+                $senderIcon.title = `anonymous`;
+            }
+            $senderIcon.innerHTML = makeSvgOfUser() + (item.text
+                ? makeSvgOfCommentTip(1)
+                : makeSvgOfMuteCommentTip(1));
+        }
+    }
+    $item.append($icon, $balloon);
+    if ($senderIcon) {
+        $item.append($senderIcon);
+    }
+    return $item;
+}
+function trimToCollapsedItemFlow($flow, type, itemOptions) {
+    const $pieces = [];
+    for (const itemOption of itemOptions) {
+        const $piece = $flow.querySelector(`:scope > [data-optional="${itemOption.name}"]`);
+        if (!($piece instanceof HTMLElement))
+            continue;
+        $piece.hidden = !itemOption.get(type);
+        if (itemOption.name == 'comment') {
+            const comment = readCollapsedItemCommentPieceText($piece);
+            if (comment)
+                writeCollapsedItemCommentPieceText($piece, comment);
+        }
+        $pieces.push($piece);
+    }
+    $flow.replaceChildren();
+    let metVisiblePiece = false;
+    for (const $piece of $pieces) {
+        if (!$piece.hidden && metVisiblePiece)
+            $flow.append(' ');
+        metVisiblePiece || (metVisiblePiece = !$piece.hidden);
+        $flow.append($piece);
+    }
+}
+function writeExpandedItemFlow(colorizer, server, $flow, { type, item }, usernames, itemOptions) {
+    const optionalize = (name, $e) => {
+        $e.dataset.optional = name;
+        $e.hidden = !itemOptions.get(name)?.get(type);
+        return $e;
+    };
+    const makeGeoUri = (lat, lon) => {
+        return makeLink(`${lat}, ${lon}`, `geo:${lat},${lon}`);
+    };
+    const makeBadge = (title, $leftEdge, $rightEdge) => (content, isEmpty = false) => {
+        const $badgeContent = makeElement('span')('content')(...content);
+        if (isEmpty)
+            $badgeContent.classList.add('empty');
+        const $badge = makeElement('span')('badge')($badgeContent);
+        if ($leftEdge)
+            $badge.prepend($leftEdge);
+        if ($rightEdge)
+            $badge.append($rightEdge);
+        if (title)
+            $badge.title = title;
+        return $badge;
+    };
+    const makeKnownEditorBadgeOrIcon = (createdBy, editorIcon, url) => {
+        const $a = makeLink(``, url);
+        if (editorIcon.type == 'svg') {
+            $a.innerHTML = `<svg width="16" height="16"><use href="#editor-${editorIcon.id}" /></svg>`;
+        }
+        else if (editorIcon.type == 'data') {
+            $a.innerHTML = `<img width="16" height="16" src="${editorIcon.data}">`;
+        }
+        else {
+            $a.textContent = `🛠️ ` + editorIcon.name;
+            return makeBadge(createdBy)([$a]);
+        }
+        $a.title = createdBy;
+        $a.classList.add('editor');
+        return $a;
+    };
+    const makeEditorBadgeOrIconFromCreatedBy = (createdBy) => {
+        if (!createdBy) {
+            return makeBadge(`unknown editor`)([`🛠️ ?`]);
+        }
+        for (const [createdByPrefix, url, editorIcon] of editorData) {
+            for (const createdByValue of createdBy.split(';')) {
+                if (createdByValue.toLowerCase().startsWith(createdByPrefix.toLowerCase())) {
+                    return makeKnownEditorBadgeOrIcon(createdBy, editorIcon, url);
+                }
+            }
+        }
+        let createdByLead = createdBy;
+        const match = createdBy.match(/(.*)(\/|\s+|v)\d/);
+        if (match && match[1]) {
+            createdByLead = match[1];
+        }
+        return makeBadge(createdBy)([`🛠️ ${createdByLead ?? '?'}`]);
+    };
+    const makeEditorBadgeOrIconFromNoteComment = (comment) => {
+        for (const [createdByPrefix, url, editorIcon, noteRegExp] of editorData) {
+            if (!noteRegExp)
+                continue;
+            let match;
+            if (match = comment.match(noteRegExp)) {
+                const [, createdBy] = match;
+                return makeKnownEditorBadgeOrIcon(createdBy ?? createdByPrefix, editorIcon, url);
+            }
+        }
+        return null;
+    };
+    const makeCommentRefButton = (uid, order, commentRef) => {
+        const $button = makeElement('button')('comment-ref')();
+        $button.dataset.order = String(order);
+        $button.title = `comment ${order + 1}`;
+        writeHueAttributes(colorizer, $button, commentRef.uid);
+        $button.innerHTML = makeSvgOfBalloonRef(commentRef.uid != uid, commentRef.mute, commentRef.action);
+        return $button;
+    };
+    const makeAllCommentsBadge = (uid, commentRefs) => {
+        if (commentRefs.length > 0) {
+            const content = [];
+            for (const [i, commentRef] of commentRefs.entries()) {
+                if (i)
+                    content.push(` `);
+                content.push(makeCommentRefButton(uid, i, commentRef));
+            }
+            if (commentRefs.length > 1) {
+                const $leftButton = makeElement('button')('arrow', 'to-right')();
+                $leftButton.title = `earlier comment side`;
+                const $rightButton = makeElement('button')('arrow', 'to-right')();
+                $rightButton.title = `later comment side`;
+                return makeBadge(undefined, $leftButton, $rightButton)(content);
+            }
+            else {
+                return makeBadge()(content);
+            }
+        }
+        else {
+            const $button = makeElement('button')('comment-ref')();
+            $button.disabled = true;
+            $button.innerHTML = makeSvgOfBalloonRef();
+            return makeBadge(`no comments`)([$button], true);
+        }
+    };
+    const makeNeighborCommentsBadge = (itemType, uid, order, prevCommentRef, nextCommentRef) => {
+        if (prevCommentRef || nextCommentRef) {
+            const content = [];
+            if (nextCommentRef) {
+                content.push(makeCommentRefButton(uid, order + 1, nextCommentRef), ` `);
+            }
+            {
+                const $currentCommentIcon = makeElement('span')('marker')();
+                writeHueAttributes(colorizer, $currentCommentIcon, uid);
+                const svg = makeSvgOfComment(itemType);
+                const narrowSvg = svg.replace(`width="8"`, `width="4"`);
+                $currentCommentIcon.innerHTML = narrowSvg;
+                content.push($currentCommentIcon);
+            }
+            if (prevCommentRef) {
+                content.push(` `, makeCommentRefButton(uid, order - 1, prevCommentRef));
+            }
+            const $leftButton = makeElement('button')('arrow', 'to-left')();
+            $leftButton.title = `later comment side`;
+            const $rightButton = makeElement('button')('arrow', 'to-left')();
+            $rightButton.title = `earlier comment side`;
+            return makeBadge(undefined, $leftButton, $rightButton)(content);
+        }
+        else {
+            const $button = makeElement('button')('comment-ref')();
+            $button.disabled = true;
+            $button.innerHTML = makeSvgOfBalloonRef();
+            return makeBadge(`no comments`)([$button], true);
+        }
+    };
+    const makeSourceBadge = (source) => {
+        const bracket = (text) => [
+            makeElement('span')('delimiter')(`[`),
+            text,
+            makeElement('span')('delimiter')(`]`)
+        ];
+        if (source) {
+            return makeBadge(`source`)(bracket(source));
+        }
+        else {
+            return makeBadge(`unspecified source`)(bracket(`?`), true);
+        }
+    };
+    const makeChangesBadge = (changesCount) => {
+        if (changesCount > 0) {
+            return makeBadge(`number of changes`)([`📝 ${changesCount}`]);
+        }
+        else {
+            return makeBadge(`no changes`)([`📝 ${changesCount}`], true);
+        }
+    };
+    const makeBboxBadge = (bbox) => {
+        if (bbox) {
+            return makeBadge(`bounding box`)([`⌖ `, makeGeoUri(bbox.minLat, bbox.minLon), ` .. `, makeGeoUri(bbox.maxLat, bbox.maxLon)]);
+        }
+        else {
+            return makeBadge(`no bounding box`)([`⌖ none`], true);
+        }
+    };
+    const rewriteWithLinks = (id, href, apiHref) => {
+        const $mainLink = makeLink(String(id), href);
+        $mainLink.classList.add('listened');
+        const $apiLink = makeLink(`api`, apiHref);
+        $apiLink.classList.add('listened');
+        $flow.replaceChildren(optionalize('id', $mainLink), ` `, optionalize('api', makeBadge()([$apiLink])));
+    };
+    const makeProjectBadgeFromComment = (comment) => {
+        const badgeContent = makeProjectBadgeContentFromComment(comment);
+        if (!badgeContent)
+            return null;
+        return makeBadge()(badgeContent);
+    };
+    const rewriteWithChangesetLinks = (id) => {
+        rewriteWithLinks(id, server.web.getUrl(e$1 `changeset/${id}`), server.api.getUrl(e$1 `changeset/${id}.json?include_discussion=true`));
+    };
+    const rewriteWithNoteLinks = (id) => {
+        rewriteWithLinks(id, server.web.getUrl(e$1 `note/${id}`), server.api.getUrl(e$1 `notes/${id}.json`));
+    };
+    let from = [];
+    let date;
+    if (type == 'user') {
+        date = item.createdAt;
+        const apiHref = server.api.getUrl(e$1 `user/${item.id}.json`);
+        $flow.replaceChildren(optionalize('api', makeBadge()([makeLink(`api`, apiHref)])), ` `, optionalize('status', makeElement('span')()(`account created`)));
+    }
+    else if (type == 'changeset' || type == 'changesetClose') {
+        date = type == 'changesetClose' ? item.closedAt : item.createdAt;
+        rewriteWithChangesetLinks(item.id);
+        $flow.append(` `, optionalize('editor', makeEditorBadgeOrIconFromCreatedBy(item.tags.created_by)), ` `, optionalize('source', makeSourceBadge(item.tags.source)));
+        if (item.tags?.comment) {
+            const $projectBadge = makeProjectBadgeFromComment(item.tags?.comment);
+            if ($projectBadge) {
+                $flow.append(` `, optionalize('project', $projectBadge));
+            }
+        }
+        $flow.append(` `, optionalize('changes', makeChangesBadge(item.changes.count)), ` `, optionalize('position', makeBboxBadge(item.bbox)), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
+        if (item.tags?.comment) {
+            $flow.append(` `, optionalize('comment', makeElement('span')()(item.tags?.comment ?? '')));
+        }
+    }
+    else if (type == 'note') {
+        date = item.createdAt;
+        rewriteWithNoteLinks(item.id);
+        if (item.openingComment) {
+            const $editorBadge = makeEditorBadgeOrIconFromNoteComment(item.openingComment);
+            if ($editorBadge) {
+                $flow.append(` `, optionalize('editor', $editorBadge));
+            }
+        }
+        $flow.append(` `, optionalize('position', makeBadge(`position`)([`⌖ `, makeGeoUri(item.lat, item.lon)])), ` `, optionalize('refs', makeAllCommentsBadge(item.uid, item.commentRefs)));
+        if (item.openingComment) {
+            $flow.append(` `, optionalize('comment', makeElement('span')()(item.openingComment)));
+        }
+    }
+    else if (type == 'changesetComment' || type == 'noteComment') {
+        date = item.createdAt;
+        let username;
+        if (item.uid) {
+            username = usernames.get(item.uid);
+        }
+        let itemType;
+        if (type == 'changesetComment') {
+            itemType = 'changeset';
+            rewriteWithChangesetLinks(item.itemId);
+        }
+        else if (type == 'noteComment') {
+            itemType = 'note';
+            rewriteWithNoteLinks(item.itemId);
+        }
+        else {
+            return;
+        }
+        if (item.uid != item.itemUid) {
+            const $senderIcon = makeElement('span')('icon')();
+            $senderIcon.classList.add('sender');
+            $senderIcon.innerHTML = makeSvgOfUser() + (item.text
+                ? makeSvgOfCommentTip(1)
+                : ``);
+            from.push($senderIcon);
+            if (username != null) {
+                from.push(makeLink(username, server.web.getUrl(e$1 `user/${username}`)));
+            }
+            else if (item.uid != null) {
+                from.push(`#${item.uid}`);
+            }
+            else {
+                from.push(`anonymous`);
+            }
+        }
+        if (item.prevCommentRef || item.nextCommentRef) {
+            $flow.append(` `, optionalize('refs', makeNeighborCommentsBadge(itemType, item.itemUid, item.order, item.prevCommentRef, item.nextCommentRef)));
+        }
+        if (item.text) {
+            $flow.append(` `, optionalize('comment', makeElement('span')()(item.text)));
+        }
+    }
+    else {
+        return;
+    }
+    if (date) {
+        $flow.prepend(optionalize('date', makeDateOutput(date)), ` `);
+    }
+    if (from.length > 0) {
+        $flow.prepend(makeElement('span')('from')(...from), ` `);
+    }
+}
+function writeNewUserIcon($icon, id) {
+    $icon.title = id != null ? `user ${id}` : `anonymous user`;
+    $icon.innerHTML = makeSvgOfNewUser();
+}
+function writeChangesetIcon($icon, id, isClosed, isEmpty, size) {
+    if (isClosed) {
+        const $button = makeElement('button')('ref')();
+        $button.title = `closed changeset ${id}`;
+        $button.innerHTML = makeSvgOfClosedChangeset(size);
+        $icon.append($button);
+    }
+    else if (isEmpty) {
+        $icon.innerHTML = makeSvgOfEmptyChangeset();
+    }
+    if (!isClosed) {
+        const $checkbox = makeElement('input')()();
+        $checkbox.type = 'checkbox';
+        $checkbox.title = `opened changeset ${id}`;
+        $icon.append($checkbox);
+    }
+}
+function writeNoteIcon($icon, id) {
+    const $anchor = makeElement('a')()();
+    $anchor.tabIndex = 0;
+    $anchor.title = `note ${id}`;
+    $anchor.innerHTML = makeSvgOfNote();
+    $icon.append($anchor);
 }
 
 class ItemRow {
@@ -4729,6 +4811,11 @@ class ItemCollectionRow extends ItemRow {
             }
         }
     }
+}
+function makeCollectionIcon() {
+    const $icon = makeElement('span')('icon')();
+    $icon.innerHTML = makeSvgOfCollection();
+    return $icon;
 }
 
 class EmbeddedItemRow {
@@ -5206,10 +5293,10 @@ class ItemOptions {
             new ItemOption(isExpanded, 'api', makeItemTypes('CcNnU '), 'api'),
             new ItemOption(isExpanded, 'editor', makeItemTypes('C N   '), '🛠️'),
             new ItemOption(isExpanded, 'source', makeItemTypes('C     '), '[]'),
-            new ItemOption(isExpanded, 'hot', makeItemTypes('Cc    '), 'hot'),
+            new ItemOption(isExpanded, 'project', makeItemTypes('Cc    '), makeLabelSvgFromSymbol('project-hotosm', 16, 10), `HOT and other tasking manager projects`),
             new ItemOption(isExpanded, 'position', makeItemTypes('C N   '), '⌖'),
             new ItemOption(isExpanded, 'changes', makeItemTypes('C     '), '📝', 'changes count'),
-            new ItemOption(isExpanded, 'refs', makeItemTypes('CcNn  '), '💬', 'comment references'),
+            new ItemOption(isExpanded, 'refs', makeItemTypes('CcNn  '), makeSvgOfBalloonRef(), 'comment references'),
             new ItemOption(isExpanded, 'comment', makeItemTypes('CcNn a'), '📣'),
             new ItemOption(true, 'status', makeItemTypes('    U '), '?', 'status'),
         ].map(option => [option.name, option]));
@@ -5224,6 +5311,9 @@ class ItemOptions {
     map(fn) {
         return [...this].map(fn);
     }
+}
+function makeLabelSvgFromSymbol(icon, width, height) {
+    return `<svg width="${width}" height="${height}"><use href="#${icon}" /></svg>`;
 }
 
 function bubbleEvent($target, type) {
@@ -6435,7 +6525,8 @@ class GridSettingsPanel extends Panel {
                     $cell.append($button);
                 }
                 for (const itemOption of itemOptions) {
-                    const $cell = makeElement('th')()(itemOption.label);
+                    const $cell = makeElement('th')()();
+                    $cell.innerHTML = itemOption.label;
                     $cell.title = itemOption.title ?? itemOption.name;
                     $row.append($cell);
                 }
