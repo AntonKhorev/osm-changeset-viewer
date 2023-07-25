@@ -1,7 +1,7 @@
 import ItemRow from './row'
 import type {ItemSequencePoint} from './info'
 import {isItem, readItemSequencePoint, isGreaterElementSequencePoint} from './info'
-import {makeSvgOfCollection} from './svg'
+import {makeSvgOfCollection} from '../widgets'
 import {makeElement, makeDiv, removeInlineElement} from '../util/html'
 
 export default class ItemCollectionRow extends ItemRow {

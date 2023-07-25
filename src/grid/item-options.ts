@@ -1,3 +1,5 @@
+import {makeSvgOfBalloonRef} from '../widgets'
+
 type ItemType = 'changeset' | 'changesetComment' | 'note' | 'noteComment' | 'user' | 'abbreviate'
 function makeItemTypes(spec: `${'C'|' '}${'c'|' '}${'N'|' '}${'n'|' '}${'U'|' '}${'a'|' '}`): Set<ItemType> {
 	const types: ItemType[] = []
@@ -70,10 +72,10 @@ export default class ItemOptions {
 			new ItemOption(isExpanded,'api'     ,makeItemTypes('CcNnU '),'api'),
 			new ItemOption(isExpanded,'editor'  ,makeItemTypes('C N   '),'🛠️'),
 			new ItemOption(isExpanded,'source'  ,makeItemTypes('C     '),'[]'),
-			new ItemOption(isExpanded,'project' ,makeItemTypes('Cc    '),makeSvgLabel('project-hotosm',16,10),`HOT and other tasking manager projects`),
+			new ItemOption(isExpanded,'project' ,makeItemTypes('Cc    '),makeLabelSvgFromSymbol('project-hotosm',16,10),`HOT and other tasking manager projects`),
 			new ItemOption(isExpanded,'position',makeItemTypes('C N   '),'⌖'),
 			new ItemOption(isExpanded,'changes' ,makeItemTypes('C     '),'📝','changes count'),
-			new ItemOption(isExpanded,'refs'    ,makeItemTypes('CcNn  '),'💬','comment references'),
+			new ItemOption(isExpanded,'refs'    ,makeItemTypes('CcNn  '),makeSvgOfBalloonRef(),'comment references'),
 			new ItemOption(isExpanded,'comment' ,makeItemTypes('CcNn a'),'📣'),
 			new ItemOption(true      ,'status'  ,makeItemTypes('    U '),'?','status'),
 		].map(option=>[option.name,option]))
@@ -90,6 +92,6 @@ export default class ItemOptions {
 	}
 }
 
-function makeSvgLabel(icon: string, width: number, height: number): string {
+function makeLabelSvgFromSymbol(icon: string, width: number, height: number): string {
 	return `<svg width="${width}" height="${height}"><use href="#${icon}" /></svg>`
 }

@@ -12,8 +12,6 @@ import {makeElement} from '../util/html'
 
 export {ItemOptions, ItemMapViewInfo}
 
-export {makeSvgOfBalloonRef} from './svg'
-
 export default class Grid {
 	$grid=makeElement('table')('grid')()
 	addExpandedItems=false

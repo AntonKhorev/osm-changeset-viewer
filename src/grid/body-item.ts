@@ -7,7 +7,7 @@ import {
 	makeSvgOfUser, makeSvgOfNewUser, makeSvgOfNote, makeSvgOfComment,
 	makeSvgOfClosedChangeset, makeSvgOfEmptyChangeset,
 	makeSvgOfBalloonRef, makeSvgOfCommentTip, makeSvgOfMuteCommentTip
-} from './svg'
+} from '../widgets'
 import type Colorizer from '../colorizer'
 import {makeDateOutput} from '../date'
 import type {MuxBatchItem} from '../mux-user-item-db-stream'
