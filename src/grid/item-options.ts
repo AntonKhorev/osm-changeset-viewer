@@ -21,7 +21,7 @@ class ItemOption {
 		value: boolean,
 		public name: string,
 		private types: Set<ItemType>,
-		public label: string | { icon: string, width: number, height: number },
+		public label: string,
 		public title?: string
 	) {
 		this.changeset=value
@@ -70,7 +70,7 @@ export default class ItemOptions {
 			new ItemOption(isExpanded,'api'     ,makeItemTypes('CcNnU '),'api'),
 			new ItemOption(isExpanded,'editor'  ,makeItemTypes('C N   '),'🛠️'),
 			new ItemOption(isExpanded,'source'  ,makeItemTypes('C     '),'[]'),
-			new ItemOption(isExpanded,'project' ,makeItemTypes('Cc    '),{icon:'project-hotosm',width:16,height:10},`HOT and other tasking manager projects`),
+			new ItemOption(isExpanded,'project' ,makeItemTypes('Cc    '),makeSvgLabel('project-hotosm',16,10),`HOT and other tasking manager projects`),
 			new ItemOption(isExpanded,'position',makeItemTypes('C N   '),'⌖'),
 			new ItemOption(isExpanded,'changes' ,makeItemTypes('C     '),'📝','changes count'),
 			new ItemOption(isExpanded,'refs'    ,makeItemTypes('CcNn  '),'💬','comment references'),
@@ -88,4 +88,8 @@ export default class ItemOptions {
 	map<T>(fn:(option:ItemOption)=>T): T[] {
 		return [...this].map(fn)
 	}
+}
+
+function makeSvgLabel(icon: string, width: number, height: number): string {
+	return `<svg width="${width}" height="${height}"><use href="#${icon}" /></svg>`
 }
