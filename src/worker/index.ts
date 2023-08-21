@@ -131,13 +131,16 @@ self.onconnect=ev=>{
 			try {
 				const response=await fetcher(e`user/${uid}.json`)
 				if (!response.ok) {
-					if (response.status==410) { // deleted user
+					if (response.status==410) { // deleted/suspended user
 						user={
 							id: uid,
 							nameUpdatedAt: now,
 							detailsUpdatedAt: now,
 							withDetails: true,
 							visible: false,
+						}
+						if (query.type=='name') {
+							user.name=query.username
 						}
 					} else if (response.status==404) {
 						failedText+=` because it doesn't exist`
